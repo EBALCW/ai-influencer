@@ -1,0 +1,28 @@
+name: Kurulum testi
+
+on:
+  pull_request:
+    paths:
+      - "scripts/**"
+      - "package.json"
+      - ".nvmrc"
+      - ".github/workflows/setup-check.yml"
+  workflow_dispatch:
+
+jobs:
+  mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/setup-mac.sh
+        env:
+          CI: "1"
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: powershell
+        run: powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1
+        env:
+          CI: "1"

@@ -1,0 +1,28 @@
+{
+  "name": "ai-influencer",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "24" },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "containerEnv": { "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0" },
+  "postCreateCommand": "sudo corepack enable && corepack install && pnpm install && (test -f .env.local || cp .env.example .env.local) && node scripts/doctor.mjs || true",
+  "forwardPorts": [3000, 54321, 54323],
+  "portsAttributes": {
+    "3000": { "label": "Admin Panel" },
+    "54321": { "label": "Supabase API" },
+    "54323": { "label": "Supabase Studio" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "editorconfig.editorconfig",
+        "denoland.vscode-deno",
+        "github.vscode-pull-request-github"
+      ]
+    }
+  }
+}

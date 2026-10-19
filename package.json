@@ -1,0 +1,13 @@
+{
+  "name": "ai-influencer",
+  "private": true,
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "doctor": "node scripts/doctor.mjs",
+    "setup:mac": "bash scripts/setup-mac.sh",
+    "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1"
+  }
+}
