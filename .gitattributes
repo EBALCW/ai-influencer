@@ -1,0 +1,6 @@
+# Windows/Mac arasında satır sonu farkını engeller
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.mp4 binary

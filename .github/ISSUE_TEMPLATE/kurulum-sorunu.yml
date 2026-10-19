@@ -1,0 +1,44 @@
+name: Kurulum sorunu
+description: Kurulum script'i veya geliştirme ortamıyla ilgili bir sorun bildir
+title: "[Kurulum] "
+labels: ["kurulum"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Önce [docs/SETUP.md → Sık Sorunlar](https://github.com/BatuDemir14/ai-influencer/blob/main/docs/SETUP.md#sık-sorunlar) bölümüne bak. Çözüm yoksa aşağıyı doldur.
+        **Hata çıktısına `.env.local` içeriğini veya herhangi bir anahtarı yapıştırma.**
+  - type: dropdown
+    id: os
+    attributes:
+      label: İşletim sistemi
+      options: ["Windows 11", "Windows 10", "macOS (Apple Silicon)", "macOS (Intel)", "Codespaces / Dev Container"]
+    validations: { required: true }
+  - type: dropdown
+    id: method
+    attributes:
+      label: Kurulum yöntemi
+      options: ["Tek yapıştırma komutu", "setup script'ini repodan çalıştırdım", "Codespaces / Dev Container", "Elle kurulum"]
+    validations: { required: true }
+  - type: input
+    id: step
+    attributes:
+      label: Hangi adımda takıldı?
+      placeholder: "ör. ==> pnpm (corepack ile)"
+    validations: { required: true }
+  - type: textarea
+    id: error
+    attributes:
+      label: Hata çıktısı
+      description: Terminaldeki hatayı olduğu gibi yapıştır.
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes:
+      label: "`pnpm doctor` (veya `node scripts/doctor.mjs`) çıktısı"
+      render: shell
+  - type: textarea
+    id: tried
+    attributes:
+      label: Denediklerin

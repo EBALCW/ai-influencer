@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+.next/
+dist/
+.DS_Store
+Thumbs.db
+*.log
+supabase/.temp/

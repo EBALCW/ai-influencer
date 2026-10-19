@@ -5,6 +5,12 @@ Yapay zeka ile influencer karakteri oluşturma, büyütme ve gelire dönüştür
 1. **Operasyon:** Karakter tasarımı, hesap kurulumu, trend araştırması, içerik üretimi, yayın ve monetizasyon. [Bu videodaki](https://youtu.be/YCthYjhIY90) 7 günlük süreç temel alındı.
 2. **Admin Panel:** Ekip bilgisayarlarında açılan bir web uygulaması. Influencer oluşturma ve düzenleme, YouTube / Instagram / TikTok istatistikleri, içerik takvimi, maliyet takibi ve marka iş birlikleri buradan yönetilecek.
 
+## 🛠 Kurulum
+
+Windows ve Mac için tek yapıştırmalık kurulum komutları, Codespaces seçeneği ve sık sorunlar: **[docs/SETUP.md](docs/SETUP.md)**
+
+Kurulumdan sonra kontrol için: `pnpm doctor`
+
 ## Yol haritası
 
 | Epic | Konu |
@@ -40,4 +46,4 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 
 ## Durum
 
-Planlama aşamasında. Henüz kod yok.
+Planlama aşamasında. Kurulum altyapısı hazır, panel kodu henüz yok.
