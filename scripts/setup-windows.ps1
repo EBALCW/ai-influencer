@@ -16,7 +16,8 @@ function Refresh-Path {
 }
 # Native komutlarin hata kodunu kontrol et (PS 5.1 bunu kendisi yapmaz)
 function Run {
-    $exe, $rest = $args
+    $exe = $args[0]
+    $rest = @($args | Select-Object -Skip 1)  # tek arguman olsa da dizi kalsin
     & $exe @rest
     if ($LASTEXITCODE -ne 0) { throw "Komut basarisiz ($LASTEXITCODE): $($args -join ' ')" }
 }
