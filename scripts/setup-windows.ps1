@@ -37,7 +37,9 @@ function Install-Tool($wingetId, $chocoId, $cmd) {
 Step 'PowerShell calistirma izni'
 $policy = Get-ExecutionPolicy -Scope CurrentUser
 if ($policy -in @('Undefined', 'Restricted', 'AllSigned')) {
-    Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force
+    # Script -ExecutionPolicy Bypass ile calistiginda ayar kaydedilir ama "override" uyarisi hata olarak firlatilir
+    try { Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force } catch [System.Security.SecurityException] { }
+    if ((Get-ExecutionPolicy -Scope CurrentUser) -ne 'RemoteSigned') { throw 'Calistirma izni ayarlanamadi' }
     Ok 'CurrentUser icin RemoteSigned ayarlandi (pnpm ve profil script''leri icin gerekli)'
 } else { Ok "mevcut: $policy" }
 
