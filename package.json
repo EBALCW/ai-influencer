@@ -8,6 +8,27 @@
   "scripts": {
     "doctor": "node scripts/doctor.mjs",
     "setup:mac": "bash scripts/setup-mac.sh",
-    "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1"
+    "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1",
+    "dev": "pnpm --filter @ai-influencer/panel dev",
+    "build": "pnpm --filter @ai-influencer/panel build",
+    "start": "pnpm --filter @ai-influencer/panel start",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "typecheck": "pnpm --filter @ai-influencer/panel typecheck && pnpm --filter @ai-influencer/shared typecheck",
+    "test": "pnpm --filter @ai-influencer/panel test",
+    "test:e2e": "pnpm --filter @ai-influencer/panel test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "eslint": "8.57.1",
+    "eslint-config-next": "15.5.28",
+    "prettier": "3.9.10",
+    "supabase": "2.121.0",
+    "shadcn": "4.22.1",
+    "typescript": "5.9.3"
   }
 }
