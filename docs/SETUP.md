@@ -18,7 +18,9 @@ Sürümleri elle kurmana gerek yok. Script bu dosyaları okuyup doğru sürümü
 
 ## Ön koşul: repo erişimi
 
-Repo private. GitHub kullanıcı adını Batu'ya ilet, seni **Collaborator** olarak eklesin. Gelen daveti e-postadan veya [github.com/notifications](https://github.com/notifications) sayfasından kabul et.
+Repo, **EBALCW** organization'ı altında ve private. GitHub kullanıcı adını Batu'ya ilet, seni organization'a üye olarak davet etsin. Daveti e-postadan veya [github.com/orgs/EBALCW/invitation](https://github.com/orgs/EBALCW/invitation) sayfasından kabul et.
+
+> Codex veya Claude Code kullanıyorsan bu sayfayı okumana gerek yok. README'deki **AI agent ile kurulum** bölümündeki metni agent'a yapıştırman yeterli.
 
 ---
 
@@ -42,7 +44,7 @@ $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Env
 gh auth status 2>$null; if ($LASTEXITCODE -ne 0) { gh auth login --web --git-protocol https }
 gh auth setup-git
 $dir = "$HOME\Projects\ai-influencer"
-if (-not (Test-Path $dir)) { gh repo clone BatuDemir14/ai-influencer $dir }
+if (-not (Test-Path $dir)) { gh repo clone EBALCW/ai-influencer $dir }
 Set-Location $dir
 powershell -ExecutionPolicy Bypass -File .\scripts\setup-windows.ps1
 ```
@@ -60,7 +62,7 @@ brew install git gh
 gh auth status >/dev/null 2>&1 || gh auth login --web --git-protocol https
 gh auth setup-git
 mkdir -p ~/Projects
-[ -d ~/Projects/ai-influencer ] || gh repo clone BatuDemir14/ai-influencer ~/Projects/ai-influencer
+[ -d ~/Projects/ai-influencer ] || gh repo clone EBALCW/ai-influencer ~/Projects/ai-influencer
 cd ~/Projects/ai-influencer && bash scripts/setup-mac.sh
 ```
 
@@ -163,11 +165,11 @@ Satır sonu sorunu. Şunu çalıştır:
 (Dikkat: commit'lenmemiş değişikliklerin silinir. Önce kaydet.)
 
 **`gh repo clone` → "Could not resolve to a Repository"**
-Collaborator davetini henüz kabul etmemişsin ya da `gh auth login` ile başka bir hesaba giriş yaptın. `gh auth status` ile kontrol et.
+EBALCW organization davetini henüz kabul etmemişsin ya da `gh auth login` ile başka bir hesaba giriş yaptın. `gh auth status` ile kontrol et.
 
 **Mac: `code` komutu bulunamıyor**
 VS Code'u aç → ⌘⇧P → **Shell Command: Install 'code' command in PATH**.
 
 ## Hâlâ çözülmediyse
 
-[**Kurulum sorunu** issue'su aç](https://github.com/BatuDemir14/ai-influencer/issues/new?template=kurulum-sorunu.yml). Hata çıktısını ve `pnpm doctor` çıktısını ekle.
+[**Kurulum sorunu** issue'su aç](https://github.com/EBALCW/ai-influencer/issues/new?template=kurulum-sorunu.yml). Hata çıktısını ve `pnpm doctor` çıktısını ekle.

@@ -7,7 +7,31 @@ Yapay zeka ile influencer karakteri oluşturma, büyütme ve gelire dönüştür
 
 ## 🛠 Kurulum
 
-Windows ve Mac için tek yapıştırmalık kurulum komutları, Codespaces seçeneği ve sık sorunlar: **[docs/SETUP.md](docs/SETUP.md)**
+### 🤖 AI agent ile kurulum (Codex / Claude Code) — önerilen
+
+**Ön koşul:** EBALCW organization davetini kabul etmiş olmalısın.
+
+1. Bir terminal aç (Windows: PowerShell, Mac: Terminal). Agent'ı ev klasöründe başlat: `codex` veya `claude`.
+2. Aşağıdaki metni olduğu gibi agent'a yapıştır.
+3. Agent kurulum komutları için izin istediğinde onayla. GitHub girişi, şifre veya Windows izin penceresi çıkarsa agent ne yapacağını söyleyecek.
+
+```text
+EBALCW/ai-influencer reposunu bu bilgisayara kur ve geliştirmeye hazır hale getir.
+
+1. GitHub CLI (gh) kurulu değilse kur (Windows: winget install --id GitHub.cli -e, Mac: brew install gh).
+2. `gh auth status` ile kontrol et. Giriş yoksa `gh auth login --web --git-protocol https`
+   çalıştır, tarayıcıda ne yapmam gerektiğini bana söyle ve bekle. Ardından `gh auth setup-git`.
+3. Repoyu ev klasöründeki Projects/ai-influencer klasörüne klonla
+   (`gh repo clone EBALCW/ai-influencer`). Klasör zaten varsa içinde `git pull` yap.
+4. Repo kökündeki AGENTS.md dosyasını oku ve "İlk kurulum" bölümünü adım adım uygula.
+5. Sonunda doctor sonucunu Türkçe, kısa bir tabloyla özetle ve benim yapmam gereken bir şey kaldıysa söyle.
+```
+
+Agent'lar talimatlarını repodaki dosyalardan okur: Codex → [`AGENTS.md`](AGENTS.md), Claude Code → [`CLAUDE.md`](CLAUDE.md) (o da `AGENTS.md`'yi içe aktarır). Kurulum adımları ve çalışma kuralları bu dosyalarda olduğu için kurulumdan sonra da agent'lar aynı kurallarla çalışır.
+
+### Elle kurulum
+
+Windows ve Mac için tek yapıştırmalık komutlar, Codespaces seçeneği ve sık sorunlar: **[docs/SETUP.md](docs/SETUP.md)**
 
 Kurulumdan sonra kontrol için: `pnpm doctor`
 
