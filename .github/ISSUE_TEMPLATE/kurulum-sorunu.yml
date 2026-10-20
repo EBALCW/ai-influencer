@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Önce [docs/SETUP.md → Sık Sorunlar](https://github.com/BatuDemir14/ai-influencer/blob/main/docs/SETUP.md#sık-sorunlar) bölümüne bak. Çözüm yoksa aşağıyı doldur.
+        Önce [docs/SETUP.md → Sık Sorunlar](https://github.com/EBALCW/ai-influencer/blob/main/docs/SETUP.md#sık-sorunlar) bölümüne bak. Çözüm yoksa aşağıyı doldur.
         **Hata çıktısına `.env.local` içeriğini veya herhangi bir anahtarı yapıştırma.**
   - type: dropdown
     id: os
