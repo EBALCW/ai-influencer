@@ -35,6 +35,20 @@ Windows ve Mac için tek yapıştırmalık komutlar, Codespaces seçeneği ve s�
 
 Kurulumdan sonra kontrol için: `pnpm doctor`
 
+## Geliştirme ortamı kurulumu
+
+Paneli ve yerel Supabase servislerini çalıştırmak için Node.js 24, pnpm 10.34.7 ve Docker Desktop gerekir. Node sürümü `.nvmrc` dosyasında sabitlenmiştir.
+
+1. Node.js 24'ü kurup etkinleştir: `nvm install && nvm use` (Windows'ta nvm-windows komutlarını kullan).
+2. pnpm'i etkinleştir: `corepack enable` ve `corepack prepare pnpm@10.34.7 --activate`.
+3. Docker Desktop'ı aç ve çalışır durumda tut.
+4. Bağımlılıkları yükle: `pnpm install`.
+5. İsteğe bağlı yerel anahtarlar için `.env.example` dosyasını `.env.local` olarak kopyala. Supabase yerel anahtarlarını görmek için `pnpm supabase:status` komutunu kullan.
+6. Supabase'i başlat: `pnpm supabase:start`.
+7. Yeni bir terminalde paneli başlat: `pnpm dev` ve [http://localhost:3000](http://localhost:3000) adresini aç.
+
+Kontroller: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`. Supabase'i durdurmak için `pnpm supabase:stop`.
+
 ## Yol haritası
 
 | Epic | Konu |
@@ -70,4 +84,4 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 
 ## Durum
 
-Planlama aşamasında. Kurulum altyapısı hazır, panel kodu henüz yok.
+Proje altyapısı ve admin panel başlangıç iskeleti hazır. Influencer yönetimi ve diğer ürün özellikleri yol haritasındaki işler kapsamında geliştirilecek.
