@@ -66,7 +66,7 @@ Kurulumdan sonra kontrol için: `pnpm doctor`
 [Instagram Graph API · YouTube Data & Analytics API · TikTok API · Higgsfield · Claude API]
 ```
 
-Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur. Böylece ekipteki herkes aynı veriyi görür ve istatistik toplama job'ları bilgisayarlar kapalıyken de çalışır. Kesin karar: [#36](../../issues/36).
+Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur. Böylece ekipteki herkes aynı veriyi görür ve istatistik toplama job'ları bilgisayarlar kapalıyken de çalışır. Mimari karar ve seçenek karşılaştırması: [ADR 0001](docs/adr/0001-admin-panel-stack.md) · [#36](../../issues/36).
 
 ## Durum
 
