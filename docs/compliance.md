@@ -50,15 +50,17 @@ Operasyonel kural: Marka/ürün/hizmet karşılığında ücret, hediye, indirim
 
 Her içerikte `templates/pre-publish-checklist.md` kopyalanır. AI açıklaması, reklam açıklaması (varsa), hak/kaynak kontrolü ve doğruluk kontrolü tamamlanmadan içerik planlanmış/yayınlanmaya hazır sayılmaz.
 
-## Kaynaklar (resmî)
+## Kaynaklar (resmî; her biri 20 Ekim 2026'da kontrol edildi)
 
-- Meta, [Labeling AI Content](https://transparency.meta.com/governance/tracking-impact/labeling-ai-content/)
-- Meta, [Community Standards](https://transparency.meta.com/policies/community-standards/)
-- TikTok, [AI-generated content disclosure](https://support.tiktok.com/en/using-tiktok/creating-videos/ai-generated-content)
-- TikTok, [Community Guidelines — Integrity and Authenticity](https://www.tiktok.com/community-guidelines/en/integrity-authenticity/)
-- YouTube, [Disclosing use of GenAI content](https://support.google.com/youtube/answer/14328491)
-- YouTube, [Spam, deceptive practices & scams policies](https://support.google.com/youtube/answer/2801973)
-- YouTube, [Impersonation policy](https://support.google.com/youtube/answer/2801947)
-- T.C. Ticaret Bakanlığı, [Sosyal Medyada Şeffaf Reklam Dönemi](https://ticaret.gov.tr/haberler/ticaret-bakanligindan-sosyal-medyada-seffaf-reklam-donemi)
-- T.C. Ticaret Bakanlığı, [Sosyal Medya Etkileyicileri Kılavuzu ve mevzuat duyurusu](https://tuketici.ticaret.gov.tr/duyurular/sosyal-medya-etkileyicileri-tarafindan-yapilan-ticari-reklam-ve-haksiz-ticari-uyg)
+| Politika | Kaynak |
+|---|---|
+| Meta AI içerik etiketleri | [Meta — Labeling AI Content](https://transparency.meta.com/governance/tracking-impact/labeling-ai-content/) |
+| Meta topluluk standartları | [Meta — Community Standards](https://transparency.meta.com/policies/community-standards/) |
+| TikTok AI etiketi | [TikTok — AI-generated content disclosure](https://support.tiktok.com/en/using-tiktok/creating-videos/ai-generated-content) |
+| TikTok sahte etkileşim, spam ve kimlik doğruluğu | [TikTok — Community Guidelines: Integrity and Authenticity](https://www.tiktok.com/community-guidelines/en/integrity-authenticity/) |
+| YouTube sentetik/altered content açıklaması | [YouTube — Disclosing use of GenAI content](https://support.google.com/youtube/answer/14328491) |
+| YouTube spam ve sahte etkileşim | [YouTube — Spam, deceptive practices & scams policies](https://support.google.com/youtube/answer/2801973) |
+| YouTube kimliğe bürünme | [YouTube — Impersonation policy](https://support.google.com/youtube/answer/2801947) |
+| Türkiye'de influencer reklam açıklaması ve yürürlük tarihi | [T.C. Ticaret Bakanlığı — Sosyal Medyada Şeffaf Reklam Dönemi](https://ticaret.gov.tr/haberler/ticaret-bakanligindan-sosyal-medyada-seffaf-reklam-donemi) |
+| Türkiye sosyal medya etkileyicileri kılavuzu | [T.C. Ticaret Bakanlığı — Kılavuz duyurusu](https://tuketici.ticaret.gov.tr/duyurular/sosyal-medya-etkileyicileri-tarafindan-yapilan-ticari-reklam-ve-haksiz-ticari-uyg) |
 
