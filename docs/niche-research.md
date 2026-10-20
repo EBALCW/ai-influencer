@@ -1,0 +1,54 @@
+# Niş araştırması — ilk masa başı taraması
+
+> **Durum:** Ön değerlendirme, 20 Ekim 2026. Bu belge issue #1'in araştırma başlangıcını ve karar önerisini kaydeder. Takipçi sayıları üçüncü taraf profillerin indekslediği yaklaşık değerlerdir; Instagram Insights değildir. Son Reels görüntülenmeleri ve paylaşım sıklığına dair bazı üçüncü taraf tahminleri bulundu; ölçüm tarihleri ve kapsamları farklı olduğu için tabloda kaynak ve kapsam belirtilmiştir. Görüntülenme verisi olmayan hesaplarda değer uydurulmamıştır. Karar öncesi seçilen hesapların son 10 Reels'i ve yayın tarihleri doğrudan kontrol edilmelidir. Ekip ilgisi puanı bilgi olmadığı için tüm seçeneklerde nötr 3/5 alınmıştır.
+
+## Puanlama
+
+1 = düşük, 5 = yüksek. “Rekabet boşluğu” puanı yükseldikçe nişin ayrışma alanı daha iyi demektir; mutlak pazar ölçümü değildir. Genel puan dört başlığın basit ortalamasıdır.
+
+| Aday niş | Rekabet boşluğu | Sponsor potansiyeli | AI ile üretim kolaylığı | Ekip ilgisi (doğrulanmadı) | Ortalama | İlk değerlendirme |
+|---|---:|---:|---:|---:|---:|---|
+| Güzellik | 2 | 5 | 3 | 3 | 3,25 | Marka bütçesi güçlü; görsel gerçekçilik ve ürün iddiaları ek risk |
+| Lifestyle | 2 | 4 | 5 | 3 | 3,50 | Üretmesi kolay; çok geniş kalma ve benzeşme riski |
+| Moda | 1 | 5 | 4 | 3 | 3,25 | Güçlü marka eşleşmesi; doygun rekabet ve kıyafet tutarlılığı riski |
+| AI/teknoloji | 4 | 4 | 4 | 3 | **3,75** | Uzmanlık iddiası yerine kaynaklı, gündelik anlatım ve ürün demo formatı gerekir |
+| Kısa film / hikâye | 4 | 3 | 4 | 3 | 3,50 | Karakter ve seri üretime uygun; senaryo, kurgu ve video kredisi yükü var |
+| Dans | 2 | 3 | 4 | 3 | 3,00 | Trend erişimi var; müzik/telif, hareket tutarlılığı ve kısa ömür riski |
+
+**Öneri:** Ana niş olarak AI/teknoloji, ayırt edici format olarak kısa görsel hikâye; lifestyle yalnızca bağlam olarak kullanılsın. Önerilen bileşim, Mina Arven persona taslağında anlatıldı. Bu karar ekip ilgisi puanı ve kısa Reels testi doğrulanmadan nihai değildir.
+
+## Rakip ve format referansları
+
+Takipçi sayıları, araştırma tarihinde erişilebilen indekslerden alınan yaklaşık snapshot'lardır; kaynaklar farklı günlerde tarandığından doğrudan sıralama gibi okunmamalıdır. “Ortalama Reels görüntülenmesi” ve “son dönem paylaşım sıklığı” sütunlarında **ölçülmedi** yazması, verinin halka açık kaynaktan doğrulanmadığını gösterir.
+
+| Hesap | Yaklaşık takipçi | Niş/format gözlemi | Ortalama Reels görüntülenmesi | Yayın sıklığı | Kaynak |
+|---|---:|---|---|---|---|
+| [@lilmiquela](https://www.instagram.com/lilmiquela/) | 2,25M | Moda, müzik, yaşam tarzı ve karakter anlatısı | LookFluence örnekleminde görüntülenme verisi dönmedi | 0,7 gönderi/hafta; ölçüm 2 Ekim 2026, Reels-only değil | [HypeAuditor](https://hypeauditor.com/instagram/lilmiquela/), [LookFluence](https://lookfluence.com/instagram/lilmiquela/) |
+| [@fit_aitana](https://www.instagram.com/fit_aitana/) | 404K | Fitness, moda ve yaşam tarzı | Ortalama 198,7K görüntülenme / paylaşım (80 takip edilen Reels; üçüncü taraf sayfa, son güncelleme yaklaşık 3 ay önce) | 3,6 gönderi/hafta, ortalama 2 gün aralık; tüm gönderi türleri | [Buzzlytics](https://www.buzzlytics.io/instagram/fit_aitana), [LookFluence](https://lookfluence.com/instagram/fit_aitana/) |
+| [@millasofiafin](https://www.instagram.com/millasofiafin/) | 681K | Moda, güzellik, seyahat; AI destekli müzik/görsel | Kaynak sayfada görüntülenme verisi yok | 1,5 gönderi/hafta; 5 gün aralık (19 Eylül 2026 raporu) | [LookFluence](https://lookfluence.com/instagram/millasofiafin/) |
+| [@shudu.gram](https://www.instagram.com/shudu.gram/) | 235K | Dijital moda modeli, editoryal ve güzellik kampanyaları | 12 gönderilik üçüncü taraf örnekleminde bir Reels için 4,3K; bu ortalama değildir | 1 gönderi/hafta (26 Mayıs 2026 örneklemi) | [IGDataHub](https://igdatahub.com/blog/shudu-gram-instagram-profile-stats/) |
+| [@imma.gram](https://www.instagram.com/imma.gram/) | ~380K (2024 kaynak snapshot'ı) | Japon kültürü, film ve sanat | Kaynak sayfada görüntülenme verisi yok | 1,8 gönderi/hafta, 4 gün aralık (üçüncü taraf analitik snapshot'ı) | [Virtual Humans](https://virtualhumans.org/human/imma-gram), [LookFluence](https://lookfluence.com/instagram/imma.gram/) |
+| [@naina_avtr](https://www.instagram.com/naina_avtr/) | 377K (2026 snapshot) | Hindistan kültürü, moda ve oyunculuk/karakter içeriği | Ortalama video görüntülenmesi 50,4K (InstME tahmini; 29 Mart 2026) | 4,71 gönderi/hafta; InstME, Reels-only değil | [InstME](https://instme.com/profile/naina_avtr) |
+| [@rozy.gram](https://www.instagram.com/rozy.gram/) | 160K | Moda, seyahat ve çevre temalı kampanyalar | Güncel ortalama görüntülenme yok; hesabın uzun süredir paylaşım yapmadığı belirtiliyor | Son paylaşım yaklaşık 6 ay önce (7 Ekim 2026 snapshot); aktif benchmark değil | [CreatorDB](https://creatordb.app/creatorstats/rozy.gram) |
+| [@noonoouri](https://www.instagram.com/noonoouri/) | 455K | Stilize dijital karakter; yüksek moda ve müzik kampanyaları | Ölçülmedi | Son 10 paylaşım örneklemi gerekli | [CreatorDB](https://creatordb.app/creatorstats/noonoouri/), [Motion](https://motionapp.com/creator/noonoouri/) |
+| [@kyraonig](https://www.instagram.com/kyraonig/) | ~247K (üçüncü taraf snapshot; tarih/kapsam değişebilir) | Hindistan merkezli sanal karakter; moda/lifestyle ve markalı hikâye | Ölçülmedi | Son 10 paylaşım örneklemi gerekli | [Findra](https://findra.com/instagram/kyraonig), [Feedspot](https://influencers.feedspot.com/ai_models_instagram_influencers/) |
+| [@magazineluiza](https://www.instagram.com/magazineluiza/) | ~9,78M (Pikory snapshot; tarih/kapsam değişebilir) | Perakende markasının sanal maskotu; ürün entegrasyonu örneği, bireysel creator değil | Ölçülmedi | 2,8–3,2 gönderi/hafta aralığı (iki üçüncü taraf analiz; formatlar karışık, Reels-only değil) | [Pikory](https://pikory.com/instagram/magazineluiza), [Shopify](https://www.shopify.com/ie/blog/ai-influencer) |
+| [@uncgotgame](https://www.instagram.com/uncgotgame/) | ~306K | Açıkça AI karakteri olan komedi/teknoloji persona formatı | Ölçülmedi | Son 10 paylaşım örneklemi gerekli | [AvatarFactory](https://avatarfactory.io/ai-influencers/unc-got-game) |
+| [@techplus.ai](https://www.instagram.com/techplus.ai/) | ~1,3M (CreatorDB, 8 Ekim 2026 snapshot) | AI araçlarını kısa ve açıklayıcı formatta anlatan hesap; sanal influencer değil, format referansı | Ortalama ölçülmedi; CreatorDB son 60 günün en iyi 5 içeriği için 139K–498K aralığı veriyor, ortalama/temsilî örneklem değil | Son 60 günde haftalık sıklık tabloda yok; örneklem incelemesi gerekli | [CreatorDB](https://creatordb.app/creatorstats/techplusai/) |
+
+> Hesaplar dört ve üzeri format kümesine ayrılmıştır; bazıları birden fazla nişe örnek olabilir. Marka maskotu ve insan tarafından yürütülen AI eğitim hesabı, sanal kişi rakibi olarak değil format referansı olarak etiketlenmiştir.
+
+## Üretim ve maliyet değerlendirmesi
+
+- **En kolay:** Lifestyle/still image içerikleri ve kısa metin overlay'leri. Üretim başına görsel maliyeti düşük olabilir; farklılaşma zayıf kalabilir.
+- **Orta:** Moda/beauty ürün sahneleri. Sponsor bağlantısı güçlü; yüz, el, kıyafet ve ürün tutarlılığı için QC ve yeniden üretim gerekebilir.
+- **Orta-yüksek:** AI/tech anlatımı. Görsel üretim kolay; metin doğruluğu, kaynak kontrolü ve ürünü gerçekten test etmiş izlenimi vermeme gerekir.
+- **Yüksek:** Kısa film ve dans videoları. Video üretimi, karakter tutarlılığı, kurgu ve lisanslı müzik maliyetini artırır.
+
+## Karar öncesi veri toplama şablonu
+
+Her referans hesabın son 10 Reels'i için şu tablo doldurulmalı: yayın tarihi, görüntülenme, süre, format, paylaşım aralığı, sponsor/ürün entegrasyonu, yapım biçimi ve AI açıklaması. Ortalama görüntülenme için 10 değer; paylaşım sıklığı için son 30 gündeki Reel sayısı kullanılmalı. Gizli veya erişilemeyen metrikler “yok” olarak bırakılmalı; tahminle doldurulmamalı.
+
+## Kaynaklar ve veri kalitesi
+
+Bu ilk taramada kamuya açık hesap sayfaları, creator-index sayfaları ve sektör listeleri kullanıldı. Takipçi sayıları üçüncü taraf snapshot'larıdır, bazıları birkaç aylık olabilir; etkileşim, sponsor geliri ve Reels görüntülenmesi için Instagram Insights veya eşdeğer panel verisi gerekir. Bu nedenle öneri, P0 issue #1'in ekipçe nihai onayı ve son-10-Reels denetimi tamamlanana kadar taslak olarak kalmalıdır.
