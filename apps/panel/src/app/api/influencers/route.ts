@@ -17,7 +17,10 @@ export async function POST(request: NextRequest) {
       .select('id, name, slug, niche, language, status')
       .single();
     if (error?.code === '23505') {
-      return NextResponse.json({ error: 'Bu slug zaten kullanılıyor.' }, { status: 409 });
+      return NextResponse.json(
+        { error: 'Bu slug zaten kullanılıyor.' },
+        { status: 409 },
+      );
     }
     if (error) throw error;
     return NextResponse.json({ influencer: data }, { status: 201 });
