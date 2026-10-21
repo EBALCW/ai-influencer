@@ -24,7 +24,6 @@ test('home page shows the studio shell and overview', async ({ page }) => {
 
 test('all navigation sections open with an empty state', async ({ page }) => {
   const destinations = [
-    ['Influencer’lar', '/influencers'],
     ['İçerik', '/content'],
     ['Takvim', '/calendar'],
     ['Analitik', '/analytics'],
@@ -40,6 +39,58 @@ test('all navigation sections open with an empty state', async ({ page }) => {
     ).toBeVisible();
     await expect(page.getByText(/kayıt bulunmuyor/i)).toBeVisible();
   }
+});
+
+test('influencer listesi detay sayfasına gider ve ?inf= seçimini korur', async ({
+  page,
+}) => {
+  await page.goto('/influencers?inf=demo-creator');
+  await expect(
+    page.getByRole('heading', { name: 'Influencer’lar', level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Demo Creator' })).toBeVisible();
+  await page.getByRole('link', { name: 'Demo Creator' }).click();
+  await expect(page).toHaveURL(/\/influencers\/demo-creator\?inf=demo-creator/);
+  await expect(
+    page.getByRole('heading', { name: 'Demo Creator', level: 1 }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('navigation', { name: 'Influencer detay sekmeleri' }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Persona' })).toBeVisible();
+  await page.getByRole('link', { name: 'Persona' }).click();
+  await expect(page).toHaveURL(/tab=persona/);
+  await expect(page.getByText('Persona kaydı yok')).toBeVisible();
+});
+
+test('bilinmeyen influencer slug gerçek HTTP 404 döndürür', async ({
+  page,
+}) => {
+  const response = await page.goto('/influencers/yok-boyle-biri');
+  expect(response?.status()).toBe(404);
+});
+
+test('arşivlenen influencer etkin listeden çıkar ve arşivden geri alınır', async ({
+  page,
+}) => {
+  await page.goto('/influencers/demo-creator');
+  await page.getByRole('button', { name: 'Arşivle' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Arşivle' }).click();
+  await expect(page.getByText('Arşiv', { exact: true })).toBeVisible();
+
+  await page.goto('/influencers');
+  await expect(page.getByRole('link', { name: 'Demo Creator' })).toHaveCount(0);
+  await page
+    .getByRole('combobox', { name: 'Duruma göre filtrele' })
+    .selectOption('archived');
+  await page.getByRole('link', { name: 'Demo Creator' }).click();
+  await page.getByRole('button', { name: 'Arşivden çıkar' }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Yeniden etkinleştir' })
+    .click();
+  await expect(page.getByText('Aktif', { exact: true })).toBeVisible();
 });
 
 test('influencer selection is stored in the URL', async ({ page }) => {
