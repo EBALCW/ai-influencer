@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(22);
+SELECT extensions.plan(23);
 
 -- Fixture (postgres rolüyle, RLS dışında). Seed'deki demo kayıtlardan bağımsız.
 INSERT INTO auth.users (
@@ -21,7 +21,7 @@ INSERT INTO public.influencers (id, name, slug, status)
 VALUES ('b1000000-0000-4000-8000-000000000001', 'Persona Test', 'persona-test', 'active');
 
 SELECT extensions.ok(
-  NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'public.create_persona_version(uuid, text, text, jsonb, jsonb, text[], jsonb, text, integer)'::regprocedure),
+  NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'public.create_persona_version(uuid, text, text, jsonb, jsonb, text[], jsonb, text, integer, text[])'::regprocedure),
   'create_persona_version is SECURITY INVOKER'
 );
 SELECT extensions.ok(
@@ -29,7 +29,7 @@ SELECT extensions.ok(
   'restore_persona_version is SECURITY INVOKER'
 );
 SELECT extensions.ok(
-  NOT has_function_privilege('anon', 'public.create_persona_version(uuid, text, text, jsonb, jsonb, text[], jsonb, text, integer)', 'EXECUTE'),
+  NOT has_function_privilege('anon', 'public.create_persona_version(uuid, text, text, jsonb, jsonb, text[], jsonb, text, integer, text[])', 'EXECUTE'),
   'anon cannot execute create_persona_version'
 );
 
@@ -38,7 +38,7 @@ SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '92000000-0000-4000-8000-000000000002', true);
 
 SELECT extensions.is(
-  (public.create_persona_version('b1000000-0000-4000-8000-000000000001', 'İlk bio', 'samimi', '{"adjectives":["meraklı"]}', '{}', ARRAY['mavi saç'], '{}', 'ilk sürüm')).version,
+  (public.create_persona_version('b1000000-0000-4000-8000-000000000001', 'İlk bio', 'samimi', '{"adjectives":["meraklı"]}', '{}', ARRAY['mavi saç'], '{}', 'ilk sürüm', NULL, ARRAY['Bugün buradayım, ya sen?'])).version,
   1,
   'first save creates v1'
 );
@@ -68,11 +68,22 @@ SELECT extensions.is(
   'created_by comes from auth.uid(), not the client'
 );
 
+SELECT extensions.is(
+  (SELECT sample_captions FROM public.influencer_personas WHERE influencer_id = 'b1000000-0000-4000-8000-000000000001' AND version = 1),
+  ARRAY['Bugün buradayım, ya sen?']::text[],
+  'sample captions are saved as part of the persona version'
+);
+
 SELECT extensions.results_eq(
   $$SELECT r.version, r.bio, r.tone, r.hook_traits, r.restored_from_version, r.change_note
     FROM public.restore_persona_version('b1000000-0000-4000-8000-000000000001', 1) r$$,
   $$VALUES (3, 'İlk bio'::text, 'samimi'::text, ARRAY['mavi saç']::text[], 1, 'v1 geri alındı'::text)$$,
   'restore creates v3 with v1 content and a default note'
+);
+SELECT extensions.is(
+  (SELECT sample_captions FROM public.influencer_personas WHERE influencer_id = 'b1000000-0000-4000-8000-000000000001' AND version = 3),
+  ARRAY['Bugün buradayım, ya sen?']::text[],
+  'restore preserves sample captions from the source version'
 );
 SELECT extensions.is(
   (SELECT count(*)::integer FROM public.influencer_personas WHERE influencer_id = 'b1000000-0000-4000-8000-000000000001'),
