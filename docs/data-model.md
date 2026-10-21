@@ -129,8 +129,9 @@ Yalnız `service_role` şu RPC'leri çağırabilir (hepsi sabit, boş `search_pa
 | `read_social_token(p_account_id)`                         | Hesap referansı **ve** `social-token:<account_id>` adı eşleşirse paketi çözer; yoksa/revoked ise NULL döner. Süresi dolmuş token yenileme için okunabilir. Sonuç API yanıtına, istemciye veya loga yazılmaz.                                        |
 | `delete_social_token(p_account_id)`                       | Sırrı siler; referans/tarihi temizler ve hesabı `revoked` yapar. Hesap ve post geçmişini silmez; tekrar çağrılabilir. Sağlayıcıdaki revoke isteğinin yerini tutmaz.                                                                                 |
 
-Vault şeması, tabloları ve fonksiyonlarına `anon`, `authenticated` ve `service_role`
-doğrudan erişemez; service role yalnız yukarıdaki RPC'lerden geçer. Owner/editor da
+Vault şeması ve tablolarına `anon` ve `authenticated` doğrudan erişemez.
+`service_role` güvenilen sunucu rolüdür; platformun verdiği geniş yetkiler korunur.
+Uygulama kodu token işlemlerini yukarıdaki dar RPC'lerden yapar. Owner/editor da
 istemci rolü `authenticated` olduğu için token referansı, son kullanım tarihi ve bağlantı
 durumunu elle değiştiremez. Normal metadata düzenlemesi ve yeni `pending` hesap ekleme
 korunur. Token bağlıyken influencer/platform değiştirilmesi engellenir.

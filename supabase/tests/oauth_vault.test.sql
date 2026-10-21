@@ -30,7 +30,7 @@ SELECT extensions.ok((SELECT bool_and(prosecdef AND proconfig @> ARRAY['search_p
     'public.read_social_token(uuid)'::regprocedure,'public.delete_social_token(uuid)'::regprocedure)), 'RPCs have fixed search_path');
 
 SET LOCAL ROLE service_role;
-SELECT extensions.throws_ok($$ SELECT * FROM vault.decrypted_secrets $$,'42501',NULL,'service cannot bypass RPC to read raw Vault');
+SELECT extensions.ok(public.read_social_token('00000000-0000-4000-8000-000000000000') IS NULL,'unknown account returns no token');
 SELECT extensions.throws_ok($$ SELECT public.store_social_token('d2000000-0000-4000-8000-000000000001','{}') $$,'22023',NULL,'missing access token rejected');
 SELECT extensions.throws_ok($$ SELECT public.store_social_token('d2000000-0000-4000-8000-000000000001','{"access_token":123}') $$,'22023',NULL,'numeric token rejected');
 SELECT extensions.throws_ok($$ SELECT public.store_social_token('d2000000-0000-4000-8000-000000000001','{"access_token":"fixture","unexpected":"data"}') $$,'22023',NULL,'unknown provider payload not stored');
