@@ -1,4 +1,11 @@
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
+
+const require = createRequire(import.meta.url);
+const { loadEnvConfig } = require('@next/env') as typeof import('@next/env');
+
+loadEnvConfig(resolve(process.cwd(), '../..'));
 
 const isCI = !!process.env.CI;
 

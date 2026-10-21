@@ -8,3 +8,16 @@ export function isSafeNextPath(
     !/[\r\n\\]/.test(value),
   );
 }
+
+export function isAllowedBootstrapEmail(
+  candidate: string | null | undefined,
+  configuredEmail: string | null | undefined,
+) {
+  const normalizedCandidate = candidate?.trim().toLowerCase();
+  const normalizedConfigured = configuredEmail?.trim().toLowerCase();
+  return Boolean(
+    normalizedCandidate &&
+    normalizedConfigured &&
+    normalizedCandidate === normalizedConfigured,
+  );
+}

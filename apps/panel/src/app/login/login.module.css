@@ -5,8 +5,8 @@
   place-items: center;
   overflow: hidden;
   padding: 24px;
-  background: #0b0d16;
-  color: #f4f2fa;
+  background: var(--canvas);
+  color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -15,7 +15,11 @@
   width: min(75vw, 760px);
   height: min(75vw, 760px);
   border-radius: 50%;
-  background: radial-gradient(circle, rgb(124 101 209 / 17%), transparent 68%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 17%, transparent),
+    transparent 68%
+  );
   pointer-events: none;
 }
 
@@ -23,10 +27,11 @@
   position: relative;
   width: min(100%, 420px);
   padding: 34px 34px 26px;
-  border: 1px solid rgb(255 255 255 / 9%);
+  border: 1px solid var(--line);
   border-radius: 22px;
-  background: linear-gradient(150deg, rgb(25 27 41 / 98%), rgb(16 19 30 / 98%));
-  box-shadow: 0 30px 110px -58px rgb(122 98 212 / 55%);
+  background: var(--surface);
+  box-shadow: 0 30px 110px -58px
+    color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .brandMark {
@@ -35,15 +40,15 @@
   height: 42px;
   margin: 0 auto;
   place-items: center;
-  border: 1px solid rgb(174 155 255 / 21%);
+  border: 1px solid color-mix(in srgb, var(--accent) 21%, transparent);
   border-radius: 14px;
-  background: rgb(174 155 255 / 11%);
-  color: #b9aaff;
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  color: var(--accent);
 }
 
 .brandName {
   margin: 13px 0 26px;
-  color: #9292a3;
+  color: var(--muted);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.19em;
@@ -52,7 +57,7 @@
 
 .card h1 {
   margin: 0;
-  color: #f5f3fc;
+  color: var(--text);
   font-size: 24px;
   font-weight: 650;
   letter-spacing: -0.03em;
@@ -61,7 +66,7 @@
 
 .subtitle {
   margin: 8px 0 25px;
-  color: #9697a8;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
@@ -84,19 +89,19 @@
 }
 
 .googleButton {
-  border: 1px solid rgb(255 255 255 / 11%);
-  background: rgb(255 255 255 / 3%);
-  color: #e7e6ee;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text);
 }
 
 .googleButton:hover:not(:disabled) {
-  border-color: rgb(255 255 255 / 20%);
-  background: rgb(255 255 255 / 6%);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
 }
 
 .googleButton > svg:last-child {
   margin-left: auto;
-  color: #737587;
+  color: var(--muted);
 }
 
 .googleButton > svg:first-child {
@@ -114,14 +119,14 @@
   align-items: center;
   gap: 12px;
   margin: 21px 0;
-  color: #6e7183;
+  color: var(--subtle);
   font-size: 10px;
 }
 
 .divider span {
   height: 1px;
   flex: 1;
-  background: rgb(255 255 255 / 8%);
+  background: var(--line-soft);
 }
 
 .form {
@@ -131,7 +136,7 @@
 }
 
 .form label {
-  color: #c7c8d4;
+  color: var(--muted);
   font-size: 11px;
   font-weight: 550;
 }
@@ -142,14 +147,14 @@
   align-items: center;
   gap: 10px;
   padding: 0 12px;
-  border: 1px solid rgb(255 255 255 / 10%);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  color: #777b8e;
+  color: var(--muted);
 }
 
 .inputWrap:focus-within {
-  border-color: rgb(174 155 255 / 55%);
-  box-shadow: 0 0 0 3px rgb(174 155 255 / 9%);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .inputWrap input {
@@ -157,13 +162,13 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: #f5f3fc;
+  color: var(--text);
   font: inherit;
   font-size: 12px;
 }
 
 .inputWrap input::placeholder {
-  color: #696c7d;
+  color: var(--subtle);
 }
 
 .inputWrap input:focus-visible {
@@ -173,12 +178,12 @@
 .submitButton {
   margin-top: 5px;
   border: 0;
-  background: #afa0ff;
-  color: #19142f;
+  background: var(--accent);
+  color: var(--canvas);
 }
 
 .submitButton:hover:not(:disabled) {
-  background: #c2b8ff;
+  background: var(--accent-strong);
 }
 
 .configMessage,
@@ -192,26 +197,26 @@
 }
 
 .configMessage {
-  border: 1px solid rgb(246 198 112 / 20%);
-  background: rgb(246 198 112 / 6%);
-  color: #e8c883;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--muted);
 }
 
 .feedback {
-  border: 1px solid rgb(108 214 173 / 20%);
-  background: rgb(108 214 173 / 6%);
-  color: #9edfc5;
+  border: 1px solid color-mix(in srgb, var(--mint) 35%, transparent);
+  background: color-mix(in srgb, var(--mint) 8%, var(--surface));
+  color: var(--mint);
 }
 
 .error {
-  border: 1px solid rgb(248 142 153 / 22%);
-  background: rgb(248 142 153 / 7%);
-  color: #f1a5ac;
+  border: 1px solid color-mix(in srgb, var(--accent-strong) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-strong) 8%, var(--surface));
+  color: var(--accent-strong);
 }
 
 .footerNote {
   margin: 21px 0 0;
-  color: #757889;
+  color: var(--muted);
   font-size: 10px;
   line-height: 1.5;
   text-align: center;

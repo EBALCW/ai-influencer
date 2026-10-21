@@ -68,50 +68,48 @@ export default async function TeamSettingsPage({
   const isOwner = currentMember.role === 'owner';
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-9 text-slate-100 sm:px-8">
+    <div className="mx-auto w-full max-w-5xl px-5 py-9 text-text sm:px-8">
       <header className="mb-7">
-        <p className="text-[10px] font-bold tracking-[0.17em] text-violet-200">
+        <p className="text-[10px] font-bold tracking-[0.17em] text-accent">
           YÖNETİM
         </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight text-text">
           {authMessages.teamTitle}
         </h1>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-muted">
           {authMessages.teamDescription}
         </p>
       </header>
 
       {resultMessage ? (
         <p
-          className={`mb-5 rounded-xl border px-4 py-3 text-sm ${result === 'error' || result === 'service-key' ? 'border-amber-300/20 bg-amber-300/[0.06] text-amber-100' : 'border-emerald-300/20 bg-emerald-300/[0.06] text-emerald-100'}`}
+          className={`mb-5 rounded-xl border px-4 py-3 text-sm ${result === 'error' || result === 'service-key' ? 'border-accent/25 bg-accent/5 text-accent-strong' : 'border-mint/20 bg-mint/5 text-mint'}`}
           role="status"
         >
           {resultMessage}
         </p>
       ) : null}
 
-      <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-surface">
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-4 sm:px-6">
+      <section className="overflow-hidden rounded-2xl border border-line-soft bg-surface">
+        <div className="flex items-center justify-between border-b border-line-soft px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-xl bg-violet-300/[0.1] text-violet-200">
+            <span className="grid size-9 place-items-center rounded-xl bg-accent/10 text-accent">
               <UsersRound size={17} />
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-white">
+              <h2 className="text-sm font-semibold text-text">
                 Erişim listesi
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
-                {members.length} üye
-              </p>
+              <p className="mt-1 text-xs text-subtle">{members.length} üye</p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/15 bg-emerald-300/[0.06] px-2.5 py-1 text-[10px] text-emerald-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-mint/20 bg-mint/5 px-2.5 py-1 text-[10px] text-mint">
             <ShieldCheck size={12} /> RLS etkin
           </span>
         </div>
 
         {members.length ? (
-          <div className="divide-y divide-white/[0.06]">
+          <div className="divide-y divide-line-soft">
             {members.map((member) => {
               const memberEmail = emailByUserId.get(member.user_id);
               const isCurrentUser = member.user_id === userId;
@@ -121,16 +119,16 @@ export default async function TeamSettingsPage({
                   className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:px-6"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-100">
+                    <p className="truncate text-sm font-medium text-text">
                       {memberEmail ?? member.user_id}
                     </p>
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-[11px] text-subtle">
                       {isCurrentUser
                         ? authMessages.currentUser
                         : `Üye kimliği: ${member.user_id.slice(0, 8)}`}
                     </p>
                   </div>
-                  <span className="min-w-28 text-xs text-slate-400">
+                  <span className="min-w-28 text-xs text-muted">
                     {roleLabels[member.role]}
                     {isCurrentUser ? ` · ${authMessages.currentUser}` : ''}
                   </span>
@@ -155,7 +153,7 @@ export default async function TeamSettingsPage({
                           id={`role-${member.user_id}`}
                           name="role"
                           defaultValue={member.role}
-                          className="h-9 rounded-lg border border-white/10 bg-[#111827] px-2 text-xs text-slate-200"
+                          className="h-9 rounded-lg border border-line bg-surface-raised px-2 text-xs text-text"
                         >
                           <option value="owner">
                             {authMessages.teamRoleOwner}
@@ -168,7 +166,7 @@ export default async function TeamSettingsPage({
                           </option>
                         </select>
                         <button
-                          className="h-9 rounded-lg border border-white/10 px-3 text-xs text-slate-300 hover:bg-white/5"
+                          className="h-9 rounded-lg border border-line px-3 text-xs text-muted hover:bg-surface-raised"
                           type="submit"
                         >
                           {authMessages.updateRole}
@@ -181,7 +179,7 @@ export default async function TeamSettingsPage({
                           value={member.user_id}
                         />
                         <button
-                          className="h-9 rounded-lg border border-rose-300/15 px-3 text-xs text-rose-200 hover:bg-rose-300/[0.07]"
+                          className="h-9 rounded-lg border border-rose-500/20 px-3 text-xs text-rose-500 hover:bg-rose-500/10"
                           type="submit"
                         >
                           {authMessages.removeMember}
@@ -194,23 +192,23 @@ export default async function TeamSettingsPage({
             })}
           </div>
         ) : (
-          <p className="px-6 py-8 text-sm text-slate-500">
+          <p className="px-6 py-8 text-sm text-subtle">
             {authMessages.noMembers}
           </p>
         )}
       </section>
 
       {isOwner ? (
-        <section className="mt-5 rounded-2xl border border-white/[0.08] bg-surface p-5 sm:p-6">
+        <section className="mt-5 rounded-2xl border border-line-soft bg-surface p-5 sm:p-6">
           <div className="mb-5 flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-xl bg-cyan-300/[0.08] text-cyan-200">
+            <span className="grid size-9 place-items-center rounded-xl bg-accent/10 text-accent">
               <MailPlus size={17} />
             </span>
             <div>
-              <h2 className="text-sm font-semibold text-white">
+              <h2 className="text-sm font-semibold text-text">
                 {authMessages.inviteTitle}
               </h2>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-subtle">
                 Davet edilen kullanıcı hesabına erişmek için e-posta
                 bağlantısını kullanır.
               </p>
@@ -221,10 +219,10 @@ export default async function TeamSettingsPage({
               action={inviteTeamMember}
               className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end"
             >
-              <label className="grid gap-2 text-xs text-slate-400">
+              <label className="grid gap-2 text-xs text-muted">
                 {authMessages.teamEmail}
                 <input
-                  className="h-10 rounded-lg border border-white/10 bg-white/[0.025] px-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-300/40"
+                  className="h-10 rounded-lg border border-line bg-surface-raised px-3 text-sm text-text outline-none placeholder:text-subtle focus:border-accent/50"
                   type="email"
                   name="email"
                   autoComplete="email"
@@ -232,10 +230,10 @@ export default async function TeamSettingsPage({
                   required
                 />
               </label>
-              <label className="grid gap-2 text-xs text-slate-400">
+              <label className="grid gap-2 text-xs text-muted">
                 {authMessages.teamRole}
                 <select
-                  className="h-10 rounded-lg border border-white/10 bg-[#111827] px-3 text-sm text-white"
+                  className="h-10 rounded-lg border border-line bg-surface-raised px-3 text-sm text-text"
                   name="role"
                   defaultValue="viewer"
                 >
@@ -245,7 +243,7 @@ export default async function TeamSettingsPage({
                 </select>
               </label>
               <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-violet-200 px-4 text-xs font-semibold text-slate-950 hover:bg-violet-100"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-semibold text-canvas hover:bg-accent-strong"
                 type="submit"
               >
                 <MailPlus size={14} />
@@ -253,16 +251,16 @@ export default async function TeamSettingsPage({
               </button>
             </form>
           ) : (
-            <p className="rounded-xl border border-amber-300/15 bg-amber-300/[0.05] px-4 py-3 text-xs leading-5 text-amber-100">
+            <p className="rounded-xl border border-accent/25 bg-accent/5 px-4 py-3 text-xs leading-5 text-accent-strong">
               {authMessages.serviceKeyMissing}
             </p>
           )}
         </section>
       ) : (
-        <p className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-xs text-slate-400">
+        <p className="mt-5 rounded-xl border border-line-soft bg-surface-raised px-4 py-3 text-xs text-muted">
           {authMessages.ownerOnly}
         </p>
       )}
-    </main>
+    </div>
   );
 }

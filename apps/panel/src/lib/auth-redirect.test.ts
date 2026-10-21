@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSafeNextPath } from './auth-redirect';
+import { isAllowedBootstrapEmail, isSafeNextPath } from './auth-redirect';
 
 describe('isSafeNextPath', () => {
   it('allows local absolute paths and their query strings', () => {
@@ -12,4 +12,19 @@ describe('isSafeNextPath', () => {
       expect(isSafeNextPath(value)).toBe(false);
     },
   );
+});
+
+describe('isAllowedBootstrapEmail', () => {
+  it('compares the preconfigured first-owner address case-insensitively', () => {
+    expect(
+      isAllowedBootstrapEmail(' Owner@Example.com ', 'owner@example.com'),
+    ).toBe(true);
+  });
+
+  it('rejects missing or different addresses', () => {
+    expect(isAllowedBootstrapEmail('owner@example.com', undefined)).toBe(false);
+    expect(
+      isAllowedBootstrapEmail('other@example.com', 'owner@example.com'),
+    ).toBe(false);
+  });
 });

@@ -10,6 +10,7 @@ Panel, Supabase Auth ile e-posta bağlantısı ve Google OAuth kullanır. Kullan
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (tercih edilen) veya `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SITE_URL` (yerel geliştirmede `http://localhost:3000`)
 - `SUPABASE_SERVICE_ROLE_KEY` (yalnızca sunucu tarafında; ekip davetleri için gerekli)
+- `SUPABASE_INITIAL_OWNER_EMAIL` (ilk owner kurulumu için izin verilen tek adres)
 
 `SUPABASE_SERVICE_ROLE_KEY` değişkenini `NEXT_PUBLIC_` önekiyle tanımlamayın veya istemci koduna aktarmayın.
 
@@ -20,4 +21,4 @@ Panel, Supabase Auth ile e-posta bağlantısı ve Google OAuth kullanır. Kullan
 3. Authentication > Settings bölümünde yeni kullanıcı kaydını kapalı tutun. Ekip davetleri Supabase Admin API ile gönderilir; e-posta girişinde `shouldCreateUser: false` kullanılır.
 4. E-posta şablonunun doğrulama/davet bağlantısı Supabase'in `{ .ConfirmationURL }` değişkenini kullansın. Bağlantı, uygulamanın `/auth/callback` rotasına dönmelidir.
 
-İlk sahibi, `team_members` tablosundaki ilk owner üyeliğiyle belirlenir. Son owner'ın silinmesi veya rolünün düşürülmesi veritabanı korumasıyla engellenir.
+`SUPABASE_INITIAL_OWNER_EMAIL` değerini ilk owner olacak adresle doldurun. Bu kullanıcıyı Supabase Dashboard > Authentication > Users bölümünden oluşturun ve `/login` üzerinden e-posta bağlantısıyla ilk kez giriş yaptırın. Callback yalnızca bu adresi, yalnızca `team_members` tablosu boşken owner olarak ekleyebilir; sonrasında diğer kullanıcılar owner kaydı oluşturamaz. Daha sonra davet edilen üyelere seçilen rol, davet sırasında kaydedilir. Son owner'ın silinmesi veya rolünün düşürülmesi veritabanı korumasıyla engellenir.
