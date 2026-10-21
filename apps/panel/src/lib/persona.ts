@@ -29,6 +29,7 @@ export const personaInputSchema = z.object({
   tone: shortText(200),
   adjectives: tagList(10),
   hookTraits: tagList(10),
+  sampleCaptions: z.array(shortText(2200).min(1)).max(10),
   audience: z.object({
     ageRange: shortText(40),
     interests: tagList(15),
@@ -83,6 +84,7 @@ export function toPersonaInput(
     tone: row?.tone ?? '',
     adjectives: asStringList(personality.adjectives),
     hookTraits: row?.hook_traits ?? [],
+    sampleCaptions: row?.sample_captions ?? [],
     audience: {
       ageRange: asString(audience.age_range),
       interests: asStringList(audience.interests),
@@ -112,6 +114,7 @@ export function toPersonaPayload(
     p_bio: input.bio,
     p_tone: input.tone,
     p_hook_traits: input.hookTraits,
+    p_sample_captions: input.sampleCaptions,
     p_personality: {
       ...asObject(current?.personality),
       adjectives: input.adjectives,
@@ -131,6 +134,14 @@ export function toPersonaPayload(
 export function parseTagList(value: string): string[] {
   return value
     .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+/** Satır satır girilen örnek captionları boş satırları atlayarak ayrıştırır. */
+export function parseCaptionList(value: string): string[] {
+  return value
+    .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
 }

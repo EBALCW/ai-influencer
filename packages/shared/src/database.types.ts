@@ -263,14 +263,14 @@ isOneToOne: false
                   ]
                 },"influencer_personas": {
                   Row: {
-                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"tone": string,"updated_at": string,"version": number
+                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"sample_captions": (string)[],"tone": string,"updated_at": string,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"tone"?: string,"updated_at"?: string,"version": number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version": number
                   }
                   Update: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"tone"?: string,"updated_at"?: string,"version"?: number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -461,7 +461,7 @@ isOneToOne: false
             }[]
                            },
 "create_persona_version":
-{ Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_tone": string }; Returns: {
+{ Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_sample_captions"?: (string)[],"p_tone": string }; Returns: {
               "appearance": NonNullable<Json>,
 "audience": NonNullable<Json>,
 "bio": string,
@@ -474,6 +474,7 @@ isOneToOne: false
 "is_current": boolean,
 "personality": NonNullable<Json>,
 "restored_from_version": number | null,
+"sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
 "version": number
@@ -546,6 +547,7 @@ isOneToOne: false
 "is_current": boolean,
 "personality": NonNullable<Json>,
 "restored_from_version": number | null,
+"sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
 "version": number
@@ -555,7 +557,10 @@ isOneToOne: false
         to: "influencer_personas"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"valid_sample_captions":
+{ Args: { "p_values": (string)[] }; Returns: boolean
+                           }
           }
           Enums: {
             "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"

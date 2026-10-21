@@ -45,6 +45,7 @@ const validPersona = {
   tone: 'samimi',
   adjectives: ['meraklı'],
   hookTraits: [],
+  sampleCaptions: [],
   audience: { ageRange: '', interests: [], description: '' },
   appearance: {
     hair: '',
@@ -155,6 +156,7 @@ describe('POST /persona', () => {
       p_influencer_id: ID,
       p_bio: 'Bio',
       p_change_note: 'ilk',
+      p_sample_captions: [],
     });
   });
 });

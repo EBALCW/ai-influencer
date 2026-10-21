@@ -5,6 +5,7 @@ const base: PersonaSnapshot = {
   bio: 'Merhaba',
   tone: 'samimi',
   hook_traits: ['mavi saç', 'gözlük'],
+  sample_captions: [],
   personality: { adjectives: ['meraklı', 'esprili'] },
   audience: { age_range: '18-24', interests: ['teknoloji'] },
   appearance: { hair: 'mavi' },
@@ -25,6 +26,19 @@ describe('diffPersonas', () => {
         after: 'esprili',
       },
     ]);
+  });
+
+  it('örnek caption değişikliklerini listede gösterir', () => {
+    const [entry] = diffPersonas(base, {
+      ...base,
+      sample_captions: ['Bugün buradayım, ya sen?'],
+    });
+    expect(entry).toMatchObject({
+      path: 'sample_captions',
+      kind: 'list',
+      added: ['Bugün buradayım, ya sen?'],
+      removed: [],
+    });
   });
 
   it('listede eklenen ve çıkarılan öğeleri ayırır', () => {
