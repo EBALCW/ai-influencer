@@ -44,10 +44,11 @@ if ($policy -in @('Undefined', 'Restricted', 'AllSigned')) {
     Ok 'CurrentUser icin RemoteSigned ayarlandi (pnpm ve profil script''leri icin gerekli)'
 } else { Ok "mevcut: $policy" }
 
-Step 'Temel araclar (git, gh, fnm)'
+Step 'Temel araclar (git, gh, fnm, age)'
 Install-Tool 'Git.Git'    'git'   'git'
 Install-Tool 'GitHub.cli' 'gh'    'gh'
 Install-Tool 'Schniz.fnm' 'fnm'   'fnm'
+Install-Tool 'FiloSottile.age' 'age.portable' 'age'
 
 Step 'Git ayarlari'
 Run git config --global core.longpaths true

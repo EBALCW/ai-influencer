@@ -69,6 +69,16 @@ Kullanıcıdan şifre, token veya API anahtarını sohbete yazmasını **asla is
    - `GitHub girişi` uyarısı varsa `gh auth login` gerekiyor.
 4. Son olarak kullanıcıya yeni bir terminal açmasını söyle (fnm ayarı yeni terminalde yüklenir).
 
+### Adım 4b: Geliştirme anahtarları (`.env.local`)
+
+Kurulumdan sonra `.env.local` değerleri boşsa şunu çalıştır:
+
+```
+pnpm env:pull
+```
+
+Bu komut test Supabase projesinin URL, anon ve service role anahtarlarını (ve tanımlıysa AI anahtarlarını) GitHub'daki `local-dev` ortamından **şifreli olarak** çeker ve `.env.local`'e yazar. Değerleri ekrana veya sohbete yazma. Kullanıcının GitHub hesabında SSH anahtarı yoksa script bir anahtar oluşturup ekler. Yetki hatası verirse kullanıcıya şunu çalıştırmasını söyle: `gh auth refresh -h github.com -s admin:public_key`. Production anahtarları ve veritabanı şifresi bu yolla **verilmez**, verilmemelidir.
+
 ### Hata olursa
 
 1. `docs/SETUP.md` → **Sık Sorunlar** bölümünde hatayla eşleşen çözümü uygula ve script'i **bir kez** tekrar çalıştır.

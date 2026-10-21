@@ -1,0 +1,69 @@
+name: Yerel env (şifreli)
+run-name: env-pull ${{ inputs.request_id }} (${{ github.actor }})
+
+# `pnpm env:pull` tarafından tetiklenir. local-dev ortamındaki secret'ları, tetikleyen kişinin
+# GitHub hesabındaki SSH public key'leriyle (age) şifreler. Repo public olduğu için çıktı
+# yalnızca şifreli artifact'tır; açabilen tek kişi özel anahtarın sahibidir.
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: env:pull istek kimliği
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    environment: local-dev
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      ACTOR: ${{ github.actor }}
+      REQUEST_ID: ${{ inputs.request_id }}
+    steps:
+      - name: İstek kimliği ve yetki kontrolü
+        run: |
+          [[ "$REQUEST_ID" =~ ^[a-f0-9-]{8,64}$ ]] || { echo "::error::Geçersiz istek kimliği"; exit 1; }
+          perm=$(gh api "repos/$GH_REPO/collaborators/$ACTOR/permission" --jq .permission 2>/dev/null || echo none)
+          case "$perm" in admin|maintain|write) echo "$ACTOR: $perm" ;; *) echo "::error::$ACTOR yazma yetkisine sahip değil"; exit 1 ;; esac
+
+      - name: Alıcının SSH anahtarları
+        run: |
+          curl -fsSL "https://github.com/$ACTOR.keys" | grep -E '^(ssh-ed25519|ssh-rsa) ' > recipients.txt || true
+          if [ ! -s recipients.txt ]; then
+            echo "::error::$ACTOR hesabında ssh-ed25519/ssh-rsa anahtarı yok. 'pnpm env:pull' anahtarı otomatik ekler; olmadıysa github.com/settings/keys"
+            exit 1
+          fi
+          echo "$(wc -l < recipients.txt) anahtar bulundu"
+
+      - name: age
+        run: sudo apt-get install -y -qq age >/dev/null
+
+      - name: Şifrele (değerler loga yazılmaz)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HIGGSFIELD_API_KEY_ID: ${{ secrets.HIGGSFIELD_API_KEY_ID }}
+          HIGGSFIELD_API_KEY_SECRET: ${{ secrets.HIGGSFIELD_API_KEY_SECRET }}
+        run: |
+          umask 077
+          : > env.txt
+          for k in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY ANTHROPIC_API_KEY HIGGSFIELD_API_KEY_ID HIGGSFIELD_API_KEY_SECRET; do
+            [ -n "${!k}" ] && printf '%s=%s\n' "$k" "${!k}" >> env.txt
+          done
+          echo "$(wc -l < env.txt) değer paketlendi: $(cut -d= -f1 env.txt | paste -sd, -)"
+          age -R recipients.txt -o env.age env.txt
+          shred -u env.txt 2>/dev/null || rm -f env.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: env-${{ inputs.request_id }}
+          path: env.age
+          retention-days: 1

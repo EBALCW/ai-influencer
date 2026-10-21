@@ -19,8 +19,8 @@ fi
 if [ -x /opt/homebrew/bin/brew ]; then eval "$(/opt/homebrew/bin/brew shellenv)"; else eval "$(brew shellenv)"; fi
 ok "brew $(brew --version | head -1 | awk '{print $2}')"
 
-step "Temel araçlar (git, gh, fnm)"
-for pkg in git gh fnm; do
+step "Temel araçlar (git, gh, fnm, age)"
+for pkg in git gh fnm age; do
   if has "$pkg"; then ok "$pkg mevcut"; else brew install "$pkg"; ok "$pkg kuruldu"; fi
 done
 
