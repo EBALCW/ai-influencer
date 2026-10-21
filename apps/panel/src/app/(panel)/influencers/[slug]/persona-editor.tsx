@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ConfirmDialog, Toast } from '@/components/ui';
 import {
   appearanceFields,
+  parseCaptionList,
   parseTagList,
   type AppearanceKey,
   type PersonaInput,
@@ -39,6 +40,7 @@ export function PersonaEditor({
     tone: initial.tone,
     adjectives: initial.adjectives.join(', '),
     hookTraits: initial.hookTraits.join(', '),
+    sampleCaptions: initial.sampleCaptions.join('\n'),
     ageRange: initial.audience.ageRange,
     interests: initial.audience.interests.join(', '),
     audienceDescription: initial.audience.description,
@@ -63,6 +65,7 @@ export function PersonaEditor({
       tone: values.tone,
       adjectives: parseTagList(values.adjectives),
       hookTraits: parseTagList(values.hookTraits),
+      sampleCaptions: parseCaptionList(values.sampleCaptions),
       audience: {
         ageRange: values.ageRange,
         interests: parseTagList(values.interests),
@@ -175,6 +178,19 @@ export function PersonaEditor({
               />
             </label>
           </div>
+          <label className={labelClass}>
+            Örnek caption’lar (her satıra bir tane)
+            <textarea
+              className={`${inputClass} min-h-28`}
+              maxLength={22000}
+              onChange={(event) => set('sampleCaptions', event.target.value)}
+              rows={4}
+              value={values.sampleCaptions}
+            />
+            <span className="mt-1 block text-xs">
+              En fazla 10 örnek; her biri en fazla 2.200 karakter.
+            </span>
+          </label>
           <fieldset className="grid gap-4 sm:grid-cols-3">
             <legend className="mb-2 text-sm font-semibold text-text">
               Görünüm
