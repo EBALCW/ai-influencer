@@ -493,7 +493,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "budget_status":
+            "asset_object_in_influencer_folder":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
+"budget_status":
 { Args: { "p_month": string }; Returns: {
               "amount": number,"budget_id": string,"currency": string,"influencer_id": string,"missing_rate_count": number,"month": string,"ratio": number,"spent": number,"warn_ratio": number
             }[]

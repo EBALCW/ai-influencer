@@ -5,13 +5,22 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { AssetKind, Row } from '@ai-influencer/shared';
 import { ConfirmDialog, EmptyState, Toast } from '@/components/ui';
+import {
+  ASSET_BUCKET,
+  ASSET_MIME_TYPES,
+  MAX_ASSET_BYTES,
+  type AssetItem,
+  assetFileExtension,
+  assetStoragePaths,
+  deleteAssets,
+  fetchAssetPage,
+  isAllowedAssetMime,
+  mergeAssetItems,
+  oldestAsset,
+  signAssetItems,
+  updateAssets,
+} from '@/lib/assets/storage';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-
-type AssetItem = {
-  asset: Row<'assets'>;
-  url: string | null;
-  thumbnailUrl: string | null;
-};
 const kindLabels: Record<AssetKind, string> = {
   reference: 'Referans',
   generated: 'Üretilen',
@@ -187,52 +196,41 @@ export function AssetManager({
   }, [visible, search]);
 
   async function upload(files: FileList | null) {
-    if (!files?.length) return;
+    // Sürükle-bırak, input disabled olsa da çalışır; eşzamanlı yüklemeyi engelle
+    if (!files?.length || busy) return;
     setBusy(true);
     setMessage(null);
     const supabase = createSupabaseBrowserClient();
+    let uploaded = 0;
     try {
       for (const file of Array.from(files)) {
-        if (
-          ![
-            'image/jpeg',
-            'image/png',
-            'image/webp',
-            'image/avif',
-            'video/mp4',
-            'video/webm',
-          ].includes(file.type)
-        )
+        if (!isAllowedAssetMime(file.type))
           throw new Error(`${file.name}: desteklenmeyen dosya türü.`);
-        if (file.size > 100 * 1024 * 1024)
+        if (file.size > MAX_ASSET_BYTES)
           throw new Error(`${file.name}: dosya 100 MB sınırını aşıyor.`);
         const id = crypto.randomUUID();
-        const extension =
-          file.name
-            .split('.')
-            .at(-1)
-            ?.toLowerCase()
-            .replace(/[^a-z0-9]/g, '') ||
-          (file.type.startsWith('image/') ? 'img' : 'video');
-        const storagePath = `${influencerId}/${id}.${extension}`;
+        const { storagePath, thumbnailPath } = assetStoragePaths(
+          influencerId,
+          id,
+          assetFileExtension(file.type),
+        );
         const metadata = await readMetadata(file);
         const kind: AssetKind = file.type.startsWith('video/')
           ? 'final_video'
           : 'reference';
         const { error: uploadError } = await supabase.storage
-          .from('assets')
+          .from(ASSET_BUCKET)
           .upload(storagePath, file, { contentType: file.type, upsert: false });
-        if (uploadError) throw uploadError;
-        const thumbnailPath = `${influencerId}/${id}-thumb.webp`;
+        if (uploadError) throw new Error(`${file.name}: yüklenemedi.`);
         const { error: thumbnailError } = await supabase.storage
-          .from('assets')
+          .from(ASSET_BUCKET)
           .upload(thumbnailPath, metadata.thumbnail, {
             contentType: 'image/webp',
             upsert: false,
           });
         if (thumbnailError) {
-          await supabase.storage.from('assets').remove([storagePath]);
-          throw thumbnailError;
+          await supabase.storage.from(ASSET_BUCKET).remove([storagePath]);
+          throw new Error(`${file.name}: küçük resim yüklenemedi.`);
         }
         const { data: row, error: rowError } = await supabase
           .from('assets')
@@ -253,31 +251,22 @@ export function AssetManager({
           .single();
         if (rowError) {
           await supabase.storage
-            .from('assets')
+            .from(ASSET_BUCKET)
             .remove([storagePath, thumbnailPath]);
-          throw rowError;
+          throw new Error(`${file.name}: kayıt oluşturulamadı.`);
         }
-        const { data: signed } = await supabase.storage
-          .from('assets')
-          .createSignedUrl(storagePath, 600);
-        const { data: thumbnailSigned } = await supabase.storage
-          .from('assets')
-          .createSignedUrl(thumbnailPath, 600);
-        setAssets((current) =>
-          [
-            {
-              asset: row,
-              url: signed?.signedUrl ?? null,
-              thumbnailUrl: thumbnailSigned?.signedUrl ?? null,
-            },
-            ...current,
-          ].slice(0, 100),
-        );
+        const [item] = await signAssetItems(supabase, [row]);
+        // Daha önce yüklenen sayfaları kırpmadan en başa ekle
+        if (item)
+          setAssets((current) => mergeAssetItems(current, [item], 'start'));
+        uploaded += 1;
       }
       setMessage({ text: 'Dosyalar yüklendi.' });
     } catch (error) {
+      const reason =
+        error instanceof Error ? error.message : 'Dosyalar yüklenemedi.';
       setMessage({
-        text: error instanceof Error ? error.message : 'Dosyalar yüklenemedi.',
+        text: uploaded ? `${uploaded} dosya yüklendi. ${reason}` : reason,
         error: true,
       });
     } finally {
@@ -287,38 +276,21 @@ export function AssetManager({
 
   async function loadMore() {
     setLoadingMore(true);
-    const supabase = createSupabaseBrowserClient();
-    const { data, error } = await supabase
-      .from('assets')
-      .select('*')
-      .eq('influencer_id', influencerId)
-      .order('created_at', { ascending: false })
-      .range(assets.length, assets.length + 99);
-    if (error) {
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const page = await fetchAssetPage(
+        supabase,
+        influencerId,
+        oldestAsset(assets),
+      );
+      const nextItems = await signAssetItems(supabase, page.assets);
+      setAssets((current) => mergeAssetItems(current, nextItems, 'end'));
+      setHasMore(page.hasMore);
+    } catch {
       setMessage({ text: 'Sonraki dosyalar alınamadı.', error: true });
+    } finally {
       setLoadingMore(false);
-      return;
     }
-    const nextItems = await Promise.all(
-      data.map(async (asset) => {
-        const { data: signed } = await supabase.storage
-          .from('assets')
-          .createSignedUrl(asset.storage_path, 600);
-        const { data: thumbnail } = asset.thumbnail_path
-          ? await supabase.storage
-              .from('assets')
-              .createSignedUrl(asset.thumbnail_path, 600)
-          : { data: null };
-        return {
-          asset,
-          url: signed?.signedUrl ?? null,
-          thumbnailUrl: thumbnail?.signedUrl ?? null,
-        };
-      }),
-    );
-    setAssets((current) => [...current, ...nextItems]);
-    setHasMore(data.length === 100);
-    setLoadingMore(false);
   }
 
   async function applyBulkTags() {
@@ -333,86 +305,69 @@ export function AssetManager({
       ),
     ];
     setBusy(true);
-    const supabase = createSupabaseBrowserClient();
-    for (const id of ids) {
-      const { error } = await supabase
-        .from('assets')
-        .update({ tags })
-        .eq('id', id);
-      if (error) {
-        setMessage({
-          text: 'Etiketler uygulanırken hata oluştu; bazı dosyalar güncellenmiş olabilir.',
-          error: true,
-        });
-        setBusy(false);
-        return;
-      }
-    }
+    const { updatedIds, complete } = await updateAssets(
+      createSupabaseBrowserClient(),
+      ids,
+      { tags },
+    );
+    const updated = new Set(updatedIds);
     setAssets((current) =>
       current.map((item) =>
-        selectedIds.has(item.asset.id)
+        updated.has(item.asset.id)
           ? { ...item, asset: { ...item.asset, tags } }
           : item,
       ),
     );
-    setMessage({ text: `${ids.length} dosyanın etiketleri güncellendi.` });
+    setMessage(
+      complete
+        ? { text: `${updatedIds.length} dosyanın etiketleri güncellendi.` }
+        : {
+            text: `${updatedIds.length}/${ids.length} dosya güncellendi; kalanlar için yetkiniz yok veya bir hata oluştu.`,
+            error: true,
+          },
+    );
     setBusy(false);
   }
 
-  async function deleteSelected() {
-    const supabase = createSupabaseBrowserClient();
-    setBusy(true);
-    for (const id of selectedIds) {
-      const item = assets.find((entry) => entry.asset.id === id);
-      if (!item) continue;
-      if (currentAvatarId === id) {
-        const { error: avatarError } = await supabase
-          .from('influencers')
-          .update({ avatar_asset_id: null })
-          .eq('id', influencerId);
-        if (avatarError) {
-          setMessage({
-            text: 'Avatar bağlantısı kaldırılamadı; varlıklar korundu.',
-            error: true,
-          });
-          setBusy(false);
-          setConfirmBulkDelete(false);
-          return;
-        }
-        setCurrentAvatarId(null);
-      }
-      const { error: storageError } = await supabase.storage
-        .from('assets')
-        .remove(
-          [item.asset.storage_path, item.asset.thumbnail_path].filter(
-            (path): path is string => Boolean(path),
-          ),
-        );
-      if (storageError) {
-        setMessage({
-          text: 'Toplu silme durdu; bu dosya ve kalanlar korunuyor.',
-          error: true,
-        });
-        setBusy(false);
-        setConfirmBulkDelete(false);
-        return;
-      }
-      const { error } = await supabase.from('assets').delete().eq('id', id);
-      if (error) {
-        setMessage({
-          text: 'Dosya depodan silindi ancak metadata silinemedi; sayfayı yenileyin.',
-          error: true,
-        });
-        setBusy(false);
-        setConfirmBulkDelete(false);
-        return;
-      }
-    }
-    setAssets((current) =>
-      current.filter(({ asset }) => !selectedIds.has(asset.id)),
+  async function removeItems(items: AssetItem[]) {
+    const result = await deleteAssets(
+      createSupabaseBrowserClient(),
+      items.map(({ asset }) => asset),
     );
-    setSelectedIds(new Set());
-    setMessage({ text: 'Seçilen dosyalar silindi.' });
+    const deleted = new Set(result.deletedIds);
+    setAssets((current) =>
+      current.filter(({ asset }) => !deleted.has(asset.id)),
+    );
+    // FK (ON DELETE SET NULL) avatarı veritabanında zaten temizler
+    if (currentAvatarId && deleted.has(currentAvatarId))
+      setCurrentAvatarId(null);
+    if (result.incomplete) {
+      setMessage({
+        text: `${result.deletedIds.length}/${items.length} dosya silindi; kalanlar silinemedi.`,
+        error: true,
+      });
+    } else if (result.storageCleanupFailed) {
+      setMessage({
+        text: 'Kayıtlar silindi; depodaki dosyalar temizlenemedi (artık görünmezler).',
+        error: true,
+      });
+    } else {
+      setMessage({
+        text:
+          items.length === 1 ? 'Dosya silindi.' : 'Seçilen dosyalar silindi.',
+      });
+    }
+    return deleted;
+  }
+
+  async function deleteSelected() {
+    setBusy(true);
+    const deleted = await removeItems(
+      assets.filter(({ asset }) => selectedIds.has(asset.id)),
+    );
+    setSelectedIds(
+      (current) => new Set([...current].filter((id) => !deleted.has(id))),
+    );
     setBusy(false);
     setConfirmBulkDelete(false);
   }
@@ -420,18 +375,18 @@ export function AssetManager({
   async function updateAsset(
     item: AssetItem,
     values: {
-      qc_status?: string;
+      qc_status?: Row<'assets'>['qc_status'];
       tags?: string[];
       qc_checklist?: Row<'assets'>['qc_checklist'];
       version_tag?: string | null;
     },
   ) {
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase
-      .from('assets')
-      .update(values)
-      .eq('id', item.asset.id);
-    if (error)
+    const { complete } = await updateAssets(
+      createSupabaseBrowserClient(),
+      [item.asset.id],
+      values,
+    );
+    if (!complete)
       return setMessage({ text: 'Varlık güncellenemedi.', error: true });
     setAssets((current) =>
       current.map((entry) =>
@@ -444,63 +399,23 @@ export function AssetManager({
 
   async function setAvatar(item: AssetItem) {
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('influencers')
       .update({ avatar_asset_id: item.asset.id })
-      .eq('id', influencerId);
+      .eq('id', influencerId)
+      .select('id');
+    const ok = !error && (data?.length ?? 0) === 1;
     setMessage(
-      error
-        ? { text: 'Avatar güncellenemedi.', error: true }
-        : { text: 'Avatar güncellendi.' },
+      ok
+        ? { text: 'Avatar güncellendi.' }
+        : { text: 'Avatar güncellenemedi.', error: true },
     );
-    if (!error) setCurrentAvatarId(item.asset.id);
+    if (ok) setCurrentAvatarId(item.asset.id);
   }
 
   async function removeAsset() {
     if (!removing) return;
-    const supabase = createSupabaseBrowserClient();
-    if (currentAvatarId === removing.asset.id) {
-      const { error: avatarError } = await supabase
-        .from('influencers')
-        .update({ avatar_asset_id: null })
-        .eq('id', influencerId);
-      if (avatarError) {
-        setMessage({
-          text: 'Avatar bağlantısı kaldırılamadı; varlık korundu.',
-          error: true,
-        });
-        setRemoving(null);
-        return;
-      }
-      setCurrentAvatarId(null);
-    }
-    const { error: storageError } = await supabase.storage
-      .from('assets')
-      .remove(
-        [removing.asset.storage_path, removing.asset.thumbnail_path].filter(
-          (path): path is string => Boolean(path),
-        ),
-      );
-    if (storageError) {
-      setMessage({ text: 'Dosya silinemedi; kayıt korundu.', error: true });
-      setRemoving(null);
-      return;
-    }
-    const { error } = await supabase
-      .from('assets')
-      .delete()
-      .eq('id', removing.asset.id);
-    if (error) {
-      setMessage({
-        text: 'Dosya depodan silindi fakat kayıt kaldı. Sayfayı yenileyerek eşitleyin.',
-        error: true,
-      });
-    } else {
-      setAssets((current) =>
-        current.filter(({ asset }) => asset.id !== removing.asset.id),
-      );
-      setMessage({ text: 'Dosya silindi.' });
-    }
+    await removeItems([removing]);
     setRemoving(null);
   }
 
@@ -542,12 +457,12 @@ export function AssetManager({
             onDrop={(event) => {
               event.preventDefault();
               setDragging(false);
-              void upload(event.dataTransfer.files);
+              if (!busy) void upload(event.dataTransfer.files);
             }}
           >
             <input
               aria-label="Görsel veya video yükle"
-              accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
+              accept={ASSET_MIME_TYPES.join(',')}
               disabled={busy}
               multiple
               onChange={(event) => {
