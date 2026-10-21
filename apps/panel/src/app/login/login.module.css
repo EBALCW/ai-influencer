@@ -1,0 +1,234 @@
+.page {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  padding: 24px;
+  background: #0b0d16;
+  color: #f4f2fa;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.glow {
+  position: absolute;
+  width: min(75vw, 760px);
+  height: min(75vw, 760px);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(124 101 209 / 17%), transparent 68%);
+  pointer-events: none;
+}
+
+.card {
+  position: relative;
+  width: min(100%, 420px);
+  padding: 34px 34px 26px;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 22px;
+  background: linear-gradient(150deg, rgb(25 27 41 / 98%), rgb(16 19 30 / 98%));
+  box-shadow: 0 30px 110px -58px rgb(122 98 212 / 55%);
+}
+
+.brandMark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto;
+  place-items: center;
+  border: 1px solid rgb(174 155 255 / 21%);
+  border-radius: 14px;
+  background: rgb(174 155 255 / 11%);
+  color: #b9aaff;
+}
+
+.brandName {
+  margin: 13px 0 26px;
+  color: #9292a3;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+  text-align: center;
+}
+
+.card h1 {
+  margin: 0;
+  color: #f5f3fc;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+
+.subtitle {
+  margin: 8px 0 25px;
+  color: #9697a8;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.googleButton,
+.submitButton {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 11px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 140ms ease;
+}
+
+.googleButton {
+  border: 1px solid rgb(255 255 255 / 11%);
+  background: rgb(255 255 255 / 3%);
+  color: #e7e6ee;
+}
+
+.googleButton:hover:not(:disabled) {
+  border-color: rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 6%);
+}
+
+.googleButton > svg:last-child {
+  margin-left: auto;
+  color: #737587;
+}
+
+.googleButton > svg:first-child {
+  margin-left: auto;
+}
+
+.googleButton:disabled,
+.submitButton:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 21px 0;
+  color: #6e7183;
+  font-size: 10px;
+}
+
+.divider span {
+  height: 1px;
+  flex: 1;
+  background: rgb(255 255 255 / 8%);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.form label {
+  color: #c7c8d4;
+  font-size: 11px;
+  font-weight: 550;
+}
+
+.inputWrap {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 10px;
+  color: #777b8e;
+}
+
+.inputWrap:focus-within {
+  border-color: rgb(174 155 255 / 55%);
+  box-shadow: 0 0 0 3px rgb(174 155 255 / 9%);
+}
+
+.inputWrap input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f5f3fc;
+  font: inherit;
+  font-size: 12px;
+}
+
+.inputWrap input::placeholder {
+  color: #696c7d;
+}
+
+.inputWrap input:focus-visible {
+  outline: 0;
+}
+
+.submitButton {
+  margin-top: 5px;
+  border: 0;
+  background: #afa0ff;
+  color: #19142f;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #c2b8ff;
+}
+
+.configMessage,
+.feedback,
+.error {
+  margin: 16px 0 0;
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.configMessage {
+  border: 1px solid rgb(246 198 112 / 20%);
+  background: rgb(246 198 112 / 6%);
+  color: #e8c883;
+}
+
+.feedback {
+  border: 1px solid rgb(108 214 173 / 20%);
+  background: rgb(108 214 173 / 6%);
+  color: #9edfc5;
+}
+
+.error {
+  border: 1px solid rgb(248 142 153 / 22%);
+  background: rgb(248 142 153 / 7%);
+  color: #f1a5ac;
+}
+
+.footerNote {
+  margin: 21px 0 0;
+  color: #757889;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 29px 23px 23px;
+  }
+}

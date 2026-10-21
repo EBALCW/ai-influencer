@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { EmptyState } from '@/components/ui';
 
@@ -77,10 +78,22 @@ export default async function SectionPage({
         </span>
       </header>
       <section className="section-card section-empty-card">
-        <EmptyState
-          title={`${page.title} alanı hazır`}
-          description="Bu bölüm için kayıt bulunmuyor. Modül tamamlandığında içerikleriniz burada listelenecek."
-        />
+        {section === 'settings' ? (
+          <div className="page-stack">
+            <EmptyState
+              title="Çalışma alanı ayarları"
+              description="Ekip üyelerini ve çalışma alanı erişim rollerini yönetin."
+            />
+            <Link className="button button-primary" href="/settings/team">
+              Ekip kullanıcıları
+            </Link>
+          </div>
+        ) : (
+          <EmptyState
+            title={`${page.title} alanı hazır`}
+            description="Bu bölüm için kayıt bulunmuyor. Modül tamamlandığında içerikleriniz burada listelenecek."
+          />
+        )}
       </section>
     </div>
   );

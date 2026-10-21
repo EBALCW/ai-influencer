@@ -111,6 +111,10 @@ function ShellContent({ children }: { children: React.ReactNode }) {
   const pageName =
     navigation.find((item) => item.href === pathname)?.label ?? 'Genel Bakış';
 
+  if (pathname === '/login' || pathname.startsWith('/access-denied')) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="studio-shell">
       {mobileOpen && (
