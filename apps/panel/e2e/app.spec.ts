@@ -63,16 +63,71 @@ test('influencer listesi detay sayfasına gider ve ?inf= seçimini korur', async
   await expect(page.getByText('Persona kaydı yok')).toBeVisible();
 });
 
-test('taslak influencer kurulumuna devam bağlantısı sunar', async ({
+test('taslak influencer kurulumunu referans ve özet adımlarıyla tamamlar', async ({
   page,
 }) => {
   await page.goto('/influencers?inf=demo-creator');
   await page.getByRole('link', { name: 'Kuruluma devam et' }).click();
   await expect(page).toHaveURL(/setup/);
-  await expect(page).toHaveURL(/inf=demo-creator/);
   await expect(
     page.getByRole('heading', { name: 'Yeni influencer oluştur', level: 1 }),
   ).toBeVisible();
+
+  await page.getByLabel('Karakter hikâyesi').fill('Test persona hikâyesi.');
+  await page.getByLabel('Ses tonu').fill('Samimi ve açık');
+  await page
+    .getByLabel('Hedef kitle açıklaması')
+    .fill('Yaratıcı içerik izleyicileri.');
+  await page.getByRole('button', { name: 'Kaydet ve devam et' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Görünüm ve karakter prompt’u' }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Prompt’u kaydet ve devam et' })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Referans görselleri' }),
+  ).toBeVisible();
+
+  await page.getByRole('link', { name: 'Medya kütüphanesinde yükle' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Görsel ve videolar' }),
+  ).toBeVisible();
+  await page.getByLabel('Görsel veya video yükle').setInputFiles({
+    name: 'wizard-reference.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  });
+  await expect(
+    page.getByRole('status').getByText('Dosyalar yüklendi.'),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Kuruluma dön' }).click();
+  await expect(page.getByRole('status')).toContainText('1 referans yüklendi');
+  await page.getByRole('button', { name: 'Avatar seçimine devam et' }).click();
+
+  await page
+    .getByRole('link', { name: 'Seti karşılaştır ve avatarı belirle' })
+    .click();
+  await page.getByRole('button', { name: 'Avatar yap' }).click();
+  await page.getByRole('link', { name: 'Kuruluma dön' }).click();
+  await expect(page.getByRole('status')).toContainText('Avatar belirlendi');
+  await page.getByRole('button', { name: 'Özeti gör' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Taslak özeti' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Taslağı tamamla' }).click();
+  await expect(page).toHaveURL(/\/influencers\/demo-creator\?inf=demo-creator/);
+
+  await page.goto('/influencers/demo-creator/assets?inf=demo-creator');
+  await page.getByRole('button', { name: 'Sil', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Dosyayı sil' })
+    .click();
+  await expect(page.getByRole('article')).toHaveCount(0);
 });
 
 test('bilinmeyen influencer slug gerçek HTTP 404 döndürür', async ({
@@ -156,6 +211,22 @@ test('asset manager uploads, previews, and removes a private image', async ({
   ).toBeVisible();
   await expect(page.getByRole('article')).toHaveCount(2);
   await expect(page.locator('img').first()).toBeVisible();
+  await page.getByLabel('Tarihe göre filtrele').selectOption('7');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await page.getByLabel('Tarihe göre filtrele').selectOption('all');
+  const assetChecks = page.getByLabel('Toplu işlem için seç');
+  await assetChecks.first().check();
+  await assetChecks.last().check();
+  await page.getByLabel('Seçilenlere etiket uygula').fill('e2e-reference');
+  await page.getByRole('button', { name: 'Etiketleri kaydet (2)' }).click();
+  await page.getByLabel('Etikete göre filtrele').selectOption('e2e-reference');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await page.getByLabel('Etikete göre filtrele').selectOption('all');
+  await page.getByRole('button', { name: 'Görseli büyüt' }).first().click();
+  await expect(
+    page.getByRole('dialog', { name: 'Görsel önizleme' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Önizlemeyi kapat' }).click();
   const versionSelects = page.getByLabel('Referans versiyonu');
   await expect(versionSelects).toHaveCount(2);
   await versionSelects.first().selectOption('v2');
@@ -167,10 +238,17 @@ test('asset manager uploads, previews, and removes a private image', async ({
   await expect(
     page.getByRole('region', { name: 'Referans seti sağ v2' }),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Avatar yap' }).first().click();
+  await expect(page.getByRole('button', { name: 'Mevcut avatar' })).toHaveCount(
+    1,
+  );
   await page.getByRole('button', { name: 'Sil', exact: true }).first().click();
   const firstDialog = page.getByRole('dialog');
   await firstDialog.getByRole('button', { name: 'Dosyayı sil' }).click();
   await expect(page.getByRole('article')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Mevcut avatar' })).toHaveCount(
+    0,
+  );
   await page.getByRole('button', { name: 'Sil', exact: true }).click();
   const secondDialog = page.getByRole('dialog');
   await secondDialog.getByRole('button', { name: 'Dosyayı sil' }).click();

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { AssetKind, Row } from '@ai-influencer/shared';
 import { ConfirmDialog, EmptyState, Toast } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -111,21 +112,27 @@ export function AssetManager({
   canEdit,
   hasMore: initialHasMore,
   influencerId,
+  returnTo,
 }: {
   assets: AssetItem[];
   avatarAssetId: string | null;
   canEdit: boolean;
   hasMore: boolean;
   influencerId: string;
+  returnTo?: string;
 }) {
   const [assets, setAssets] = useState(initialAssets);
   const [currentAvatarId, setCurrentAvatarId] = useState(avatarAssetId);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
+  const [filterNow, setFilterNow] = useState(0);
   const [search, setSearch] = useState('');
   const [leftVersion, setLeftVersion] = useState('');
   const [rightVersion, setRightVersion] = useState('');
+  const [lightbox, setLightbox] = useState<AssetItem | null>(null);
   const versionOptions = useMemo(
     () =>
       Array.from(
@@ -139,6 +146,13 @@ export function AssetManager({
       ).sort((a, b) => a.localeCompare(b, 'tr')),
     [assets],
   );
+  const tagOptions = useMemo(
+    () =>
+      Array.from(new Set(assets.flatMap(({ asset }) => asset.tags))).sort(
+        (a, b) => a.localeCompare(b, 'tr'),
+      ),
+    [assets],
+  );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkTags, setBulkTags] = useState('');
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -148,16 +162,19 @@ export function AssetManager({
     error?: boolean;
   } | null>(null);
   const [removing, setRemoving] = useState<AssetItem | null>(null);
-  const visible = useMemo(
-    () =>
-      assets.filter(
-        ({ asset }) =>
-          filter === 'all' ||
-          asset.kind === filter ||
-          asset.qc_status === filter,
-      ),
-    [assets, filter],
-  );
+  const visible = useMemo(() => {
+    const cutoff =
+      dateFilter === 'all' || !filterNow
+        ? 0
+        : filterNow - Number(dateFilter) * 24 * 60 * 60 * 1000;
+    return assets.filter(({ asset }) => {
+      const kindMatches =
+        filter === 'all' || asset.kind === filter || asset.qc_status === filter;
+      const tagMatches = tagFilter === 'all' || asset.tags.includes(tagFilter);
+      const dateMatches = !cutoff || Date.parse(asset.created_at) >= cutoff;
+      return kindMatches && tagMatches && dateMatches;
+    });
+  }, [assets, dateFilter, filter, filterNow, tagFilter]);
   const searched = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('tr');
     return visible.filter(
@@ -347,6 +364,22 @@ export function AssetManager({
     for (const id of selectedIds) {
       const item = assets.find((entry) => entry.asset.id === id);
       if (!item) continue;
+      if (currentAvatarId === id) {
+        const { error: avatarError } = await supabase
+          .from('influencers')
+          .update({ avatar_asset_id: null })
+          .eq('id', influencerId);
+        if (avatarError) {
+          setMessage({
+            text: 'Avatar bağlantısı kaldırılamadı; varlıklar korundu.',
+            error: true,
+          });
+          setBusy(false);
+          setConfirmBulkDelete(false);
+          return;
+        }
+        setCurrentAvatarId(null);
+      }
       const { error: storageError } = await supabase.storage
         .from('assets')
         .remove(
@@ -425,6 +458,21 @@ export function AssetManager({
   async function removeAsset() {
     if (!removing) return;
     const supabase = createSupabaseBrowserClient();
+    if (currentAvatarId === removing.asset.id) {
+      const { error: avatarError } = await supabase
+        .from('influencers')
+        .update({ avatar_asset_id: null })
+        .eq('id', influencerId);
+      if (avatarError) {
+        setMessage({
+          text: 'Avatar bağlantısı kaldırılamadı; varlık korundu.',
+          error: true,
+        });
+        setRemoving(null);
+        return;
+      }
+      setCurrentAvatarId(null);
+    }
     const { error: storageError } = await supabase.storage
       .from('assets')
       .remove(
@@ -465,6 +513,11 @@ export function AssetManager({
           </div>
           <span className="soft-badge">{assets.length} dosya yüklendi</span>
         </div>
+        {returnTo && (
+          <Link className="button button-quiet" href={returnTo}>
+            Kuruluma dön
+          </Link>
+        )}
         {canEdit && (
           <label className="file-dropzone">
             <input
@@ -500,6 +553,40 @@ export function AssetManager({
             <option value="failed">QC kaldı</option>
           </select>
         </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex items-center gap-2 text-sm">
+            Etiket
+            <select
+              aria-label="Etikete göre filtrele"
+              className="rounded-lg border border-line bg-surface px-3 py-2"
+              onChange={(event) => setTagFilter(event.target.value)}
+              value={tagFilter}
+            >
+              <option value="all">Tüm etiketler</option>
+              {tagOptions.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            Tarih
+            <select
+              aria-label="Tarihe göre filtrele"
+              className="rounded-lg border border-line bg-surface px-3 py-2"
+              onChange={(event) => {
+                setDateFilter(event.target.value);
+                setFilterNow(Date.now());
+              }}
+              value={dateFilter}
+            >
+              <option value="all">Tüm tarihler</option>
+              <option value="7">Son 7 gün</option>
+              <option value="30">Son 30 gün</option>
+            </select>
+          </label>
+        </div>
         <label className="flex items-center gap-2 text-sm">
           Ara
           <input
@@ -668,11 +755,11 @@ export function AssetManager({
                     src={item.url}
                   />
                 ) : item.url ? (
-                  <a
-                    aria-label="Görseli büyük görüntüle"
-                    href={item.url}
-                    rel="noreferrer"
-                    target="_blank"
+                  <button
+                    aria-label="Görseli büyüt"
+                    className="absolute inset-0 h-full w-full"
+                    onClick={() => setLightbox(item)}
+                    type="button"
                   >
                     <Image
                       alt={
@@ -684,7 +771,7 @@ export function AssetManager({
                       src={item.thumbnailUrl ?? item.url}
                       unoptimized
                     />
-                  </a>
+                  </button>
                 ) : (
                   <div className="grid h-full place-items-center text-muted">
                     Önizleme alınamadı
@@ -811,7 +898,7 @@ export function AssetManager({
                       QC{' '}
                       {item.asset.qc_status === 'passed' ? 'beklet' : 'geçir'}
                     </button>
-                    {item.asset.kind !== 'final_video' && (
+                    {item.asset.kind === 'reference' && (
                       <button
                         className="button button-quiet"
                         onClick={() => void setAvatar(item)}
@@ -854,6 +941,36 @@ export function AssetManager({
         >
           {loadingMore ? 'Yükleniyor…' : 'Daha fazla yükle'}
         </button>
+      )}
+      {lightbox && lightbox.url && (
+        <div
+          aria-label="Görsel önizleme"
+          aria-modal="true"
+          className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"
+          role="dialog"
+        >
+          <div className="w-full max-w-5xl rounded-xl bg-surface p-4">
+            <div className="mb-3 flex justify-end">
+              <button
+                aria-label="Önizlemeyi kapat"
+                className="button button-quiet"
+                onClick={() => setLightbox(null)}
+                type="button"
+              >
+                Kapat
+              </button>
+            </div>
+            <div className="relative max-h-[80vh] min-h-72 overflow-hidden">
+              <Image
+                alt={lightbox.asset.storage_path.split('/').at(-1) ?? 'Görsel'}
+                className="h-full w-full object-contain"
+                fill
+                src={lightbox.url}
+                unoptimized
+              />
+            </div>
+          </div>
+        </div>
       )}
       {message && (
         <Toast
