@@ -4,7 +4,8 @@ CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
 -- API rolleri Vault'a doğrudan erişemez; yalnız dar RPC'ler service_role'e açıktır.
 REVOKE ALL ON SCHEMA vault FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON ALL TABLES IN SCHEMA vault FROM PUBLIC, anon, authenticated, service_role;
-REVOKE ALL ON ALL FUNCTIONS IN SCHEMA vault FROM PUBLIC, anon, authenticated, service_role;
+-- Vault iç kripto fonksiyonları extension sahibine aittir; onların ACL'ine dokunmayız.
+-- Şema USAGE izni olmadığı için API rolleri bu fonksiyonları da çağıramaz.
 
 CREATE FUNCTION public.guard_social_token_fields()
 RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
