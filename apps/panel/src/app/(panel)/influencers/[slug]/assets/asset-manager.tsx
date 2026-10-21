@@ -6,7 +6,11 @@ import type { AssetKind, Row } from '@ai-influencer/shared';
 import { ConfirmDialog, EmptyState, Toast } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
-type AssetItem = { asset: Row<'assets'>; url: string | null };
+type AssetItem = {
+  asset: Row<'assets'>;
+  url: string | null;
+  thumbnailUrl: string | null;
+};
 const kindLabels: Record<AssetKind, string> = {
   reference: 'Referans',
   generated: 'Üretilen',
@@ -39,30 +43,62 @@ const qcItems = [
   ['video_lip_sync', 'Dudak senkronu uygun'],
 ] as const;
 
+async function canvasBlob(canvas: HTMLCanvasElement) {
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error('Küçük resim üretilemedi.')),
+      'image/webp',
+      0.78,
+    ),
+  );
+}
+
 async function readMetadata(file: File) {
   if (file.type.startsWith('image/')) {
     const image = await createImageBitmap(file);
+    const scale = Math.min(1, 640 / Math.max(image.width, image.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    canvas
+      .getContext('2d')
+      ?.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const thumbnail = await canvasBlob(canvas);
     const metadata = {
       width: image.width,
       height: image.height,
       duration_ms: null,
     };
     image.close();
-    return metadata;
+    return { ...metadata, thumbnail };
   }
   const url = URL.createObjectURL(file);
   try {
-    const duration = await new Promise<number>((resolve, reject) => {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.onloadedmetadata = () => resolve(video.duration);
-      video.onerror = () => reject(new Error('Video bilgisi okunamadı.'));
-      video.src = url;
+    const video = await new Promise<HTMLVideoElement>((resolve, reject) => {
+      const element = document.createElement('video');
+      element.preload = 'auto';
+      element.muted = true;
+      element.onloadeddata = () => resolve(element);
+      element.onerror = () => reject(new Error('Video bilgisi okunamadı.'));
+      element.src = url;
     });
+    const scale = Math.min(
+      1,
+      640 / Math.max(video.videoWidth, video.videoHeight),
+    );
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+    canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+    canvas
+      .getContext('2d')
+      ?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const thumbnail = await canvasBlob(canvas);
     return {
-      width: null,
-      height: null,
-      duration_ms: Math.round(duration * 1000),
+      width: video.videoWidth,
+      height: video.videoHeight,
+      duration_ms: Math.round(video.duration * 1000),
+      thumbnail,
     };
   } finally {
     URL.revokeObjectURL(url);
@@ -154,6 +190,17 @@ export function AssetManager({
           .from('assets')
           .upload(storagePath, file, { contentType: file.type, upsert: false });
         if (uploadError) throw uploadError;
+        const thumbnailPath = `${influencerId}/${id}-thumb.webp`;
+        const { error: thumbnailError } = await supabase.storage
+          .from('assets')
+          .upload(thumbnailPath, metadata.thumbnail, {
+            contentType: 'image/webp',
+            upsert: false,
+          });
+        if (thumbnailError) {
+          await supabase.storage.from('assets').remove([storagePath]);
+          throw thumbnailError;
+        }
         const { data: row, error: rowError } = await supabase
           .from('assets')
           .insert({
@@ -161,24 +208,36 @@ export function AssetManager({
             influencer_id: influencerId,
             kind,
             storage_path: storagePath,
+            thumbnail_path: thumbnailPath,
             mime_type: file.type,
             file_size_bytes: file.size,
-            ...metadata,
+            width: metadata.width,
+            height: metadata.height,
+            duration_ms: metadata.duration_ms,
           })
           .select('*')
           .single();
         if (rowError) {
-          await supabase.storage.from('assets').remove([storagePath]);
+          await supabase.storage
+            .from('assets')
+            .remove([storagePath, thumbnailPath]);
           throw rowError;
         }
         const { data: signed } = await supabase.storage
           .from('assets')
           .createSignedUrl(storagePath, 600);
+        const { data: thumbnailSigned } = await supabase.storage
+          .from('assets')
+          .createSignedUrl(thumbnailPath, 600);
         setAssets((current) =>
-          [{ asset: row, url: signed?.signedUrl ?? null }, ...current].slice(
-            0,
-            100,
-          ),
+          [
+            {
+              asset: row,
+              url: signed?.signedUrl ?? null,
+              thumbnailUrl: thumbnailSigned?.signedUrl ?? null,
+            },
+            ...current,
+          ].slice(0, 100),
         );
       }
       setMessage({ text: 'Dosyalar yüklendi.' });
@@ -211,7 +270,16 @@ export function AssetManager({
         const { data: signed } = await supabase.storage
           .from('assets')
           .createSignedUrl(asset.storage_path, 600);
-        return { asset, url: signed?.signedUrl ?? null };
+        const { data: thumbnail } = asset.thumbnail_path
+          ? await supabase.storage
+              .from('assets')
+              .createSignedUrl(asset.thumbnail_path, 600)
+          : { data: null };
+        return {
+          asset,
+          url: signed?.signedUrl ?? null,
+          thumbnailUrl: thumbnail?.signedUrl ?? null,
+        };
       }),
     );
     setAssets((current) => [...current, ...nextItems]);
@@ -265,7 +333,11 @@ export function AssetManager({
       if (!item) continue;
       const { error: storageError } = await supabase.storage
         .from('assets')
-        .remove([item.asset.storage_path]);
+        .remove(
+          [item.asset.storage_path, item.asset.thumbnail_path].filter(
+            (path): path is string => Boolean(path),
+          ),
+        );
       if (storageError) {
         setMessage({
           text: 'Toplu silme durdu; bu dosya ve kalanlar korunuyor.',
@@ -338,7 +410,11 @@ export function AssetManager({
     const supabase = createSupabaseBrowserClient();
     const { error: storageError } = await supabase.storage
       .from('assets')
-      .remove([removing.asset.storage_path]);
+      .remove(
+        [removing.asset.storage_path, removing.asset.thumbnail_path].filter(
+          (path): path is string => Boolean(path),
+        ),
+      );
     if (storageError) {
       setMessage({ text: 'Dosya silinemedi; kayıt korundu.', error: true });
       setRemoving(null);
@@ -375,6 +451,7 @@ export function AssetManager({
         {canEdit && (
           <label className="file-dropzone">
             <input
+              aria-label="Görsel veya video yükle"
               accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
               disabled={busy}
               multiple
@@ -480,6 +557,7 @@ export function AssetManager({
                     className="h-full w-full object-contain"
                     controls
                     preload="metadata"
+                    poster={item.thumbnailUrl ?? undefined}
                     src={item.url}
                   />
                 ) : item.url ? (
@@ -496,7 +574,7 @@ export function AssetManager({
                       }
                       className="h-full w-full object-contain"
                       fill
-                      src={item.url}
+                      src={item.thumbnailUrl ?? item.url}
                       unoptimized
                     />
                   </a>
