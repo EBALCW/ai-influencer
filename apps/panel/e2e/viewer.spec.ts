@@ -73,6 +73,7 @@ test('viewer persona API çağrılarında 403 alır', async ({ page }) => {
     },
   );
   expect(restore.status()).toBe(403);
+});
 
 test('viewer maliyetleri görür ama ekleyemez', async ({ page }) => {
   const response = await page.goto('/costs');
