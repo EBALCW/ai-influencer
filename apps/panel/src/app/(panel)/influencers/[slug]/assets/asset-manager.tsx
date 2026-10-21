@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import type { AssetKind, Row } from '@ai-influencer/shared';
 import { ConfirmDialog, EmptyState, Toast } from '@/components/ui';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -112,14 +111,12 @@ export function AssetManager({
   canEdit,
   hasMore: initialHasMore,
   influencerId,
-  returnTo,
 }: {
   assets: AssetItem[];
   avatarAssetId: string | null;
   canEdit: boolean;
   hasMore: boolean;
   influencerId: string;
-  returnTo?: string;
 }) {
   const [assets, setAssets] = useState(initialAssets);
   const [currentAvatarId, setCurrentAvatarId] = useState(avatarAssetId);
@@ -468,11 +465,6 @@ export function AssetManager({
           </div>
           <span className="soft-badge">{assets.length} dosya yüklendi</span>
         </div>
-        {returnTo && (
-          <Link className="button button-quiet" href={returnTo}>
-            Kuruluma dön
-          </Link>
-        )}
         {canEdit && (
           <label className="file-dropzone">
             <input
