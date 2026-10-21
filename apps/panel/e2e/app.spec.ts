@@ -255,6 +255,37 @@ test('asset manager uploads, previews, and removes a private image', async ({
   await expect(page.getByRole('article')).toHaveCount(0);
 });
 
+test('asset manager accepts drag and drop uploads', async ({ page }) => {
+  await page.goto('/influencers/demo-creator/assets?inf=demo-creator');
+  await page.locator('.file-dropzone').evaluate((dropzone) => {
+    const base64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==';
+    const bytes = Uint8Array.from(atob(base64), (character) =>
+      character.charCodeAt(0),
+    );
+    const transfer = new DataTransfer();
+    transfer.items.add(
+      new File([bytes], 'drag-reference.png', { type: 'image/png' }),
+    );
+    dropzone.dispatchEvent(
+      new DragEvent('dragover', { bubbles: true, dataTransfer: transfer }),
+    );
+    dropzone.dispatchEvent(
+      new DragEvent('drop', { bubbles: true, dataTransfer: transfer }),
+    );
+  });
+  await expect(
+    page.getByRole('status').getByText('Dosyalar yüklendi.'),
+  ).toBeVisible();
+  await expect(page.getByRole('article')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Sil', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Dosyayı sil' })
+    .click();
+  await expect(page.getByRole('article')).toHaveCount(0);
+});
+
 test('theme can be switched and stays selected after reload', async ({
   page,
 }) => {
