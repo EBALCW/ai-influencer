@@ -178,17 +178,21 @@ export function InfluencerList({
                           <span>
                             <Link
                               className="font-semibold text-primary hover:underline"
-                              href={
-                                item.status === 'draft' && canEdit
-                                  ? `/influencers/${encodeURIComponent(item.slug)}/setup${infQuery}`
-                                  : `/influencers/${encodeURIComponent(item.slug)}${infQuery}`
-                              }
+                              href={`/influencers/${encodeURIComponent(item.slug)}${infQuery}`}
                             >
                               {item.name}
                             </Link>
                             <span className="block text-xs text-muted">
                               {item.niche || 'Niş belirtilmemiş'}
                             </span>
+                            {canEdit && item.status === 'draft' && (
+                              <Link
+                                className="mt-1 inline-block text-xs text-accent hover:underline"
+                                href={`/influencers/${encodeURIComponent(item.slug)}/setup${infQuery}`}
+                              >
+                                Kuruluma devam et
+                              </Link>
+                            )}
                           </span>
                         </div>
                       </td>
