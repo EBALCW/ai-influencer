@@ -495,7 +495,9 @@ export function InfluencerWizard({
               onChange={(event) =>
                 updatePersona('sampleCaptions', event.target.value)
               }
-              placeholder={"Bugün küçük bir kaçamak yaptım…\nSence bu kombin nasıl olmuş?"}
+              placeholder={
+                'Bugün küçük bir kaçamak yaptım…\nSence bu kombin nasıl olmuş?'
+              }
               rows={4}
               value={persona.sampleCaptions.join('\n')}
             />
