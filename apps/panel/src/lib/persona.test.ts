@@ -99,19 +99,25 @@ describe('persona şeması ve eşleme', () => {
   });
 
   it('caption listesini satırlara göre ayrıştırır ve sınırları uygular', () => {
-    expect(parseCaptionList('  Bugün buradayım, ya sen?  \\n\\nYeni bir gün.')).toEqual([
-      'Bugün buradayım, ya sen?',
-      'Yeni bir gün.',
-    ]);
+    expect(
+      parseCaptionList('  Bugün buradayım, ya sen?  \\n\\nYeni bir gün.'),
+    ).toEqual(['Bugün buradayım, ya sen?', 'Yeni bir gün.']);
     const valid = { ...toPersonaInput(row), sampleCaptions: ['Örnek caption'] };
     expect(personaInputSchema.safeParse(valid).success).toBe(true);
-    expect(personaInputSchema.safeParse({
-      ...valid,
-      sampleCaptions: Array.from({ length: 11 }, (_, index) => `Caption ${index}`),
-    }).success).toBe(false);
-    expect(personaInputSchema.safeParse({
-      ...valid,
-      sampleCaptions: ['x'.repeat(2201)],
-    }).success).toBe(false);
+    expect(
+      personaInputSchema.safeParse({
+        ...valid,
+        sampleCaptions: Array.from(
+          { length: 11 },
+          (_, index) => `Caption ${index}`,
+        ),
+      }).success,
+    ).toBe(false);
+    expect(
+      personaInputSchema.safeParse({
+        ...valid,
+        sampleCaptions: ['x'.repeat(2201)],
+      }).success,
+    ).toBe(false);
   });
 });
