@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Camera, CirclePlay, Music2, Plus, Search, UsersRound } from 'lucide-react';
+import {
+  Camera,
+  CirclePlay,
+  Music2,
+  Plus,
+  Search,
+  UsersRound,
+} from 'lucide-react';
 import type { InfluencerListItem } from '@/lib/influencers';
 import { EmptyState } from '@/components/ui';
 
@@ -93,7 +100,10 @@ export function InfluencerList({
             <UsersRound size={15} /> {influencers.length} kayıt
           </span>
           {canEdit && (
-            <Link className="button button-primary" href={`/influencers/new${infQuery}`}>
+            <Link
+              className="button button-primary"
+              href={`/influencers/new${infQuery}`}
+            >
               <Plus aria-hidden="true" size={16} /> Yeni influencer
             </Link>
           )}
@@ -168,7 +178,11 @@ export function InfluencerList({
                           <span>
                             <Link
                               className="font-semibold text-primary hover:underline"
-                              href={item.status === 'draft' && canEdit ? `/influencers/${encodeURIComponent(item.slug)}/setup${infQuery}` : `/influencers/${encodeURIComponent(item.slug)}${infQuery}`}
+                              href={
+                                item.status === 'draft' && canEdit
+                                  ? `/influencers/${encodeURIComponent(item.slug)}/setup${infQuery}`
+                                  : `/influencers/${encodeURIComponent(item.slug)}${infQuery}`
+                              }
                             >
                               {item.name}
                             </Link>
