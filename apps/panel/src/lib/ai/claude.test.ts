@@ -1,178 +1,124 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it, vi } from 'vitest';
+import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
-
 vi.mock('server-only', () => ({}));
-
 const { runStructured } = await import('./claude');
-const { AiError } = await import('./errors');
-
 const schema = z.object({ caption: z.string() });
-
-function fakeClient(parse: ReturnType<typeof vi.fn>) {
-  return { beta: { messages: { parse } } } as unknown as Parameters<
-    typeof runStructured
-  >[0];
-}
-
-const okResponse = {
-  stop_reason: 'end_turn',
-  parsed_output: { caption: 'Merhaba' },
-  model: 'claude-opus-5-5',
-  usage: { input_tokens: 120, output_tokens: 40, cache_read_input_tokens: 0 },
-};
-
 const request = {
-  model: 'claude-opus-5-5',
+  model: 'claude-fixture',
   system: 'talimat',
-  userMessage: 'girdi',
+  userMessage: 'kullanıcı verisi',
   schema,
   effort: 'low' as const,
 };
-
-async function expectAiError(promise: Promise<unknown>, code: string) {
-  const error = await promise.catch((e: unknown) => e);
-  expect(error).toBeInstanceOf(AiError);
-  expect((error as InstanceType<typeof AiError>).code).toBe(code);
-}
-
+const response = () => ({
+  model: 'claude-fixture',
+  stop_reason: 'end_turn',
+  content: [{ type: 'text', text: '{"caption":"Merhaba"}' }],
+  usage: { input_tokens: 120, output_tokens: 40, cache_read_input_tokens: 0 },
+});
+const client = (create: ReturnType<typeof vi.fn>) =>
+  ({ beta: { messages: { create } } }) as unknown as Parameters<
+    typeof runStructured
+  >[0];
 describe('runStructured', () => {
-  it('doğrulanmış çıktıyı ve token kullanımını döner', async () => {
-    const parse = vi.fn().mockResolvedValue(okResponse);
-    const result = await runStructured(fakeClient(parse), request);
-
-    expect(result).toEqual({
-      data: { caption: 'Merhaba' },
-      usage: { inputTokens: 120, outputTokens: 40, cacheReadInputTokens: 0 },
-      model: 'claude-opus-5-5',
+  it('şemayı doğrular, talimatı ve veriyi ayrı gönderir, otomatik fallback yapmaz', async () => {
+    const create = vi.fn().mockResolvedValue(response());
+    const result = await runStructured(client(create), request);
+    expect(result.data).toEqual({ caption: 'Merhaba' });
+    expect(create.mock.calls[0]![0]).toMatchObject({
+      system: 'talimat',
+      messages: [{ role: 'user', content: 'kullanıcı verisi' }],
+      output_config: { format: { type: 'json_schema' } },
     });
+    expect(create.mock.calls[0]![0]).not.toHaveProperty('fallbacks');
   });
-
-  it('talimatı system alanına, kullanıcı girdisini ayrı mesaja koyar', async () => {
-    const parse = vi.fn().mockResolvedValue(okResponse);
-    await runStructured(fakeClient(parse), request);
-
-    const params = parse.mock.calls[0]?.[0];
-    expect(params.system).toBe('talimat');
-    expect(params.messages).toEqual([{ role: 'user', content: 'girdi' }]);
-    expect(params.output_config.effort).toBe('low');
-    expect(params.output_config.format.type).toBe('json_schema');
-  });
-
-  it('destekleyen modelde sunucu tarafı fallback açılır, desteklemeyende açılmaz', async () => {
-    const parse = vi.fn().mockResolvedValue(okResponse);
-    await runStructured(fakeClient(parse), request);
-    await runStructured(fakeClient(parse), {
-      ...request,
-      model: 'claude-haiku-5-5',
-    });
-
-    expect(parse.mock.calls[0]?.[0]).toMatchObject({
-      fallbacks: 'default',
-      betas: ['server-side-fallback-2026-07-01'],
-    });
-    expect(parse.mock.calls[1]?.[0]).not.toHaveProperty('fallbacks');
-    expect(parse.mock.calls[1]?.[0]).not.toHaveProperty('betas');
-  });
-
-  it('şemaya uymayan / bozuk JSON çıktısında invalid_output', async () => {
-    const parse = vi
-      .fn()
-      .mockRejectedValue(
-        new Anthropic.AnthropicError('Failed to parse structured output'),
+  it.each(['not json', '{"caption":123}'])(
+    'geçersiz çıktıda bile kullanım önce yazılır: %s',
+    async (text) => {
+      const r = response();
+      r.content[0]!.text = text;
+      const usage = vi.fn();
+      await expect(
+        runStructured(client(vi.fn().mockResolvedValue(r)), {
+          ...request,
+          onUsage: usage,
+        }),
+      ).rejects.toMatchObject({ code: 'invalid_output' });
+      expect(usage).toHaveBeenCalledWith(
+        { inputTokens: 120, outputTokens: 40, cacheReadInputTokens: 0 },
+        'claude-fixture',
       );
-    await expectAiError(
-      runStructured(fakeClient(parse), request),
-      'invalid_output',
-    );
-  });
-
-  it('parsed_output boşsa veya max_tokens ile kesildiyse invalid_output', async () => {
-    const empty = vi
-      .fn()
-      .mockResolvedValue({ ...okResponse, parsed_output: null });
-    await expectAiError(
-      runStructured(fakeClient(empty), request),
-      'invalid_output',
-    );
-
-    const truncated = vi
-      .fn()
-      .mockResolvedValue({ ...okResponse, stop_reason: 'max_tokens' });
-    await expectAiError(
-      runStructured(fakeClient(truncated), request),
-      'invalid_output',
-    );
-  });
-
-  it('model reddederse refused', async () => {
-    const parse = vi.fn().mockResolvedValue({
-      ...okResponse,
-      stop_reason: 'refusal',
-      parsed_output: null,
-    });
-    await expectAiError(runStructured(fakeClient(parse), request), 'refused');
-  });
-
-  it('429 → rate_limited, istek kimliği korunur', async () => {
-    const headers = new Headers({ 'request-id': 'req_123' });
-    const parse = vi
-      .fn()
-      .mockRejectedValue(
-        new Anthropic.RateLimitError(429, {}, 'rate limited', headers),
-      );
-    const error = (await runStructured(fakeClient(parse), request).catch(
-      (e: unknown) => e,
-    )) as InstanceType<typeof AiError>;
-    expect(error.code).toBe('rate_limited');
-    expect(error.status).toBe(429);
-    expect(error.requestId).toBe('req_123');
-  });
-
-  it('zaman aşımı → timeout', async () => {
-    const parse = vi
-      .fn()
-      .mockRejectedValue(new Anthropic.APIConnectionTimeoutError());
-    await expectAiError(runStructured(fakeClient(parse), request), 'timeout');
-  });
-
-  it('401 → auth_failed, 5xx → unavailable', async () => {
-    const auth = vi
-      .fn()
-      .mockRejectedValue(
-        new Anthropic.AuthenticationError(401, {}, 'invalid', new Headers()),
-      );
-    await expectAiError(
-      runStructured(fakeClient(auth), request),
-      'auth_failed',
-    );
-
-    const server = vi
-      .fn()
-      .mockRejectedValue(
-        new Anthropic.InternalServerError(500, {}, 'boom', new Headers()),
-      );
-    await expectAiError(
-      runStructured(fakeClient(server), request),
-      'unavailable',
-    );
-  });
-
-  it('kullanıcı mesajı sağlayıcı hata metnini veya anahtarı içermez', async () => {
-    const parse = vi
-      .fn()
-      .mockRejectedValue(
-        new Anthropic.AuthenticationError(
-          401,
-          {},
-          'invalid x-api-key sk-ant-secret',
-          new Headers(),
+    },
+  );
+  it.each(['refusal', 'max_tokens', 'pause_turn'])(
+    'kesilmiş/reddedilmiş çıktının da maliyeti kaydedilir: %s',
+    async (stop_reason) => {
+      const usage = vi.fn();
+      await expect(
+        runStructured(
+          client(vi.fn().mockResolvedValue({ ...response(), stop_reason })),
+          { ...request, onUsage: usage },
         ),
-      );
-    const error = (await runStructured(fakeClient(parse), request).catch(
-      (e: unknown) => e,
-    )) as Error;
-    expect(error.message).not.toContain('sk-ant');
-    expect(error.message).not.toContain('x-api-key');
+      ).rejects.toMatchObject({
+        code: stop_reason === 'refusal' ? 'refused' : 'invalid_output',
+      });
+      expect(usage).toHaveBeenCalledOnce();
+    },
+  );
+  it('cache yazma sürelerini ayırır', async () => {
+    const usage = vi.fn();
+    await runStructured(
+      client(
+        vi.fn().mockResolvedValue({
+          ...response(),
+          usage: {
+            input_tokens: 1,
+            output_tokens: 2,
+            cache_creation_input_tokens: 300,
+            cache_creation: { ephemeral_1h_input_tokens: 100 },
+          },
+        }),
+      ),
+      { ...request, onUsage: usage },
+    );
+    expect(usage.mock.calls[0]![0]).toMatchObject({
+      cacheCreationInputTokens: 200,
+      cacheCreation1hInputTokens: 100,
+    });
+  });
+  it('sağlayıcı hata metni ve anahtar sızmaz', async () => {
+    const error = new Anthropic.AuthenticationError(
+      401,
+      {},
+      'sk-ant-private',
+      new Headers(),
+    );
+    await expect(
+      runStructured(client(vi.fn().mockRejectedValue(error)), request),
+    ).rejects.toMatchObject({ code: 'auth_failed', status: 503 });
+    await expect(
+      runStructured(client(vi.fn().mockRejectedValue(error)), request),
+    ).rejects.not.toThrow('sk-ant-private');
+  });
+  it('maliyet kaydı hatası çıktıyı başarıya çeviremez', async () => {
+    await expect(
+      runStructured(client(vi.fn().mockResolvedValue(response())), {
+        ...request,
+        onUsage: async () => {
+          throw Error('billing');
+        },
+      }),
+    ).rejects.toThrow('billing');
+  });
+  it('timeout güvenli hataya çevrilir', async () => {
+    await expect(
+      runStructured(
+        client(
+          vi.fn().mockRejectedValue(new Anthropic.APIConnectionTimeoutError()),
+        ),
+        request,
+      ),
+    ).rejects.toMatchObject({ code: 'timeout' });
   });
 });

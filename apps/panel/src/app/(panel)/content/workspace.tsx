@@ -1,4 +1,5 @@
 'use client';
+import { AiSuggestion, suggestionText } from '@/components/ai-suggestion';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -764,6 +765,54 @@ function ContentEditor({
               </fieldset>
             ))}
           </div>
+          {!readonly && (
+            <AiSuggestion
+              influencerId={values.influencer_id}
+              tasks={['caption', 'script', 'weekly']}
+              disabled={pending}
+              requestFor={(task) =>
+                task === 'caption'
+                  ? {
+                      task: 'caption',
+                      input: {
+                        persona: {
+                          name:
+                            workspace.influencers.find(
+                              (i) => i.id === values.influencer_id,
+                            )?.name ?? '',
+                          niche:
+                            workspace.influencers.find(
+                              (i) => i.id === values.influencer_id,
+                            )?.niche || 'Niş belirtilmedi',
+                        },
+                        topic: values.title,
+                        format: values.format,
+                        language: 'tr',
+                      },
+                    }
+                  : task === 'script'
+                    ? {
+                        task: 'script',
+                        input: {
+                          topic: values.title,
+                          durationSeconds: 30,
+                          language: 'tr',
+                        },
+                      }
+                    : { task: 'weekly', input: { language: 'tr' } }
+              }
+              onApply={(result) => {
+                const next = [values.notes, suggestionText(result)]
+                  .filter(Boolean)
+                  .join('\n\n');
+                if (next.length > 10000)
+                  throw new Error(
+                    'Notlar 10.000 karakteri aşacak. Önce mevcut notları kısaltın.',
+                  );
+                set('notes', next);
+              }}
+            />
+          )}
           <div className="space-y-4">
             <h3 className="text-base font-semibold">
               Yayın öncesi kontrol listesi

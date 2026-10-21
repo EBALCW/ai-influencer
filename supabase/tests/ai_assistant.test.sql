@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(18);
+SELECT extensions.plan(21);
 INSERT INTO auth.users(id,aud,role,email,encrypted_password,created_at,updated_at) VALUES
  ('96000000-0000-4000-8000-000000000001','authenticated','authenticated','ai-owner@example.invalid','',now(),now()),
  ('96000000-0000-4000-8000-000000000002','authenticated','authenticated','ai-editor@example.invalid','',now(),now()),
@@ -38,6 +38,19 @@ SELECT extensions.is((public.ai_weekly_summary('e1000000-0000-4000-8000-00000000
 SELECT extensions.is((public.ai_weekly_summary('e1000000-0000-4000-8000-000000000001','2026-11-10T00:00Z')->>'postsPublished')::integer,0,'old posts are not counted as new');
 SELECT extensions.is((public.ai_weekly_summary('e1000000-0000-4000-8000-000000000001','2026-11-02T00:00Z')->>'postsWithViewBaseline')::integer,0,'missing baseline is explicit');
 SELECT extensions.ok(public.ai_weekly_summary('e1000000-0000-4000-8000-000000000001','2026-11-02T00:00Z')->'followerChange' = 'null'::jsonb,'missing follower baseline does not invent growth');
+RESET ROLE;
+INSERT INTO public.posts(id,account_id,published_at) SELECT md5('ai-post-'||n)::uuid,'e2000000-0000-4000-8000-000000000001','2026-11-01T00:00Z' FROM generate_series(1,1001) n;
+INSERT INTO public.metric_snapshots(post_id,captured_at,views) SELECT md5('ai-post-'||n)::uuid,'2026-11-03T00:00Z',1 FROM generate_series(1,1001) n;
+INSERT INTO public.metric_snapshots(post_id,captured_at,views) SELECT md5('ai-post-'||n)::uuid,'2026-11-10T00:00Z',2 FROM generate_series(1,1001) n;
+SET LOCAL ROLE authenticated;
+SELECT extensions.is((public.ai_weekly_summary('e1000000-0000-4000-8000-000000000001','2026-11-10T00:00Z')->>'observedViewIncrease')::integer,1351,'SQL aggregation includes more than 1000 posts');
+RESET ROLE;
+INSERT INTO public.posts(id,account_id,published_at) VALUES ('e3000000-0000-4000-8000-000000000002','e2000000-0000-4000-8000-000000000001','2026-11-09T00:00Z');
+INSERT INTO public.metric_snapshots(post_id,captured_at,views) VALUES ('e3000000-0000-4000-8000-000000000002','2026-11-10T00:00Z',90);
+SET LOCAL ROLE authenticated;
+SELECT extensions.is((public.ai_weekly_summary('e1000000-0000-4000-8000-000000000001','2026-11-10T00:00Z')->>'observedViewIncrease')::integer,1441,'new post starts from zero views at publication');
+SELECT extensions.is((public.ai_weekly_summary('e1000000-0000-4000-8000-000000000001','2026-11-10T00:00Z')->>'postsPublished')::integer,1,'new post counted in period');
+
 SELECT set_config('request.jwt.claim.sub','96000000-0000-4000-8000-000000000004',true);
 SELECT extensions.is_empty($$ SELECT key FROM public.app_settings $$,'outsider cannot read settings');
 SELECT extensions.ok(public.ai_weekly_summary('e1000000-0000-4000-8000-000000000001') IS NULL,'summary respects outsider RLS');

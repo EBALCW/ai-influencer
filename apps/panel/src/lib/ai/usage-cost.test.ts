@@ -27,13 +27,13 @@ describe('estimateAiCost', () => {
     ).toBe('0.0310'); // 0.006 + 0.02 + 0.005
   });
 
-  it('cache fiyatı yoksa cache token ücretsiz sayılır', () => {
-    expect(
+  it('kullanılan cache fiyatı yoksa eksik maliyet hesaplamaz', () => {
+    expect(() =>
       estimateAiCost(
         { inputTokens: 0, outputTokens: 0, cacheReadInputTokens: 5000 },
         { currency: 'USD', inputPerMTok: '5', outputPerMTok: '25' },
       ),
-    ).toBe('0.0000');
+    ).toThrow(/fiyatı eksik/);
   });
 
   it('geçersiz token sayısını reddeder', () => {
@@ -98,4 +98,28 @@ describe('recordAiUsage', () => {
       }),
     ).rejects.toThrow(/kaydedilemedi/);
   });
+});
+
+it('iki cache yazma fiyatını ayrı hesaplar', () => {
+  expect(
+    estimateAiCost(
+      {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheReadInputTokens: 0,
+        cacheCreationInputTokens: 1_000_000,
+        cacheCreation1hInputTokens: 1_000_000,
+      },
+      { ...pricing, cacheWritePerMTok: '5', cacheWrite1hPerMTok: '8' },
+    ),
+  ).toBe('13.0000');
+});
+
+it('toplamı bir kez yuvarlar', () => {
+  expect(
+    estimateAiCost(
+      { inputTokens: 10, outputTokens: 10, cacheReadInputTokens: 0 },
+      { currency: 'USD', inputPerMTok: '5', outputPerMTok: '5' },
+    ),
+  ).toBe('0.0001');
 });

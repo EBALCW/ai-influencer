@@ -4,7 +4,13 @@ import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { canManageTeam } from '@/lib/team-roles';
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ inf?: string }>;
+}) {
+  const inf = (await searchParams).inf;
+  const aiHref = `/settings/ai${inf ? `?inf=${encodeURIComponent(inf)}` : ''}`;
   const { role } = await requireTeamMember();
 
   return (
@@ -35,6 +41,11 @@ export default async function SettingsPage() {
           </div>
         </section>
       )}
+      <section className="section-card">
+        <Link className="button" href={aiHref}>
+          AI ayarları
+        </Link>
+      </section>
       <section className="section-card section-empty-card">
         <EmptyState
           title="Ayarlar alanı hazır"

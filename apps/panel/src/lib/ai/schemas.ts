@@ -24,9 +24,20 @@ export const captionInputSchema = z.object({
   language: z.enum(['tr', 'en']).default('tr'),
 });
 
+export const scriptInputSchema = z.object({
+  topic: shortText(1000),
+  language: z.enum(['tr', 'en']).default('tr'),
+  durationSeconds: z.number().int().min(5).max(90).default(30),
+});
+export const weeklyInputSchema = z.object({
+  language: z.enum(['tr', 'en']).default('tr'),
+});
+
 export const suggestRequestSchema = z.discriminatedUnion('task', [
   z.object({ task: z.literal('persona'), input: personaInputSchema }),
   z.object({ task: z.literal('caption'), input: captionInputSchema }),
+  z.object({ task: z.literal('script'), input: scriptInputSchema }),
+  z.object({ task: z.literal('weekly'), input: weeklyInputSchema }),
 ]);
 
 export type PersonaInput = z.infer<typeof personaInputSchema>;
@@ -57,3 +68,30 @@ export const captionOutputSchema = z.object({
 
 export type PersonaSuggestion = z.infer<typeof personaOutputSchema>;
 export type CaptionSuggestion = z.infer<typeof captionOutputSchema>;
+
+export const aiApiRequestSchema = z.object({
+  influencerId: z.string().uuid(),
+  request: suggestRequestSchema,
+});
+export const scriptOutputSchema = z.object({
+  hook: z.string().min(1).max(500),
+  scenes: z
+    .array(
+      z.object({
+        seconds: z.number().min(1).max(90),
+        visual: z.string().min(1).max(1000),
+        narration: z.string().max(1000),
+      }),
+    )
+    .min(1)
+    .max(12),
+  caption: z.string().max(1000),
+});
+export const weeklyOutputSchema = z.object({
+  summary: z.string().min(1).max(3000),
+  observations: z.array(z.string().min(1).max(1000)).max(8),
+  suggestions: z.array(z.string().min(1).max(1000)).max(8),
+  limitations: z.array(z.string().min(1).max(1000)).max(8),
+});
+export type ScriptSuggestion = z.infer<typeof scriptOutputSchema>;
+export type WeeklySuggestion = z.infer<typeof weeklyOutputSchema>;

@@ -148,3 +148,15 @@ callback'i/yenileme job'u için sunucu altyapısıdır; tarayıcıdan çağrılm
 Kaynak: [Supabase Vault resmi dokümanı](https://supabase.com/docs/guides/database/vault)
 (okuma: 2026-10-21). pgTAP `oauth_vault.test.sql`: rol sınırları, şifreleme/rotasyon,
 referans izolasyonu, girdi doğrulaması, bağlantıyı kaldırma ve cascade temizliği.
+
+### AI asistanı (#48)
+
+`app_settings`: `key='ai'` tekil ayarı, model ID ve USD token fiyatlarını `value` JSON'unda
+tutar. API anahtarı içermez. Ekip SELECT yapar; yalnız owner INSERT/UPDATE/DELETE yapabilir.
+Audit trigger'ları `created_by` ve `updated_at` alanlarını yönetir. Geçersiz/eksik model
+ve fiyatlarda sunucu sabit varsayılana dönmez. Ayarlar API'si Zod şemasıyla doğrular.
+
+`ai_weekly_summary(influencer_id, as_of)` SECURITY INVOKER RPC'si son 7 günün sayısal
+özetini veritabanında hesaplar. Snapshot'ları toplamak yerine post başına baseline ile
+son ölçümün farkını alır; eksik baseline kapsamını döndürür. RLS nedeniyle ekip dışı
+kullanıcıya özet döndürmez. Ayrıntılar ve çağrı/maliyet sözleşmesi: [AI rehberi](AI.md).

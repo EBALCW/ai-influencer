@@ -24,7 +24,7 @@ export default defineConfig({
     {
       // Ayrı oturum: app.spec'teki çıkış testi owner oturumunu iptal eder
       name: 'editor',
-      testMatch: /(?:persona|content)\.spec\.ts/,
+      testMatch: /(?:persona|content|ai)\.spec\.ts/,
       use: { storageState: 'e2e/.auth/editor.json' },
     },
     {

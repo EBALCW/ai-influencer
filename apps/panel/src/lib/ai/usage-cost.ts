@@ -14,6 +14,8 @@ export type AiPricing = {
   inputPerMTok: Decimal;
   outputPerMTok: Decimal;
   cacheReadPerMTok?: Decimal;
+  cacheWritePerMTok?: Decimal;
+  cacheWrite1hPerMTok?: Decimal;
 };
 
 const MILLION = 1_000_000n;
@@ -25,17 +27,23 @@ const MILLION = 1_000_000n;
  */
 export function estimateAiCost(usage: AiUsage, pricing: AiPricing): string {
   const part = (tokens: number, perMTok: Decimal | undefined) => {
-    if (!Number.isInteger(tokens) || tokens < 0)
+    if (!Number.isSafeInteger(tokens) || tokens < 0)
       throw new RangeError('Token sayısı negatif olmayan tamsayı olmalı');
-    if (!perMTok || tokens === 0) return 0n;
-    // (tokens * fiyat) / 1M, yarım-yukarı yuvarlama
-    return (BigInt(tokens) * toMinor(perMTok) + MILLION / 2n) / MILLION;
+    if (tokens === 0) return 0n;
+    if (perMTok === undefined)
+      throw new RangeError('Kullanılan token türünün fiyatı eksik');
+    const price = toMinor(perMTok);
+    if (price < 0n) throw new RangeError('Token fiyatı negatif olamaz');
+    return BigInt(tokens) * price;
   };
-  return fromMinor(
+  const numerator =
     part(usage.inputTokens, pricing.inputPerMTok) +
-      part(usage.outputTokens, pricing.outputPerMTok) +
-      part(usage.cacheReadInputTokens, pricing.cacheReadPerMTok),
-  );
+    part(usage.outputTokens, pricing.outputPerMTok) +
+    part(usage.cacheReadInputTokens, pricing.cacheReadPerMTok) +
+    part(usage.cacheCreationInputTokens ?? 0, pricing.cacheWritePerMTok) +
+    part(usage.cacheCreation1hInputTokens ?? 0, pricing.cacheWrite1hPerMTok);
+  // Bileşenleri ayrı yuvarlamak küçük çağrıları fazla/eksik ücretlendirir.
+  return fromMinor((numerator + MILLION / 2n) / MILLION);
 }
 
 /**
@@ -66,6 +74,6 @@ export async function recordAiUsage(
     })
     .select('id')
     .single();
-  if (error) throw new Error(`AI maliyeti kaydedilemedi: ${error.message}`);
+  if (error) throw new Error('AI maliyeti kaydedilemedi.');
   return { id: data.id, amount };
 }
