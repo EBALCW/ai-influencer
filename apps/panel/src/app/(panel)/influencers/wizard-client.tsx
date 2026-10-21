@@ -80,7 +80,10 @@ export function InfluencerWizard({
 
   const updatePersona = (key: keyof PersonaInput, value: string) => {
     if (key === 'sampleCaptions') {
-      setPersona((current) => ({ ...current, sampleCaptions: parseCaptionList(value) }));
+      setPersona((current) => ({
+        ...current,
+        sampleCaptions: parseCaptionList(value),
+      }));
     } else if (key === 'bio' || key === 'tone' || key === 'changeNote') {
       setPersona((current) => ({ ...current, [key]: value }));
     }
@@ -488,8 +491,10 @@ export function InfluencerWizard({
             Örnek caption’lar (her satıra bir tane)
             <textarea
               className={inputClass}
-              maxLength={22000}
-              onChange={(event) => updatePersona('sampleCaptions', event.target.value)}
+              maxLength={22009}
+              onChange={(event) =>
+                updatePersona('sampleCaptions', event.target.value)
+              }
               placeholder={"Bugün küçük bir kaçamak yaptım…\nSence bu kombin nasıl olmuş?"}
               rows={4}
               value={persona.sampleCaptions.join('\n')}
