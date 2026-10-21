@@ -11,7 +11,7 @@ AS $$
     AND NOT EXISTS (
       SELECT 1
       FROM unnest(coalesce(p_values, '{}'::text[])) AS item
-      WHERE item IS NULL OR length(item) = 0 OR length(item) > 2200
+      WHERE item IS NULL OR length(btrim(item)) = 0 OR length(item) > 2200
     );
 $$;
 
