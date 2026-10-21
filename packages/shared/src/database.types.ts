@@ -527,9 +527,6 @@ isOneToOne: false
 "is_initial_owner_setup":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
-"valid_sample_captions":
-{ Args: { "p_values": (string)[] }; Returns: boolean
-                           },
 "is_team_member":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -560,7 +557,10 @@ isOneToOne: false
         to: "influencer_personas"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"valid_sample_captions":
+{ Args: { "p_values": (string)[] }; Returns: boolean
+                           }
           }
           Enums: {
             "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
