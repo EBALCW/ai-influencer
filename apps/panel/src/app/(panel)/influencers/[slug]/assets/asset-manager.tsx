@@ -157,6 +157,7 @@ export function AssetManager({
   const [bulkTags, setBulkTags] = useState('');
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
     error?: boolean;
@@ -519,7 +520,31 @@ export function AssetManager({
           </Link>
         )}
         {canEdit && (
-          <label className="file-dropzone">
+          <label
+            className={`file-dropzone ${dragging ? 'ring-2 ring-accent' : ''}`}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setDragging(true);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = 'copy';
+              setDragging(true);
+            }}
+            onDragLeave={(event) => {
+              if (
+                !event.currentTarget.contains(
+                  event.relatedTarget as Node | null,
+                )
+              )
+                setDragging(false);
+            }}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragging(false);
+              void upload(event.dataTransfer.files);
+            }}
+          >
             <input
               aria-label="Görsel veya video yükle"
               accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
@@ -532,8 +557,14 @@ export function AssetManager({
               type="file"
             />
             <span className="file-dropzone-mark">＋</span>
-            <strong>{busy ? 'Yükleniyor…' : 'Dosya yükle'}</strong>
-            <small>Görsel veya video seçin · en fazla 100 MB/dosya</small>
+            <strong>
+              {busy
+                ? 'Yükleniyor…'
+                : dragging
+                  ? 'Dosyaları buraya bırakın'
+                  : 'Dosya yükle'}
+            </strong>
+            <small>Sürükleyip bırakın veya seçin · en fazla 100 MB/dosya</small>
           </label>
         )}
         <label className="flex items-center gap-2 text-sm">
