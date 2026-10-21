@@ -41,7 +41,9 @@ test('viewer kütüphaneyi görür ama prompt oluşturamaz', async ({ page }) =>
 
   await page.goto('/prompts/new');
   await expect(page).toHaveURL(/\/prompts\?error=editor_required$/);
-  await expect(page.getByRole('alert')).toContainText('düzenleme yetkisi');
+  await expect(
+    page.getByText('Prompt oluşturmak için düzenleme yetkisi gerekir.'),
+  ).toBeVisible();
 });
 
 test('viewer önizleyebilir; puanlama, üretim ve yeni versiyon yok', async ({
@@ -50,7 +52,9 @@ test('viewer önizleyebilir; puanlama, üretim ve yeni versiyon yok', async ({
   const response = await page.goto(`/prompts/${promptId}`);
   expect(response?.status()).toBe(200);
   const preview = page.getByRole('form', { name: 'Önizleme ve üretim' });
-  await preview.getByLabel('renk').fill('kızıl');
+  await preview
+    .getByRole('textbox', { name: 'renk', exact: true })
+    .fill('kızıl');
   await expect(preview.getByLabel('Doldurulmuş prompt')).toHaveText(
     'kızıl saçlı karakter',
   );

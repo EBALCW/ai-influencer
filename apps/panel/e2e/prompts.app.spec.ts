@@ -59,7 +59,7 @@ test('yeni global prompt oluşturulur ve detayına gidilir', async ({ page }) =>
   await form
     .getByLabel('Prompt metni')
     .fill('{{kıyafet}} giyen karakter, {{mekan}} arka planı');
-  await form.getByLabel('mekan').fill('kafe');
+  await form.getByRole('textbox', { name: 'mekan', exact: true }).fill('kafe');
   await form.getByRole('button', { name: "Prompt'u kaydet" }).click();
 
   await expect(page).toHaveURL(/\/prompts\/[0-9a-f-]{36}$/);
@@ -90,11 +90,13 @@ test('şablon doldurulur, önizlenir ve üretim kuyruğuna gönderilir', async (
   const form = page.getByRole('form', { name: 'Önizleme ve üretim' });
   const submit = form.getByRole('button', { name: 'Üretime gönder' });
 
-  await form.getByLabel('kıyafet').fill('');
+  await form.getByRole('textbox', { name: 'kıyafet', exact: true }).fill('');
   await expect(form.getByText('Eksik değişken: kıyafet')).toBeVisible();
   await expect(submit).toBeDisabled();
 
-  await form.getByLabel('kıyafet').fill('trençkot');
+  await form
+    .getByRole('textbox', { name: 'kıyafet', exact: true })
+    .fill('trençkot');
   await expect(form.getByLabel('Doldurulmuş prompt')).toHaveText(
     'trençkot giyen karakter, kafe arka planı',
   );
