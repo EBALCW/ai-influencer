@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(33);
+SELECT extensions.plan(37);
 
 INSERT INTO auth.users(id,aud,role,email,encrypted_password,created_at,updated_at) VALUES
  ('94000000-0000-4000-8000-000000000001','authenticated','authenticated','content-editor@example.invalid','',now(),now()),
@@ -18,7 +18,8 @@ INSERT INTO public.assets(id,influencer_id,kind,storage_path) VALUES
  ('c3000000-0000-4000-8000-000000000001','c1000000-0000-4000-8000-000000000001','reference','content-fixture/ref.png'),
  ('c3000000-0000-4000-8000-000000000002','c1000000-0000-4000-8000-000000000002','reference','other-content-fixture/ref.png');
 INSERT INTO public.posts(id,account_id,published_at) VALUES
- ('c4000000-0000-4000-8000-000000000001','c2000000-0000-4000-8000-000000000001','2026-11-10T12:00:00Z');
+ ('c4000000-0000-4000-8000-000000000001','c2000000-0000-4000-8000-000000000001','2026-11-10T12:00:00Z'),
+ ('c4000000-0000-4000-8000-000000000002','c2000000-0000-4000-8000-000000000002','2026-11-10T12:00:00Z');
 INSERT INTO public.metric_snapshots(post_id,captured_at,views) VALUES
  ('c4000000-0000-4000-8000-000000000001','2026-11-10T13:00:00Z',20),
  ('c4000000-0000-4000-8000-000000000001','2026-11-11T12:00:00Z',42);
@@ -51,6 +52,8 @@ SELECT extensions.throws_ok($$UPDATE public.content_items SET stage='scheduled',
  '23514',NULL,'direct database write cannot bypass checklist');
 UPDATE public.content_items SET checklist='{"hookScore":2,"engagementScore":4}',stage='qc' WHERE id=current_setting('test.content_id')::uuid;
 SELECT extensions.is((SELECT stage::text FROM public.content_items WHERE id=current_setting('test.content_id')::uuid),'edit','score below three returns card to edit');
+SELECT extensions.throws_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000001')$$,'23514',NULL,'post matching cannot bypass incomplete checklist');
+SELECT extensions.is((SELECT content_item_id FROM public.posts WHERE id='c4000000-0000-4000-8000-000000000001'),NULL::uuid,'failed post matching rolls back the post link');
 SELECT extensions.lives_ok($$UPDATE public.content_items SET checklist=current_setting('test.ready_checklist')::jsonb,stage='scheduled',target_account_id='c2000000-0000-4000-8000-000000000001',scheduled_at='2026-11-01T09:00:00Z' WHERE id=current_setting('test.content_id')::uuid$$,'complete checklist can schedule');
 SELECT extensions.throws_ok($$UPDATE public.content_items SET target_account_id='c2000000-0000-4000-8000-000000000002' WHERE id=current_setting('test.content_id')::uuid$$,'23514',NULL,'cross-influencer account rejected');
 SELECT extensions.throws_ok($$INSERT INTO public.content_item_assets(content_item_id,asset_id) VALUES(current_setting('test.content_id')::uuid,'c3000000-0000-4000-8000-000000000002')$$,'23514',NULL,'cross-influencer asset rejected');
@@ -67,6 +70,7 @@ SELECT extensions.is(cardinality(public.content_schedule_warnings(current_settin
 INSERT INTO public.content_items(influencer_id,title,target_account_id,stage,scheduled_at,checklist)
  SELECT 'c1000000-0000-4000-8000-000000000001','extra','c2000000-0000-4000-8000-000000000001','scheduled','2026-11-01T15:00:00Z'::timestamptz + n*interval '30 minutes',current_setting('test.ready_checklist')::jsonb FROM generate_series(1,3) n;
 SELECT extensions.is(cardinality(public.content_schedule_warnings(current_setting('test.content_id')::uuid)),2,'fifth post on same local day warns');
+SELECT extensions.throws_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000002')$$,'23514',NULL,'cross-account post matching rejected');
 SELECT extensions.lives_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000001')$$,'published post can be matched manually');
 SELECT extensions.is((SELECT stage::text FROM public.content_items WHERE id=current_setting('test.content_id')::uuid),'published','matching moves content to published');
 SELECT extensions.is((public.content_item_details(ARRAY[current_setting('test.content_id')::uuid])->0->'posts'->0->>'views')::bigint,42::bigint,'only latest snapshot contributes post metrics');
@@ -81,5 +85,8 @@ SELECT extensions.is_empty($$SELECT id FROM public.content_items WHERE influence
 SELECT extensions.is_empty($$SELECT id FROM public.content_item_assets$$,'outsider cannot read media links');
 SELECT extensions.is_empty($$SELECT id FROM public.posting_slots$$,'outsider cannot read posting slots');
 SELECT extensions.is(public.content_item_details(ARRAY[current_setting('test.content_id')::uuid]),'[]'::jsonb,'details RPC respects RLS');
+RESET ROLE;
+DELETE FROM public.posts WHERE account_id='c2000000-0000-4000-8000-000000000001';
+SELECT extensions.lives_ok($$DELETE FROM public.influencers WHERE id='c1000000-0000-4000-8000-000000000001'$$,'account SET NULL does not break influencer cascade deletion');
 SELECT * FROM extensions.finish();
 ROLLBACK;

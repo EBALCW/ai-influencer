@@ -35,6 +35,7 @@ CREATE TABLE public.posting_slots (
 );
 CREATE INDEX content_items_account_schedule_idx ON public.content_items(target_account_id, scheduled_at);
 CREATE INDEX content_item_assets_content_idx ON public.content_item_assets(content_item_id);
+CREATE INDEX posts_content_item_idx ON public.posts(content_item_id);
 
 DO $$
 DECLARE t text;
@@ -80,6 +81,12 @@ BEGIN
   IF TG_TABLE_NAME = 'posting_slots' THEN RETURN NEW; END IF;
   IF TG_OP = 'UPDATE' AND NEW.influencer_id IS DISTINCT FROM OLD.influencer_id THEN
     RAISE EXCEPTION 'İçeriğin influencer bilgisi değiştirilemez.' USING ERRCODE = '23514';
+  END IF;
+  -- Hesap silindiğinde FK'nin SET NULL işlemi kartı düzeltmeye döndürür.
+  -- Bu ayrıca influencer CASCADE silmesinin trigger sırasına bağlı kalmasını önler.
+  IF TG_OP = 'UPDATE' AND OLD.target_account_id IS NOT NULL AND NEW.target_account_id IS NULL
+    AND NOT EXISTS (SELECT 1 FROM public.social_accounts WHERE id = OLD.target_account_id) THEN
+    NEW.stage := 'edit';
   END IF;
   IF NEW.target_account_id IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM public.social_accounts WHERE id = NEW.target_account_id AND influencer_id = NEW.influencer_id
