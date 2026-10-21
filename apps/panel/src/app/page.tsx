@@ -1,112 +1,121 @@
-import { Activity, ArrowUpRight, Clapperboard, Sparkles } from 'lucide-react';
-import { getPanelGreeting } from '@ai-influencer/shared';
+'use client';
 
-const modules = [
+import {
+  Activity,
+  ArrowUpRight,
+  CalendarDays,
+  Clapperboard,
+  Sparkles,
+  UsersRound,
+} from 'lucide-react';
+import Link from 'next/link';
+import { getPanelGreeting } from '@ai-influencer/shared';
+import { EmptyState, StatCard } from '@/components/ui';
+
+const activity = [
   {
-    label: 'Karakter stüdyosu',
-    icon: Sparkles,
-    status: 'Hazır olduğunda burada',
+    icon: UsersRound,
+    title: 'Influencer stüdyosu',
+    detail: 'Karakterlerinizi yönetin',
+    href: '/influencers',
   },
-  { label: 'İçerik akışı', icon: Clapperboard, status: 'Kurulum aşamasında' },
-  { label: 'Performans', icon: Activity, status: 'Hesap bağlandıktan sonra' },
+  {
+    icon: Clapperboard,
+    title: 'İçerik akışı',
+    detail: 'Üretim adımlarını takip edin',
+    href: '/content',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Yayın takvimi',
+    detail: 'Planınızı tek yerde görün',
+    href: '/calendar',
+  },
 ];
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-canvas text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_15%_0%,rgba(87,104,204,0.18),transparent_40%),radial-gradient(ellipse_at_90%_80%,rgba(70,180,152,0.10),transparent_35%)]" />
-      <div className="relative mx-auto max-w-7xl px-6 py-7 sm:px-10">
-        <header className="flex items-center justify-between border-b border-white/10 pb-6">
-          <a
-            className="flex items-center gap-3"
-            href="#home"
-            aria-label="Ana sayfa"
-          >
-            <span className="grid size-10 place-items-center rounded-2xl bg-accent/15 text-accent ring-1 ring-accent/30">
-              <Sparkles size={19} />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold tracking-wide">
-                INFLUENCER STUDIO
-              </span>
-              <span className="text-xs text-slate-400">
-                {getPanelGreeting()}
-              </span>
-            </span>
-          </a>
-          <span className="rounded-full border border-mint/20 bg-mint/10 px-3 py-1.5 text-xs font-medium text-mint">
-            Geliştirme ortamı
+    <div className="page-stack">
+      <section className="welcome-panel">
+        <div className="welcome-copy">
+          <span className="eyebrow">
+            <Sparkles size={15} /> AI INFLUENCER STUDIO
           </span>
-        </header>
+          <h1>
+            İçerik üretiminiz için <span>tek bir stüdyo.</span>
+          </h1>
+          <p>
+            {getPanelGreeting()} Karakterlerinizi, yayın planınızı ve
+            performansınızı buradan yönetin.
+          </p>
+          <Link className="button button-primary" href="/influencers">
+            Stüdyoya göz at <ArrowUpRight size={16} />
+          </Link>
+        </div>
+        <div className="welcome-orbit" aria-hidden="true">
+          <div className="orbit-ring orbit-ring-outer" />
+          <div className="orbit-ring orbit-ring-inner" />
+          <div className="orbit-core">
+            <Sparkles size={30} />
+          </div>
+          <span className="orbit-dot orbit-dot-one" />
+          <span className="orbit-dot orbit-dot-two" />
+        </div>
+      </section>
 
-        <section className="grid gap-12 py-16 md:grid-cols-[1.15fr_0.85fr] md:items-end md:py-24">
+      <section aria-label="Genel bakış" className="stats-grid">
+        <StatCard
+          label="Influencer"
+          value="0"
+          detail="İlk karakterinizi oluşturun"
+          icon={UsersRound}
+          tone="violet"
+        />
+        <StatCard
+          label="Planlanan içerik"
+          value="0"
+          detail="Yayın takviminiz hazır"
+          icon={CalendarDays}
+          tone="blue"
+        />
+        <StatCard
+          label="Toplam izlenme"
+          value="—"
+          detail="Hesaplar bağlandığında görünür"
+          icon={Activity}
+          tone="mint"
+        />
+      </section>
+
+      <section className="section-card">
+        <div className="section-heading">
           <div>
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-slate-300">
-              <span className="size-1.5 rounded-full bg-mint" />
-              Ortak üretim alanınız hazır
-            </p>
-            <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
-              Fikirden yayına,
-              <span className="block bg-linear-to-r from-accent to-mint bg-clip-text text-transparent">
-                tek bir stüdyoda.
+            <p className="eyebrow">BAŞLANGIÇ</p>
+            <h2>Çalışma alanınız</h2>
+          </div>
+          <span className="soft-badge">
+            <span className="status-dot" /> Kurulum aşamasında
+          </span>
+        </div>
+        <div className="quick-links">
+          {activity.map(({ icon: Icon, title, detail, href }) => (
+            <a className="quick-link" href={href} key={href}>
+              <span className="quick-link-icon">
+                <Icon size={19} />
               </span>
-            </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-slate-400">
-              Karakterlerinizi, içerik üretimini ve performansı aynı çalışma
-              alanında yönetin. Panel temeli kuruldu; modüller sırayla
-              eklenecek.
-            </p>
-            <a
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
-              href="https://github.com/EBALCW/ai-influencer/issues"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Yol haritasını gör <ArrowUpRight size={16} />
+              <span className="quick-link-copy">
+                <strong>{title}</strong>
+                <small>{detail}</small>
+              </span>
+              <ArrowUpRight className="quick-link-arrow" size={16} />
             </a>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-surface/80 p-5 shadow-2xl shadow-black/30 backdrop-blur">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div>
-                <p className="text-sm font-medium">Çalışma alanı</p>
-                <p className="mt-1 text-xs text-slate-400">
-                  İlk modüller hazırlanıyor
-                </p>
-              </div>
-              <span className="text-xs text-slate-500">01 / 03</span>
-            </div>
-            <div className="space-y-3 pt-4">
-              {modules.map(({ label, icon: Icon, status }, index) => (
-                <div
-                  key={label}
-                  className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4"
-                >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/[0.06] text-slate-300">
-                    <Icon size={18} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{label}</span>
-                    <span className="mt-1 block text-xs text-slate-500">
-                      {status}
-                    </span>
-                  </span>
-                  <span className="text-xs text-slate-600">0{index + 1}</span>
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 rounded-xl bg-black/20 px-4 py-3 text-xs leading-5 text-slate-500">
-              Veriler Supabase üzerinde ortak tutulacak. Henüz hiçbir sosyal
-              hesap bağlı değil.
-            </p>
-          </div>
-        </section>
-
-        <footer className="border-t border-white/10 py-5 text-xs text-slate-600">
-          AI Influencer Studio <span className="mx-2 text-slate-700">·</span>{' '}
-          Yerel geliştirme iskeleti
-        </footer>
-      </div>
-    </main>
+          ))}
+        </div>
+        <EmptyState
+          title="Henüz içerik yok"
+          description="İlk influencer ve içerik kayıtlarınız eklendiğinde özetler burada görünecek."
+        />
+      </section>
+    </div>
   );
 }
