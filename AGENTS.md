@@ -12,6 +12,16 @@ AI influencer oluşturma, büyütme ve gelire dönüştürme projesi. Kodlanacak
 - **Stack (plan, #36):** TypeScript · Next.js 16 (App Router) · Tailwind + shadcn/ui · Supabase (Postgres, Auth, Storage, Edge Functions, pg_cron) · pnpm workspace
 - **Sabit sürümler:** Node `.nvmrc` (24) · pnpm `package.json` → `packageManager` (10.34.7) · `engine-strict=true`
 
+## ⛔ Veritabanı kuralı (istisnasız)
+
+Test ve production Supabase veritabanlarına **sadece CI/CD pipeline yazar**. Agent olarak:
+
+- `execute_sql`, `apply_migration` gibi Supabase MCP araçlarını **kullanma**.
+- `supabase link`, `supabase db push`, `supabase migration repair` veya uzak `psql` **çalıştırma**.
+- Studio ya da SQL editörü üzerinden değişiklik **önerme**.
+
+Şema veya referans verisi değişikliği gerekiyorsa `supabase/migrations/` altına yeni bir migration dosyası yaz ve PR aç. Kullanıcı açıkça istese bile önce bu kuralı hatırlat. Ayrıntılar `docs/DEVELOPMENT.md` → "0. Veritabanı değişiklikleri".
+
 ## İlk kurulum
 
 Bu bölümü şu durumlarda uygula: kullanıcı "kur", "kurulumu yap", "ortamı hazırla" dediğinde, repo yeni klonlandığında, `node_modules` yoksa veya doctor başarısızsa.

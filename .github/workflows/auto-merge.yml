@@ -129,5 +129,4 @@ jobs:
       - name: CD'yi tetikle
         if: steps.pr.outputs.number && (steps.pr.outputs.base == 'main' || steps.pr.outputs.base == 'test')
         run: |
-          env_name=$([ "${{ steps.pr.outputs.base }}" = "main" ] && echo production || echo test)
-          gh workflow run cd.yml --ref "${{ steps.pr.outputs.base }}" -f environment="$env_name"
+          if [ "${{ steps.pr.outputs.base }}" = "main" ]; then gh workflow run deploy-production.yml --ref main; else gh workflow run deploy-test.yml --ref test; fi

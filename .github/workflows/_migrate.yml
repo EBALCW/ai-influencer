@@ -1,0 +1,83 @@
+name: Migration (ortak)
+
+# deploy-test.yml ve deploy-production.yml tarafından çağrılır.
+# Uzak veritabanına yazan TEK yer burasıdır (docs/DEVELOPMENT.md → "Veritabanı değişiklikleri").
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: test | production
+        type: string
+        required: true
+
+jobs:
+  migrate:
+    name: Migration · ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 25
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secret'lar tanımlı mı?
+        run: |
+          missing=""
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::'${{ inputs.environment }}' ortamında eksik secret:$missing (docs/WORKFLOW.md)"; exit 1
+          fi
+
+      - name: Supabase CLI sürümü (package.json ile aynı)
+        id: cli
+        run: echo "version=$(node -p "require('./package.json').devDependencies.supabase")" >> "$GITHUB_OUTPUT"
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: ${{ steps.cli.outputs.version }}
+
+      - name: Projeye bağlan
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Uygulanmış / bekleyen migration'lar
+        run: supabase migration list --password "$SUPABASE_DB_PASSWORD" | tee migration-list.txt
+
+      # Uzakta repoda olmayan bir migration varsa (biri elle uyguladıysa) bu adım hata verir.
+      - name: Ön izleme (dry-run)
+        run: supabase db push --dry-run --password "$SUPABASE_DB_PASSWORD" 2>&1 | tee dry-run.txt
+
+      - name: Migration'ları uygula
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+
+      # Migration'lar uygulandıktan sonra uzak şema ile repo aynı olmalı.
+      # Fark varsa biri veritabanını migration dışından (Studio, SQL editor, MCP) değiştirmiştir.
+      - name: Sapma kontrolü (migration dışı değişiklik var mı?)
+        run: |
+          supabase db diff --linked --schema public > drift.sql 2> drift.log || { cat drift.log; exit 1; }
+          if grep -qvE '^\s*(--.*)?$' drift.sql; then
+            echo "::error::Uzak veritabanında migration dışı şema değişikliği var. Değişikliği bir migration'a çevirin veya geri alın:"
+            cat drift.sql
+            exit 1
+          fi
+          echo "Sapma yok."
+
+      - name: Edge Function'ları deploy et
+        if: hashFiles('supabase/functions/**/index.ts') != ''
+        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Özet
+        if: always()
+        run: |
+          {
+            echo "### 🗄️ Migration · ${{ inputs.environment }}"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo '```'
+            cat migration-list.txt 2>/dev/null || true
+            echo '```'
+            if [ -s dry-run.txt ]; then echo "<details><summary>Dry-run</summary>"; echo; echo '```'; cat dry-run.txt; echo '```'; echo "</details>"; fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -9,11 +9,11 @@ feature/xyz ──PR──▶ test ──PR──▶ main
                    CI + deploy   CI + deploy ──▶ main → test geri senkron
 ```
 
-| Dal                 | Doğrudan push      | PR          | Ne olur                                                                                   |
-| ------------------- | ------------------ | ----------- | ----------------------------------------------------------------------------------------- |
-| `main`              | ❌ Yasak (ruleset) | ✅ Zorunlu  | CI geçerse PR otomatik onaylanır ve merge edilir → **production** deploy + GitHub Release |
-| `test`              | ✅ Serbest         | ✅ Olabilir | Her push'ta CI + **test** ortamına deploy                                                 |
-| `feat/*`, `fix/*` … | ✅                 | —           | PR açılınca CI çalışır                                                                    |
+| Dal                 | Doğrudan push      | PR          | Ne olur                                                                                      |
+| ------------------- | ------------------ | ----------- | -------------------------------------------------------------------------------------------- |
+| `main`              | ❌ Yasak (ruleset) | ✅ Zorunlu  | CI geçerse PR otomatik onaylanır ve merge edilir → **production** migration + GitHub Release |
+| `test`              | ✅ Serbest         | ✅ Olabilir | Her push'ta CI + **test** ortamına deploy                                                    |
+| `feat/*`, `fix/*` … | ✅                 | —           | PR açılınca CI çalışır                                                                       |
 
 `main` ve `test` dallarında force-push ve dal silme her iki dalda da kapalı.
 
@@ -50,29 +50,35 @@ Her PR'da (main ve test'e) çalışır:
 
 Kurulum script'leri değişirse ayrıca `Kurulum testi` (macOS + Windows) çalışır.
 
-## CD (`.github/workflows/cd.yml`)
+## CD: test ve production için ayrı pipeline
 
-| Tetikleyici                 | Ortam        | Adımlar                                                                                      |
-| --------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
-| `test`'e push / merge       | `test`       | CI → Supabase migration + Edge Functions                                                     |
-| `main`'e merge              | `production` | CI → Supabase migration + Edge Functions → GitHub Release → `main`'i `test`'e geri birleştir |
-| Actions → CD → Run workflow | seçilen      | Elle yeniden deploy                                                                          |
+| Workflow                                        | Tetikleyici                               | Adımlar                                                                                            |
+| ----------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `Deploy · test` (`deploy-test.yml`)             | `test`'e push veya merge, elle çalıştırma | CI → **test** veritabanına migration'lar (`_migrate.yml`)                                          |
+| `Deploy · production` (`deploy-production.yml`) | `main`'e merge, elle çalıştırma           | CI → **production** veritabanına migration'lar → GitHub Release → `main`'i `test`'e geri birleştir |
 
-Panel her ekip bilgisayarında yerel çalıştığı için deploy edilen kısım Supabase'dir (veritabanı şeması ve zamanlanmış işler). Panel kodu `git pull` ile güncellenir.
+Migration adımı (`_migrate.yml`), iki ortamda da aynı sırayla çalışır:
 
-### Ortam secret'ları (tek seferlik kurulum)
+1. Secret kontrolü. Eksikse deploy **hata verir**, atlamaz.
+2. `supabase link`, ardından `migration list` (hangi migration uygulanmış, hangisi bekliyor).
+3. `db push --dry-run`. Uzakta repoda olmayan bir migration varsa burada durur.
+4. `db push`: bekleyen migration'lar uygulanır.
+5. **Sapma kontrolü** (`db diff --linked`): Migration dışı bir şema değişikliği varsa deploy kırmızıya düşer.
+6. Edge Function'lar varsa deploy edilir.
 
-Supabase projeleri açıldığında (#38) **Settings → Environments** altında `test` ve `production` için şunlar eklenir:
+Seed verisi (`supabase/seed.sql`) uzak veritabanlarına **uygulanmaz**, sadece yerel ve CI içindir.
 
-| Secret                  | Nereden                                            |
-| ----------------------- | -------------------------------------------------- |
-| `SUPABASE_ACCESS_TOKEN` | supabase.com → Account → Access Tokens             |
-| `SUPABASE_PROJECT_REF`  | Proje URL'indeki `<ref>.supabase.co`               |
-| `SUPABASE_DB_PASSWORD`  | Proje oluşturulurken belirlenen veritabanı şifresi |
+### Ortam secret'ları
 
-Secret'lar yokken CD hata vermez, Supabase adımını atlar ve uyarı yazar.
+**Settings → Environments** altında `test` (AiInfTest projesi) ve `production` (AiInfMain projesi) için:
 
-**Release PR'ı açıkken `test`'e yeni şey girerse** bot release PR'ının CI'ını otomatik yeniden çalıştırır ve yeşilse merge eder. Elle tetiklemek için: Actions → CI → Run workflow (`test`).
+| Secret                  | Nereden                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| `SUPABASE_ACCESS_TOKEN` | supabase.com → Account → Access Tokens ("EBALCW General") |
+| `SUPABASE_PROJECT_REF`  | Proje URL'indeki `<ref>.supabase.co`                      |
+| `SUPABASE_DB_PASSWORD`  | Proje oluşturulurken belirlenen veritabanı şifresi        |
+
+Token veya şifre değişirse: `gh secret set <AD> --env <test|production> -R EBALCW/ai-influencer` (değeri gizli olarak sorar).
 
 ## Sık sorular
 

@@ -139,10 +139,24 @@ jobs:
             git /repo --redact --no-banner --exit-code 1
 
   # Branch korumasında "zorunlu kontrol" olarak bu iş seçilir
+  migrations:
+    name: Migration kuralları
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Var olan migration'lar değişmedi, yeniler sıralı mı?
+        if: github.event_name == 'pull_request'
+        run: node scripts/check-migrations.mjs "origin/${{ github.base_ref }}"
+      - name: PR dışı çalıştırma
+        if: github.event_name != 'pull_request'
+        run: echo "Migration kuralları sadece PR'da denetlenir (deploy'da db push sırasız migration'ı zaten reddeder)."
+
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [quality, e2e, windows, secrets]
+    needs: [quality, e2e, windows, secrets, migrations]
     runs-on: ubuntu-latest
     steps:
       - name: Tüm işler başarılı mı?
