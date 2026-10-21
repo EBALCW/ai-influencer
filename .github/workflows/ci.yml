@@ -81,9 +81,9 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      # Oturumlu testler için yerel Supabase (sadece auth + REST + DB)
+      # Oturum ve Storage yükleme E2E testleri için yerel Supabase
       - name: Start local Supabase
-        run: pnpm exec supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
+        run: pnpm exec supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local Supabase env
         run: |
           pnpm exec supabase status -o env > "$RUNNER_TEMP/sb.env"

@@ -126,6 +126,57 @@ test('unknown sections return 404', async ({ page }) => {
   expect(response?.status()).toBe(404);
 });
 
+test('asset manager uploads, previews, and removes a private image', async ({
+  page,
+}) => {
+  await page.goto('/influencers/demo-creator/assets?inf=demo-creator');
+  await expect(
+    page.getByRole('heading', { name: 'Görsel ve videolar' }),
+  ).toBeVisible();
+  await page.getByLabel('Görsel veya video yükle').setInputFiles([
+    {
+      name: 'asset-test.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    },
+    {
+      name: 'asset-test-2.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    },
+  ]);
+  await expect(
+    page.getByRole('status').getByText('Dosyalar yüklendi.'),
+  ).toBeVisible();
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await expect(page.locator('img').first()).toBeVisible();
+  const versionSelects = page.getByLabel('Referans versiyonu');
+  await expect(versionSelects).toHaveCount(2);
+  await versionSelects.first().selectOption('v2');
+  await page.getByLabel('Sol referans seti').selectOption('v1');
+  await page.getByLabel('Sağ referans seti').selectOption('v2');
+  await expect(
+    page.getByRole('region', { name: 'Referans seti sol v1' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Referans seti sağ v2' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Sil', exact: true }).first().click();
+  const firstDialog = page.getByRole('dialog');
+  await firstDialog.getByRole('button', { name: 'Dosyayı sil' }).click();
+  await expect(page.getByRole('article')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Sil', exact: true }).click();
+  const secondDialog = page.getByRole('dialog');
+  await secondDialog.getByRole('button', { name: 'Dosyayı sil' }).click();
+  await expect(page.getByRole('article')).toHaveCount(0);
+});
+
 test('theme can be switched and stays selected after reload', async ({
   page,
 }) => {
