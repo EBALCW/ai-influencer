@@ -23,10 +23,19 @@ test('home page shows the studio shell and overview', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('all navigation sections open with an empty state', async ({ page }) => {
+test('navigation opens real modules and unfinished sections show empty states', async ({
+  page,
+}) => {
+  for (const [label, href] of [
+    ['İçerik akışı', '/content'],
+    ['Yayın takvimi', '/calendar'],
+  ] as const) {
+    await page.goto(href);
+    await expect(
+      page.getByRole('heading', { name: label, level: 1 }),
+    ).toBeVisible();
+  }
   const destinations = [
-    ['İçerik', '/content'],
-    ['Takvim', '/calendar'],
     ['Analitik', '/analytics'],
     ['Üretim', '/production'],
     ['Markalar', '/brands'],

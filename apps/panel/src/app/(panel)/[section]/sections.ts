@@ -3,16 +3,6 @@ export const sections: Record<
   string,
   { title: string; description: string; icon: string }
 > = {
-  content: {
-    title: 'İçerik',
-    description: 'Fikirden yayına içerik üretim adımlarını takip edin.',
-    icon: '▤',
-  },
-  calendar: {
-    title: 'Takvim',
-    description: 'Planlanan ve yayınlanan içerikleri takvimde görüntüleyin.',
-    icon: '▦',
-  },
   analytics: {
     title: 'Analitik',
     description: 'Platform performansını ve büyüme metriklerini inceleyin.',
