@@ -7,7 +7,14 @@ SELECT extensions.ok(
   'assets storage bucket is private'
 );
 SELECT extensions.has_column('public', 'assets', 'qc_checklist', 'assets store QC checklist answers');
-SELECT extensions.has_check('public', 'assets', 'assets_passed_qc_complete', 'passed assets require every QC item');
+SELECT extensions.ok(
+  EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'public.assets'::regclass
+      AND conname = 'assets_passed_qc_complete'
+  ),
+  'passed assets require every QC item'
+);
 SELECT extensions.ok(
   (SELECT count(*) = 1 FROM pg_constraint
    WHERE conrelid = 'public.assets'::regclass
