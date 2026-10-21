@@ -48,7 +48,7 @@ influencer/<slug>/
 
 - Haftalık kontrol: yeni final dosyaları, düzenlenebilir proje dosyaları, prompt ve persona güncellemeleri yedeğe gitti mi?
 - Aylık kontrol: Instagram/Meta bilgi dışa aktarımı talep edildi mi; arşivin erişimi kısıtlandı mı?
-- İlk tam yedek ve geri yükleme testi için tarih, klasör ve sonucu `docs/incidents.md` dosyasındaki **Yedekleme doğrulama kaydı** bölümüne yazın. Buraya dış bulut bağlantısı, hesap adı veya gizli dosya paylaşım linki eklemeyin.
+- İlk tam yedek ve geri yükleme testi için tarih, klasör ve sonucu `docs/incidents.md` içindeki **Yedekleme doğrulama kaydı** şablonuyla ekibin erişimi kısıtlı alanına yazın (repo public; kayıt repoya girmez). Buraya dış bulut bağlantısı, hesap adı veya gizli dosya paylaşım linki eklemeyin.
 - En az bir örnek dosyayı yedek konumundan ayrı bir çalışma klasörüne geri alın ve açılabildiğini doğrulayın. Test kopyasını doğrulama sonrası kaldırın.
 
 ## Hesap durumu ve ani erişim düşüşü
@@ -65,7 +65,7 @@ Erişim performansına dayanarak sabit süreli paylaşım arası verme kuralı y
 
 ## Ele geçirilme veya erişim kaybı müdahalesi
 
-1. **Koordinasyon:** Olayı `docs/incidents.md` şablonuyla kaydedin; bir olay sorumlusu belirleyin. Kod, parola veya 2FA kodu paylaşmadan ekip üyelerine haber verin.
+1. **Koordinasyon:** Olayı `docs/incidents.md` şablonuyla ekibin erişimi kısıtlı alanına kaydedin (repoya veya issue'ya değil); bir olay sorumlusu belirleyin. Kod, parola veya 2FA kodu paylaşmadan ekip üyelerine haber verin.
 2. **E-posta ve kurtarma:** Hesaba bağlı e-posta/Google hesabını güvenli cihazdan açın. Bilinmeyen oturumları kapatın, benzersiz parolayı değiştirin, 2FA ve kurtarma yöntemlerini doğrulayın.
 3. **Sosyal hesap:** Resmi uygulamayı/adresi doğrudan açın; güvenlik bildirimi ve cihaz listesini kontrol edin. Parolayı değiştirin, tanınmayan oturum ve üçüncü taraf uygulamalarını kaldırın, 2FA yöntemini ve iletişim bilgisini kontrol edin.
 4. **İzinler:** Meta Business, kanal yöneticileri, TikTok bağlantıları ve yayınlama araçlarında bilinmeyen kişi/uygulama erişimini kaldırın. Gerekirse API tokenlarını iptal edip yenileyin; tokenı issue veya loga yazmayın.
@@ -75,7 +75,7 @@ Erişim performansına dayanarak sabit süreli paylaşım arası verme kuralı y
 
 ## Aylık güvenlik ve yedek kontrolü
 
-Her ayın ilk haftasında her platform hesabı için bir satır doldurun. Gerçek e-posta/telefon, 2FA kodu veya kurtarma kodu eklemeyin.
+Her ayın ilk haftasında her platform hesabı için bir satır doldurun. Tabloyu repoda değil ekibin erişimi kısıtlı alanında tutun, bu tablo yalnızca şablondur. Gerçek e-posta/telefon, 2FA kodu veya kurtarma kodu eklemeyin.
 
 | Tarih (UTC) | Hesap slug’ı | 2FA kontrolü      | Oturum/cihaz kontrolü | Bağlı uygulama kontrolü | İçerik yedeği | Geri yükleme testi | Kontrol eden  |
 | ----------- | ------------ | ----------------- | --------------------- | ----------------------- | ------------- | ------------------ | ------------- |
