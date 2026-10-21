@@ -124,6 +124,21 @@ export function AssetManager({
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [leftVersion, setLeftVersion] = useState('');
+  const [rightVersion, setRightVersion] = useState('');
+  const versionOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          assets
+            .filter(
+              ({ asset }) => asset.kind === 'reference' && asset.version_tag,
+            )
+            .map(({ asset }) => asset.version_tag as string),
+        ),
+      ).sort((a, b) => a.localeCompare(b, 'tr')),
+    [assets],
+  );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkTags, setBulkTags] = useState('');
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
@@ -214,6 +229,7 @@ export function AssetManager({
             width: metadata.width,
             height: metadata.height,
             duration_ms: metadata.duration_ms,
+            version_tag: kind === 'reference' ? 'v1' : null,
           })
           .select('*')
           .single();
@@ -373,6 +389,7 @@ export function AssetManager({
       qc_status?: string;
       tags?: string[];
       qc_checklist?: Row<'assets'>['qc_checklist'];
+      version_tag?: string | null;
     },
   ) {
     const supabase = createSupabaseBrowserClient();
@@ -493,6 +510,87 @@ export function AssetManager({
             value={search}
           />
         </label>
+        <section className="rounded-xl border border-line p-4">
+          <h3 className="font-semibold">Referans setlerini karşılaştır</h3>
+          <p className="mt-1 text-sm text-muted">
+            İki referans versiyonunu yan yana inceleyin.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1 text-sm">
+              Sol set
+              <select
+                aria-label="Sol referans seti"
+                className="rounded-lg border border-line bg-surface px-3 py-2"
+                onChange={(event) => setLeftVersion(event.target.value)}
+                value={leftVersion}
+              >
+                <option value="">Versiyon seçin</option>
+                {versionOptions.map((version) => (
+                  <option key={version} value={version}>{version}</option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm">
+              Sağ set
+              <select
+                aria-label="Sağ referans seti"
+                className="rounded-lg border border-line bg-surface px-3 py-2"
+                onChange={(event) => setRightVersion(event.target.value)}
+                value={rightVersion}
+              >
+                <option value="">Versiyon seçin</option>
+                {versionOptions.map((version) => (
+                  <option key={version} value={version}>{version}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {leftVersion && rightVersion && (
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              {[leftVersion, rightVersion].map((version, index) => {
+                const versionAssets = assets.filter(
+                  ({ asset }) =>
+                    asset.kind === 'reference' && asset.version_tag === version,
+                );
+                return (
+                  <section
+                    aria-label={`Referans seti ${index === 0 ? 'sol' : 'sağ'} ${version}`}
+                    className="rounded-lg border border-line p-3"
+                    key={`${index}-${version}`}
+                  >
+                    <h4 className="mb-3 font-medium">{version}</h4>
+                    {versionAssets.length ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {versionAssets.map(({ asset, url, thumbnailUrl }) => (
+                          <div
+                            className="relative aspect-square overflow-hidden rounded-lg bg-surface"
+                            key={asset.id}
+                          >
+                            {thumbnailUrl || url ? (
+                              <Image
+                                alt={asset.storage_path.split('/').at(-1) ?? 'Referans görseli'}
+                                className="h-full w-full object-contain"
+                                fill
+                                src={thumbnailUrl ?? url!}
+                                unoptimized
+                              />
+                            ) : (
+                              <span className="grid h-full place-items-center text-xs text-muted">
+                                Önizleme alınamadı
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted">Bu sette referans yok.</p>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </section>
         {canEdit && selectedIds.size > 0 && (
           <div className="flex flex-wrap items-end gap-3 border-t border-line pt-4">
             <label className="grid gap-1 text-sm">
@@ -591,6 +689,36 @@ export function AssetManager({
               <p className="truncate text-sm text-muted">
                 {item.asset.storage_path.split('/').at(-1)}
               </p>
+              {item.asset.kind === 'reference' && canEdit && (
+                <label className="grid gap-1 text-sm">
+                  Referans versiyonu
+                  <select
+                    aria-label="Referans versiyonu"
+                    className="rounded-lg border border-line bg-surface px-3 py-2"
+                    onChange={(event) =>
+                      void updateAsset(item, {
+                        version_tag: event.target.value || null,
+                      })
+                    }
+                    value={item.asset.version_tag ?? ''}
+                  >
+                    <option value="">Versiyonsuz</option>
+                    {Array.from(
+                      new Set([
+                        'v1',
+                        'v2',
+                        'v3',
+                        'v4',
+                        ...(item.asset.version_tag
+                          ? [item.asset.version_tag]
+                          : []),
+                      ]),
+                    ).map((version) => (
+                      <option key={version} value={version}>{version}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
               {item.asset.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {item.asset.tags.map((tag) => (
