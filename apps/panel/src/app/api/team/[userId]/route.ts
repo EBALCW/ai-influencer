@@ -1,39 +1,40 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import type { TeamRole } from '@ai-influencer/shared';
-import { requireApiOwner } from '@/lib/auth-api';
+import { apiError, jsonError, parseJson, requireApiRole } from '@/lib/auth-api';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { roleUpdateSchema, userIdSchema } from '@/lib/team-schemas';
 
 type RouteContext = { params: Promise<{ userId: string }> };
 
+// Son owner'ın düşürülmesi/silinmesi veritabanında trigger ile engellenir (23514)
+const LAST_OWNER = '23514';
+
+async function targetUserId(context: RouteContext) {
+  const { userId } = await context.params;
+  return userIdSchema.safeParse(userId).success ? userId : null;
+}
+
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
-    const auth = await requireApiOwner();
+    const auth = await requireApiRole('owner');
     if (!auth.ok) return auth.response;
-    const { userId } = await context.params;
+    const userId = await targetUserId(context);
+    if (!userId) return jsonError('Kullanıcı bulunamadı.', 404);
     if (userId === auth.user.id) {
-      return NextResponse.json(
-        { error: 'Kendi rolünü değiştiremezsin.' },
-        { status: 400 },
-      );
+      return jsonError('Kendi rolünü değiştiremezsin.', 400);
     }
-    const body: unknown = await request.json();
-    const role =
-      body && typeof body === 'object'
-        ? (body as { role?: unknown }).role
-        : null;
-    if (role !== 'owner' && role !== 'editor' && role !== 'viewer') {
-      return NextResponse.json({ error: 'Rol geçersiz.' }, { status: 400 });
-    }
+    const body = await parseJson(request, roleUpdateSchema);
+    if (!body.ok) return body.response;
 
-    const { error } = await createSupabaseAdminClient()
+    const { data, error } = await createSupabaseAdminClient()
       .from('team_members')
-      .update({ role: role as TeamRole })
-      .eq('user_id', userId);
-    if (error)
-      return NextResponse.json(
-        { error: 'Rol değiştirilemedi.' },
-        { status: 409 },
-      );
+      .update({ role: body.data.role })
+      .eq('user_id', userId)
+      .select('user_id');
+    if (error?.code === LAST_OWNER) {
+      return jsonError('Ekipte en az bir owner kalmalı.', 409);
+    }
+    if (error) return jsonError('Rol değiştirilemedi.', 409);
+    if (!data.length) return jsonError('Üye bulunamadı.', 404);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return apiError(error);
@@ -42,36 +43,26 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
-    const auth = await requireApiOwner();
+    const auth = await requireApiRole('owner');
     if (!auth.ok) return auth.response;
-    const { userId } = await context.params;
+    const userId = await targetUserId(context);
+    if (!userId) return jsonError('Kullanıcı bulunamadı.', 404);
     if (userId === auth.user.id) {
-      return NextResponse.json(
-        { error: 'Kendi üyeliğini buradan kaldıramazsın.' },
-        { status: 400 },
-      );
+      return jsonError('Kendi üyeliğini buradan kaldıramazsın.', 400);
     }
 
-    const { error } = await createSupabaseAdminClient()
+    const { data, error } = await createSupabaseAdminClient()
       .from('team_members')
       .delete()
-      .eq('user_id', userId);
-    if (error)
-      return NextResponse.json({ error: 'Üye çıkarılamadı.' }, { status: 409 });
+      .eq('user_id', userId)
+      .select('user_id');
+    if (error?.code === LAST_OWNER) {
+      return jsonError('Ekipte en az bir owner kalmalı.', 409);
+    }
+    if (error) return jsonError('Üye çıkarılamadı.', 409);
+    if (!data.length) return jsonError('Üye bulunamadı.', 404);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return apiError(error);
   }
-}
-
-function apiError(error: unknown) {
-  if (error && typeof error === 'object' && 'digest' in error) throw error;
-  const message = error instanceof Error ? error.message : '';
-  const status = message.includes('yapılandırması eksik') ? 503 : 500;
-  return NextResponse.json(
-    {
-      error: status === 503 ? message : 'İşlem tamamlanamadı.',
-    },
-    { status },
-  );
 }

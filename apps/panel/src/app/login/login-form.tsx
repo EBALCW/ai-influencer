@@ -1,13 +1,10 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { safeNextPath } from '@/lib/safe-redirect';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 type LoginFormProps = { nextPath?: string };
-
-function safeNextPath(path?: string) {
-  return path?.startsWith('/') && !path.startsWith('//') ? path : '/';
-}
 
 export function LoginForm({ nextPath }: LoginFormProps) {
   const [email, setEmail] = useState('');
@@ -30,11 +27,10 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           shouldCreateUser: false,
         },
       });
-      // Keep the same response for invited and unknown emails.
+      // Davetli ve davetsiz e-postalar için aynı yanıt: kimin ekipte olduğu sızmasın
+      if (error) console.warn('[login] magic link:', error.status);
       setMessage(
-        error
-          ? 'Bu e-posta davetliyse giriş bağlantısı gönderildi. Gelen kutunu kontrol et.'
-          : 'Giriş bağlantısı gönderildi. Gelen kutunu kontrol et.',
+        'Bu e-posta ekipte kayıtlıysa giriş bağlantısı gönderildi. Gelen kutunu kontrol et.',
       );
     } catch {
       setMessage(

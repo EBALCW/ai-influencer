@@ -1,3 +1,4 @@
+import 'server-only';
 import { createServerClient } from '@supabase/ssr';
 import type { Database } from '@ai-influencer/shared';
 import { cookies } from 'next/headers';

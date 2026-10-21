@@ -1,35 +1,25 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { safeNextPath } from '@/lib/safe-redirect';
 import { getSupabasePublicEnv } from '@/lib/supabase/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-function safeNextPath(path: string | null) {
-  return path?.startsWith('/') && !path.startsWith('//') ? path : '/';
-}
-
 export async function GET(request: NextRequest) {
+  const redirectTo = (path: string) =>
+    NextResponse.redirect(new URL(path, request.nextUrl.origin));
+
   const code = request.nextUrl.searchParams.get('code');
-  if (!code || !getSupabasePublicEnv()) {
-    return NextResponse.redirect(
-      new URL('/login?error=not_configured', request.url),
-    );
-  }
+  if (!getSupabasePublicEnv()) return redirectTo('/login?error=not_configured');
+  if (!code) return redirectTo('/login?error=not_allowed');
 
   const supabase = await createSupabaseServerClient();
   const { error: exchangeError } =
     await supabase.auth.exchangeCodeForSession(code);
-  if (exchangeError) {
-    return NextResponse.redirect(
-      new URL('/login?error=not_allowed', request.url),
-    );
-  }
+  if (exchangeError) return redirectTo('/login?error=not_allowed');
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user)
-    return NextResponse.redirect(
-      new URL('/login?error=not_allowed', request.url),
-    );
+  if (!user) return redirectTo('/login?error=not_allowed');
 
   let { data: member } = await supabase
     .from('team_members')
@@ -37,6 +27,7 @@ export async function GET(request: NextRequest) {
     .eq('user_id', user.id)
     .maybeSingle();
 
+  // Boş çalışma alanında ilk giren davetli kullanıcı owner olur (RLS de bunu sadece tablo boşken izin verir)
   if (!member) {
     const { data: canBootstrap } = await supabase.rpc('is_initial_owner_setup');
     if (canBootstrap) {
@@ -45,26 +36,18 @@ export async function GET(request: NextRequest) {
         role: 'owner',
         created_by: user.id,
       });
-      const refreshed = await supabase
+      ({ data: member } = await supabase
         .from('team_members')
         .select('user_id')
         .eq('user_id', user.id)
-        .maybeSingle();
-      member = refreshed.data;
+        .maybeSingle());
     }
   }
 
   if (!member) {
     await supabase.auth.signOut();
-    return NextResponse.redirect(
-      new URL('/login?error=not_allowed', request.url),
-    );
+    return redirectTo('/login?error=not_allowed');
   }
 
-  return NextResponse.redirect(
-    new URL(
-      safeNextPath(request.nextUrl.searchParams.get('next')),
-      request.url,
-    ),
-  );
+  return redirectTo(safeNextPath(request.nextUrl.searchParams.get('next')));
 }
