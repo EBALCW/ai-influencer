@@ -27,6 +27,7 @@ import { LogoutButton } from '@/components/logout-button';
 import { Toast } from '@/components/ui';
 
 export type ShellMember = { email: string; role: TeamRole };
+type InfluencerOption = { slug: string; name: string };
 
 const roleLabels: Record<TeamRole, string> = {
   owner: 'Owner',
@@ -64,10 +65,6 @@ const navigation: Array<{
   { label: 'Ayarlar', href: '/settings', icon: Settings2, group: 'YÖNETİM' },
 ];
 
-// Geçici: #42 (influencer listesi) gelene kadar seçici bu sabit listeden beslenir.
-// Slug'lar supabase/seed.sql ile aynı olmalı.
-const influencerOptions = [{ slug: 'demo-creator', name: 'Demo Creator' }];
-
 function withInfluencer(href: string, slug: string) {
   return slug ? `${href}?inf=${encodeURIComponent(slug)}` : href;
 }
@@ -86,16 +83,18 @@ function subscribeToTheme(callback: () => void) {
 function ShellContent({
   children,
   member,
+  influencers,
 }: {
   children: React.ReactNode;
   member: ShellMember;
+  influencers: InfluencerOption[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedInfluencer = searchParams.get('inf') ?? '';
   const selectedInfluencerName =
-    influencerOptions.find((item) => item.slug === selectedInfluencer)?.name ??
+    influencers.find((item) => item.slug === selectedInfluencer)?.name ??
     'Tüm influencer’lar';
   const theme = useSyncExternalStore(
     subscribeToTheme,
@@ -250,7 +249,7 @@ function ShellContent({
                 value={selectedInfluencer}
               >
                 <option value="">Tüm influencer’lar</option>
-                {influencerOptions.map((item) => (
+                {influencers.map((item) => (
                   <option key={item.slug} value={item.slug}>
                     {item.name}
                   </option>
@@ -306,13 +305,17 @@ function ShellContent({
 export function PanelShell({
   children,
   member,
+  influencers,
 }: {
   children: React.ReactNode;
   member: ShellMember;
+  influencers: InfluencerOption[];
 }) {
   return (
     // (panel) layout'u oturum yüzünden dinamik; useSearchParams için Suspense gerekmez.
     // Suspense, bölüm sayfalarındaki notFound()'un 404 yerine 200 dönmesine yol açıyordu.
-    <ShellContent member={member}>{children}</ShellContent>
+    <ShellContent member={member} influencers={influencers}>
+      {children}
+    </ShellContent>
   );
 }
