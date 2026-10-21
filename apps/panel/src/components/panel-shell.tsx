@@ -18,6 +18,7 @@ import {
   Settings2,
   Sparkles,
   Sun,
+  ScrollText,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -56,6 +57,7 @@ const navigation: Array<{
     icon: UsersRound,
     group: 'STÜDYO',
   },
+  { label: "Prompt'lar", href: '/prompts', icon: ScrollText, group: 'STÜDYO' },
   { label: 'İçerik', href: '/content', icon: Clapperboard, group: 'YAYIN' },
   { label: 'Takvim', href: '/calendar', icon: CalendarDays, group: 'YAYIN' },
   { label: 'Analitik', href: '/analytics', icon: Activity, group: 'BÜYÜME' },

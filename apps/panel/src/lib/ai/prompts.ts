@@ -74,3 +74,41 @@ const defaults: TemplateMap = {
 export function getPromptTemplate<T extends AiTask>(task: T): TemplateMap[T] {
   return defaults[task];
 }
+
+/** Prompt kütüphanesindeki (#46) bir versiyon; sadece bu alanlar şablona taşınır. */
+export type LibraryPrompt = { id: string; version: number; body: string };
+
+/**
+ * Bir görevin talimatlarını kütüphanedeki versiyonla değiştirir. Kullanıcı girdisinin
+ * veri bloğu olarak verilmesi (`buildUserMessage`) ve effort değişmez; kütüphane
+ * sadece talimat metnini belirler.
+ */
+export function applyLibraryPrompt<Template extends PromptTemplate<never>>(
+  template: Template,
+  library: LibraryPrompt | null,
+): Template {
+  if (!library?.body.trim()) return template;
+  return {
+    ...template,
+    id: `prompt:${library.id}`,
+    version: library.version,
+    system: library.body,
+  };
+}
+
+/** Görev talimatının kaynağı (ör. `prompts` tablosu). Hata veya kayıt yoksa varsayılan kullanılır. */
+export type PromptSource = (task: AiTask) => Promise<LibraryPrompt | null>;
+
+export async function loadPromptTemplate<T extends AiTask>(
+  task: T,
+  source?: PromptSource,
+): Promise<TemplateMap[T]> {
+  const fallback = getPromptTemplate(task);
+  if (!source) return fallback;
+  try {
+    return applyLibraryPrompt(fallback, await source(task));
+  } catch {
+    // Kütüphane okunamazsa asistan çalışmaya devam etsin; varsayılan talimat güvenli
+    return fallback;
+  }
+}

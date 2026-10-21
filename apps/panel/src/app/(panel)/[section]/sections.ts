@@ -23,11 +23,6 @@ export const sections: Record<
     description: 'Görsel ve video üretimlerinizi buradan takip edin.',
     icon: '▷',
   },
-  costs: {
-    title: 'Maliyetler',
-    description: 'Üretim ve abonelik maliyetlerinizi tek yerde izleyin.',
-    icon: '₺',
-  },
   brands: {
     title: 'Markalar',
     description: 'Marka iş birliklerini ve medya kitinizi yönetin.',
