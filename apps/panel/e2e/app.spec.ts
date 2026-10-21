@@ -143,7 +143,7 @@ test('asset manager uploads, previews, and removes a private image', async ({
     page.getByRole('status').getByText('Dosyalar yüklendi.'),
   ).toBeVisible();
   await expect(page.getByRole('article')).toHaveCount(2);
-  await expect(page.locator('img')).toBeVisible();
+  await expect(page.locator('img').first()).toBeVisible();
   const versionSelects = page.getByLabel('Referans versiyonu');
   await expect(versionSelects).toHaveCount(2);
   await versionSelects.first().selectOption('v2');
