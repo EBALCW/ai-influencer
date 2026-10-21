@@ -3,6 +3,9 @@
 import type { Database } from './database.types.js';
 
 export type { Database, Json } from './database.types.js';
+// Enum değerlerinin çalışma zamanı listesi (Zod şemalarını DB enum'uyla birebir tutmak için).
+// Değer export'u uzantısız: Next/Turbopack kaynak .ts dosyasını `.js` yolundan çözemiyor.
+export { Constants } from './database.types';
 
 type PublicSchema = Database['public'];
 
