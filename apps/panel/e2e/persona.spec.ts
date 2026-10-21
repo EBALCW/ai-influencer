@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 
 // Editor rolüyle persona düzenleme, geçmiş, geri alma ve karşılaştırma (#44).
@@ -6,7 +7,25 @@ import { hasLocalSupabase } from './global-setup';
 test.skip(!hasLocalSupabase(), 'Yerel Supabase yok (pnpm supabase:start)');
 test.describe.configure({ mode: 'serial' });
 
-const PERSONA_URL = '/influencers/demo-creator?tab=persona';
+// Kendi influencer'ı: app.spec demo-creator'da "Persona kaydı yok" bekliyor, paralel çalışırken çakışmasın
+const INFLUENCER_ID = 'e2e00000-0000-4000-8000-000000000044';
+const PERSONA_URL = '/influencers/e2e-persona?tab=persona';
+
+test.beforeAll(async () => {
+  // Sadece yerel Supabase (hasLocalSupabase); ortak projeye asla yazmaz
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+  const { error } = await admin.from('influencers').upsert({
+    id: INFLUENCER_ID,
+    name: 'E2E Persona',
+    slug: 'e2e-persona',
+    status: 'active',
+  });
+  if (error) throw error;
+});
 
 async function currentVersion(page: Page) {
   const heading = page.getByRole('heading', {
@@ -117,7 +136,7 @@ test('geçersiz gövde ve olmayan influencer API seviyesinde reddedilir', async 
 }) => {
   await page.goto(PERSONA_URL);
   const invalid = await page.request.post(
-    '/api/influencers/10000000-0000-4000-8000-000000000001/persona',
+    `/api/influencers/${INFLUENCER_ID}/persona`,
     { data: { bio: 123 } },
   );
   expect(invalid.status()).toBe(400);
