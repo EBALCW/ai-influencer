@@ -527,6 +527,9 @@ isOneToOne: false
 "is_initial_owner_setup":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"valid_sample_captions":
+{ Args: { "p_values": (string)[] }; Returns: boolean
+                           },
 "is_team_member":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
