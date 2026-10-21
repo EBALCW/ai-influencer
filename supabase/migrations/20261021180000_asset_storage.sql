@@ -11,6 +11,7 @@ ON CONFLICT (id) DO UPDATE SET
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 ALTER TABLE public.assets
+  ADD COLUMN thumbnail_path text,
   ADD COLUMN qc_checklist jsonb NOT NULL DEFAULT '{}'::jsonb
     CHECK (jsonb_typeof(qc_checklist) = 'object'),
   ADD CONSTRAINT assets_passed_qc_complete CHECK (
