@@ -114,6 +114,32 @@ test('unknown sections return 404', async ({ page }) => {
   expect(response?.status()).toBe(404);
 });
 
+test('asset manager uploads, previews, and removes a private image', async ({
+  page,
+}) => {
+  await page.goto('/influencers/demo-creator/assets?inf=demo-creator');
+  await expect(
+    page.getByRole('heading', { name: 'Görsel ve videolar' }),
+  ).toBeVisible();
+  await page.getByLabel('Görsel veya video yükle').setInputFiles({
+    name: 'asset-test.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+      'base64',
+    ),
+  });
+  await expect(
+    page.getByRole('status').getByText('Dosyalar yüklendi.'),
+  ).toBeVisible();
+  await expect(page.getByRole('article')).toContainText('Referans');
+  await expect(page.locator('img')).toBeVisible();
+  await page.getByRole('button', { name: 'Sil', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Dosyayı sil' }).click();
+  await expect(page.locator('img')).toHaveCount(0);
+});
+
 test('theme can be switched and stays selected after reload', async ({
   page,
 }) => {
