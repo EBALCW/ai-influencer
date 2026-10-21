@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Camera, CirclePlay, Music2, Search, UsersRound } from 'lucide-react';
+import {
+  Camera,
+  CirclePlay,
+  Music2,
+  Plus,
+  Search,
+  UsersRound,
+} from 'lucide-react';
 import type { InfluencerListItem } from '@/lib/influencers';
 import { EmptyState } from '@/components/ui';
 
@@ -43,9 +50,11 @@ function number(value: number) {
 export function InfluencerList({
   influencers,
   selectedSlug,
+  canEdit,
 }: {
   influencers: InfluencerListItem[];
   selectedSlug: string;
+  canEdit: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('current');
@@ -86,9 +95,19 @@ export function InfluencerList({
           <h1>Influencer’lar</h1>
           <p>Karakterleri, bağlı hesapları ve güncel performansı yönetin.</p>
         </div>
-        <span className="soft-badge">
-          <UsersRound size={15} /> {influencers.length} kayıt
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="soft-badge">
+            <UsersRound size={15} /> {influencers.length} kayıt
+          </span>
+          {canEdit && (
+            <Link
+              className="button button-primary"
+              href={`/influencers/new${infQuery}`}
+            >
+              <Plus aria-hidden="true" size={16} /> Yeni influencer
+            </Link>
+          )}
+        </div>
       </header>
 
       <section className="section-card">
@@ -166,6 +185,14 @@ export function InfluencerList({
                             <span className="block text-xs text-muted">
                               {item.niche || 'Niş belirtilmemiş'}
                             </span>
+                            {canEdit && item.status === 'draft' && (
+                              <Link
+                                className="mt-1 inline-block text-xs text-accent hover:underline"
+                                href={`/influencers/${encodeURIComponent(item.slug)}/setup${infQuery}`}
+                              >
+                                Kuruluma devam et
+                              </Link>
+                            )}
                           </span>
                         </div>
                       </td>
