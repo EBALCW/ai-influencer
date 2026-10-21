@@ -255,7 +255,11 @@ export default async function InfluencerDetailPage({
           <Link
             aria-current={tab === key ? 'page' : undefined}
             className={`rounded-lg px-3 py-2 text-sm ${tab === key ? 'bg-surface text-primary font-semibold' : 'text-muted hover:text-primary'}`}
-            href={tabHref(key)}
+            href={
+              key === 'references'
+                ? `/influencers/${encodeURIComponent(slug)}/assets${selectedSlug ? `?inf=${encodeURIComponent(selectedSlug)}` : ''}`
+                : tabHref(key)
+            }
             key={key}
           >
             {label}
