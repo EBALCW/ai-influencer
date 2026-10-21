@@ -123,6 +123,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"budgets": {
+                  Row: {
+                    "amount": number,"created_at": string,"created_by": string | null,"currency": string,"id": string,"influencer_id": string | null,"month": string,"updated_at": string,"warn_ratio": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount": number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"influencer_id"?: string | null,"month": string,"updated_at"?: string,"warn_ratio"?: number
+                  }
+                  Update: {
+                    "amount"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"influencer_id"?: string | null,"month"?: string,"updated_at"?: string,"warn_ratio"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "budgets_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"content_items": {
                   Row: {
                     "checklist": NonNullable<Json>,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"scheduled_at": string | null,"stage": Database["public"]['Enums']["content_stage"],"title": string,"updated_at": string
@@ -168,6 +188,34 @@ isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
     }
+                  ]
+                },"credit_rates": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"currency": string,"id": string,"rate_per_credit": number,"tool": string,"updated_at": string,"valid_from": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"currency": string,"id"?: string,"rate_per_credit": number,"tool": string,"updated_at"?: string,"valid_from": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate_per_credit"?: number,"tool"?: string,"updated_at"?: string,"valid_from"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"exchange_rates": {
+                  Row: {
+                    "base_currency": string,"created_at": string,"created_by": string | null,"currency": string,"id": string,"rate": number,"updated_at": string,"valid_on": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "base_currency": string,"created_at"?: string,"created_by"?: string | null,"currency": string,"id"?: string,"rate": number,"updated_at"?: string,"valid_on": string
+                  }
+                  Update: {
+                    "base_currency"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate"?: number,"updated_at"?: string,"valid_on"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"generations": {
                   Row: {
@@ -381,11 +429,36 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "can_manage_team":
+            "budget_status":
+{ Args: { "p_month": string }; Returns: {
+              "amount": number,"budget_id": string,"currency": string,"influencer_id": string,"missing_rate_count": number,"month": string,"ratio": number,"spent": number,"warn_ratio": number
+            }[]
+                           },
+"can_manage_team":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "can_write_data":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"cost_by_category":
+{ Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
+              "category": Database["public"]['Enums']["cost_category"],"missing_rate_count": number,"total": number
+            }[]
+                           },
+"cost_daily":
+{ Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
+              "day": string,"missing_rate_count": number,"total": number
+            }[]
+                           },
+"cost_entries_converted":
+{ Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
+              "amount": number,"category": Database["public"]['Enums']["cost_category"],"converted_amount": number,"currency": string,"generation_id": string,"id": string,"incurred_on": string,"influencer_id": string
+            }[]
+                           },
+"cost_summary":
+{ Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
+              "cost_per_1000_views": number,"cost_per_video": number,"entry_count": number,"failed_cost": number,"failed_credits": number,"failed_generation_count": number,"failed_ratio": number,"generation_count": number,"missing_rate_count": number,"total": number,"video_count": number,"views": number
+            }[]
                            },
 "create_persona_version":
 { Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_tone": string }; Returns: {
@@ -434,8 +507,16 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"credits_to_money":
+{ Args: { "p_credits": number,"p_on": string,"p_tool": string }; Returns: {
+              "amount": number,"currency": string
+            }[]
+                           },
 "current_team_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["team_role"]
+                           },
+"fx_rate":
+{ Args: { "p_from": string,"p_on": string,"p_to": string }; Returns: number
                            },
 "influencer_list_stats":
 { Args: { "p_influencer_ids"?: (string)[],"p_since"?: string }; Returns: {
@@ -447,6 +528,9 @@ isOneToOne: false
                            },
 "is_team_member":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"raise_budget_alerts":
+{ Args: { "p_month": string }; Returns: number
                            },
 "restore_persona_version":
 { Args: { "p_change_note"?: string,"p_influencer_id": string,"p_version": number }; Returns: {
@@ -474,7 +558,7 @@ isOneToOne: false
       } }
           }
           Enums: {
-            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
+            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -594,7 +678,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
+            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
           }
         }
 } as const

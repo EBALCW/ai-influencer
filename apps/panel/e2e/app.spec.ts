@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase, OWNER_EMAIL } from './global-setup';
 
 // Oturum gerektirir: CI'da yerel Supabase ile çalışır, yerelde Supabase yoksa atlanır
@@ -28,7 +29,6 @@ test('all navigation sections open with an empty state', async ({ page }) => {
     ['Takvim', '/calendar'],
     ['Analitik', '/analytics'],
     ['Üretim', '/production'],
-    ['Maliyetler', '/costs'],
     ['Markalar', '/brands'],
     ['Ayarlar', '/settings'],
   ];
@@ -145,6 +145,64 @@ test('owner ekip sayfasında kendini görür', async ({ page }) => {
   ).toBeVisible();
   // E-posta üst bardaki profilde de görünüyor; ekip listesini main içinde ara
   await expect(page.getByRole('main').getByText(OWNER_EMAIL)).toBeVisible();
+});
+
+test('maliyet sayfası açılır, kayıt yoksa uydurma değer göstermez', async ({
+  page,
+}) => {
+  const response = await page.goto('/costs?month=2026-09&cur=USD');
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('heading', { name: 'Maliyetler', level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByText('Bu dönemde harcama yok')).toBeVisible();
+  await expect(page.getByText('Bu ay için bütçe yok')).toBeVisible();
+});
+
+test('owner maliyet girer; video ve 1000 izlenme başına maliyet SQL’den hesaplanır', async ({
+  page,
+}) => {
+  // Playwright yeniden denerse aynı kayıt iki kez eklenmesin: önce bu testin kaydını temizle
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+  const cleanup = await admin
+    .from('costs')
+    .delete()
+    .eq('description', 'E2E abonelik');
+  expect(cleanup.error).toBeNull();
+
+  // Seed: Ekim 2026'da 10 video, en son izlenmelerin toplamı 20.140
+  await page.goto('/costs?month=2026-10&cur=USD&inf=demo-creator');
+  const form = page.getByRole('form', { name: 'Maliyet ekle' });
+  await form.getByLabel('Tutar').fill('20.14');
+  await form.getByLabel('Tarih').fill('2026-10-05');
+  await form.getByLabel('Açıklama').fill('E2E abonelik');
+  await form.getByRole('button', { name: 'Maliyet ekle' }).click();
+  await expect(form.getByText('Maliyet kaydedildi.')).toBeVisible();
+
+  const summary = page.getByRole('region', { name: 'Dönem özeti' });
+  await expect(summary.getByText('$20,14')).toBeVisible();
+  await expect(summary.getByText('$2,01')).toBeVisible(); // 20,14 / 10 video
+  await expect(summary.getByText('$1,00')).toBeVisible(); // 20,14 * 1000 / 20.140
+  await expect(page.getByRole('cell', { name: 'E2E abonelik' })).toBeVisible();
+});
+
+test('owner bütçe tanımlar; %80 eşiği aşılınca uyarı görünür', async ({
+  page,
+}) => {
+  await page.goto('/costs?month=2026-10&cur=USD&inf=demo-creator');
+  const form = page.getByRole('form', { name: 'Bütçe tanımla' });
+  await form.getByLabel('Kapsam').selectOption({ label: 'Demo Creator' });
+  await form.getByLabel('Aylık tavan').fill('25');
+  await form.getByRole('button', { name: /bütçesini kaydet/ }).click();
+  await expect(form.getByText('Bütçe kaydedildi.')).toBeVisible();
+  // 20,14 / 25 = %80,6 -> uyarı
+  await expect(
+    page.getByRole('progressbar', { name: 'Demo Creator bütçe kullanımı' }),
+  ).toHaveAttribute('aria-valuetext', /Uyarı eşiği aşıldı/);
 });
 
 test('profilde gerçek kullanıcı ve çıkış var', async ({ page }) => {

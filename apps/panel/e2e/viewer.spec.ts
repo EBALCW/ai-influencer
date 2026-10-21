@@ -74,3 +74,36 @@ test('viewer persona API çağrılarında 403 alır', async ({ page }) => {
   );
   expect(restore.status()).toBe(403);
 });
+
+test('viewer maliyetleri görür ama ekleyemez', async ({ page }) => {
+  const response = await page.goto('/costs');
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('heading', { name: 'Maliyetler', level: 1 }),
+  ).toBeVisible();
+  await expect(page.getByRole('form', { name: 'Maliyet ekle' })).toHaveCount(0);
+  await expect(page.getByRole('form', { name: 'Bütçe tanımla' })).toHaveCount(
+    0,
+  );
+
+  // Sunucu da reddeder: UI'da gizlemek yetki kontrolü değildir
+  const api = await page.request.post('/api/costs', {
+    data: {
+      influencerId: '10000000-0000-4000-8000-000000000001',
+      category: 'other',
+      amount: '1',
+      currency: 'USD',
+      incurredOn: '2026-10-01',
+    },
+  });
+  expect(api.status()).toBe(403);
+  const budget = await page.request.put('/api/budgets', {
+    data: {
+      influencerId: null,
+      month: '2026-10',
+      amount: '1',
+      currency: 'USD',
+    },
+  });
+  expect(budget.status()).toBe(403);
+});
