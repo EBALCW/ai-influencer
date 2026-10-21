@@ -263,14 +263,14 @@ isOneToOne: false
                   ]
                 },"influencer_personas": {
                   Row: {
-                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"tone": string,"updated_at": string,"version": number
+                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"sample_captions": (string)[],"tone": string,"updated_at": string,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"tone"?: string,"updated_at"?: string,"version": number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version": number
                   }
                   Update: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"tone"?: string,"updated_at"?: string,"version"?: number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -461,7 +461,7 @@ isOneToOne: false
             }[]
                            },
 "create_persona_version":
-{ Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_tone": string }; Returns: {
+{ Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_sample_captions"?: (string)[],"p_tone": string }; Returns: {
               "appearance": NonNullable<Json>,
 "audience": NonNullable<Json>,
 "bio": string,
@@ -474,6 +474,7 @@ isOneToOne: false
 "is_current": boolean,
 "personality": NonNullable<Json>,
 "restored_from_version": number | null,
+"sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
 "version": number
@@ -546,6 +547,7 @@ isOneToOne: false
 "is_current": boolean,
 "personality": NonNullable<Json>,
 "restored_from_version": number | null,
+"sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
 "version": number
