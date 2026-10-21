@@ -9,6 +9,8 @@ Bu dosya, kod yazan herkesin (insan ya da agent) uyması gereken kuralları topl
 Bir issue ancak şunların hepsi sağlandığında kapanır:
 
 - [ ] Issue'daki **her kabul kriteri** en az bir otomatik testle doğrulanıyor: arayüz davranışı için Playwright E2E, saf mantık için Vitest, yetki için pgTAP. PR açıklamasında kriter → test eşlemesi yazılı.
+- [ ] Güvenlik içeren işlerde (auth, yetki, redirect, dosya, dış API) **negatif testler** var: yetkisiz kullanıcı, boş tablo, eşzamanlı istek, kötü niyetli girdi (ör. `next=/\\evil.com`).
+- [ ] İşin dokunduğu **mevcut özellikler** listelendi ve testleri güncellendi (ör. auth gelince shell E2E'leri ve 404 davranışı etkilendi).
 - [ ] `pnpm check` ve `pnpm build` yerelde geçiyor, CI (`ci-ok`) yeşil.
 - [ ] Yeni env değişkeni varsa `.env.example`'a boş değer ve açıklamayla eklendi.
 - [ ] Şema değiştiyse yeni migration, pgTAP testi ve yeniden üretilmiş tipler aynı PR'da.
@@ -75,6 +77,13 @@ Bir issue ancak şunların hepsi sağlandığında kapanır:
 
 > Neden: Bilinmeyen panel bölümü, Suspense yüzünden 404 yerine 200 dönüyordu (#80).
 
+- **Yan etkiler sadece Route Handler / Server Action'da.** Server Component render sırasında veritabanına yazmaz, cookie ayarlamaz, `signOut()` çağırmaz. Çıkış `/auth/signout` (POST) üzerinden yapılır.
+- **Hata yutma yok.** Her Supabase çağrısında `error` kontrol edilir. Boş `catch {}` yazılmaz. Beklenen hata kullanıcıya anlamlı mesajla, beklenmeyen hata loglanarak döner. Loga token, anahtar veya sağlayıcı yanıtının tamamı yazılmaz.
+- **Yardımcı kopyalama yok.** `apiError`, `parseJson`, `safeRedirect` gibi bir yardımcının ikinci versiyonu yazılmaz, `src/lib/`'teki mevcut olan kullanılır veya genişletilir. Issue Zod diyorsa elle regex yazılmaz.
+- **Config değişikliği çalıştırılarak doğrulanır.** `supabase/config.toml`, `next.config.ts` veya env yükleme değişikliğinin etkisi yerelde ve E2E ile kanıtlanır.
+
+> Neden (#78): Boş ekipte giriş yapan herkes owner olabiliyordu. `next=/\\evil.com` dış siteye yönlendiriyordu. `enable_signup=false` yerelde magic link'i de kapatmıştı. Kökteki `.env.local` panele hiç ulaşmıyordu. Üye olmayanın oturumu Server Component içinde kapatılmaya çalışılıyor ama sessizce başarısız oluyordu.
+
 ## 4. Arayüz
 
 Ayrıntılar `apps/panel/AGENTS.md`'de. Özet:
@@ -112,3 +121,5 @@ Ayrıntılar `apps/panel/AGENTS.md`'de. Özet:
 - Bir PR tek bir issue'yu kapatır. Büyük işler alt PR'lara bölünür (ideal: 400 satır altı, lockfile hariç).
 - PR açmadan önce `test`'e rebase edilir. Çakışmalı PR'da CI çalışmaz ve otomatik merge olmaz.
 - İnceleme isteniyorsa PR draft açılır veya `bekle` label'ı eklenir. Aksi halde CI geçince otomatik merge olur.
+- **Aynı issue'ya ikinci PR açılmaz.** Issue'da açık bir PR varsa onun üzerinde çalışılır. Başlamadan önce `gh pr list --search "<issue no>"` ile kontrol edilir.
+- Commit'ler anlamlı olur. Dosya başına bir commit (`feat: X (dosya.ts)`) atılmaz. CI'ı hiç çalışmamış bir PR "hazır" sayılmaz.

@@ -26,6 +26,7 @@ feature/xyz ──PR──▶ test ──PR──▶ main
    - Canlıya almak için: `test` → `main` PR'ı → `gh pr create --base main --head test --title "Release: <özet>"`
 4. CI geçince PR **otomatik onaylanır ve merge edilir**. Feature dalları squash edilip silinir, `test → main` merge commit ile birleşir.
 5. Merge sonrası ilgili ortama CD otomatik çalışır.
+6. PR açıklamasındaki `Closes #N` issue'ları, PR `test`'e merge edildiğinde otomatik kapanır. GitHub bunu normalde sadece `main`'de yapar, bu adımı otomatik merge workflow'u ekliyor.
 
 ### Otomatik merge'i durdurmak
 
