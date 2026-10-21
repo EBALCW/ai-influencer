@@ -1,12 +1,13 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(8);
+SELECT extensions.plan(9);
 
 SELECT extensions.ok(
   (SELECT NOT b.public FROM storage.buckets AS b WHERE b.id = 'assets'),
   'assets storage bucket is private'
 );
 SELECT extensions.has_column('public', 'assets', 'qc_checklist', 'assets store QC checklist answers');
+SELECT extensions.has_column('public', 'assets', 'thumbnail_path', 'asset thumbnails stay in private storage');
 SELECT extensions.ok(
   EXISTS (
     SELECT 1 FROM pg_constraint
