@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(23);
+SELECT extensions.plan(24);
 
 -- Fixture (postgres rolüyle, RLS dışında). Seed'deki demo kayıtlardan bağımsız.
 INSERT INTO auth.users (
