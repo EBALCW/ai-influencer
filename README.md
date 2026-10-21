@@ -35,34 +35,34 @@ Windows ve Mac için tek yapıştırmalık komutlar, Codespaces seçeneği ve s�
 
 Kurulumdan sonra kontrol için: `pnpm doctor`
 
-## Geliştirme ortamı kurulumu
+## Geliştirme
 
-Paneli ve yerel Supabase servislerini çalıştırmak için Node.js 24, pnpm 10.34.7 ve Docker Desktop gerekir. Node sürümü `.nvmrc` dosyasında sabitlenmiştir.
+Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 
-1. Node.js 24'ü kurup etkinleştir: `nvm install && nvm use` (Windows'ta nvm-windows komutlarını kullan).
-2. pnpm'i etkinleştir: `corepack enable` ve `corepack prepare pnpm@10.34.7 --activate`.
-3. Docker Desktop'ı aç ve çalışır durumda tut.
-4. Bağımlılıkları yükle: `pnpm install`.
-5. İsteğe bağlı yerel anahtarlar için `.env.example` dosyasını `.env.local` olarak kopyala. Supabase yerel anahtarlarını görmek için `pnpm supabase:status` komutunu kullan.
-6. Supabase'i başlat: `pnpm supabase:start`.
-7. Yeni bir terminalde paneli başlat: `pnpm dev` ve [http://localhost:3000](http://localhost:3000) adresini aç.
+| Komut                           | Ne yapar                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `pnpm dev`                      | Paneli başlatır → http://localhost:3000                                             |
+| `pnpm check`                    | Format + lint + typecheck + unit test (PR açmadan önce çalıştır)                    |
+| `pnpm build`                    | Production build                                                                    |
+| `pnpm test:e2e`                 | Playwright uçtan uca testleri (ilk seferde `pnpm exec playwright install chromium`) |
+| `pnpm supabase:start` / `:stop` | Yerel Supabase (opsiyonel, Docker Desktop gerekir)                                  |
 
-Kontroller: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`. Supabase'i durdurmak için `pnpm supabase:stop`.
+Supabase için varsayılan yol ortak **dev** projesidir, değerleri `.env.local`'a yazılır ve Docker gerekmez. Yerel Supabase sadece migration denemek için gerekir.
 
 ## Yol haritası
 
-| Epic | Konu |
-|---|---|
-| [#5](../../issues/5) | 1 · AI karakter oluşturma ve imaj |
-| [#9](../../issues/9) | 2 · Hesap kurulumu ve algoritma ısıtma |
-| [#14](../../issues/14) | 3 · Trend araştırması, otomasyon, AI entegrasyonları |
-| [#20](../../issues/20) | 4 · İçerik üretim hattı |
-| [#26](../../issues/26) | 5 · Yayın stratejisi ve analitik |
-| [#31](../../issues/31) | 6 · Bütçe ve monetizasyon |
-| [#35](../../issues/35) | 7 · Risk, uyum ve platform kuralları |
-| [#63](../../issues/63) | 8 · Admin panel: altyapı ve mimari |
-| [#64](../../issues/64) | 9 · Admin panel: Influencer Studio |
-| [#65](../../issues/65) | 10 · Admin panel: sosyal medya entegrasyonları ve analitik |
+| Epic                   | Konu                                                           |
+| ---------------------- | -------------------------------------------------------------- |
+| [#5](../../issues/5)   | 1 · AI karakter oluşturma ve imaj                              |
+| [#9](../../issues/9)   | 2 · Hesap kurulumu ve algoritma ısıtma                         |
+| [#14](../../issues/14) | 3 · Trend araştırması, otomasyon, AI entegrasyonları           |
+| [#20](../../issues/20) | 4 · İçerik üretim hattı                                        |
+| [#26](../../issues/26) | 5 · Yayın stratejisi ve analitik                               |
+| [#31](../../issues/31) | 6 · Bütçe ve monetizasyon                                      |
+| [#35](../../issues/35) | 7 · Risk, uyum ve platform kuralları                           |
+| [#63](../../issues/63) | 8 · Admin panel: altyapı ve mimari                             |
+| [#64](../../issues/64) | 9 · Admin panel: Influencer Studio                             |
+| [#65](../../issues/65) | 10 · Admin panel: sosyal medya entegrasyonları ve analitik     |
 | [#66](../../issues/66) | 11 · Admin panel: operasyon (içerik, yayın, maliyet, markalar) |
 
 Öncelikler `P0` / `P1` / `P2` label'larıyla işaretli. İşe `P0` ile başlanır.

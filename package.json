@@ -10,25 +10,27 @@
     "setup:mac": "bash scripts/setup-mac.sh",
     "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1",
     "dev": "pnpm --filter @ai-influencer/panel dev",
-    "build": "pnpm --filter @ai-influencer/panel build",
+    "build": "pnpm -r --if-present run build",
     "start": "pnpm --filter @ai-influencer/panel start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "typecheck": "pnpm --filter @ai-influencer/panel typecheck && pnpm --filter @ai-influencer/shared typecheck",
-    "test": "pnpm --filter @ai-influencer/panel test",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "pnpm -r --if-present run test",
     "test:e2e": "pnpm --filter @ai-influencer/panel test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
-    "supabase:status": "supabase status"
+    "supabase:status": "supabase status",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
-    "eslint": "8.57.1",
-    "eslint-config-next": "15.5.28",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.2",
+    "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.10",
-    "supabase": "2.121.0",
     "shadcn": "4.22.1",
+    "supabase": "2.121.0",
     "typescript": "5.9.3"
   }
 }

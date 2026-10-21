@@ -1,6 +1,6 @@
 # Yayın öncesi kontrol listesi
 
-İçerik: ____________________  Platform: ____________________  Tarih: __________
+İçerik: ____________________ Platform: ____________________ Tarih: __________
 
 ## 1. İzlenme kancası
 
@@ -53,4 +53,4 @@
 - [ ] Düzeltmeye geri gönder
 - [ ] Hukuk/marka/platform kontrolü bekliyor
 
-Kontrol eden: ____________________  Not: __________________________________________
+Kontrol eden: ____________________ Not: __________________________________________

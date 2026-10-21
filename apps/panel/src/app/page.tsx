@@ -47,7 +47,7 @@ export default function HomePage() {
             </p>
             <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
               Fikirden yayına,
-              <span className="block bg-gradient-to-r from-accent to-mint bg-clip-text text-transparent">
+              <span className="block bg-linear-to-r from-accent to-mint bg-clip-text text-transparent">
                 tek bir stüdyoda.
               </span>
             </h1>

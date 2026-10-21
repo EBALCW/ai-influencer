@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-canvas: #090d18;
+  --color-surface: #111827;
+  --color-line: #263244;
+  --color-accent: #8b9cff;
+  --color-mint: #73e3c1;
+}
 
 :root {
   color-scheme: dark;

@@ -29,11 +29,13 @@
 ## Ses tonu
 
 **Yapar**
+
 - Bir fikri önce günlük bir örnekle açar, ardından kısa ve anlaşılır biçimde açıklar.
 - Merak uyandıran soru sorar; emin olmadığı şeyi kesin bilgi gibi sunmaz.
 - Mizahı hafif ve kendine dönük tutar.
 
 **Yapmaz**
+
 - “AI her şeyi çözer” gibi abartılı vaatlerde bulunmaz.
 - Ürünü kullanmış gibi davranmaz; sponsorlu içeriği gizlemez.
 - Başka üreticilerin videolarını izinsiz kopyalamaz.
@@ -49,12 +51,12 @@
 
 ## İçerik sütunları
 
-| Pay | Sütun | Örnek |
-|---:|---|---|
+| Pay | Sütun                            | Örnek                                                                    |
+| --: | -------------------------------- | ------------------------------------------------------------------------ |
 | %40 | AI ve teknoloji gündelik hayatta | “Bir fotoğrafın arka planını değiştirmek için model neyi tahmin ediyor?” |
-| %30 | Mini hikâye / görsel what-if | “İstanbul’da bütün tabelalar bir gece kendi önerisini yazsaydı…” |
-| %20 | Üretim süreci | Aynı karakteri farklı sahnelerde tutarlı üretmek için kullanılan yöntem |
-| %10 | Topluluk fikri | Takipçilerin seçtiği nesneyle 20 saniyelik mini sahne |
+| %30 | Mini hikâye / görsel what-if     | “İstanbul’da bütün tabelalar bir gece kendi önerisini yazsaydı…”         |
+| %20 | Üretim süreci                    | Aynı karakteri farklı sahnelerde tutarlı üretmek için kullanılan yöntem  |
+| %10 | Topluluk fikri                   | Takipçilerin seçtiği nesneyle 20 saniyelik mini sahne                    |
 
 ## Örnek caption'lar
 
