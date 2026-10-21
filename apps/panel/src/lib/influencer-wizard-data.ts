@@ -2,6 +2,7 @@ import 'server-only';
 import type { Row } from '@ai-influencer/shared';
 import { toPersonaInput, type PersonaInput } from './persona';
 import { createSupabaseServerClient } from './supabase/server';
+import { CHARACTER_PROMPT_KEY } from './influencer-wizard-prompt';
 
 export type InfluencerWizardDraft = {
   id: string;
@@ -11,6 +12,8 @@ export type InfluencerWizardDraft = {
   language: string;
   persona: PersonaInput | null;
   promptBody: string | null;
+  referenceCount: number;
+  avatarAssetId: string | null;
 };
 
 async function loadDraft(
@@ -29,6 +32,7 @@ async function loadDraft(
   const [
     { data: persona, error: personaError },
     { data: prompt, error: promptError },
+    { count: referenceCount, error: assetsError },
   ] = await Promise.all([
     supabase
       .from('influencer_personas')
@@ -41,12 +45,19 @@ async function loadDraft(
       .select('body')
       .eq('influencer_id', influencer.id)
       .eq('category', 'character')
+      .eq('key', CHARACTER_PROMPT_KEY)
       .order('version', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from('assets')
+      .select('id', { count: 'exact', head: true })
+      .eq('influencer_id', influencer.id)
+      .eq('kind', 'reference'),
   ]);
-  if (personaError || promptError)
-    throw new Error('Taslak adımları alınamadı.');
+  const stepError = personaError ?? promptError ?? assetsError;
+  if (stepError)
+    throw new Error(`Taslak adımları alınamadı: ${stepError.message}`);
 
   return {
     id: influencer.id,
@@ -56,6 +67,8 @@ async function loadDraft(
     language: influencer.language,
     persona: persona ? toPersonaInput(persona) : null,
     promptBody: prompt?.body ?? null,
+    referenceCount: referenceCount ?? 0,
+    avatarAssetId: influencer.avatar_asset_id,
   } satisfies InfluencerWizardDraft;
 }
 

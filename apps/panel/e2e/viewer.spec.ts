@@ -107,3 +107,27 @@ test('viewer maliyetleri görür ama ekleyemez', async ({ page }) => {
   });
   expect(budget.status()).toBe(403);
 });
+
+test('viewer influencer sihirbazını açamaz ve taslak oluşturamaz', async ({
+  page,
+}) => {
+  await page.goto('/influencers/new');
+  await expect(page).toHaveURL(/\/influencers(\?|$)/);
+  await expect(page.getByRole('link', { name: /Yeni influencer/ })).toHaveCount(
+    0,
+  );
+  const create = await page.request.post('/api/influencers', {
+    data: {
+      name: 'Viewer',
+      slug: 'viewer-denemesi',
+      niche: '',
+      language: 'tr',
+    },
+  });
+  expect(create.status()).toBe(403);
+  const prompt = await page.request.post(
+    '/api/influencers/10000000-0000-4000-8000-000000000001/character-prompt',
+    { data: { body: 'viewer denemesi' } },
+  );
+  expect(prompt.status()).toBe(403);
+});

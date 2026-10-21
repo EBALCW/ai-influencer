@@ -1,0 +1,33 @@
+name: Deploy · test
+
+# test dalına her push/merge: CI → test veritabanına migration'lar
+on:
+  push:
+    branches: [test]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sadece test dalı
+        run: |
+          [ "${{ github.ref_name }}" = "test" ] || { echo "::error::Deploy · test yalnızca test dalından çalışır"; exit 1; }
+
+  ci:
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+
+  migrate:
+    needs: ci
+    uses: ./.github/workflows/_migrate.yml
+    with:
+      environment: test
+    secrets: inherit

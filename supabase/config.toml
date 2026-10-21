@@ -29,6 +29,15 @@ additional_redirect_urls = ["http://127.0.0.1:3000/**"]
 enabled = true
 port = 54323
 
+[storage]
+enabled = true
+file_size_limit = "100MiB"
+
+[storage.buckets.assets]
+public = false
+file_size_limit = "100MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/avif", "video/mp4", "video/webm"]
+
 [inbucket]
 enabled = true
 port = 54324

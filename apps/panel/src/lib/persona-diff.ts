@@ -3,7 +3,13 @@ import type { PersonaRow } from './persona';
 
 export type PersonaSnapshot = Pick<
   PersonaRow,
-  'bio' | 'tone' | 'hook_traits' | 'personality' | 'audience' | 'appearance'
+  | 'bio'
+  | 'tone'
+  | 'hook_traits'
+  | 'sample_captions'
+  | 'personality'
+  | 'audience'
+  | 'appearance'
 >;
 
 export type DiffEntry =
@@ -101,6 +107,12 @@ export function diffPersonas(
       'Kanca özellikleri',
       older.hook_traits,
       newer.hook_traits,
+    ),
+    listDiff(
+      'sample_captions',
+      'Örnek caption’lar',
+      older.sample_captions,
+      newer.sample_captions,
     ),
   ];
 

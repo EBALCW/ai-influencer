@@ -23,10 +23,19 @@ test('home page shows the studio shell and overview', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('all navigation sections open with an empty state', async ({ page }) => {
+test('navigation opens real modules and unfinished sections show empty states', async ({
+  page,
+}) => {
+  for (const [label, href] of [
+    ['İçerik akışı', '/content'],
+    ['Yayın takvimi', '/calendar'],
+  ] as const) {
+    await page.goto(href);
+    await expect(
+      page.getByRole('heading', { name: label, level: 1 }),
+    ).toBeVisible();
+  }
   const destinations = [
-    ['İçerik', '/content'],
-    ['Takvim', '/calendar'],
     ['Analitik', '/analytics'],
     ['Üretim', '/production'],
     ['Markalar', '/brands'],
@@ -63,16 +72,99 @@ test('influencer listesi detay sayfasına gider ve ?inf= seçimini korur', async
   await expect(page.getByText('Persona kaydı yok')).toBeVisible();
 });
 
-test('taslak influencer kurulumuna devam bağlantısı sunar', async ({
+test('taslak influencer listesinden kuruluma devam edilir', async ({
   page,
 }) => {
   await page.goto('/influencers?inf=demo-creator');
   await page.getByRole('link', { name: 'Kuruluma devam et' }).click();
-  await expect(page).toHaveURL(/setup/);
-  await expect(page).toHaveURL(/inf=demo-creator/);
+  await expect(page).toHaveURL(/\/influencers\/demo-creator\/setup/);
   await expect(
     page.getByRole('heading', { name: 'Yeni influencer oluştur', level: 1 }),
   ).toBeVisible();
+});
+
+test('yeni influencer sihirbazı 1. adımdan özete kadar tamamlanır', async ({
+  page,
+}) => {
+  // Ortak seed kaydını (demo-creator) değiştirmemek için kendi taslağını oluşturur;
+  // retry'da çakışmasın diye slug benzersiz.
+  const slug = `e2e-wizard-${Date.now().toString(36)}`;
+  await page.goto('/influencers?inf=demo-creator');
+  await page.getByRole('link', { name: /Yeni influencer/ }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Yeni influencer oluştur', level: 1 }),
+  ).toBeVisible();
+  await page.getByLabel('Karakter adı').fill('E2E Sihirbaz');
+  await page.getByLabel('URL slug').fill(slug);
+  await page.getByLabel('Niş').fill('test');
+  await page.getByRole('button', { name: 'Kaydet ve devam et' }).click();
+  await expect(page).toHaveURL(new RegExp(`/influencers/${slug}/setup`));
+
+  // Liste alanları tuş tuş yazılabilmeli (virgül ve yeni satır kaybolmamalı)
+  await page
+    .getByLabel('Kişilik sıfatları')
+    .pressSequentially('meraklı, enerjik');
+  await expect(page.getByLabel('Kişilik sıfatları')).toHaveValue(
+    'meraklı, enerjik',
+  );
+
+  await page.getByLabel('Karakter hikâyesi').fill('Test persona hikâyesi.');
+  await page.getByLabel('Ses tonu').fill('Samimi ve açık');
+  await page
+    .getByLabel('Hedef kitle açıklaması')
+    .fill('Yaratıcı içerik izleyicileri.');
+  await page.getByRole('button', { name: 'Kaydet ve devam et' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Görünüm ve karakter prompt’u' }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Prompt’u kaydet ve devam et' })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Referans görselleri' }),
+  ).toBeVisible();
+
+  await page.getByRole('link', { name: 'Medya kütüphanesinde yükle' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Görsel ve videolar' }),
+  ).toBeVisible();
+  await page.getByLabel('Görsel veya video yükle').setInputFiles({
+    name: 'wizard-reference.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  });
+  await expect(
+    page.getByRole('status').getByText('Dosyalar yüklendi.'),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Kuruluma dön' }).click();
+  await expect(page.getByRole('status')).toContainText('1 referans yüklendi');
+  await page.getByRole('button', { name: 'Avatar seçimine devam et' }).click();
+
+  await page
+    .getByRole('link', { name: 'Seti karşılaştır ve avatarı belirle' })
+    .click();
+  await page.getByRole('button', { name: 'Avatar yap' }).click();
+  await page.getByRole('link', { name: 'Kuruluma dön' }).click();
+  await expect(page.getByRole('status')).toContainText('Avatar belirlendi');
+  await page.getByRole('button', { name: 'Özeti gör' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Taslak özeti' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Taslağı tamamla' }).click();
+  await expect(page).toHaveURL(
+    new RegExp(`/influencers/${slug}\\?inf=${slug}`),
+  );
+
+  await page.goto(`/influencers/${slug}/assets?inf=${slug}`);
+  await page.getByRole('button', { name: 'Sil', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Dosyayı sil' })
+    .click();
+  await expect(page.getByRole('article')).toHaveCount(0);
 });
 
 test('bilinmeyen influencer slug gerçek HTTP 404 döndürür', async ({
@@ -124,6 +216,111 @@ test('influencer selection is stored in the URL', async ({ page }) => {
 test('unknown sections return 404', async ({ page }) => {
   const response = await page.goto('/olmayan-bolum');
   expect(response?.status()).toBe(404);
+});
+
+test('asset manager uploads, previews, and removes a private image', async ({
+  page,
+}) => {
+  await page.goto('/influencers/demo-creator/assets?inf=demo-creator');
+  await expect(
+    page.getByRole('heading', { name: 'Görsel ve videolar' }),
+  ).toBeVisible();
+  await page.getByLabel('Görsel veya video yükle').setInputFiles([
+    {
+      name: 'asset-test.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    },
+    {
+      name: 'asset-test-2.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    },
+  ]);
+  await expect(
+    page.getByRole('status').getByText('Dosyalar yüklendi.'),
+  ).toBeVisible();
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await expect(page.locator('img').first()).toBeVisible();
+  await page.getByLabel('Tarihe göre filtrele').selectOption('7');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await page.getByLabel('Tarihe göre filtrele').selectOption('all');
+  const assetChecks = page.getByLabel('Toplu işlem için seç');
+  await assetChecks.first().check();
+  await assetChecks.last().check();
+  await page.getByLabel('Seçilenlere etiket uygula').fill('e2e-reference');
+  await page.getByRole('button', { name: 'Etiketleri kaydet (2)' }).click();
+  await page.getByLabel('Etikete göre filtrele').selectOption('e2e-reference');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await page.getByLabel('Etikete göre filtrele').selectOption('all');
+  await page.getByRole('button', { name: 'Görseli büyüt' }).first().click();
+  await expect(
+    page.getByRole('dialog', { name: 'Görsel önizleme' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Önizlemeyi kapat' }).click();
+  const versionSelects = page.getByLabel('Referans versiyonu');
+  await expect(versionSelects).toHaveCount(2);
+  await versionSelects.first().selectOption('v2');
+  await page.getByLabel('Sol referans seti').selectOption('v1');
+  await page.getByLabel('Sağ referans seti').selectOption('v2');
+  await expect(
+    page.getByRole('region', { name: 'Referans seti sol v1' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Referans seti sağ v2' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Avatar yap' }).first().click();
+  await expect(page.getByRole('button', { name: 'Mevcut avatar' })).toHaveCount(
+    1,
+  );
+  await page.getByRole('button', { name: 'Sil', exact: true }).first().click();
+  const firstDialog = page.getByRole('dialog');
+  await firstDialog.getByRole('button', { name: 'Dosyayı sil' }).click();
+  await expect(page.getByRole('article')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Mevcut avatar' })).toHaveCount(
+    0,
+  );
+  await page.getByRole('button', { name: 'Sil', exact: true }).click();
+  const secondDialog = page.getByRole('dialog');
+  await secondDialog.getByRole('button', { name: 'Dosyayı sil' }).click();
+  await expect(page.getByRole('article')).toHaveCount(0);
+});
+
+test('asset manager accepts drag and drop uploads', async ({ page }) => {
+  await page.goto('/influencers/demo-creator/assets?inf=demo-creator');
+  await page.locator('.file-dropzone').evaluate((dropzone) => {
+    const base64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==';
+    const bytes = Uint8Array.from(atob(base64), (character) =>
+      character.charCodeAt(0),
+    );
+    const transfer = new DataTransfer();
+    transfer.items.add(
+      new File([bytes], 'drag-reference.png', { type: 'image/png' }),
+    );
+    dropzone.dispatchEvent(
+      new DragEvent('dragover', { bubbles: true, dataTransfer: transfer }),
+    );
+    dropzone.dispatchEvent(
+      new DragEvent('drop', { bubbles: true, dataTransfer: transfer }),
+    );
+  });
+  await expect(
+    page.getByRole('status').getByText('Dosyalar yüklendi.'),
+  ).toBeVisible();
+  await expect(page.getByRole('article')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Sil', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Dosyayı sil' })
+    .click();
+  await expect(page.getByRole('article')).toHaveCount(0);
 });
 
 test('theme can be switched and stays selected after reload', async ({

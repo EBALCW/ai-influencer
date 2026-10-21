@@ -4,6 +4,23 @@ Bu dosya, kod yazan herkesin (insan ya da agent) uyması gereken kuralları topl
 
 İlgili dosyalar: kurulum `docs/SETUP.md` · branch/PR akışı `docs/WORKFLOW.md` · veri modeli `docs/data-model.md` · auth `docs/AUTH.md` · panel arayüz kuralları `apps/panel/AGENTS.md`.
 
+## 0. Veritabanı değişiklikleri SADECE migration ile (en önemli kural)
+
+- Test ve production veritabanlarına **sadece pipeline yazar** (`.github/workflows/_migrate.yml`). `test`'e merge → `Deploy · test`, `main`'e merge → `Deploy · production`.
+- **Yasak** (insan ve agent fark etmez):
+  - Supabase Studio'nun SQL editöründe veya Table Editor'de şema değiştirmek
+  - Supabase MCP ile `execute_sql` / `apply_migration` çalıştırmak
+  - Yerelden uzak projeye `supabase link`, `supabase db push` veya `migration repair` çalıştırmak
+  - `psql` ile uzak veritabanına bağlanıp değişiklik yapmak
+- **Doğru yol:** `supabase/migrations/<YYYYMMDDHHMMSS>_<ad>.sql` dosyası ekle (RLS ve pgTAP testiyle) → PR → CI → merge → pipeline uygular.
+- **Uygulama verisi** (influencer, kayıt, bütçe…) panel veya API üzerinden girilir. Elle SQL ile veri değiştirilmez. Sabit referans verisi gerekiyorsa o da migration'dır.
+- **Zorlama:**
+  - CI'daki `Migration kuralları` işi değiştirilmiş, silinmiş veya sırasız migration'ı reddeder.
+  - Deploy sırasında `db push` repoda olmayan uzak migration'ı reddeder.
+  - Deploy sonunda `db diff` sapma kontrolü yapar: migration dışı bir şema değişikliği varsa deploy kırmızıya düşer.
+  - Claude Code için yasaklı komutlar `.claude/settings.json`'da tanımlı.
+- **Acil durumda bile** önce migration yazılır. Uzak veritabanında elle bir şey yapıldıysa hemen ekibe haber verilir ve aynı değişiklik migration'a çevrilir.
+
 ## 1. Bitti tanımı (Definition of Done)
 
 Bir issue ancak şunların hepsi sağlandığında kapanır:

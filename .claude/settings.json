@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "deny": [
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__reset_branch",
+      "mcp__supabase__merge_branch",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__reset_branch",
+      "mcp__claude_ai_Supabase__merge_branch",
+      "Bash(supabase db push:*)",
+      "Bash(pnpm exec supabase db push:*)",
+      "Bash(npx supabase db push:*)",
+      "Bash(supabase link:*)",
+      "Bash(pnpm exec supabase link:*)",
+      "Bash(supabase migration repair:*)",
+      "Bash(pnpm exec supabase migration repair:*)",
+      "Bash(psql:*)"
+    ]
+  }
+}

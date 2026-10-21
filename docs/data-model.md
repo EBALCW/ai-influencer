@@ -56,8 +56,18 @@ Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bul
 - Yeni versiyon yalnızca `create_persona_version(...)` RPC'siyle oluşturulur. Versiyon numarası (`max + 1`), `is_current` ve değiştiren kişi (`created_by`) veritabanında belirlenir. RPC influencer satırını `FOR UPDATE` ile kilitler, böylece eşzamanlı iki kayıt aynı numarayı alamaz.
 - Geri alma (`restore_persona_version`) eski içeriği kopyalayan **yeni** bir versiyon oluşturur ve `restored_from_version` alanına kaynağı yazar. Geçmiş doğrusal kalır.
 - Var olan satırın içeriği trigger ile kilitlidir. `UPDATE` sadece `is_current`'ı `true → false` yapabilir. Geçmişi sadece owner silebilir.
-- `change_note`: versiyon notu (en fazla 500 karakter). `appearance`: görünüm alanları (saç, ten, göz, yüz, vücut, imza aksesuar). #43 wizard'ı da bu kolonu kullanır.
+- `change_note`: versiyon notu (en fazla 500 karakter). `appearance`: görünüm alanları (saç, ten, göz, yüz, vücut, imza aksesuar). #43 wizard'ı da bu kolonu kullanır. `sample_captions`: persona tonunu örnekleyen, en fazla 10 caption (her biri en fazla 2.200 karakter); persona sürümüyle birlikte saklanır ve geri yüklenir.
 - Panel tarafında form şeması `apps/panel/src/lib/persona.ts`, versiyon farkı `apps/panel/src/lib/persona-diff.ts` içindedir. jsonb alanlarındaki bilinmeyen anahtarlar yeni versiyona taşınır.
+
+## İçerik akışı ve yayın takvimi (#57)
+
+- `content_items`: trend URL/izlenme/viral neden/uyarlama puanı, sorumlu ekip üyesi, hedef sosyal hesap, IANA saat dilimi, sıra ve not alanları. Influencer sonradan değişmez. `updated_at` atomik kayıt RPC’sinde iyimser kilittir; eski sürümle kayıt 409 döner.
+- `content_item_assets`: bir içerik ile aynı influencer’a ait asset veya üretimi bağlar (her satırda tam biri). RLS, audit trigger’ları ve tekil bağlantı kısıtları vardır.
+- `posting_slots`: hesap, haftanın günü (Pazar=0), PostgreSQL `time` ve IANA saat dilimi. Viewer yalnız okur. DST’de mevcut olmayan slot saati takvimde uyarı olarak gösterilir.
+- `save_content_item`: içerik ve medya bağlantılarını tek transaction’da kaydeder. `link_content_post`: `posts.content_item_id` üzerinden yayını eşleştirir; hesabı doğrular ve kartı Yayında’ya taşır. Fonksiyonlar `SECURITY INVOKER` kullanır.
+- `checklist` biçimi: `{ items: { <madde>: boolean }, hookScore: 1..5 | null, engagementScore: 1..5 | null, decision: 'ready' | 'rework' | 'review' }`. Maddeler `templates/pre-publish-checklist.md` ile eşleşir. Eksik checklist, düşük puan, eksik hesap/zaman veya post eşleştirmesi planlama/yayın aşamasına geçişi veritabanında da engeller (API 422).
+- 5 saat ve günlük 4 paylaşım kuralları uyarıdır. Planlanmış içerik ve gerçek postlar hesap bazında tek kez sayılır; günlük sınır kartın hedef saat diliminde hesaplanır. `content_item_details` yalnız seçili kartlar için son post snapshot’ını getirir; snapshot’lar toplanmaz.
+- Kanban ve takvim 100 kartlık sayfalar kullanır; medya ve post seçimleri son 200 kayıtla sınırlıdır. Daha eski bağlı medyanın kimliği korunur.
 
 ## Prompt kütüphanesi (#46)
 
@@ -91,6 +101,8 @@ Her uygulama tablosunda RLS açıktır. Anon rolüne tablo yetkisi verilmez; `au
 
 ## Yerel geliştirme ve tip üretimi
 
+`assets.qc_checklist` QC kontrol yanıtlarını, `assets.thumbnail_path` ise private `assets` bucket'ındaki küçük resim yolunu tutar. Storage erişim politikaları üyeler için okuma, owner/editor için yazma ve silme izni verir. Yazma sadece var olan bir influencer'ın klasörüne (`<influencer_id>/<dosya>`, tek seviye) yapılabilir. `assets` satırındaki yollar da aynı influencer klasöründe olmak zorundadır (`assets_paths_in_influencer_folder`). Silmede önce satır, sonra dosya kaldırılır. Avatar bağlantısını FK (`ON DELETE SET NULL`) temizler.
+
 `pnpm supabase:start` yerel Supabase'i başlatır. `pnpm supabase:db-reset` migration'ları ve `supabase/seed.sql` demo verisini sıfırdan uygular. `pnpm supabase:test` pgTAP testlerini çalıştırır; testler ilk owner kaydı, viewer salt-okunur davranışı, takım dışı erişim ve editor yazma yetkisini kontrol eder.
 
 Şema değiştikten sonra `pnpm supabase:types` komutu `supabase gen types typescript --local` çıktısını `packages/shared/src/database.types.ts` dosyasına yazar. Bu dosya **elle düzenlenmez**; CI, migration'lardan üretilen tiplerle dosyanın aynı olduğunu kontrol eder ve fark varsa PR'ı düşürür. `Row<'influencers'>`, `TeamRole` gibi yardımcı tipler `packages/shared/src/database.ts` içindedir; panel kodu her zaman `@ai-influencer/shared` üzerinden import eder.
@@ -101,3 +113,38 @@ Her uygulama tablosunda RLS açıktır. Anon rolüne tablo yetkisi verilmez; `au
 - Sosyal OAuth token'ları bu şemaya düz metin olarak yazılmaz; Vault secret adı veya kimliği `token_ref` alanında tutulur.
 - Storage bucket oluşturma, dosya yükleme politikaları ve asset kullanıcı akışı #45 kapsamındadır.
 - Paylaşım ve OAuth entegrasyonlarına özel alanlar, kendi issue'larında sağlayıcı koşulları doğrulandıkça migration ile eklenmelidir.
+
+### Sosyal hesap token kasası (#49, altyapı)
+
+`20261022160000_oauth_vault_helpers.sql`, token paketini Vault'ta şifreli tutar.
+`social_accounts.token_ref` yalnız Vault UUID'sini içerir. Token paketinde yalnız
+`access_token` ve isteğe bağlı `refresh_token`, `token_type`, `scope` metinleri kabul edilir;
+sağlayıcı yanıtının tamamı saklanmaz. Tarih verilirse gelecekte ve sonlu olmalıdır.
+
+Yalnız `service_role` şu RPC'leri çağırabilir (hepsi sabit, boş `search_path` kullanır):
+
+| RPC                                                       | Davranış                                                                                                                                                                                                                                            |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `store_social_token(p_account_id, p_token, p_expires_at)` | Hesabı kilitler; aynı hesaba ait sırrı oluşturur/günceller, UUID referansı ve son kullanım tarihiyle hesabı `active` yapar. Paket bütünüyle değiştirilir; yenileme yanıtında refresh token yoksa çağıran sunucu önceki refresh token'ı korumalıdır. |
+| `read_social_token(p_account_id)`                         | Hesap referansı **ve** `social-token:<account_id>` adı eşleşirse paketi çözer; yoksa/revoked ise NULL döner. Süresi dolmuş token yenileme için okunabilir. Sonuç API yanıtına, istemciye veya loga yazılmaz.                                        |
+| `delete_social_token(p_account_id)`                       | Sırrı siler; referans/tarihi temizler ve hesabı `revoked` yapar. Hesap ve post geçmişini silmez; tekrar çağrılabilir. Sağlayıcıdaki revoke isteğinin yerini tutmaz.                                                                                 |
+
+Vault şeması ve tablolarına `anon` ve `authenticated` doğrudan erişemez.
+`service_role` güvenilen sunucu rolüdür; platformun verdiği geniş yetkiler korunur.
+Uygulama kodu token işlemlerini yukarıdaki dar RPC'lerden yapar. Owner/editor da
+istemci rolü `authenticated` olduğu için token referansı, son kullanım tarihi ve bağlantı
+durumunu elle değiştiremez. Normal metadata düzenlemesi ve yeni `pending` hesap ekleme
+korunur. Token bağlıyken influencer/platform değiştirilmesi engellenir.
+
+Hesap silinince (influencer CASCADE dahil) yalnız o hesabın adıyla eşleşen Vault sırrı
+trigger ile temizlenir. Bir hesabın bozuk referansı başka hesabın sırrını okuyamaz/silemez.
+Saklama ve silme aynı hesap kilidini kullanır; Vault yazımı ve hesap güncellemesi tek
+transaction'dır. RPC hataları token paketini içermez.
+
+Bu migration sağlayıcı uygulaması, OAuth start/callback, state/PKCE, refresh job'u veya
+canlı ortam secret'ı kurmaz. Bunlar #49'un kalan adımlarıdır. RPC'ler doğrulanmış OAuth
+callback'i/yenileme job'u için sunucu altyapısıdır; tarayıcıdan çağrılmaz.
+
+Kaynak: [Supabase Vault resmi dokümanı](https://supabase.com/docs/guides/database/vault)
+(okuma: 2026-10-21). pgTAP `oauth_vault.test.sql`: rol sınırları, şifreleme/rotasyon,
+referans izolasyonu, girdi doğrulaması, bağlantıyı kaldırma ve cascade temizliği.

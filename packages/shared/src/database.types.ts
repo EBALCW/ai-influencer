@@ -65,14 +65,14 @@ isOneToOne: false
                   ]
                 },"assets": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_status": string,"storage_path": string,"tags": (string)[],"updated_at": string,"version_tag": string | null,"width": number | null
+                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"thumbnail_path": string | null,"updated_at": string,"version_tag": string | null,"width": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
                   }
                   Relationships: [
                     {
@@ -143,23 +143,67 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"content_items": {
+                },"content_item_assets": {
                   Row: {
-                    "checklist": NonNullable<Json>,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"scheduled_at": string | null,"stage": Database["public"]['Enums']["content_stage"],"title": string,"updated_at": string
+                    "asset_id": string | null,"content_item_id": string,"created_at": string,"created_by": string | null,"generation_id": string | null,"id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"scheduled_at"?: string | null,"stage"?: Database["public"]['Enums']["content_stage"],"title": string,"updated_at"?: string
+                    "asset_id"?: string | null,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"generation_id"?: string | null,"id"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"scheduled_at"?: string | null,"stage"?: Database["public"]['Enums']["content_stage"],"title"?: string,"updated_at"?: string
+                    "asset_id"?: string | null,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"generation_id"?: string | null,"id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "content_item_assets_asset_id_fkey"
+      columns: ["asset_id"]
+isOneToOne: false
+      referencedRelation: "assets"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "content_item_assets_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "content_item_assets_generation_id_fkey"
+      columns: ["generation_id"]
+isOneToOne: false
+      referencedRelation: "generations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"content_items": {
+                  Row: {
+                    "adaptation_score": number | null,"assignee_id": string | null,"checklist": NonNullable<Json>,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"notes": string,"scheduled_at": string | null,"sort_order": number,"source_url": string,"source_views": number | null,"stage": Database["public"]['Enums']["content_stage"],"target_account_id": string | null,"timezone": string,"title": string,"updated_at": string,"viral_reason": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"viral_reason"?: string
+                  }
+                  Update: {
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"viral_reason"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "content_items_assignee_id_fkey"
+      columns: ["assignee_id"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["user_id"]
+    },{
       foreignKeyName: "content_items_influencer_id_fkey"
       columns: ["influencer_id"]
 isOneToOne: false
       referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "content_items_target_account_id_fkey"
+      columns: ["target_account_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
       referencedColumns: ["id"]
     }
                   ]
@@ -263,14 +307,14 @@ isOneToOne: false
                   ]
                 },"influencer_personas": {
                   Row: {
-                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"tone": string,"updated_at": string,"version": number
+                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"sample_captions": (string)[],"tone": string,"updated_at": string,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"tone"?: string,"updated_at"?: string,"version": number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version": number
                   }
                   Update: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"tone"?: string,"updated_at"?: string,"version"?: number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -318,6 +362,26 @@ isOneToOne: false
       columns: ["post_id"]
 isOneToOne: false
       referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"posting_slots": {
+                  Row: {
+                    "account_id": string,"created_at": string,"created_by": string | null,"id": string,"local_time": string,"timezone": string,"updated_at": string,"weekday": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"local_time": string,"timezone"?: string,"updated_at"?: string,"weekday": number
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"local_time"?: string,"timezone"?: string,"updated_at"?: string,"weekday"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "posting_slots_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
       referencedColumns: ["id"]
     }
                   ]
@@ -429,7 +493,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "budget_status":
+            "asset_object_in_influencer_folder":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
+"budget_status":
 { Args: { "p_month": string }; Returns: {
               "amount": number,"budget_id": string,"currency": string,"influencer_id": string,"missing_rate_count": number,"month": string,"ratio": number,"spent": number,"warn_ratio": number
             }[]
@@ -439,6 +506,15 @@ isOneToOne: false
                            },
 "can_write_data":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"content_checklist_ready":
+{ Args: { "p_checklist": Json }; Returns: boolean
+                           },
+"content_item_details":
+{ Args: { "p_ids": (string)[] }; Returns: Json
+                           },
+"content_schedule_warnings":
+{ Args: { "p_id": string }; Returns: (string)[]
                            },
 "cost_by_category":
 { Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
@@ -461,7 +537,7 @@ isOneToOne: false
             }[]
                            },
 "create_persona_version":
-{ Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_tone": string }; Returns: {
+{ Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_sample_captions"?: (string)[],"p_tone": string }; Returns: {
               "appearance": NonNullable<Json>,
 "audience": NonNullable<Json>,
 "bio": string,
@@ -474,6 +550,7 @@ isOneToOne: false
 "is_current": boolean,
 "personality": NonNullable<Json>,
 "restored_from_version": number | null,
+"sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
 "version": number
@@ -515,6 +592,9 @@ isOneToOne: false
 "current_team_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["team_role"]
                            },
+"delete_social_token":
+{ Args: { "p_account_id": string }; Returns: undefined
+                           },
 "fx_rate":
 { Args: { "p_from": string,"p_on": string,"p_to": string }; Returns: number
                            },
@@ -529,8 +609,40 @@ isOneToOne: false
 "is_team_member":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"link_content_post":
+{ Args: { "p_content_id": string,"p_post_id": string }; Returns: {
+              "adaptation_score": number | null,
+"assignee_id": string | null,
+"checklist": NonNullable<Json>,
+"created_at": string,
+"created_by": string | null,
+"format": string,
+"hook_type": string | null,
+"id": string,
+"influencer_id": string,
+"notes": string,
+"scheduled_at": string | null,
+"sort_order": number,
+"source_url": string,
+"source_views": number | null,
+"stage": Database["public"]['Enums']["content_stage"],
+"target_account_id": string | null,
+"timezone": string,
+"title": string,
+"updated_at": string,
+"viral_reason": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "content_items"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "raise_budget_alerts":
 { Args: { "p_month": string }; Returns: number
+                           },
+"read_social_token":
+{ Args: { "p_account_id": string }; Returns: Json
                            },
 "restore_persona_version":
 { Args: { "p_change_note"?: string,"p_influencer_id": string,"p_version": number }; Returns: {
@@ -546,6 +658,7 @@ isOneToOne: false
 "is_current": boolean,
 "personality": NonNullable<Json>,
 "restored_from_version": number | null,
+"sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
 "version": number
@@ -555,7 +668,42 @@ isOneToOne: false
         to: "influencer_personas"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"save_content_item":
+{ Args: { "p_asset_ids"?: (string)[],"p_expected_updated_at"?: string,"p_generation_ids"?: (string)[],"p_id": string,"p_values": Json }; Returns: {
+              "adaptation_score": number | null,
+"assignee_id": string | null,
+"checklist": NonNullable<Json>,
+"created_at": string,
+"created_by": string | null,
+"format": string,
+"hook_type": string | null,
+"id": string,
+"influencer_id": string,
+"notes": string,
+"scheduled_at": string | null,
+"sort_order": number,
+"source_url": string,
+"source_views": number | null,
+"stage": Database["public"]['Enums']["content_stage"],
+"target_account_id": string | null,
+"timezone": string,
+"title": string,
+"updated_at": string,
+"viral_reason": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "content_items"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"store_social_token":
+{ Args: { "p_account_id": string,"p_expires_at"?: string,"p_token": Json }; Returns: string
+                           },
+"valid_sample_captions":
+{ Args: { "p_values": (string)[] }; Returns: boolean
+                           }
           }
           Enums: {
             "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"

@@ -1,0 +1,76 @@
+name: Deploy · production
+
+# main'e her merge: CI → production veritabanına migration'lar → GitHub Release → main'i test'e geri birleştir
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write
+  pull-requests: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sadece main dalı
+        run: |
+          [ "${{ github.ref_name }}" = "main" ] || { echo "::error::Deploy · production yalnızca main dalından çalışır"; exit 1; }
+
+  ci:
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+
+  migrate:
+    needs: ci
+    uses: ./.github/workflows/_migrate.yml
+    with:
+      environment: production
+    secrets: inherit
+
+  release:
+    needs: migrate
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: GitHub Release oluştur
+        run: |
+          tag="v$(date -u +%Y.%m.%d)-${GITHUB_SHA::7}"
+          gh release view "$tag" >/dev/null 2>&1 && { echo "$tag zaten var"; exit 0; }
+          gh release create "$tag" --target "$GITHUB_SHA" --generate-notes --title "$tag"
+
+  sync-test:
+    needs: migrate
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: test
+          fetch-depth: 0
+      - name: main'i test'e geri birleştir
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          if git merge-base --is-ancestor origin/main HEAD; then echo "test zaten güncel"; exit 0; fi
+          if git merge --no-edit origin/main && git push origin test; then
+            gh workflow run deploy-test.yml --ref test
+          else
+            git merge --abort 2>/dev/null || true
+            existing=$(gh pr list --base test --head main --state open --json number --jq '.[0].number')
+            [ -n "$existing" ] || gh pr create --base test --head main \
+              --title "main → test senkronizasyonu" \
+              --body "main'deki değişiklikler test'e otomatik birleştirilemedi (çakışma veya workflow dosyası değişikliği). Elle merge edin."
+            echo "::warning::main → test otomatik birleştirilemedi, PR açıldı"
+          fi

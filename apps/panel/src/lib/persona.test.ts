@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parseCaptionList,
   parseTagList,
   personaInputSchema,
   toPersonaInput,
@@ -11,6 +12,7 @@ const row = {
   bio: 'Bio',
   tone: 'samimi',
   hook_traits: ['mavi saç'],
+  sample_captions: ['Bugün buradayım, ya sen?'],
   personality: { adjectives: ['meraklı'], legacy_key: 'korunmalı' },
   audience: {
     age_range: '18-24',
@@ -27,6 +29,7 @@ describe('persona şeması ve eşleme', () => {
       bio: 'Bio',
       adjectives: ['meraklı'],
       hookTraits: ['mavi saç'],
+      sampleCaptions: ['Bugün buradayım, ya sen?'],
       audience: {
         ageRange: '18-24',
         interests: ['ai'],
@@ -68,6 +71,7 @@ describe('persona şeması ve eşleme', () => {
       'p_change_note',
       'p_hook_traits',
       'p_personality',
+      'p_sample_captions',
       'p_tone',
     ]);
   });
@@ -92,5 +96,28 @@ describe('persona şeması ve eşleme', () => {
 
   it('virgüllü listeyi temizler', () => {
     expect(parseTagList(' a, b , ,c,')).toEqual(['a', 'b', 'c']);
+  });
+
+  it('caption listesini satırlara göre ayrıştırır ve sınırları uygular', () => {
+    expect(
+      parseCaptionList('  Bugün buradayım, ya sen?  \n\nYeni bir gün.'),
+    ).toEqual(['Bugün buradayım, ya sen?', 'Yeni bir gün.']);
+    const valid = { ...toPersonaInput(row), sampleCaptions: ['Örnek caption'] };
+    expect(personaInputSchema.safeParse(valid).success).toBe(true);
+    expect(
+      personaInputSchema.safeParse({
+        ...valid,
+        sampleCaptions: Array.from(
+          { length: 11 },
+          (_, index) => `Caption ${index}`,
+        ),
+      }).success,
+    ).toBe(false);
+    expect(
+      personaInputSchema.safeParse({
+        ...valid,
+        sampleCaptions: ['x'.repeat(2201)],
+      }).success,
+    ).toBe(false);
   });
 });

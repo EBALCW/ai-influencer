@@ -121,6 +121,20 @@ pnpm doctor
 
 Zorunlu kontrollerin hepsi `[OK]` olmalı. `[UYARI]` satırları kurulumu engellemez. Örneğin `.env.local` değerleri ilk gün boş olabilir.
 
+## Anahtarları almak: `pnpm env:pull`
+
+Kurulumdan sonra panelin test veritabanına bağlanması için:
+
+```bash
+pnpm env:pull
+```
+
+Komut test Supabase projesinin anahtarlarını GitHub'dan **şifreli** olarak çekip `.env.local`'e yazar. Kimseden anahtar istemen veya mesajla göndermen gerekmez.
+
+- **Nasıl çalışır:** GitHub secret'ları geri okunamaz. Bir workflow secret'ları senin GitHub hesabındaki SSH anahtarınla şifreler, script indirip senin bilgisayarında çözer. Repo public olsa da şifreli paketi sadece sen açabilirsin.
+- **İlk seferde:** SSH anahtarın yoksa script oluşturur ve GitHub'a ekler. Yetki hatası alırsan `gh auth refresh -h github.com -s admin:public_key` çalıştırıp tekrar dene.
+- **Kapsam:** Sadece test projesinin anahtarları gelir. Production anahtarları ve veritabanı şifresi gelmez, veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0).
+
 ## Anahtarlar (`.env.local`)
 
 - Gerçek anahtarlar **sadece** kökteki `.env.local` dosyasına yazılır. Bu dosya git'e gönderilmez, panel de bu dosyayı okur.
