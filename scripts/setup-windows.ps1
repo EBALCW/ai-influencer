@@ -11,8 +11,20 @@ function Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
 function Warn($m) { Write-Host "  [!] $m" -ForegroundColor Yellow }
 function Has($c)  { [bool](Get-Command $c -ErrorAction SilentlyContinue) }
 function Refresh-Path {
-    $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
-                [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + $env:Path
+    # Oturum + makine + kullanici PATH'ini tekrarsiz birlestir. Her kurulumdan sonra eklemek
+    # PATH'i ikiye katliyordu; uzunluk cmd.exe sinirini asinca pnpm postinstall'lari 'node'u bulamiyordu.
+    $all = @($env:Path, [Environment]::GetEnvironmentVariable('Path', 'Machine'),
+             [Environment]::GetEnvironmentVariable('Path', 'User')) -join ';'
+    $seen = @{}
+    $result = New-Object System.Collections.Generic.List[string]
+    foreach ($p in $all -split ';') {
+        if (-not $p) { continue }
+        $key = $p.TrimEnd('\').ToLowerInvariant()
+        if ($seen.ContainsKey($key)) { continue }
+        $seen[$key] = $true
+        $result.Add($p)
+    }
+    $env:Path = $result -join ';'
 }
 # Native komutlarin hata kodunu kontrol et (PS 5.1 bunu kendisi yapmaz)
 function Run {
@@ -44,10 +56,11 @@ if ($policy -in @('Undefined', 'Restricted', 'AllSigned')) {
     Ok 'CurrentUser icin RemoteSigned ayarlandi (pnpm ve profil script''leri icin gerekli)'
 } else { Ok "mevcut: $policy" }
 
-Step 'Temel araclar (git, gh, fnm)'
+Step 'Temel araclar (git, gh, fnm, age)'
 Install-Tool 'Git.Git'    'git'   'git'
 Install-Tool 'GitHub.cli' 'gh'    'gh'
 Install-Tool 'Schniz.fnm' 'fnm'   'fnm'
+Install-Tool 'FiloSottile.age' 'age.portable' 'age'
 
 Step 'Git ayarlari'
 Run git config --global core.longpaths true

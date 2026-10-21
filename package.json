@@ -29,7 +29,8 @@
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "panel": "node scripts/panel.mjs",
     "backup": "node scripts/backup.mjs",
-    "backup:restore": "node scripts/backup.mjs restore"
+    "backup:restore": "node scripts/backup.mjs restore",
+    "env:pull": "node scripts/env-pull.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
