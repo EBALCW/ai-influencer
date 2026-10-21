@@ -100,7 +100,7 @@ describe('persona şeması ve eşleme', () => {
 
   it('caption listesini satırlara göre ayrıştırır ve sınırları uygular', () => {
     expect(
-      parseCaptionList('  Bugün buradayım, ya sen?  \\n\\nYeni bir gün.'),
+      parseCaptionList('  Bugün buradayım, ya sen?  \n\nYeni bir gün.'),
     ).toEqual(['Bugün buradayım, ya sen?', 'Yeni bir gün.']);
     const valid = { ...toPersonaInput(row), sampleCaptions: ['Örnek caption'] };
     expect(personaInputSchema.safeParse(valid).success).toBe(true);
