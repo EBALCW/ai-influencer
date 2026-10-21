@@ -261,7 +261,7 @@ export function AssetManager({
           setAssets((current) => mergeAssetItems(current, [item], 'start'));
         uploaded += 1;
       }
-      setMessage({ text: `${uploaded} dosya yüklendi.` });
+      setMessage({ text: 'Dosyalar yüklendi.' });
     } catch (error) {
       const reason =
         error instanceof Error ? error.message : 'Dosyalar yüklenemedi.';
