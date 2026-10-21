@@ -72,6 +72,8 @@ Supabase projeleri açıldığında (#38) **Settings → Environments** altında
 
 Secret'lar yokken CD hata vermez, Supabase adımını atlar ve uyarı yazar.
 
+**Release PR'ı açıkken `test`'e yeni şey girerse** bot release PR'ının CI'ını otomatik yeniden çalıştırır ve yeşilse merge eder. Elle tetiklemek için: Actions → CI → Run workflow (`test`).
+
 ## Sık sorular
 
 **PR merge olmadı.** PR sayfasındaki notice'a bak: draft, `bekle` label'ı, CI'dan sonra yeni commit gelmesi veya fork olması merge'i engeller. Yeni commit geldiyse CI tekrar çalışır ve merge eder.
