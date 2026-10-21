@@ -2,7 +2,7 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SELECT extensions.plan(21);
 
-SELECT extensions.has_table('public', 'influencers');
+SELECT extensions.has_table('public', 'influencers', 'influencers table exists');
 SELECT extensions.ok(
   (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.influencers'::regclass),
   'influencers has row-level security enabled'
