@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Activity, Coins, UsersRound, Video } from 'lucide-react';
 import type { TeamRole } from '@ai-influencer/shared';
-import { EmptyState, StatCard } from '@/components/ui';
+import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { getInfluencerBySlug } from '@/lib/influencers';
 import { StatusControls } from '../status-controls';
+import { DetailStats } from './detail-stats';
 
 const tabs = [
   ['general', 'Genel'],
@@ -29,12 +29,6 @@ const date = (value: string | null) =>
         new Date(value),
       )
     : 'Tarih yok';
-const count = (value: number) =>
-  new Intl.NumberFormat('tr-TR', {
-    notation: value > 9999 ? 'compact' : 'standard',
-    maximumFractionDigits: 1,
-  }).format(value);
-
 function RecordList({
   rows,
 }: {
@@ -95,34 +89,12 @@ export default async function InfluencerDetailPage({
   if (tab === 'general') {
     content = (
       <div className="page-stack">
-        <section className="stats-grid">
-          <StatCard
-            label="Toplam takipçi"
-            value={count(listItem.followers)}
-            detail="Bağlı hesapların son snapshot toplamı"
-            icon={UsersRound}
-          />
-          <StatCard
-            label="Son 7 gün izlenme"
-            value={count(listItem.views7d)}
-            detail="Kümülatif sayaç farkı"
-            icon={Activity}
-            tone="blue"
-          />
-          <StatCard
-            label="Son postlar"
-            value={String(data.posts.length)}
-            detail="En yeni yayınlar"
-            icon={Video}
-            tone="mint"
-          />
-          <StatCard
-            label="Üretimler"
-            value={String(data.generations.length)}
-            detail="Son üretim kayıtları"
-            icon={Coins}
-          />
-        </section>
+        <DetailStats
+          followers={listItem.followers}
+          views7d={listItem.views7d}
+          posts={data.posts.length}
+          generations={data.generations.length}
+        />
         <section className="section-card">
           <div className="section-heading">
             <div>
