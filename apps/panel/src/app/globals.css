@@ -3,9 +3,11 @@
 @theme {
   --color-canvas: #090d18;
   --color-surface: #111827;
+  --color-panel: #101624;
   --color-line: #263244;
   --color-accent: #8b9cff;
   --color-mint: #73e3c1;
+  --shadow-panel: 0 14px 40px -26px rgb(0 0 0 / 65%);
 }
 
 :root {
@@ -25,7 +27,76 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+::selection {
+  background: rgb(196 181 253 / 35%);
+}
+
+button,
+select,
+input {
+  font: inherit;
+}
+
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.theme-light {
+  color-scheme: light;
+  background-color: #f3f5f9 !important;
+  color: #172033;
+}
+
+.theme-light .bg-panel {
+  background-color: #fff;
+  border-color: #e3e7ef;
+  box-shadow: 0 14px 35px -28px rgb(30 41 59 / 35%);
+}
+
+.theme-light aside,
+.theme-light header {
+  background-color: rgb(255 255 255 / 94%);
+  border-color: #e6e9ef;
+}
+
+.theme-light [class*='border-white'] {
+  border-color: rgb(31 41 55 / 11%);
+}
+
+.theme-light [class*='bg-white/'] {
+  background-color: rgb(31 41 55 / 4%);
+}
+
+.theme-light .text-white,
+.theme-light .text-slate-100,
+.theme-light .text-slate-200 {
+  color: #172033;
+}
+
+.theme-light .text-slate-300,
+.theme-light .text-slate-400 {
+  color: #475569;
+}
+
+.theme-light .text-slate-500,
+.theme-light .text-slate-600 {
+  color: #64748b;
+}
+
+.theme-light .hero-banner .text-white {
+  color: #fff;
+}
+
+.theme-light .hero-banner .text-slate-300 {
+  color: #d1d5db;
+}
+
+.theme-light input,
+.theme-light select {
+  color: #172033;
+}
+
+.theme-light input::placeholder {
+  color: #94a3b8;
 }

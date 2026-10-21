@@ -15,7 +15,9 @@ export default defineConfig({
   },
   webServer: {
     // CI'da build edilmiş uygulama test edilir, yerelde dev sunucusu
-    command: isCI ? 'pnpm start' : 'pnpm dev',
+    command: isCI
+      ? 'pnpm exec next start --hostname 127.0.0.1'
+      : 'pnpm exec next dev --hostname 127.0.0.1',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: !isCI,
     timeout: 120_000,
