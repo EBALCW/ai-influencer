@@ -35,7 +35,16 @@ export default async function InfluencerAssetsPage({
       const { data } = await supabase.storage
         .from('assets')
         .createSignedUrl(asset.storage_path, 600);
-      return { asset: asset as Row<'assets'>, url: data?.signedUrl ?? null };
+      const { data: thumbnail } = asset.thumbnail_path
+        ? await supabase.storage
+            .from('assets')
+            .createSignedUrl(asset.thumbnail_path, 600)
+        : { data: null };
+      return {
+        asset: asset as Row<'assets'>,
+        url: data?.signedUrl ?? null,
+        thumbnailUrl: thumbnail?.signedUrl ?? null,
+      };
     }),
   );
 
