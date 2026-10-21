@@ -211,6 +211,22 @@ test('asset manager uploads, previews, and removes a private image', async ({
   ).toBeVisible();
   await expect(page.getByRole('article')).toHaveCount(2);
   await expect(page.locator('img').first()).toBeVisible();
+  await page.getByLabel('Tarihe göre filtrele').selectOption('7');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await page.getByLabel('Tarihe göre filtrele').selectOption('all');
+  const assetChecks = page.getByLabel('Toplu işlem için seç');
+  await assetChecks.first().check();
+  await assetChecks.last().check();
+  await page.getByLabel('Seçilenlere etiket uygula').fill('e2e-reference');
+  await page.getByRole('button', { name: 'Etiketleri kaydet (2)' }).click();
+  await page.getByLabel('Etikete göre filtrele').selectOption('e2e-reference');
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await page.getByLabel('Etikete göre filtrele').selectOption('all');
+  await page.getByRole('button', { name: 'Görseli büyüt' }).first().click();
+  await expect(
+    page.getByRole('dialog', { name: 'Görsel önizleme' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Önizlemeyi kapat' }).click();
   const versionSelects = page.getByLabel('Referans versiyonu');
   await expect(versionSelects).toHaveCount(2);
   await versionSelects.first().selectOption('v2');
@@ -222,10 +238,17 @@ test('asset manager uploads, previews, and removes a private image', async ({
   await expect(
     page.getByRole('region', { name: 'Referans seti sağ v2' }),
   ).toBeVisible();
+  await page.getByRole('button', { name: 'Avatar yap' }).first().click();
+  await expect(page.getByRole('button', { name: 'Mevcut avatar' })).toHaveCount(
+    1,
+  );
   await page.getByRole('button', { name: 'Sil', exact: true }).first().click();
   const firstDialog = page.getByRole('dialog');
   await firstDialog.getByRole('button', { name: 'Dosyayı sil' }).click();
   await expect(page.getByRole('article')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Mevcut avatar' })).toHaveCount(
+    0,
+  );
   await page.getByRole('button', { name: 'Sil', exact: true }).click();
   const secondDialog = page.getByRole('dialog');
   await secondDialog.getByRole('button', { name: 'Dosyayı sil' }).click();
