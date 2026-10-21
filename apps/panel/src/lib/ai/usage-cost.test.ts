@@ -48,7 +48,7 @@ describe('estimateAiCost', () => {
 
 describe('recordAiUsage', () => {
   function client(result: { data: unknown; error: unknown }) {
-    const insert = vi.fn(() => ({
+    const insert = vi.fn<(values: Record<string, unknown>) => unknown>(() => ({
       select: () => ({ single: async () => result }),
     }));
     return { insert, supabase: { from: vi.fn(() => ({ insert })) } };
