@@ -24,8 +24,6 @@ type Draft = {
   language: string;
   persona: PersonaInput | null;
   promptBody: string | null;
-  referenceCount: number;
-  avatarAssetId: string | null;
 };
 
 const inputClass =
@@ -52,7 +50,7 @@ export function InfluencerWizard({
   const infParam = selectedSlug
     ? `&inf=${encodeURIComponent(selectedSlug)}`
     : '';
-  const [step, setStep] = useState(Math.min(6, Math.max(1, initialStep)));
+  const [step, setStep] = useState(Math.min(3, Math.max(1, initialStep)));
   const [draft, setDraft] = useState(initial);
   const [name, setName] = useState(initial?.name ?? '');
   const [slug, setSlug] = useState(initial?.slug ?? '');
@@ -124,8 +122,6 @@ export function InfluencerWizard({
       ...result.influencer,
       persona,
       promptBody: draft?.promptBody ?? null,
-      referenceCount: draft?.referenceCount ?? 0,
-      avatarAssetId: draft?.avatarAssetId ?? null,
     };
     setDraft(nextDraft);
     setPending(false);
@@ -223,30 +219,8 @@ export function InfluencerWizard({
       }
       setDraft({ ...draft, promptBody: prompt });
     }
-    setDraft((current) =>
-      current ? { ...current, promptBody: prompt } : current,
-    );
     setPending(false);
-    updateStep(4);
-  }
-
-  async function completeDraft() {
-    if (!draft) return;
-    setPending(true);
-    setMessage('');
-    const response = await fetch(
-      `/api/influencers/${draft.id}/complete-wizard`,
-      { method: 'POST' },
-    );
-    if (!response.ok) {
-      setMessage(await responseError(response));
-      setPending(false);
-      return;
-    }
-    setPending(false);
-    router.push(
-      `/influencers/${encodeURIComponent(draft.slug)}?inf=${encodeURIComponent(draft.slug)}`,
-    );
+    router.push(`/influencers?inf=${encodeURIComponent(draft.slug)}`);
     router.refresh();
   }
 
@@ -278,7 +252,7 @@ export function InfluencerWizard({
           <p className="eyebrow">INFLUENCER STUDIO</p>
           <h1>Yeni influencer oluştur</h1>
           <p>
-            Altı adımda karakter taslağını oluştur. İlerlemeniz her adımda
+            Üç adımda karakter taslağını oluştur. Her adım ilerlerken
             kaydedilir.
           </p>
         </div>
@@ -287,9 +261,9 @@ export function InfluencerWizard({
 
       <ol
         aria-label="Influencer oluşturma adımları"
-        className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6"
+        className="grid gap-2 sm:grid-cols-3"
       >
-        {['Temel', 'Persona', 'Görünüm', 'Referans', 'Avatar', 'Özet'].map(
+        {['Temel bilgiler', 'Persona', 'Görünüm ve prompt'].map(
           (title, index) => (
             <li
               key={title}
@@ -530,6 +504,10 @@ export function InfluencerWizard({
               {buildCharacterPrompt(name, persona)}
             </pre>
           </div>
+          <p className="text-sm text-muted">
+            Bu ilk geliştirme diliminde referans görsel yükleme ve avatar seçimi
+            sonraki adımda, #45’in Storage akışıyla eklenecek.
+          </p>
           <div className="flex justify-between">
             <button
               className="button"
@@ -544,156 +522,7 @@ export function InfluencerWizard({
               onClick={() => void finish()}
               type="button"
             >
-              {pending ? 'Kaydediliyor…' : 'Prompt’u kaydet ve devam et'}
-            </button>
-          </div>
-        </section>
-      )}
-      {step === 4 && draft && (
-        <section className="section-card space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold">Referans görselleri</h2>
-            <p className="mt-1 text-sm text-muted">
-              Görselleri medya kütüphanesine yükleyin. Görsel başına bir
-              referans sürümü (v1, v2…) atanır.
-            </p>
-          </div>
-          <p className="soft-badge" role="status">
-            {draft.referenceCount} referans yüklendi
-          </p>
-          <a
-            className="button button-primary"
-            href={`/influencers/${encodeURIComponent(draft.slug)}/assets?wizard=4`}
-          >
-            Medya kütüphanesinde yükle
-          </a>
-          <div className="flex justify-between">
-            <button
-              className="button"
-              onClick={() => updateStep(3)}
-              type="button"
-            >
-              Geri
-            </button>
-            <button
-              className="button button-primary"
-              disabled={draft.referenceCount === 0}
-              onClick={() => updateStep(5)}
-              type="button"
-            >
-              Avatar seçimine devam et
-            </button>
-          </div>
-          {draft.referenceCount === 0 && (
-            <p className="text-sm text-muted">
-              Devam etmek için en az bir referans görsel yükleyin.
-            </p>
-          )}
-        </section>
-      )}
-
-      {step === 5 && draft && (
-        <section className="section-card space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold">Referans setini seçin</h2>
-            <p className="mt-1 text-sm text-muted">
-              Medya kütüphanesinde sürümleri karşılaştırın ve bir görseli
-              influencer avatarı olarak belirleyin.
-            </p>
-          </div>
-          <p className="soft-badge" role="status">
-            {draft.avatarAssetId
-              ? 'Avatar belirlendi'
-              : 'Avatar henüz seçilmedi'}
-          </p>
-          <a
-            className="button button-primary"
-            href={`/influencers/${encodeURIComponent(draft.slug)}/assets?wizard=5`}
-          >
-            Seti karşılaştır ve avatarı belirle
-          </a>
-          <div className="flex justify-between">
-            <button
-              className="button"
-              onClick={() => updateStep(4)}
-              type="button"
-            >
-              Geri
-            </button>
-            <button
-              className="button button-primary"
-              disabled={!draft.avatarAssetId}
-              onClick={() => updateStep(6)}
-              type="button"
-            >
-              Özeti gör
-            </button>
-          </div>
-          {!draft.avatarAssetId && (
-            <p className="text-sm text-muted">
-              Devam etmeden önce medya kütüphanesinde bir avatar seçin.
-            </p>
-          )}
-        </section>
-      )}
-
-      {step === 6 && draft && (
-        <section className="section-card space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold">Taslak özeti</h2>
-            <p className="mt-1 text-sm text-muted">
-              Kontrol edin ve influencer taslağını tamamlayın.
-            </p>
-          </div>
-          <dl className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-sm text-muted">Ad</dt>
-              <dd>{draft.name}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted">Slug</dt>
-              <dd>{draft.slug}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted">Niş</dt>
-              <dd>{draft.niche || 'Belirtilmedi'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted">Dil</dt>
-              <dd>{draft.language}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted">Referans</dt>
-              <dd>{draft.referenceCount} görsel</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-muted">Avatar</dt>
-              <dd>{draft.avatarAssetId ? 'Seçildi' : 'Seçilmedi'}</dd>
-            </div>
-          </dl>
-          <div className="rounded-xl border border-line bg-surface-raised p-4">
-            <h3 className="text-sm font-semibold">Karakter prompt’u</h3>
-            <pre className="mt-3 whitespace-pre-wrap font-sans text-sm text-muted">
-              {draft.promptBody}
-            </pre>
-          </div>
-          <div className="flex justify-between">
-            <button
-              className="button"
-              onClick={() => updateStep(5)}
-              type="button"
-            >
-              Geri
-            </button>
-            <button
-              className="button button-primary"
-              disabled={
-                pending || draft.referenceCount === 0 || !draft.avatarAssetId
-              }
-              onClick={() => void completeDraft()}
-              type="button"
-            >
-              {pending ? 'Kaydediliyor…' : 'Taslağı tamamla'}
+              {pending ? 'Kaydediliyor…' : 'Taslağı kaydet'}
             </button>
           </div>
         </section>
