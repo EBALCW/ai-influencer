@@ -6,11 +6,14 @@ import { AssetManager } from './asset-manager';
 
 export default async function InfluencerAssetsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ wizard?: string }>;
 }) {
-  const [{ slug }, member, supabase] = await Promise.all([
+  const [{ slug }, query, member, supabase] = await Promise.all([
     params,
+    searchParams,
     requireTeamMember(),
     createSupabaseServerClient(),
   ]);
@@ -48,6 +51,11 @@ export default async function InfluencerAssetsPage({
     }),
   );
 
+  const returnTo =
+    query.wizard === '4' || query.wizard === '5'
+      ? `/influencers/${encodeURIComponent(slug)}/setup?step=${query.wizard}`
+      : undefined;
+
   return (
     <AssetManager
       assets={items}
@@ -55,6 +63,7 @@ export default async function InfluencerAssetsPage({
       canEdit={member.role !== 'viewer'}
       hasMore={(assets?.length ?? 0) === 100}
       influencerId={influencer.id}
+      returnTo={returnTo}
     />
   );
 }
