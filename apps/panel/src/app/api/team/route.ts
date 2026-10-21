@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { apiError, jsonError, parseJson, requireApiRole } from '@/lib/auth-api';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { getTeamMemberEmails } from '@/lib/team-emails';
 import { inviteSchema } from '@/lib/team-schemas';
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
@@ -18,17 +19,14 @@ export async function GET() {
     if (error) throw new Error('Ekip listesi alınamadı.');
 
     // Sadece ekip üyelerinin e-postalarını getir (tüm auth kullanıcılarını listelemek yerine)
-    const emails = await Promise.all(
-      members.map(async (member) => {
-        const { data } = await admin.auth.admin.getUserById(member.user_id);
-        return data.user?.email ?? null;
-      }),
+    const emails = await getTeamMemberEmails(
+      members.map((member) => member.user_id),
     );
 
     return NextResponse.json({
-      members: members.map((member, index) => ({
+      members: members.map((member) => ({
         userId: member.user_id,
-        email: emails[index] ?? 'E-posta yok',
+        email: emails.get(member.user_id) ?? 'E-posta yok',
         role: member.role,
         createdAt: member.created_at,
       })),

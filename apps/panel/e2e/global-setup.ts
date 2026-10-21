@@ -7,6 +7,8 @@ export const OWNER_STATE = 'e2e/.auth/owner.json';
 export const OWNER_EMAIL = 'e2e-owner@example.test';
 export const VIEWER_STATE = 'e2e/.auth/viewer.json';
 export const VIEWER_EMAIL = 'e2e-viewer@example.test';
+export const EDITOR_STATE = 'e2e/.auth/editor.json';
+export const EDITOR_EMAIL = 'e2e-editor@example.test';
 
 /**
  * Oturumlu testler için yerel Supabase'te owner ve viewer kullanıcıları oluşturur ve
@@ -32,11 +34,13 @@ export default async function globalSetup() {
     const empty = JSON.stringify({ cookies: [], origins: [] });
     await writeFile(OWNER_STATE, empty);
     await writeFile(VIEWER_STATE, empty);
+    await writeFile(EDITOR_STATE, empty);
     return;
   }
   // Owner önce: viewer üyeliğini de owner'ın created_by'ı ile kaydetmek için
   const ownerId = await createSession(OWNER_EMAIL, 'owner', OWNER_STATE);
   await createSession(VIEWER_EMAIL, 'viewer', VIEWER_STATE, ownerId);
+  await createSession(EDITOR_EMAIL, 'editor', EDITOR_STATE, ownerId);
 }
 
 async function createSession(

@@ -22,6 +22,12 @@ export default defineConfig({
       use: { storageState: 'e2e/.auth/owner.json' },
     },
     {
+      // Ayrı oturum: app.spec'teki çıkış testi owner oturumunu iptal eder
+      name: 'editor',
+      testMatch: /persona\.spec\.ts/,
+      use: { storageState: 'e2e/.auth/editor.json' },
+    },
+    {
       name: 'viewer',
       testMatch: /viewer\.spec\.ts/,
       use: { storageState: 'e2e/.auth/viewer.json' },

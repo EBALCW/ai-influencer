@@ -5,7 +5,9 @@ import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { getInfluencerBySlug } from '@/lib/influencers';
 import { StatusControls } from '../status-controls';
+import { getTeamMemberEmails } from '@/lib/team-emails';
 import { DetailStats } from './detail-stats';
+import { PersonaTab } from './persona-tab';
 
 const tabs = [
   ['general', 'Genel'],
@@ -70,7 +72,12 @@ export default async function InfluencerDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ inf?: string; tab?: string }>;
+  searchParams: Promise<{
+    inf?: string;
+    tab?: string;
+    from?: string;
+    to?: string;
+  }>;
 }) {
   const [{ slug }, query, member] = await Promise.all([
     params,
@@ -126,45 +133,20 @@ export default async function InfluencerDetailPage({
       </div>
     );
   } else if (tab === 'persona') {
-    const current =
-      data.personas.find((persona) => persona.is_current) ?? data.personas[0];
-    content = current ? (
-      <section className="section-card space-y-4">
-        <h2 className="text-lg font-semibold">Persona · v{current.version}</h2>
-        <p className="whitespace-pre-wrap text-secondary">
-          {current.bio || 'Biyografi girilmemiş.'}
-        </p>
-        <dl className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <dt className="text-muted">Ton</dt>
-            <dd>{current.tone || 'Belirtilmemiş'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Kanca özellikleri</dt>
-            <dd>{current.hook_traits.join(', ') || 'Belirtilmemiş'}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Kişilik</dt>
-            <dd>
-              <pre className="whitespace-pre-wrap text-sm">
-                {JSON.stringify(current.personality, null, 2)}
-              </pre>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-muted">Hedef kitle</dt>
-            <dd>
-              <pre className="whitespace-pre-wrap text-sm">
-                {JSON.stringify(current.audience, null, 2)}
-              </pre>
-            </dd>
-          </div>
-        </dl>
-      </section>
-    ) : (
-      <EmptyState
-        title="Persona kaydı yok"
-        description="Persona sürümü eklendiğinde burada görüntülenecek."
+    const emails = await getTeamMemberEmails(
+      data.personas.map((persona) => persona.created_by),
+    );
+    content = (
+      <PersonaTab
+        authorEmails={Object.fromEntries(emails)}
+        canEdit={(member.role as TeamRole) !== 'viewer'}
+        compare={{ from: query.from, to: query.to, inf: selectedSlug }}
+        currentUserId={member.user.id}
+        hrefWith={(extra) =>
+          `/influencers/${encodeURIComponent(slug)}?${new URLSearchParams({ ...(selectedSlug ? { inf: selectedSlug } : {}), tab: 'persona', ...extra })}`
+        }
+        influencerId={influencer.id}
+        personas={data.personas}
       />
     );
   } else if (tab === 'references') {
