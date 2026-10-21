@@ -8,7 +8,10 @@ export default async function NewInfluencerPage({
 }: {
   searchParams: Promise<{ draft?: string; step?: string }>;
 }) {
-  const [query, member] = await Promise.all([searchParams, requireTeamMember()]);
+  const [query, member] = await Promise.all([
+    searchParams,
+    requireTeamMember(),
+  ]);
   if (member.role === 'viewer') redirect('/influencers');
   const draft = query.draft ? await getWizardDraftById(query.draft) : null;
   if (query.draft && !draft) notFound();
