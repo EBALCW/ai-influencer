@@ -12,3 +12,4 @@ playwright-report/
 test-results/
 coverage/
 *.tsbuildinfo
+apps/panel/e2e/.auth/
