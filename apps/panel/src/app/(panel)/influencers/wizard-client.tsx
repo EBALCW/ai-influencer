@@ -196,6 +196,9 @@ export function InfluencerWizard({
         setPending(false);
         return;
       }
+      const saved = { ...parsed.data, changeNote: '' };
+      setSavedPersona(saved);
+      setPersona(saved);
     }
     if (prompt !== draft.promptBody) {
       const response = await fetch(
@@ -214,6 +217,7 @@ export function InfluencerWizard({
         setPending(false);
         return;
       }
+      setDraft({ ...draft, promptBody: prompt });
     }
     setPending(false);
     router.push(`/influencers?inf=${encodeURIComponent(draft.slug)}`);
