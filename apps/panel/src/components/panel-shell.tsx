@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -311,12 +311,8 @@ export function PanelShell({
   member: ShellMember;
 }) {
   return (
-    <Suspense
-      fallback={
-        <div className="shell-fallback" aria-label="Panel yükleniyor" />
-      }
-    >
-      <ShellContent member={member}>{children}</ShellContent>
-    </Suspense>
+    // (panel) layout'u oturum yüzünden dinamik; useSearchParams için Suspense gerekmez.
+    // Suspense, bölüm sayfalarındaki notFound()'un 404 yerine 200 dönmesine yol açıyordu.
+    <ShellContent member={member}>{children}</ShellContent>
   );
 }
