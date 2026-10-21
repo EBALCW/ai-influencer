@@ -171,14 +171,14 @@ isOneToOne: false
                   ]
                 },"generations": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"credits": number | null,"duration_ms": number | null,"error": string | null,"id": string,"influencer_id": string,"input_asset_ids": (string)[],"output_asset_id": string | null,"prompt_id": string | null,"status": Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at": string
+                    "created_at": string,"created_by": string | null,"credits": number | null,"duration_ms": number | null,"error": string | null,"id": string,"influencer_id": string,"input_asset_ids": (string)[],"output_asset_id": string | null,"params": NonNullable<Json>,"prompt_id": string | null,"status": Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"id"?: string,"influencer_id": string,"input_asset_ids"?: (string)[],"output_asset_id"?: string | null,"prompt_id"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"id"?: string,"influencer_id": string,"input_asset_ids"?: (string)[],"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"prompt_id"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"id"?: string,"influencer_id"?: string,"input_asset_ids"?: (string)[],"output_asset_id"?: string | null,"prompt_id"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool"?: string,"type"?: Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"id"?: string,"influencer_id"?: string,"input_asset_ids"?: (string)[],"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"prompt_id"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool"?: string,"type"?: Database["public"]['Enums']["generation_type"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -193,6 +193,18 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "assets"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "generations_prompt_id_fkey"
+      columns: ["prompt_id"]
+isOneToOne: false
+      referencedRelation: "prompt_lineages"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "generations_prompt_id_fkey"
+      columns: ["prompt_id"]
+isOneToOne: false
+      referencedRelation: "prompt_stats"
+      referencedColumns: ["prompt_id"]
     },{
       foreignKeyName: "generations_prompt_id_fkey"
       columns: ["prompt_id"]
@@ -289,14 +301,14 @@ isOneToOne: false
                   ]
                 },"prompts": {
                   Row: {
-                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"negative": string,"rating": number | null,"updated_at": string,"variables": NonNullable<Json>,"version": number
+                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"change_note": string,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"key": string,"negative": string,"rating": number | null,"title": string,"updated_at": string,"variables": NonNullable<Json>,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"negative"?: string,"rating"?: number | null,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
+                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"key"?: string,"negative"?: string,"rating"?: number | null,"title"?: string,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
                   }
                   Update: {
-                    "body"?: string,"category"?: Database["public"]['Enums']["prompt_category"],"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"negative"?: string,"rating"?: number | null,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
+                    "body"?: string,"category"?: Database["public"]['Enums']["prompt_category"],"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"key"?: string,"negative"?: string,"rating"?: number | null,"title"?: string,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
                   }
                   Relationships: [
                     {
@@ -344,7 +356,29 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "prompt_lineages": {
+                  Row: {
+                    "body": string | null,"category": Database["public"]['Enums']["prompt_category"] | null,"change_note": string | null,"created_at": string | null,"created_by": string | null,"id": string | null,"influencer_id": string | null,"key": string | null,"negative": string | null,"rating": number | null,"title": string | null,"updated_at": string | null,"variables": Json | null,"version": number | null,"version_count": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "prompts_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"prompt_stats": {
+                  Row: {
+                    "avg_credits": number | null,"failed": number | null,"pending": number | null,"prompt_id": string | null,"succeeded": number | null,"success_rate": number | null,"total": number | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                }
           }
           Functions: {
             "can_manage_team":
@@ -374,6 +408,29 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "influencer_personas"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_prompt_version":
+{ Args: { "p_body": string,"p_category": Database["public"]['Enums']["prompt_category"],"p_change_note"?: string,"p_influencer_id"?: string,"p_key": string,"p_negative"?: string,"p_title": string,"p_variables"?: Json }; Returns: {
+              "body": string,
+"category": Database["public"]['Enums']["prompt_category"],
+"change_note": string,
+"created_at": string,
+"created_by": string | null,
+"id": string,
+"influencer_id": string | null,
+"key": string,
+"negative": string,
+"rating": number | null,
+"title": string,
+"updated_at": string,
+"variables": NonNullable<Json>,
+"version": number
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "prompts"
         isOneToOne: true
         isSetofReturn: false
       } },
