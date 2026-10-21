@@ -1,280 +1,490 @@
-/**
- * Database contract for the migrations in `supabase/migrations`.
- * Regenerate from the local Supabase database with `pnpm supabase:types`.
- */
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[];
 
-export type TeamRole = 'owner' | 'editor' | 'viewer';
-export type InfluencerStatus = 'draft' | 'active' | 'paused' | 'archived';
-export type AssetKind = 'reference' | 'generated' | 'final_video' | 'thumbnail';
-export type PromptCategory =
-  'character' | 'video2video' | 'short_film' | 'caption' | 'research';
-export type GenerationType = 'image' | 'video';
-export type GenerationStatus =
-  'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
-export type SocialPlatform = 'instagram' | 'youtube' | 'tiktok';
-export type SocialAccountStatus =
-  'pending' | 'active' | 'expired' | 'revoked' | 'error';
-export type ContentStage =
-  'idea' | 'script' | 'production' | 'qc' | 'edit' | 'scheduled' | 'published';
-export type BrandDealStage =
-  'lead' | 'negotiation' | 'signed' | 'delivered' | 'paid' | 'lost';
-export type CostCategory = 'subscription' | 'credits' | 'tool' | 'other';
-
-type AuditColumns = {
-  created_at: string;
-  updated_at: string;
-  created_by: string | null;
-};
-
-type Table<
-  Row extends Record<string, unknown>,
-  Required extends keyof Row = never,
-> = {
-  Row: Row;
-  Insert: Pick<Row, Required> & Partial<Omit<Row, Required>>;
-  Update: Partial<Row>;
-  Relationships: [];
-};
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-  public: {
-    Tables: {
-      team_members: Table<
-        AuditColumns & { user_id: string; role: TeamRole },
-        'user_id' | 'role'
-      >;
-      influencers: Table<
-        AuditColumns & {
-          id: string;
-          name: string;
-          slug: string;
-          niche: string | null;
-          language: string;
-          status: InfluencerStatus;
-          avatar_asset_id: string | null;
-        },
-        'name' | 'slug'
-      >;
-      influencer_personas: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string;
-          version: number;
-          bio: string;
-          personality: Json;
-          tone: string;
-          audience: Json;
-          hook_traits: string[];
-          is_current: boolean;
-        },
-        'influencer_id' | 'version'
-      >;
-      assets: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string | null;
-          kind: AssetKind;
-          storage_path: string;
-          mime_type: string | null;
-          file_size_bytes: number | null;
-          width: number | null;
-          height: number | null;
-          duration_ms: number | null;
-          tags: string[];
-          qc_status: 'pending' | 'passed' | 'failed';
-          version_tag: string | null;
-        },
-        'kind' | 'storage_path'
-      >;
-      prompts: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string | null;
-          category: PromptCategory;
-          body: string;
-          negative: string;
-          variables: Json;
-          version: number;
-          rating: number | null;
-        },
-        'category' | 'body'
-      >;
-      generations: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string;
-          prompt_id: string | null;
-          tool: string;
-          type: GenerationType;
-          input_asset_ids: string[];
-          output_asset_id: string | null;
-          credits: number | null;
-          status: GenerationStatus;
-          error: string | null;
-          duration_ms: number | null;
-        },
-        'influencer_id' | 'tool' | 'type'
-      >;
-      social_accounts: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string;
-          platform: SocialPlatform;
-          handle: string;
-          external_id: string | null;
-          token_ref: string | null;
-          token_expires_at: string | null;
-          status: SocialAccountStatus;
-        },
-        'influencer_id' | 'platform' | 'handle'
-      >;
-      content_items: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string;
-          title: string;
-          format: string;
-          hook_type: string | null;
-          stage: ContentStage;
-          scheduled_at: string | null;
-          checklist: Json;
-        },
-        'influencer_id' | 'title'
-      >;
-      posts: Table<
-        AuditColumns & {
-          id: string;
-          content_item_id: string | null;
-          account_id: string;
-          external_id: string | null;
-          url: string | null;
-          caption: string;
-          published_at: string | null;
-          duration_s: number | null;
-          is_short: boolean;
-        },
-        'account_id'
-      >;
-      metric_snapshots: Table<
-        AuditColumns & {
-          id: string;
-          post_id: string;
-          captured_at: string;
-          hours_since_publish: number | null;
-          views: number;
-          reach: number | null;
-          likes: number;
-          comments: number;
-          shares: number;
-          saves: number;
-          avg_watch_time_s: number | null;
-          completion_rate: number | null;
-          raw_payload: Json;
-        },
-        'post_id'
-      >;
-      account_snapshots: Table<
-        AuditColumns & {
-          id: string;
-          account_id: string;
-          captured_at: string;
-          followers: number;
-          following: number | null;
-          media_count: number | null;
-          reach_day: number | null;
-          profile_views: number | null;
-        },
-        'account_id'
-      >;
-      costs: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string;
-          category: CostCategory;
-          description: string;
-          amount: number;
-          currency: string;
-          credits: number | null;
-          generation_id: string | null;
-          incurred_on: string;
-        },
-        'influencer_id' | 'category' | 'amount'
-      >;
-      brands: Table<
-        AuditColumns & {
-          id: string;
-          name: string;
-          website: string | null;
-          contact_name: string | null;
-          contact_email: string | null;
-          notes: string;
-        },
-        'name'
-      >;
-      brand_deals: Table<
-        AuditColumns & {
-          id: string;
-          brand_id: string;
-          influencer_id: string;
-          stage: BrandDealStage;
-          fee: number | null;
-          currency: string;
-          deliverables: Json;
-          due_date: string | null;
-          notes: string;
-        },
-        'brand_id' | 'influencer_id'
-      >;
-      alerts: Table<
-        AuditColumns & {
-          id: string;
-          influencer_id: string | null;
-          type: string;
-          payload: Json;
-          read_at: string | null;
-        },
-        'type'
-      >;
-    };
-    Views: Record<never, never>;
-    Functions: {
-      can_manage_team: { Args: Record<PropertyKey, never>; Returns: boolean };
-      can_write_data: { Args: Record<PropertyKey, never>; Returns: boolean };
-      current_team_role: {
-        Args: Record<PropertyKey, never>;
-        Returns: TeamRole | null;
-      };
-      is_initial_owner_setup: {
-        Args: Record<PropertyKey, never>;
-        Returns: boolean;
-      };
-      is_team_member: { Args: Record<PropertyKey, never>; Returns: boolean };
-    };
-    Enums: {
-      team_role: TeamRole;
-      influencer_status: InfluencerStatus;
-      asset_kind: AssetKind;
-      prompt_category: PromptCategory;
-      generation_type: GenerationType;
-      generation_status: GenerationStatus;
-      social_platform: SocialPlatform;
-      social_account_status: SocialAccountStatus;
-      content_stage: ContentStage;
-      brand_deal_stage: BrandDealStage;
-      cost_category: CostCategory;
-    };
-    CompositeTypes: Record<never, never>;
-  };
-  __InternalSupabase: { PostgrestVersion: '14.1' };
-};
+  
+  "graphql_public": {
+          Tables: {
+            [_ in never]: never
+          }
+          Views: {
+            [_ in never]: never
+          }
+          Functions: {
+            "graphql":
+{ Args: { "extensions"?: Json,"operationName"?: string,"query"?: string,"variables"?: Json }; Returns: Json
+                           }
+          }
+          Enums: {
+            [_ in never]: never
+          }
+          CompositeTypes: {
+            [_ in never]: never
+          }
+        },"public": {
+          Tables: {
+            "account_snapshots": {
+                  Row: {
+                    "account_id": string,"captured_at": string,"created_at": string,"created_by": string | null,"followers": number,"following": number | null,"id": string,"media_count": number | null,"profile_views": number | null,"reach_day": number | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "account_snapshots_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"alerts": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"payload": NonNullable<Json>,"read_at": string | null,"type": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "alerts_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"assets": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_status": string,"storage_path": string,"tags": (string)[],"updated_at": string,"version_tag": string | null,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "assets_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"brand_deals": {
+                  Row: {
+                    "brand_id": string,"created_at": string,"created_by": string | null,"currency": string,"deliverables": NonNullable<Json>,"due_date": string | null,"fee": number | null,"id": string,"influencer_id": string,"notes": string,"stage": Database["public"]['Enums']["brand_deal_stage"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "brand_id": string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id": string,"notes"?: string,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
+                  }
+                  Update: {
+                    "brand_id"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "brand_deals_brand_id_fkey"
+      columns: ["brand_id"]
+isOneToOne: false
+      referencedRelation: "brands"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deals_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"brands": {
+                  Row: {
+                    "contact_email": string | null,"contact_name": string | null,"created_at": string,"created_by": string | null,"id": string,"name": string,"notes": string,"updated_at": string,"website": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "contact_email"?: string | null,"contact_name"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string,"notes"?: string,"updated_at"?: string,"website"?: string | null
+                  }
+                  Update: {
+                    "contact_email"?: string | null,"contact_name"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"notes"?: string,"updated_at"?: string,"website"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"content_items": {
+                  Row: {
+                    "checklist": NonNullable<Json>,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"scheduled_at": string | null,"stage": Database["public"]['Enums']["content_stage"],"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"scheduled_at"?: string | null,"stage"?: Database["public"]['Enums']["content_stage"],"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"scheduled_at"?: string | null,"stage"?: Database["public"]['Enums']["content_stage"],"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "content_items_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"costs": {
+                  Row: {
+                    "amount": number,"category": Database["public"]['Enums']["cost_category"],"created_at": string,"created_by": string | null,"credits": number | null,"currency": string,"description": string,"generation_id": string | null,"id": string,"incurred_on": string,"influencer_id": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount": number,"category": Database["public"]['Enums']["cost_category"],"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"currency"?: string,"description"?: string,"generation_id"?: string | null,"id"?: string,"incurred_on"?: string,"influencer_id": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "amount"?: number,"category"?: Database["public"]['Enums']["cost_category"],"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"currency"?: string,"description"?: string,"generation_id"?: string | null,"id"?: string,"incurred_on"?: string,"influencer_id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "costs_generation_id_fkey"
+      columns: ["generation_id"]
+isOneToOne: false
+      referencedRelation: "generations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "costs_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"generations": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"credits": number | null,"duration_ms": number | null,"error": string | null,"id": string,"influencer_id": string,"input_asset_ids": (string)[],"output_asset_id": string | null,"prompt_id": string | null,"status": Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"id"?: string,"influencer_id": string,"input_asset_ids"?: (string)[],"output_asset_id"?: string | null,"prompt_id"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"id"?: string,"influencer_id"?: string,"input_asset_ids"?: (string)[],"output_asset_id"?: string | null,"prompt_id"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool"?: string,"type"?: Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "generations_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "generations_output_asset_id_fkey"
+      columns: ["output_asset_id"]
+isOneToOne: false
+      referencedRelation: "assets"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "generations_prompt_id_fkey"
+      columns: ["prompt_id"]
+isOneToOne: false
+      referencedRelation: "prompts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"influencer_personas": {
+                  Row: {
+                    "audience": NonNullable<Json>,"bio": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"tone": string,"updated_at": string,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "audience"?: NonNullable<Json>,"bio"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"tone"?: string,"updated_at"?: string,"version": number
+                  }
+                  Update: {
+                    "audience"?: NonNullable<Json>,"bio"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"tone"?: string,"updated_at"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "influencer_personas_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"influencers": {
+                  Row: {
+                    "avatar_asset_id": string | null,"created_at": string,"created_by": string | null,"id": string,"language": string,"name": string,"niche": string | null,"slug": string,"status": Database["public"]['Enums']["influencer_status"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "avatar_asset_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"language"?: string,"name": string,"niche"?: string | null,"slug": string,"status"?: Database["public"]['Enums']["influencer_status"],"updated_at"?: string
+                  }
+                  Update: {
+                    "avatar_asset_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"language"?: string,"name"?: string,"niche"?: string | null,"slug"?: string,"status"?: Database["public"]['Enums']["influencer_status"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "influencers_avatar_asset_id_fkey"
+      columns: ["avatar_asset_id"]
+isOneToOne: false
+      referencedRelation: "assets"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"metric_snapshots": {
+                  Row: {
+                    "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"updated_at": string,"views": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id": string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"updated_at"?: string,"views"?: number
+                  }
+                  Update: {
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id"?: string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"updated_at"?: string,"views"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "metric_snapshots_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"posts": {
+                  Row: {
+                    "account_id": string,"caption": string,"content_item_id": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"external_id": string | null,"id": string,"is_short": boolean,"published_at": string | null,"updated_at": string,"url": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"updated_at"?: string,"url"?: string | null
+                  }
+                  Update: {
+                    "account_id"?: string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"updated_at"?: string,"url"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "posts_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "posts_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"prompts": {
+                  Row: {
+                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"negative": string,"rating": number | null,"updated_at": string,"variables": NonNullable<Json>,"version": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"negative"?: string,"rating"?: number | null,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
+                  }
+                  Update: {
+                    "body"?: string,"category"?: Database["public"]['Enums']["prompt_category"],"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"negative"?: string,"rating"?: number | null,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "prompts_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"social_accounts": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"external_id": string | null,"handle": string,"id": string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status": Database["public"]['Enums']["social_account_status"],"token_expires_at": string | null,"token_ref": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"external_id"?: string | null,"handle": string,"id"?: string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status"?: Database["public"]['Enums']["social_account_status"],"token_expires_at"?: string | null,"token_ref"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"external_id"?: string | null,"handle"?: string,"id"?: string,"influencer_id"?: string,"platform"?: Database["public"]['Enums']["social_platform"],"status"?: Database["public"]['Enums']["social_account_status"],"token_expires_at"?: string | null,"token_ref"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "social_accounts_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"team_members": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"role": Database["public"]['Enums']["team_role"],"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"role": Database["public"]['Enums']["team_role"],"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"role"?: Database["public"]['Enums']["team_role"],"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                }
+          }
+          Views: {
+            [_ in never]: never
+          }
+          Functions: {
+            "can_manage_team":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"can_write_data":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"current_team_role":
+{ Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["team_role"]
+                           },
+"is_initial_owner_setup":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_team_member":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           }
+          }
+          Enums: {
+            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
+          }
+          CompositeTypes: {
+            [_ in never]: never
+          }
+        }
+}
 
-export type TableName = keyof Database['public']['Tables'];
-export type Row<Name extends TableName> =
-  Database['public']['Tables'][Name]['Row'];
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
+
+export const Constants = {
+  "graphql_public": {
+          Enums: {
+            
+          }
+        },"public": {
+          Enums: {
+            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
+          }
+        }
+} as const
