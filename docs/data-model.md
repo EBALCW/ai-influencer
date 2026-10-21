@@ -101,7 +101,7 @@ Her uygulama tablosunda RLS açıktır. Anon rolüne tablo yetkisi verilmez; `au
 
 ## Yerel geliştirme ve tip üretimi
 
-`assets.qc_checklist` QC kontrol yanıtlarını, `assets.thumbnail_path` ise private `assets` bucket'ındaki küçük resim yolunu tutar. Storage erişim politikaları üyeler için okuma, owner/editor için yazma ve silme izni verir.
+`assets.qc_checklist` QC kontrol yanıtlarını, `assets.thumbnail_path` ise private `assets` bucket'ındaki küçük resim yolunu tutar. Storage erişim politikaları üyeler için okuma, owner/editor için yazma ve silme izni verir. Yazma sadece var olan bir influencer'ın klasörüne (`<influencer_id>/<dosya>`, tek seviye) yapılabilir. `assets` satırındaki yollar da aynı influencer klasöründe olmak zorundadır (`assets_paths_in_influencer_folder`). Silmede önce satır, sonra dosya kaldırılır. Avatar bağlantısını FK (`ON DELETE SET NULL`) temizler.
 
 `pnpm supabase:start` yerel Supabase'i başlatır. `pnpm supabase:db-reset` migration'ları ve `supabase/seed.sql` demo verisini sıfırdan uygular. `pnpm supabase:test` pgTAP testlerini çalıştırır; testler ilk owner kaydı, viewer salt-okunur davranışı, takım dışı erişim ve editor yazma yetkisini kontrol eder.
 
