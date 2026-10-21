@@ -3,11 +3,6 @@ export const sections: Record<
   string,
   { title: string; description: string; icon: string }
 > = {
-  influencers: {
-    title: 'Influencer’lar',
-    description: 'Karakterlerinizi, profillerinizi ve bağlı hesapları yönetin.',
-    icon: '✦',
-  },
   content: {
     title: 'İçerik',
     description: 'Fikirden yayına içerik üretim adımlarını takip edin.',
