@@ -29,6 +29,12 @@ jobs:
           cache: pnpm
       - run: corepack enable && pnpm -v
       - run: pnpm install --frozen-lockfile
+      - name: Start local Supabase
+        run: pnpm supabase:start
+      - name: Reset database and apply migrations
+        run: pnpm supabase:db-reset
+      - name: Test database policies
+        run: pnpm supabase:test
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
@@ -43,6 +49,9 @@ jobs:
             !apps/panel/.next/cache
           include-hidden-files: true
           retention-days: 3
+      - name: Stop local Supabase
+        if: always()
+        run: pnpm supabase:stop
 
   e2e:
     name: E2E (Playwright)
