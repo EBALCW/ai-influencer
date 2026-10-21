@@ -21,6 +21,11 @@ export default defineConfig({
       testMatch: /app\.spec\.ts/,
       use: { storageState: 'e2e/.auth/owner.json' },
     },
+    {
+      name: 'viewer',
+      testMatch: /viewer\.spec\.ts/,
+      use: { storageState: 'e2e/.auth/viewer.json' },
+    },
   ],
   webServer: {
     // CI'da build edilmiş uygulama test edilir, yerelde dev sunucusu

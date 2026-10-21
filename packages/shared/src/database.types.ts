@@ -356,6 +356,9 @@ isOneToOne: false
 "current_team_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["team_role"]
                            },
+"influencer_list_stats":
+{ Args: { "p_influencer_ids"?: string[],"p_since"?: string }; Returns: { "followers": number,"influencer_id": string,"platforms": string[],"views_7d": number }[]
+                           },
 "is_initial_owner_setup":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },

@@ -1,7 +1,6 @@
 import 'server-only';
 import type { InfluencerStatus, Row } from '@ai-influencer/shared';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { sumSevenDayViews, type ViewSnapshot } from './influencer-metrics';
 
 export type InfluencerListItem = Pick<
   Row<'influencers'>,
@@ -39,6 +38,53 @@ export async function getInfluencerOptions() {
   return data ?? [];
 }
 
+type InfluencerStats = Pick<
+  InfluencerListItem,
+  'platforms' | 'followers' | 'views7d'
+>;
+
+/**
+ * Takipçi, platform ve 7 günlük izlenme özetini veritabanında hesaplar
+ * (`influencer_list_stats`, security invoker). Snapshot satırlarını çekip JS'te
+ * toplamak `max_rows` sınırında sessizce eksik sonuç verirdi.
+ */
+async function getInfluencerStats(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  influencerIds: string[],
+): Promise<Map<string, InfluencerStats>> {
+  const stats = new Map<string, InfluencerStats>();
+  if (!influencerIds.length) return stats;
+  const { data, error } = await supabase.rpc('influencer_list_stats', {
+    p_influencer_ids: influencerIds,
+  });
+  throwOnError(error);
+  for (const row of data ?? []) {
+    stats.set(row.influencer_id, {
+      platforms: row.platforms ?? [],
+      followers: Number(row.followers),
+      views7d: Number(row.views_7d),
+    });
+  }
+  return stats;
+}
+
+const emptyStats: InfluencerStats = { platforms: [], followers: 0, views7d: 0 };
+
+function toListItem(
+  influencer: Row<'influencers'>,
+  stats: InfluencerStats | undefined,
+): InfluencerListItem {
+  return {
+    id: influencer.id,
+    name: influencer.name,
+    slug: influencer.slug,
+    niche: influencer.niche,
+    status: influencer.status as InfluencerStatus,
+    avatar_asset_id: influencer.avatar_asset_id,
+    ...(stats ?? emptyStats),
+  };
+}
+
 export async function getInfluencerList(options?: {
   includeArchived?: boolean;
 }): Promise<InfluencerListItem[]> {
@@ -48,89 +94,11 @@ export async function getInfluencerList(options?: {
   const { data: influencers, error } = await query;
   throwOnError(error);
   const rows = influencers ?? [];
-  if (!rows.length) return [];
-
-  const influencerIds = rows.map((row) => row.id);
-  const { data: accounts, error: accountsError } = await supabase
-    .from('social_accounts')
-    .select('*')
-    .in('influencer_id', influencerIds);
-  throwOnError(accountsError);
-  const accountRows = accounts ?? [];
-  const accountIds = accountRows.map((row) => row.id);
-  const { data: accountSnapshots, error: snapshotsError } = accountIds.length
-    ? await supabase
-        .from('account_snapshots')
-        .select('account_id, followers, captured_at')
-        .in('account_id', accountIds)
-        .order('captured_at', { ascending: false })
-    : { data: [], error: null };
-  throwOnError(snapshotsError);
-
-  const { data: posts, error: postsError } = accountIds.length
-    ? await supabase
-        .from('posts')
-        .select('id, account_id')
-        .in('account_id', accountIds)
-    : { data: [], error: null };
-  throwOnError(postsError);
-  const postRows = posts ?? [];
-  const postIds = postRows.map((post) => post.id);
-  const { data: metrics, error: metricsError } = postIds.length
-    ? await supabase
-        .from('metric_snapshots')
-        .select('post_id, captured_at, views')
-        .in('post_id', postIds)
-    : { data: [], error: null };
-  throwOnError(metricsError);
-
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  return rows.map((influencer) => {
-    const relatedAccounts = accountRows.filter(
-      (account) => account.influencer_id === influencer.id,
-    );
-    const ids = new Set(relatedAccounts.map((account) => account.id));
-    const latestFollowers = new Map<string, number>();
-    for (const snapshot of accountSnapshots ?? []) {
-      if (
-        ids.has(snapshot.account_id) &&
-        !latestFollowers.has(snapshot.account_id)
-      ) {
-        latestFollowers.set(snapshot.account_id, Number(snapshot.followers));
-      }
-    }
-    const postIdsForInfluencer = new Set(
-      postRows
-        .filter((post) => ids.has(post.account_id))
-        .map((post) => post.id),
-    );
-    const snapshotsByPost = new Map<string, ViewSnapshot[]>();
-    for (const metric of metrics ?? []) {
-      if (!postIdsForInfluencer.has(metric.post_id)) continue;
-      const snapshots = snapshotsByPost.get(metric.post_id) ?? [];
-      snapshots.push({
-        captured_at: metric.captured_at,
-        views: Number(metric.views),
-      });
-      snapshotsByPost.set(metric.post_id, snapshots);
-    }
-    return {
-      id: influencer.id,
-      name: influencer.name,
-      slug: influencer.slug,
-      niche: influencer.niche,
-      status: influencer.status,
-      avatar_asset_id: influencer.avatar_asset_id,
-      platforms: [
-        ...new Set(relatedAccounts.map((account) => account.platform)),
-      ],
-      followers: [...latestFollowers.values()].reduce(
-        (sum, value) => sum + value,
-        0,
-      ),
-      views7d: sumSevenDayViews(snapshotsByPost, since),
-    };
-  });
+  const stats = await getInfluencerStats(
+    supabase,
+    rows.map((row) => row.id),
+  );
+  return rows.map((row) => toListItem(row, stats.get(row.id)));
 }
 
 export async function getInfluencerBySlug(
@@ -146,7 +114,7 @@ export async function getInfluencerBySlug(
   if (!influencer) return null;
 
   const [
-    list,
+    stats,
     accountsResult,
     generationsResult,
     personasResult,
@@ -154,7 +122,7 @@ export async function getInfluencerBySlug(
     assetsResult,
     costsResult,
   ] = await Promise.all([
-    getInfluencerList({ includeArchived: true }),
+    getInfluencerStats(supabase, [influencer.id]),
     supabase
       .from('social_accounts')
       .select('*')
@@ -211,17 +179,7 @@ export async function getInfluencerBySlug(
   throwOnError(postsError);
   return {
     influencer,
-    listItem: list.find((item) => item.id === influencer.id) ?? {
-      id: influencer.id,
-      name: influencer.name,
-      slug: influencer.slug,
-      niche: influencer.niche,
-      status: influencer.status as InfluencerStatus,
-      avatar_asset_id: influencer.avatar_asset_id,
-      platforms: accounts.map((account) => account.platform),
-      followers: 0,
-      views7d: 0,
-    },
+    listItem: toListItem(influencer, stats.get(influencer.id)),
     accounts,
     posts: posts ?? [],
     generations: generationsResult.data ?? [],

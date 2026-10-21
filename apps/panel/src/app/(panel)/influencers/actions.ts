@@ -18,11 +18,15 @@ export async function updateInfluencerStatus(formData: FormData) {
   if (!input.success) throw new Error('Influencer güncelleme isteği geçersiz.');
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase
+  // RLS reddi hata vermez, 0 satır döner; sessiz "başarı" olmasın diye satırı geri istiyoruz
+  const { data, error } = await supabase
     .from('influencers')
     .update({ status: input.data.status })
-    .eq('id', input.data.id);
+    .eq('id', input.data.id)
+    .select('id');
   if (error) throw new Error(`Durum güncellenemedi: ${error.message}`);
+  if (!data?.length)
+    throw new Error('Influencer bulunamadı veya bu işlem için yetkin yok.');
   revalidatePath('/influencers');
   revalidatePath('/influencers/[slug]', 'page');
 }
