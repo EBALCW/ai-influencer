@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import {
   appearanceFields,
+  parseCaptionList,
   parseTagList,
   toPersonaInput,
   type AppearanceKey,
@@ -78,7 +79,9 @@ export function InfluencerWizard({
   };
 
   const updatePersona = (key: keyof PersonaInput, value: string) => {
-    if (key === 'bio' || key === 'tone' || key === 'changeNote') {
+    if (key === 'sampleCaptions') {
+      setPersona((current) => ({ ...current, sampleCaptions: parseCaptionList(value) }));
+    } else if (key === 'bio' || key === 'tone' || key === 'changeNote') {
       setPersona((current) => ({ ...current, [key]: value }));
     }
   };
@@ -480,6 +483,20 @@ export function InfluencerWizard({
               placeholder="kırmızı gözlük, kısa mizahi yorum"
               value={persona.hookTraits.join(', ')}
             />
+          </label>
+          <label className={labelClass}>
+            Örnek caption’lar (her satıra bir tane)
+            <textarea
+              className={inputClass}
+              maxLength={22000}
+              onChange={(event) => updatePersona('sampleCaptions', event.target.value)}
+              placeholder={"Bugün küçük bir kaçamak yaptım…\nSence bu kombin nasıl olmuş?"}
+              rows={4}
+              value={persona.sampleCaptions.join('\n')}
+            />
+            <span className="mt-1 block text-xs">
+              En fazla 10 örnek; her biri en fazla 2.200 karakter.
+            </span>
           </label>
           <div className="flex justify-between">
             <button
