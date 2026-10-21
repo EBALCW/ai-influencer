@@ -1,8 +1,20 @@
+import 'server-only';
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import type { TeamRole } from '@ai-influencer/shared';
 import { createSupabaseServerClient } from './supabase/server';
 
-export async function requireTeamMember() {
+export type TeamMember = {
+  user: { id: string; email: string | null };
+  role: TeamRole;
+};
+
+/**
+ * Oturum açmış ve `team_members` tablosunda kaydı olan kullanıcıyı döndürür.
+ * Aynı istekte layout ve sayfa birlikte çağırdığında tek sorgu yapılır (cache).
+ * Üye değilse oturum /auth/signout ile kapatılır (Server Component cookie yazamaz).
+ */
+export const requireTeamMember = cache(async (): Promise<TeamMember> => {
   let supabase;
   try {
     supabase = await createSupabaseServerClient();
@@ -10,44 +22,27 @@ export async function requireTeamMember() {
     redirect('/login?error=not_configured');
   }
 
-  const { data: userResult, error: userError } = await supabase.auth.getUser();
-  if (userError || !userResult.user) redirect('/login');
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+  if (userError || !user) redirect('/login');
 
-  const user = userResult.user;
-  let { data: member, error } = await supabase
+  const { data: member, error } = await supabase
     .from('team_members')
     .select('role')
     .eq('user_id', user.id)
     .maybeSingle();
 
-  // The first invited Auth account bootstraps the empty single-team workspace.
-  if (!member && !error) {
-    const { data: canBootstrap } = await supabase.rpc('is_initial_owner_setup');
-    if (canBootstrap) {
-      await supabase.from('team_members').insert({
-        user_id: user.id,
-        role: 'owner',
-        created_by: user.id,
-      });
-      const refreshed = await supabase
-        .from('team_members')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      member = refreshed.data;
-      error = refreshed.error;
-    }
-  }
+  if (error || !member) redirect('/auth/signout?error=not_allowed');
 
-  if (error || !member) {
-    await supabase.auth.signOut();
-    redirect('/login?error=not_allowed');
-  }
+  return {
+    user: { id: user.id, email: user.email ?? null },
+    role: member.role as TeamRole,
+  };
+});
 
-  return { user, role: member.role as TeamRole };
-}
-
-export async function requireOwner() {
+export async function requireOwner(): Promise<TeamMember> {
   const member = await requireTeamMember();
   if (member.role !== 'owner') redirect('/?error=owner_required');
   return member;

@@ -40,16 +40,7 @@ const sections: Record<
     description: 'Marka iş birliklerini ve medya kitinizi yönetin.',
     icon: '◇',
   },
-  settings: {
-    title: 'Ayarlar',
-    description: 'Çalışma alanı ve ekip tercihlerinizi yönetin.',
-    icon: '⚙',
-  },
 };
-
-export function generateStaticParams() {
-  return Object.keys(sections).map((section) => ({ section }));
-}
 
 export default async function SectionPage({
   params,
