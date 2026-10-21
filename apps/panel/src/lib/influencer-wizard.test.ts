@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildCharacterPrompt, influencerDraftSchema, slugifyInfluencerName } from './influencer-wizard';
+import {
+  buildCharacterPrompt,
+  influencerDraftSchema,
+  slugifyInfluencerName,
+} from './influencer-wizard';
 import { toPersonaInput } from './persona';
 
 describe('influencer wizard helpers', () => {
@@ -10,10 +14,16 @@ describe('influencer wizard helpers', () => {
 
   it('accepts only lowercase URL-safe slugs and language tags', () => {
     const valid = influencerDraftSchema.safeParse({
-      name: 'Mina', slug: 'mina-yilmaz', niche: 'Moda', language: 'tr',
+      name: 'Mina',
+      slug: 'mina-yilmaz',
+      niche: 'Moda',
+      language: 'tr',
     });
     const invalid = influencerDraftSchema.safeParse({
-      name: 'Mina', slug: 'Mina Yılmaz', niche: '', language: 'Türkçe',
+      name: 'Mina',
+      slug: 'Mina Yılmaz',
+      niche: '',
+      language: 'Türkçe',
     });
     expect(valid.success).toBe(true);
     expect(invalid.success).toBe(false);
