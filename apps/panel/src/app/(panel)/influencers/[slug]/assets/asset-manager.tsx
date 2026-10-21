@@ -526,7 +526,9 @@ export function AssetManager({
               >
                 <option value="">Versiyon seçin</option>
                 {versionOptions.map((version) => (
-                  <option key={version} value={version}>{version}</option>
+                  <option key={version} value={version}>
+                    {version}
+                  </option>
                 ))}
               </select>
             </label>
@@ -540,7 +542,9 @@ export function AssetManager({
               >
                 <option value="">Versiyon seçin</option>
                 {versionOptions.map((version) => (
-                  <option key={version} value={version}>{version}</option>
+                  <option key={version} value={version}>
+                    {version}
+                  </option>
                 ))}
               </select>
             </label>
@@ -568,7 +572,10 @@ export function AssetManager({
                           >
                             {thumbnailUrl || url ? (
                               <Image
-                                alt={asset.storage_path.split('/').at(-1) ?? 'Referans görseli'}
+                                alt={
+                                  asset.storage_path.split('/').at(-1) ??
+                                  'Referans görseli'
+                                }
                                 className="h-full w-full object-contain"
                                 fill
                                 src={thumbnailUrl ?? url!}
@@ -583,7 +590,9 @@ export function AssetManager({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted">Bu sette referans yok.</p>
+                      <p className="text-sm text-muted">
+                        Bu sette referans yok.
+                      </p>
                     )}
                   </section>
                 );
@@ -714,7 +723,9 @@ export function AssetManager({
                           : []),
                       ]),
                     ).map((version) => (
-                      <option key={version} value={version}>{version}</option>
+                      <option key={version} value={version}>
+                        {version}
+                      </option>
                     ))}
                   </select>
                 </label>
