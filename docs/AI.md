@@ -43,7 +43,7 @@ girdisi, model yanıtı ve sağlayıcı hata nesnesi loglanmaz.
 `ai_weekly_summary` RPC'si RLS ile, UTC'de son 7 günü hesaplar. Her post için dönem sonuna
 kadar en son kümülatif izlenme ile dönem başlangıcına kadar son ölçümün farkı kullanılır.
 Dönemde yayımlanan yeni postun başlangıcı sıfır kabul edilir. Eski postlarda negatif sayaç farkı sıfırlanır; baseline olmayan eski post artış toplamına girmez. Kaç postta ve
-hesapta baseline olduğu ayrıca verilir. Tüm hesapların başlangıç/son takipçi ölçümü yoksa
+hesapta baseline ve son 7 günde ölçüm olduğu ayrıca verilir. Eski ölçüm bulunan ancak güncel snapshot olmayan hesap/postlar taze ölçüm gibi yorumlanmamalıdır. Tüm hesapların başlangıç/son takipçi ölçümü yoksa
 `followerChange` NULL'dır. Yeni post sayımı `[from,to)` aralığıdır. JSON tek SQL satırında
 agregasyon yapıldığı için PostgREST'in 1000 satır sınırı toplamı kesmez.
 

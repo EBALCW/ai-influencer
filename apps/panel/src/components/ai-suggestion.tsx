@@ -194,8 +194,14 @@ function AiSuggestionState({
             className="button button-primary"
             disabled={disabled}
             onClick={() => {
-              onApply(result);
-              setResult(null);
+              try {
+                onApply(result);
+                setResult(null);
+              } catch (e) {
+                setError(
+                  e instanceof Error ? e.message : 'Öneri uygulanamadı.',
+                );
+              }
             }}
           >
             Öneriyi forma uygula
