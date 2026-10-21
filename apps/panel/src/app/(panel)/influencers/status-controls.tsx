@@ -86,8 +86,8 @@ export function StatusControls({
         confirmLabel={label}
         onCancel={() => setNextStatus('')}
         onConfirm={() => {
-          setNextStatus('');
           formRef.current?.requestSubmit();
+          setNextStatus('');
         }}
       />
     </>
