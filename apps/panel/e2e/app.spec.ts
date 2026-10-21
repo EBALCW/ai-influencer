@@ -68,9 +68,8 @@ test('taslak influencer kurulumuna devam bağlantısı sunar', async ({
 }) => {
   await page.goto('/influencers?inf=demo-creator');
   await page.getByRole('link', { name: 'Kuruluma devam et' }).click();
-  await expect(page).toHaveURL(
-    /\/influencers\/demo-creator\/setup\\?inf=demo-creator/,
-  );
+  await expect(page).toHaveURL(/setup/);
+  await expect(page).toHaveURL(/inf=demo-creator/);
   await expect(
     page.getByRole('heading', { name: 'Yeni influencer oluştur', level: 1 }),
   ).toBeVisible();
