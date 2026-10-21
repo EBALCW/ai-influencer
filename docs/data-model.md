@@ -113,3 +113,38 @@ Her uygulama tablosunda RLS açıktır. Anon rolüne tablo yetkisi verilmez; `au
 - Sosyal OAuth token'ları bu şemaya düz metin olarak yazılmaz; Vault secret adı veya kimliği `token_ref` alanında tutulur.
 - Storage bucket oluşturma, dosya yükleme politikaları ve asset kullanıcı akışı #45 kapsamındadır.
 - Paylaşım ve OAuth entegrasyonlarına özel alanlar, kendi issue'larında sağlayıcı koşulları doğrulandıkça migration ile eklenmelidir.
+
+### Sosyal hesap token kasası (#49, altyapı)
+
+`20261022160000_oauth_vault_helpers.sql`, token paketini Vault'ta şifreli tutar.
+`social_accounts.token_ref` yalnız Vault UUID'sini içerir. Token paketinde yalnız
+`access_token` ve isteğe bağlı `refresh_token`, `token_type`, `scope` metinleri kabul edilir;
+sağlayıcı yanıtının tamamı saklanmaz. Tarih verilirse gelecekte ve sonlu olmalıdır.
+
+Yalnız `service_role` şu RPC'leri çağırabilir (hepsi sabit, boş `search_path` kullanır):
+
+| RPC                                                       | Davranış                                                                                                                                                                                                                                            |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `store_social_token(p_account_id, p_token, p_expires_at)` | Hesabı kilitler; aynı hesaba ait sırrı oluşturur/günceller, UUID referansı ve son kullanım tarihiyle hesabı `active` yapar. Paket bütünüyle değiştirilir; yenileme yanıtında refresh token yoksa çağıran sunucu önceki refresh token'ı korumalıdır. |
+| `read_social_token(p_account_id)`                         | Hesap referansı **ve** `social-token:<account_id>` adı eşleşirse paketi çözer; yoksa/revoked ise NULL döner. Süresi dolmuş token yenileme için okunabilir. Sonuç API yanıtına, istemciye veya loga yazılmaz.                                        |
+| `delete_social_token(p_account_id)`                       | Sırrı siler; referans/tarihi temizler ve hesabı `revoked` yapar. Hesap ve post geçmişini silmez; tekrar çağrılabilir. Sağlayıcıdaki revoke isteğinin yerini tutmaz.                                                                                 |
+
+Vault şeması ve tablolarına `anon` ve `authenticated` doğrudan erişemez.
+`service_role` güvenilen sunucu rolüdür; platformun verdiği geniş yetkiler korunur.
+Uygulama kodu token işlemlerini yukarıdaki dar RPC'lerden yapar. Owner/editor da
+istemci rolü `authenticated` olduğu için token referansı, son kullanım tarihi ve bağlantı
+durumunu elle değiştiremez. Normal metadata düzenlemesi ve yeni `pending` hesap ekleme
+korunur. Token bağlıyken influencer/platform değiştirilmesi engellenir.
+
+Hesap silinince (influencer CASCADE dahil) yalnız o hesabın adıyla eşleşen Vault sırrı
+trigger ile temizlenir. Bir hesabın bozuk referansı başka hesabın sırrını okuyamaz/silemez.
+Saklama ve silme aynı hesap kilidini kullanır; Vault yazımı ve hesap güncellemesi tek
+transaction'dır. RPC hataları token paketini içermez.
+
+Bu migration sağlayıcı uygulaması, OAuth start/callback, state/PKCE, refresh job'u veya
+canlı ortam secret'ı kurmaz. Bunlar #49'un kalan adımlarıdır. RPC'ler doğrulanmış OAuth
+callback'i/yenileme job'u için sunucu altyapısıdır; tarayıcıdan çağrılmaz.
+
+Kaynak: [Supabase Vault resmi dokümanı](https://supabase.com/docs/guides/database/vault)
+(okuma: 2026-10-21). pgTAP `oauth_vault.test.sql`: rol sınırları, şifreleme/rotasyon,
+referans izolasyonu, girdi doğrulaması, bağlantıyı kaldırma ve cascade temizliği.

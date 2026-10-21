@@ -592,6 +592,9 @@ isOneToOne: false
 "current_team_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["team_role"]
                            },
+"delete_social_token":
+{ Args: { "p_account_id": string }; Returns: undefined
+                           },
 "fx_rate":
 { Args: { "p_from": string,"p_on": string,"p_to": string }; Returns: number
                            },
@@ -637,6 +640,9 @@ isOneToOne: false
       } },
 "raise_budget_alerts":
 { Args: { "p_month": string }; Returns: number
+                           },
+"read_social_token":
+{ Args: { "p_account_id": string }; Returns: Json
                            },
 "restore_persona_version":
 { Args: { "p_change_note"?: string,"p_influencer_id": string,"p_version": number }; Returns: {
@@ -692,6 +698,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"store_social_token":
+{ Args: { "p_account_id": string,"p_expires_at"?: string,"p_token": Json }; Returns: string
+                           },
 "valid_sample_captions":
 { Args: { "p_values": (string)[] }; Returns: boolean
                            }
