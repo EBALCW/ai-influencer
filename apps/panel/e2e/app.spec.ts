@@ -131,7 +131,8 @@ test('owner ekip sayfasında kendini görür', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Ekip', level: 1 }),
   ).toBeVisible();
-  await expect(page.getByText(OWNER_EMAIL)).toBeVisible();
+  // E-posta üst bardaki profilde de görünüyor; ekip listesini main içinde ara
+  await expect(page.getByRole('main').getByText(OWNER_EMAIL)).toBeVisible();
 });
 
 test('profilde gerçek kullanıcı ve çıkış var', async ({ page }) => {
