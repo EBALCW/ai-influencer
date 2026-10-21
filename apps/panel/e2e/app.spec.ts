@@ -125,7 +125,7 @@ test('asset manager uploads, previews, and removes a private image', async ({
     name: 'asset-test.png',
     mimeType: 'image/png',
     buffer: Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAAFklEQVR42mMMqDjBwMDAxMDAwMDAAAAScgGUP/5+KwAAAABJRU5ErkJggg==',
       'base64',
     ),
   });
