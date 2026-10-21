@@ -13,3 +13,5 @@ test-results/
 coverage/
 *.tsbuildinfo
 apps/panel/e2e/.auth/
+backups/
+*.dump

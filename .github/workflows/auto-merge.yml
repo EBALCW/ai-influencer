@@ -4,7 +4,8 @@ name: Otomatik onay ve merge
 # workflow_run her zaman main'deki bu dosyanın sürümüyle çalışır ve PR kodunu checkout ETMEZ.
 on:
   workflow_run:
-    workflows: [CI]
+    # Hangisi en son biterse o tetikler; merge öncesi PR'daki TÜM kontroller ayrıca doğrulanır
+    workflows: [CI, Kurulum testi]
     types: [completed]
 
 permissions:
@@ -21,12 +22,14 @@ jobs:
   approve-and-merge:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'pull_request'
+      (github.event.workflow_run.event == 'pull_request' ||
+       (github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.name == 'CI'))
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
       HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_EVENT: ${{ github.event.workflow_run.event }}
     steps:
       - name: PR'ı bul ve uygunluğunu kontrol et
         id: pr
@@ -49,6 +52,17 @@ jobs:
           [ "$draft" = "false" ] || skip "draft PR"
           [ "$current_sha" = "$HEAD_SHA" ] || skip "CI'dan sonra yeni commit gelmiş"
           case ",$labels," in *",bekle,"*) skip "'bekle' label'ı var" ;; esac
+
+          if [ "$RUN_EVENT" = "workflow_dispatch" ]; then
+            # Elle/otomatik tetiklenen CI sadece release PR'ı (test -> main) için kullanılır.
+            # Bot'un test'e yaptığı merge pull_request olayı üretmediğinden release PR'ının CI'ı böyle çalışır.
+            [ "$head" = "test" ] && [ "$base" = "main" ] || skip "workflow_dispatch CI'ı sadece release PR'ı içindir"
+          else
+            # PR'daki bütün kontroller (CI + path filtreli Kurulum testi vb.) bitmiş ve başarılı olmalı.
+            # Biri hâlâ çalışıyorsa çık: o bittiğinde bu workflow tekrar tetiklenir.
+            not_ok=$(gh pr checks "$number" --json name,bucket --jq '[.[] | select(.bucket != "pass" and .bucket != "skipping") | "\(.name)=\(.bucket)"] | join(", ")' || true)
+            [ -z "$not_ok" ] || skip "tüm kontroller henüz yeşil değil: $not_ok"
+          fi
 
           perm=$(gh api "repos/$GH_REPO/collaborators/$author/permission" --jq .permission 2>/dev/null || echo none)
           case "$perm" in admin|maintain|write) ;; *) skip "yazarın ($author) yazma yetkisi yok" ;; esac
@@ -95,9 +109,21 @@ jobs:
           for n in $refs; do
             state=$(gh api "repos/$GH_REPO/issues/$n" --jq 'select(.pull_request == null) | .state' 2>/dev/null || true)
             [ "$state" = "open" ] || continue
+            gh issue edit "$n" --remove-label "in progress" >/dev/null 2>&1 || true
             gh issue close "$n" --reason completed \
               --comment "✅ #$NUMBER ile \`test\`'e merge edildi. Bir sonraki release ile \`main\`'e gidecek."
           done
+
+      # Bot'un test'e merge'ü açık release PR'ında (test -> main) pull_request olayı üretmez,
+      # bu yüzden release PR'ının CI'ı yeni test içeriğiyle elle tetiklenir.
+      - name: Açık release PR'ının CI'ını tetikle
+        if: steps.pr.outputs.number && steps.pr.outputs.base == 'test'
+        run: |
+          release=$(gh pr list --base main --head test --state open --json number --jq '.[0].number')
+          if [ -n "$release" ]; then
+            gh workflow run ci.yml --ref test
+            echo "::notice::Release PR #$release için CI test üzerinde tetiklendi"
+          fi
 
       # GITHUB_TOKEN ile yapılan merge 'push' tetiklemez; CD'yi elle başlatıyoruz
       - name: CD'yi tetikle

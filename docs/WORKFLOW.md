@@ -19,12 +19,13 @@ feature/xyz ──PR──▶ test ──PR──▶ main
 
 ## Günlük akış
 
+0. Issue'yu kendine ata ve `in progress` label'ı ekle: `gh issue edit <n> --add-assignee @me --add-label "in progress"`
 1. `test`'ten dal aç: `git switch test && git pull && git switch -c feat/kisa-ad`
 2. Çalış, commit at, `pnpm check` ile kontrol et.
 3. PR aç:
    - Denemek için: `gh pr create --base test` (veya küçük işlerde doğrudan `git push origin HEAD:test`)
    - Canlıya almak için: `test` → `main` PR'ı → `gh pr create --base main --head test --title "Release: <özet>"`
-4. CI geçince PR **otomatik onaylanır ve merge edilir**. Feature dalları squash edilip silinir, `test → main` merge commit ile birleşir.
+4. CI ve PR'daki diğer kontrollerin hepsi (ör. kurulum script'i değiştiyse `Kurulum testi`) geçince PR **otomatik onaylanır ve merge edilir**. Feature dalları squash edilip silinir, `test → main` merge commit ile birleşir.
 5. Merge sonrası ilgili ortama CD otomatik çalışır.
 6. PR açıklamasındaki `Closes #N` issue'ları, PR `test`'e merge edildiğinde otomatik kapanır. GitHub bunu normalde sadece `main`'de yapar, bu adımı otomatik merge workflow'u ekliyor.
 
@@ -70,6 +71,8 @@ Supabase projeleri açıldığında (#38) **Settings → Environments** altında
 | `SUPABASE_DB_PASSWORD`  | Proje oluşturulurken belirlenen veritabanı şifresi |
 
 Secret'lar yokken CD hata vermez, Supabase adımını atlar ve uyarı yazar.
+
+**Release PR'ı açıkken `test`'e yeni şey girerse** bot release PR'ının CI'ını otomatik yeniden çalıştırır ve yeşilse merge eder. Elle tetiklemek için: Actions → CI → Run workflow (`test`).
 
 ## Sık sorular
 

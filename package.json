@@ -14,7 +14,7 @@
     "start": "pnpm --filter @ai-influencer/panel start",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "pnpm -r --if-present run typecheck",
-    "test": "pnpm -r --if-present run test",
+    "test": "pnpm -r --if-present run test && pnpm test:scripts",
     "test:e2e": "pnpm --filter @ai-influencer/panel test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -25,7 +25,11 @@
     "supabase:db-reset": "supabase db reset",
     "supabase:test": "supabase test db",
     "supabase:types": "node scripts/generate-supabase-types.mjs",
-    "owner:create": "pnpm --filter @ai-influencer/panel run owner:create"
+    "owner:create": "pnpm --filter @ai-influencer/panel run owner:create",
+    "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
+    "panel": "node scripts/panel.mjs",
+    "backup": "node scripts/backup.mjs",
+    "backup:restore": "node scripts/backup.mjs restore"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
