@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -22,7 +22,25 @@ import {
   X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { TeamRole } from '@ai-influencer/shared';
+import { LogoutButton } from '@/components/logout-button';
 import { Toast } from '@/components/ui';
+
+export type ShellMember = { email: string; role: TeamRole };
+
+const roleLabels: Record<TeamRole, string> = {
+  owner: 'Owner',
+  editor: 'Editör',
+  viewer: 'İzleyici',
+};
+
+function initials(email: string) {
+  const name = email.split('@')[0] ?? '';
+  const parts = name.split(/[._-]+/).filter(Boolean);
+  const letters =
+    parts.length > 1 ? `${parts[0]![0]}${parts[1]![0]}` : name.slice(0, 2);
+  return letters.toUpperCase() || '?';
+}
 
 const navigation: Array<{
   label: string;
@@ -65,7 +83,13 @@ function subscribeToTheme(callback: () => void) {
   return () => window.removeEventListener('studio-theme-change', callback);
 }
 
-function ShellContent({ children }: { children: React.ReactNode }) {
+function ShellContent({
+  children,
+  member,
+}: {
+  children: React.ReactNode;
+  member: ShellMember;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -189,13 +213,13 @@ function ShellContent({ children }: { children: React.ReactNode }) {
               Çalışma alanına git <span>↗</span>
             </Link>
           </div>
-          {/* #39 (auth) gelince oturumdaki kullanıcının adı ve rolü gösterilecek */}
           <div className="profile-row">
-            <span className="profile-avatar">?</span>
+            <span className="profile-avatar">{initials(member.email)}</span>
             <span>
-              <strong>Ekip üyesi</strong>
-              <small>Giriş yakında</small>
+              <strong title={member.email}>{member.email}</strong>
+              <small>{roleLabels[member.role]}</small>
             </span>
+            <LogoutButton />
           </div>
         </div>
       </aside>
@@ -255,14 +279,15 @@ function ShellContent({ children }: { children: React.ReactNode }) {
               <span />
             </button>
             <span className="topbar-divider" />
-            <button
-              aria-label="Hesap menüsü"
+            <span
+              aria-label={`${member.email} (${roleLabels[member.role]})`}
               className="topbar-profile"
-              type="button"
+              title={member.email}
             >
-              <span className="profile-avatar profile-avatar-small">?</span>
-              <ChevronDown size={14} />
-            </button>
+              <span className="profile-avatar profile-avatar-small">
+                {initials(member.email)}
+              </span>
+            </span>
           </div>
         </header>
         <main className="main-content">{children}</main>
@@ -278,14 +303,16 @@ function ShellContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function PanelShell({ children }: { children: React.ReactNode }) {
+export function PanelShell({
+  children,
+  member,
+}: {
+  children: React.ReactNode;
+  member: ShellMember;
+}) {
   return (
-    <Suspense
-      fallback={
-        <div className="shell-fallback" aria-label="Panel yükleniyor" />
-      }
-    >
-      <ShellContent>{children}</ShellContent>
-    </Suspense>
+    // (panel) layout'u oturum yüzünden dinamik; useSearchParams için Suspense gerekmez.
+    // Suspense, bölüm sayfalarındaki notFound()'un 404 yerine 200 dönmesine yol açıyordu.
+    <ShellContent member={member}>{children}</ShellContent>
   );
 }

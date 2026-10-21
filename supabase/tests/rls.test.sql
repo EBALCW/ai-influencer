@@ -34,10 +34,17 @@ VALUES
 
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '90000000-0000-4000-8000-000000000001', true);
-SELECT extensions.lives_ok(
+SELECT extensions.throws_ok(
   $$INSERT INTO public.team_members (user_id, role) VALUES (auth.uid(), 'owner')$$,
-  'first authenticated user can bootstrap as owner'
+  '42501', NULL,
+  'empty workspace: a signed-in user cannot make themselves owner (first owner is created with the service role)'
 );
+
+-- İlk owner servis rolüyle oluşturulur (pnpm owner:create ile aynı yol)
+RESET ROLE;
+INSERT INTO public.team_members (user_id, role) VALUES ('90000000-0000-4000-8000-000000000001', 'owner');
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub', '90000000-0000-4000-8000-000000000001', true);
 SELECT extensions.is(public.can_manage_team(), true, 'owner can manage team membership');
 SELECT extensions.lives_ok(
   $$INSERT INTO public.team_members (user_id, role) VALUES ('90000000-0000-4000-8000-000000000002', 'viewer')$$,

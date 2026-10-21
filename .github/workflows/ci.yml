@@ -71,7 +71,7 @@ jobs:
     name: E2E (Playwright)
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - run: corepack enable
@@ -81,10 +81,20 @@ jobs:
           cache: pnpm
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
-        with:
-          name: panel-build
-          path: apps/panel/.next
+      # Oturumlu testler için yerel Supabase (sadece auth + REST + DB)
+      - name: Start local Supabase
+        run: pnpm exec supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
+      - name: Export local Supabase env
+        run: |
+          pnpm exec supabase status -o env > "$RUNNER_TEMP/sb.env"
+          get() { grep "^$1=" "$RUNNER_TEMP/sb.env" | cut -d= -f2- | tr -d '"'; }
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(get API_URL)"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(get ANON_KEY)"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(get SERVICE_ROLE_KEY)"
+          } >> "$GITHUB_ENV"
+      # NEXT_PUBLIC_* build sırasında koda gömülür; bu yüzden env ile burada build edilir
+      - run: pnpm build
       - run: pnpm --filter @ai-influencer/panel exec playwright install --with-deps chromium
       - run: pnpm test:e2e
         env:
@@ -95,6 +105,9 @@ jobs:
           name: playwright-report
           path: apps/panel/playwright-report
           retention-days: 7
+      - name: Stop local Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup
 
   windows:
     name: Windows uyumluluğu
