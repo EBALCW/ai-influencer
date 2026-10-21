@@ -35,6 +35,20 @@ jobs:
         run: pnpm supabase:db-reset
       - name: Test database policies
         run: pnpm supabase:test
+      - name: Veritabanı tipleri migration'larla uyumlu mu?
+        run: |
+          pnpm supabase:types
+          if ! git diff --exit-code -- packages/shared/src/database.types.ts; then
+            echo "::error::packages/shared/src/database.types.ts güncel değil. 'pnpm supabase:types' çalıştırıp commit'le."
+            exit 1
+          fi
+      - name: Üretilen tipleri sakla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-types
+          path: packages/shared/src/database.types.ts
+          retention-days: 3
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck

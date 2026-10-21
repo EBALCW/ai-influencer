@@ -14,7 +14,7 @@ export default function ErrorPage({
     console.error('Panel route error:', error);
   }, [error]);
   return (
-    <main className="section-card section-empty-card" role="alert">
+    <div className="section-card section-empty-card" role="alert">
       <div className="empty-state">
         <span className="section-hero-icon">
           <CircleAlert size={23} />
@@ -32,6 +32,6 @@ export default function ErrorPage({
           <RotateCcw size={14} /> Tekrar dene
         </button>
       </div>
-    </main>
+    </div>
   );
 }

@@ -101,6 +101,9 @@ export function ConfirmDialog({
   return (
     <div
       className="dialog-backdrop"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') onCancel();
+      }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onCancel();
       }}
@@ -115,6 +118,7 @@ export function ConfirmDialog({
         <p>{description}</p>
         <div className="dialog-actions">
           <button
+            autoFocus
             className="button button-quiet"
             onClick={onCancel}
             type="button"
