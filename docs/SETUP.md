@@ -123,20 +123,76 @@ Zorunlu kontrollerin hepsi `[OK]` olmalı. `[UYARI]` satırları kurulumu engell
 
 ## Anahtarlar (`.env.local`)
 
-- Gerçek anahtarlar **sadece** `.env.local` dosyasına yazılır. Bu dosya git'e gönderilmez.
-- Değerler ekip parola yöneticisinde tutulur. WhatsApp, Slack veya e-posta ile paylaşma.
-- Bir anahtar yanlışlıkla commit'lenirse hemen ekibe haber ver. Anahtar iptal edilip yenisi alınır.
+- Gerçek anahtarlar **sadece** kökteki `.env.local` dosyasına yazılır. Bu dosya git'e gönderilmez, panel de bu dosyayı okur.
+- Değerler **ekip parola yöneticisinin paylaşılan kasasında** tutulur. WhatsApp, Slack, e-posta, issue veya agent sohbeti ile paylaşılmaz.
+- Panelin çalışması için `NEXT_PUBLIC_SUPABASE_URL` ve `NEXT_PUBLIC_SUPABASE_ANON_KEY` yeterli. `SUPABASE_SERVICE_ROLE_KEY` ekip daveti için gerekli, sadece owner'ın bilgisayarında olması yeterli. `SUPABASE_DB_URL` sadece yedek alan kişide olur.
+- **Aynı veriyi görmek için** herkesin `.env.local`'ı aynı ortak dev Supabase projesini göstermeli. `pnpm supabase:start` ile açılan yerel Supabase her bilgisayarda ayrı bir veritabanıdır.
+- Bir anahtar yanlışlıkla commit'lenir veya paylaşılırsa hemen ekibe haber ver. Anahtar iptal edilip yenisi alınır.
+
+## Paneli açmak
+
+```bash
+pnpm panel
+```
+
+Bu komut sırasıyla şunları yapar:
+
+1. Ortamı kontrol eder (`doctor`).
+2. Kod değiştiyse paneli build eder. İlk seferde 1-2 dakika sürer, sonrasında atlanır.
+3. Paneli başlatır ve tarayıcıda `http://127.0.0.1:3000` adresini açar.
+
+Kapatmak için terminalde **Ctrl+C**.
+
+| Seçenek                  | Ne yapar                                                         |
+| ------------------------ | ---------------------------------------------------------------- |
+| `pnpm panel --update`    | Önce en son kodu çeker (`git pull` + `pnpm install`), sonra açar |
+| `pnpm panel --port 3001` | 3000 portu doluysa başka port                                    |
+| `pnpm panel --no-open`   | Tarayıcıyı açmaz                                                 |
+
+`.env.local`'da Supabase değerleri yoksa panel yine açılır ama giriş çalışmaz. Script bunu uyarı olarak söyler.
+
+> Geliştirme yapıyorsan `pnpm panel` yerine `pnpm dev` kullan. Değişiklikler anında yansır.
 
 ## Güncel kalmak
 
-Her çalışma gününe şununla başla:
+Her çalışma gününe şununla başla (Windows ve Mac'te aynı):
 
 ```bash
-git pull
-pnpm install
+pnpm panel --update
 ```
 
-`.nvmrc` veya `packageManager` değişmişse kurulum script'ini tekrar çalıştır. Hangi script'i çalıştıracağını bilmiyorsan `pnpm doctor` ne yapman gerektiğini söyler.
+Sadece kodu güncellemek istiyorsan `git pull` ve ardından `pnpm install`.
+
+Commit'lenmemiş değişikliğin varsa `--update` durur ve seni uyarır. `.nvmrc` veya `packageManager` değiştiyse `doctor` Node/pnpm sürümünün yanlış olduğunu söyler. O durumda kurulum script'ini tekrar çalıştır.
+
+## Yedekleme ve geri yükleme
+
+**Neyi yedekliyoruz:** Supabase veritabanı. Şema (`schema.sql`), uygulama verisi (`data-public.sql`) ve ekip kullanıcıları (`data-auth.sql`) ayrı dosyalara yazılır. Storage'daki görsel/video dosyaları henüz yedeklenmiyor, bucket'lar #45 ile gelecek.
+
+**Supabase'in kendi yedeği:** Otomatik günlük yedekler Supabase'in ücretli planlarında var. Ücretsiz planda olup olmadığını ve saklama süresini proje açılırken [supabase.com/pricing](https://supabase.com/pricing) sayfasından doğrula. Kendi yedeğimizi her durumda **haftada bir** alıyoruz.
+
+**Gereksinim:** PostgreSQL 17 istemci araçları (`pg_dump`, `psql`)
+
+- macOS: `brew install postgresql@17`
+- Windows: [PostgreSQL 17](https://www.postgresql.org/download/windows/) kurulumunda sadece "Command Line Tools" seç, `bin` klasörünü PATH'e ekle.
+
+**Yedek almak** (`.env.local`'da `SUPABASE_DB_URL` olmalı):
+
+```bash
+pnpm backup
+```
+
+Yedek `~/ai-influencer-backups/<tarih>/` klasörüne yazılır. Script repo içine yazmayı reddeder, çünkü repo public ve yedek hassas veri içerir. Bu klasörü ekibin erişimi kısıtlı bulut alanına kopyala.
+
+**Geri yükleme testi** (ayda bir, sadece yerel Supabase'e, Docker gerekir):
+
+```bash
+pnpm supabase:start
+pnpm supabase:db-reset
+pnpm backup:restore ~/ai-influencer-backups/<tarih>
+```
+
+Script ortak dev veya production projesine geri yüklemeyi reddeder, sadece `127.0.0.1` kabul eder. Test sonucunu `docs/incidents.md` şablonuyla ekibin kısıtlı alanına kaydet.
 
 ---
 

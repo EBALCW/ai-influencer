@@ -96,11 +96,13 @@ node scripts/doctor.mjs
 
 ## Komutlar
 
-| Komut                               | Ne yapar              |
-| ----------------------------------- | --------------------- |
-| `pnpm doctor`                       | Ortam sağlık kontrolü |
-| `pnpm setup:mac` / `pnpm setup:win` | Kurulum script'leri   |
-| `pnpm install`                      | Bağımlılıklar         |
+| Komut                                                       | Ne yapar                                                          |
+| ----------------------------------------------------------- | ----------------------------------------------------------------- |
+| `pnpm doctor`                                               | Ortam sağlık kontrolü                                             |
+| `pnpm setup:mac` / `pnpm setup:win`                         | Kurulum script'leri                                               |
+| `pnpm install`                                              | Bağımlılıklar                                                     |
+| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`) | Paneli build edip başlatır, tarayıcıyı açar                       |
+| `pnpm backup` / `pnpm backup:restore <klasör>`              | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`) |
 
 Panel kodu geldikçe (#37) `dev`, `build`, `lint`, `typecheck`, `test` komutları buraya eklenecek.
 
