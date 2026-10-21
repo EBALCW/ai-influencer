@@ -43,7 +43,7 @@ export default async function globalSetup() {
   await createSession(EDITOR_EMAIL, 'editor', EDITOR_STATE, ownerId);
 }
 
-async function createSession(
+export async function createSession(
   email: string,
   role: Role,
   statePath: string,
