@@ -1,6 +1,8 @@
-# Olay ve yedekleme doğrulama kayıtları
+# Olay ve yedekleme doğrulama şablonları
 
-Bu dosya olayların ve geri yükleme testlerinin kaydıdır; parola, doğrulama kodu, kurtarma kodu, token, özel paylaşım bağlantısı, tam e-posta/telefon veya hassas mesaj içeriği yazılmaz. Kanıt dosyaları yalnızca ekip erişimi kısıtlı depoda tutulur; bu dosyaya depo yolu veya gizli olmayan kısa bir referans yazılabilir.
+> ⚠️ **Bu repo public.** Gerçek olay ve yedek kayıtları bu dosyaya veya repodaki herhangi bir dosyaya, issue'ya ya da PR'a **yazılmaz**. Bir hesabın ele geçirildiği, kısıtlandığı veya yedeğinin eksik olduğu bilgisi herkese açık olursa saldırganlara hedef verir. Aşağıdaki şablonları kopyalayıp ekibin erişimi kısıtlı alanında (ör. paylaşılan parola kasasının notları veya ekip içi private doküman) doldurun.
+
+Bu dosya, olay ve geri yükleme testi kayıtları için şablon sağlar. Kayıtlarda parola, doğrulama kodu, kurtarma kodu, token, özel paylaşım bağlantısı, tam e-posta/telefon veya hassas mesaj içeriği yazılmaz. Kanıt dosyaları yalnızca ekip erişimi kısıtlı depoda tutulur; bu dosyaya depo yolu veya gizli olmayan kısa bir referans yazılabilir.
 
 ## Hesap olayı kaydı şablonu
 
@@ -59,6 +61,6 @@ Her tam yedek ve geri yükleme testinde bir kayıt oluşturun. Bulut sağlayıc�
 - Eksik veya takip işi: `<yok veya issue bağlantısı>`
 ```
 
-## Olay kayıtları
+## Kayıtlar nerede tutulur?
 
-Henüz kayıt yok.
+Kayıtlar repoda tutulmaz, ekibin erişimi kısıtlı alanında durur. Repoda sadece tekrarı önleyici işler, hassas ayrıntı içermeyen issue'lar olarak açılır (ör. "Aylık 2FA kontrolü hatırlatıcısı ekle").
