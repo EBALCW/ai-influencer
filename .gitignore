@@ -8,3 +8,7 @@ dist/
 Thumbs.db
 *.log
 supabase/.temp/
+playwright-report/
+test-results/
+coverage/
+*.tsbuildinfo

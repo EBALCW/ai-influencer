@@ -11,17 +11,17 @@ Ekip üyeleri paneli kendi bilgisayarlarında kullanacak. Influencer, içerik, m
 
 ## Değerlendirilen seçenekler
 
-| Seçenek | Ortak ekip verisi | Bilgisayar kapalıyken işler | OAuth ve gizli anahtarlar | Geliştirme ve işletim |
-|---|---|---|---|---|
-| **A. Next.js + Supabase** | Supabase Postgres ile yerleşik | Edge Functions ve zamanlayıcı ile | Server-side route/Edge Function; sırlar sunucu tarafında | TypeScript ekosistemiyle hızlı; yönetilen servis maliyeti ve sağlayıcı bağımlılığı var |
-| **B. Tauri/Electron + yerel SQLite** | Bilgisayarlar arasında ayrıca eşitleme gerekir | Her bilgisayar kapalıyken durur | Her kurulumda token saklama ve yenileme karmaşıklaşır | Masaüstü dağıtımı ve güncelleme yükü ekler |
-| **C. FastAPI + React** | Ayrı, sürekli çalışan ortak backend ve veritabanı gerekir | Sunucu altyapısı kurulursa mümkün | Backend'de çözülebilir; OAuth için yine erişilebilir callback gerekir | İki dil/uygulama yığını ve ek servis işletimi gerektirir |
+| Seçenek                              | Ortak ekip verisi                                         | Bilgisayar kapalıyken işler       | OAuth ve gizli anahtarlar                                             | Geliştirme ve işletim                                                                  |
+| ------------------------------------ | --------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **A. Next.js + Supabase**            | Supabase Postgres ile yerleşik                            | Edge Functions ve zamanlayıcı ile | Server-side route/Edge Function; sırlar sunucu tarafında              | TypeScript ekosistemiyle hızlı; yönetilen servis maliyeti ve sağlayıcı bağımlılığı var |
+| **B. Tauri/Electron + yerel SQLite** | Bilgisayarlar arasında ayrıca eşitleme gerekir            | Her bilgisayar kapalıyken durur   | Her kurulumda token saklama ve yenileme karmaşıklaşır                 | Masaüstü dağıtımı ve güncelleme yükü ekler                                             |
+| **C. FastAPI + React**               | Ayrı, sürekli çalışan ortak backend ve veritabanı gerekir | Sunucu altyapısı kurulursa mümkün | Backend'de çözülebilir; OAuth için yine erişilebilir callback gerekir | İki dil/uygulama yığını ve ek servis işletimi gerektirir                               |
 
 ## Karar
 
 **A seçeneği** seçildi:
 
-- Panel: **Next.js 15 App Router, TypeScript, Tailwind CSS ve shadcn/ui**.
+- Panel: **Next.js 16 App Router, TypeScript, Tailwind CSS ve shadcn/ui**.
 - Workspace: **pnpm**, apps/panel ve packages/* yapısı.
 - Ortak veri ve kimlik: **Supabase Postgres, Auth, Storage ve Row Level Security (RLS)**.
 - Sunucu tarafı işler: **Supabase Edge Functions**; zamanlama için **pg_cron** veya Supabase'in desteklediği zamanlanmış iş mekanizması.
@@ -29,6 +29,8 @@ Ekip üyeleri paneli kendi bilgisayarlarında kullanacak. Influencer, içerik, m
 - OAuth callback'leri geliştirmede Next.js route'larında, dağıtılmış akış gerektiğinde Edge Function veya erişilebilir sunucu callback'inde ele alınır. Her sağlayıcının izin verdiği redirect URI ve uygulama inceleme koşulları entegrasyon issue'sunda doğrulanır.
 - Higgsfield, Claude ve sosyal platform API anahtarları tarayıcıya veya repoya konmaz; sunucu ortamında ya da Supabase Vault/Secrets içinde tutulur.
 - Tauri/Electron ve yerel SQLite ilk sürüm kapsamına alınmaz. Masaüstü paketleme ihtiyacı doğarsa, ortak Supabase veri katmanı korunarak ayrıca değerlendirilir.
+
+> **Sürüm notu (2026-10-21):** İskelet kurulurken güncel ana sürümler seçildi: Next.js 16, Tailwind CSS 4, ESLint 9 (flat config). Proje boşken major yükseltme en ucuz noktadır.
 
 ## Mimari
 

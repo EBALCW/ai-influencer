@@ -17,11 +17,11 @@ Her yayın için:
 
 ## Platform bazında uygulama
 
-| Platform | Resmî kural / araç | Bu projedeki uygulama |
-|---|---|---|
+| Platform         | Resmî kural / araç                                                                                                                                                                                                                                      | Bu projedeki uygulama                                                                                                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Instagram / Meta | Meta, AI içeriğini kullanıcı açıklaması veya teknik sinyallerle tespit ettiğinde “AI info” açıklaması gösterebildiğini belirtiyor. Etiketleme biçimi ve yerleşimi değişebilir. Meta topluluk standartları AI içerikleri dahil tüm içeriklere uygulanır. | Gerçekçi AI içerikte yükleme akışında sunulan AI etiketi/açıklaması kullanılır. Bio'da karakterin AI ile oluşturulduğu açıkça yazılır. Platform tespitinin etiketi otomatik eklemesine güvenilmez. |
-| TikTok | TikTok, gerçekçi görüntü, ses veya video içeren tüm AI üretimi içeriğin etiketlenmesini şart koşuyor; yalnızca TikTok'un AI efektleriyle üretilen içerikte otomatik etiket istisnası olabilir. | Karakterli AI içeriğinde yükleme ekranındaki “AI-generated content” açıklaması açılır. Yalnızca otomatik etikete güvenilmez. |
-| YouTube | Gerçekçi görünen ve anlamlı biçimde sentetik üretilen/değiştirilen içerik yükleme sırasında “altered content” olarak açıklanmalıdır. | Gerçekçi AI karakter videosunda YouTube Studio > AI use / altered content sorusuna “Yes” seçilir. Platformun otomatik etiketine rağmen yükleyici açıklaması yapılır. |
+| TikTok           | TikTok, gerçekçi görüntü, ses veya video içeren tüm AI üretimi içeriğin etiketlenmesini şart koşuyor; yalnızca TikTok'un AI efektleriyle üretilen içerikte otomatik etiket istisnası olabilir.                                                          | Karakterli AI içeriğinde yükleme ekranındaki “AI-generated content” açıklaması açılır. Yalnızca otomatik etikete güvenilmez.                                                                       |
+| YouTube          | Gerçekçi görünen ve anlamlı biçimde sentetik üretilen/değiştirilen içerik yükleme sırasında “altered content” olarak açıklanmalıdır.                                                                                                                    | Gerçekçi AI karakter videosunda YouTube Studio > AI use / altered content sorusuna “Yes” seçilir. Platformun otomatik etiketine rağmen yükleyici açıklaması yapılır.                               |
 
 ### Ticari içerik ve reklam açıklaması
 
@@ -52,15 +52,14 @@ Her içerikte `templates/pre-publish-checklist.md` kopyalanır. AI açıklaması
 
 ## Kaynaklar (resmî; her biri 20 Ekim 2026'da kontrol edildi)
 
-| Politika | Kaynak |
-|---|---|
-| Meta AI içerik etiketleri | [Meta — Labeling AI Content](https://transparency.meta.com/governance/tracking-impact/labeling-ai-content/) |
-| Meta topluluk standartları | [Meta — Community Standards](https://transparency.meta.com/policies/community-standards/) |
-| TikTok AI etiketi | [TikTok — AI-generated content disclosure](https://support.tiktok.com/en/using-tiktok/creating-videos/ai-generated-content) |
-| TikTok sahte etkileşim, spam ve kimlik doğruluğu | [TikTok — Community Guidelines: Integrity and Authenticity](https://www.tiktok.com/community-guidelines/en/integrity-authenticity/) |
-| YouTube sentetik/altered content açıklaması | [YouTube — Disclosing use of GenAI content](https://support.google.com/youtube/answer/14328491) |
-| YouTube spam ve sahte etkileşim | [YouTube — Spam, deceptive practices & scams policies](https://support.google.com/youtube/answer/2801973) |
-| YouTube kimliğe bürünme | [YouTube — Impersonation policy](https://support.google.com/youtube/answer/2801947) |
-| Türkiye'de influencer reklam açıklaması ve yürürlük tarihi | [T.C. Ticaret Bakanlığı — Sosyal Medyada Şeffaf Reklam Dönemi](https://ticaret.gov.tr/haberler/ticaret-bakanligindan-sosyal-medyada-seffaf-reklam-donemi) |
-| Türkiye sosyal medya etkileyicileri kılavuzu | [T.C. Ticaret Bakanlığı — Kılavuz duyurusu](https://tuketici.ticaret.gov.tr/duyurular/sosyal-medya-etkileyicileri-tarafindan-yapilan-ticari-reklam-ve-haksiz-ticari-uyg) |
-
+| Politika                                                   | Kaynak                                                                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Meta AI içerik etiketleri                                  | [Meta — Labeling AI Content](https://transparency.meta.com/governance/tracking-impact/labeling-ai-content/)                                                              |
+| Meta topluluk standartları                                 | [Meta — Community Standards](https://transparency.meta.com/policies/community-standards/)                                                                                |
+| TikTok AI etiketi                                          | [TikTok — AI-generated content disclosure](https://support.tiktok.com/en/using-tiktok/creating-videos/ai-generated-content)                                              |
+| TikTok sahte etkileşim, spam ve kimlik doğruluğu           | [TikTok — Community Guidelines: Integrity and Authenticity](https://www.tiktok.com/community-guidelines/en/integrity-authenticity/)                                      |
+| YouTube sentetik/altered content açıklaması                | [YouTube — Disclosing use of GenAI content](https://support.google.com/youtube/answer/14328491)                                                                          |
+| YouTube spam ve sahte etkileşim                            | [YouTube — Spam, deceptive practices & scams policies](https://support.google.com/youtube/answer/2801973)                                                                |
+| YouTube kimliğe bürünme                                    | [YouTube — Impersonation policy](https://support.google.com/youtube/answer/2801947)                                                                                      |
+| Türkiye'de influencer reklam açıklaması ve yürürlük tarihi | [T.C. Ticaret Bakanlığı — Sosyal Medyada Şeffaf Reklam Dönemi](https://ticaret.gov.tr/haberler/ticaret-bakanligindan-sosyal-medyada-seffaf-reklam-donemi)                |
+| Türkiye sosyal medya etkileyicileri kılavuzu               | [T.C. Ticaret Bakanlığı — Kılavuz duyurusu](https://tuketici.ticaret.gov.tr/duyurular/sosyal-medya-etkileyicileri-tarafindan-yapilan-ticari-reklam-ve-haksiz-ticari-uyg) |

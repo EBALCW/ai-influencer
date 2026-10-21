@@ -2,13 +2,13 @@
 
 Bu sayfa, ekipteki herkesin (Windows ve Mac) **aynı araçların aynı sürümlerini** tek seferde kurması için hazırlandı.
 
-| | Sürüm | Nereden sabitleniyor |
-|---|---|---|
-| Node.js | 24 LTS | `.nvmrc` |
-| pnpm | 10.34.7 | `package.json` → `packageManager` |
-| Dil | TypeScript | (panel kodu #37 ile gelecek) |
-| Satır sonu | LF | `.gitattributes`, `.editorconfig` |
-| Editör ayarları | VS Code + önerilen eklentiler | `.vscode/` |
+|                 | Sürüm                         | Nereden sabitleniyor              |
+| --------------- | ----------------------------- | --------------------------------- |
+| Node.js         | 24 LTS                        | `.nvmrc`                          |
+| pnpm            | 10.34.7                       | `package.json` → `packageManager` |
+| Dil             | TypeScript                    | (panel kodu #37 ile gelecek)      |
+| Satır sonu      | LF                            | `.gitattributes`, `.editorconfig` |
+| Editör ayarları | VS Code + önerilen eklentiler | `.vscode/`                        |
 
 Sürümleri elle kurmana gerek yok. Script bu dosyaları okuyup doğru sürümü kendisi kurar. Biri sürümü güncellerse, diğerleri script'i tekrar çalıştırınca aynı sürüme geçer.
 
@@ -70,18 +70,18 @@ cd ~/Projects/ai-influencer && bash scripts/setup-mac.sh
 
 ### Script ne kuruyor?
 
-| Adım | Windows | macOS |
-|---|---|---|
-| Paket yöneticisi | winget (Windows'ta hazır gelir) | Homebrew |
-| Git, GitHub CLI | ✓ | ✓ |
-| Node sürüm yöneticisi | fnm | fnm |
-| Node.js 24 | fnm ile `.nvmrc`'den | fnm ile `.nvmrc`'den |
-| pnpm | corepack ile `package.json`'dan | corepack ile `package.json`'dan |
-| VS Code + eklentiler | ✓ | ✓ |
-| Proje bağımlılıkları | `pnpm install` | `pnpm install` |
-| `.env.local` | `.env.example`'dan kopyalar | `.env.example`'dan kopyalar |
-| Git ayarı | `core.longpaths=true`, `core.autocrlf=false` | — |
-| Sağlık kontrolü | `doctor` | `doctor` |
+| Adım                  | Windows                                      | macOS                           |
+| --------------------- | -------------------------------------------- | ------------------------------- |
+| Paket yöneticisi      | winget (Windows'ta hazır gelir)              | Homebrew                        |
+| Git, GitHub CLI       | ✓                                            | ✓                               |
+| Node sürüm yöneticisi | fnm                                          | fnm                             |
+| Node.js 24            | fnm ile `.nvmrc`'den                         | fnm ile `.nvmrc`'den            |
+| pnpm                  | corepack ile `package.json`'dan              | corepack ile `package.json`'dan |
+| VS Code + eklentiler  | ✓                                            | ✓                               |
+| Proje bağımlılıkları  | `pnpm install`                               | `pnpm install`                  |
+| `.env.local`          | `.env.example`'dan kopyalar                  | `.env.example`'dan kopyalar     |
+| Git ayarı             | `core.longpaths=true`, `core.autocrlf=false` | —                               |
+| Sağlık kontrolü       | `doctor`                                     | `doctor`                        |
 
 Script'i tekrar çalıştırmak güvenlidir, kurulu olan araçları atlar. Sorun yaşarsan önce script'i bir kez daha çalıştır.
 
@@ -96,6 +96,7 @@ Bilgisayarına hiçbir şey kurmak istemiyorsan veya Yöntem A çalışmadıysa 
 3. Panel çalışınca **Ports** sekmesinden 3000 portunu aç.
 
 Notlar:
+
 - Kişisel GitHub hesaplarında aylık ücretsiz Codespaces kotası var. Kullanmadığında codespace'i durdur.
 - Sosyal medya OAuth callback'leri (#49) `localhost` yerine Codespaces adresine yönlenir. Bağlantı testlerini Yöntem A ile yapmak daha kolay.
 - Docker Desktop kuruluysa aynı ortam yerelde de açılabilir: VS Code → **Dev Containers: Reopen in Container**.
@@ -150,6 +151,7 @@ Microsoft Store'u aç, **App Installer** uygulamasını ara ve güncelle (ya da 
 
 **Kurulum bitti ama yeni terminalde `node` / `pnpm` bulunamıyor**
 Terminali tamamen kapatıp yeniden aç. fnm ayarı yeni açılan terminallerde yüklenir. Yine olmazsa script'i tekrar çalıştır.
+
 - Mac: `~/.zshrc` dosyasında `fnm env` satırı olmalı.
 - Windows: `notepad $PROFILE` ile profil dosyasını aç, `fnm env` satırı olmalı.
 

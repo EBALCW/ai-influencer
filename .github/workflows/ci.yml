@@ -1,0 +1,116 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, test]
+  push:
+    branches: [test]
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint · Typecheck · Unit test · Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      # pnpm, setup-node'un cache adımından ÖNCE hazır olmalı
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack enable && pnpm -v
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: panel-build
+          path: |
+            apps/panel/.next
+            !apps/panel/.next/cache
+          include-hidden-files: true
+          retention-days: 3
+
+  e2e:
+    name: E2E (Playwright)
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: panel-build
+          path: apps/panel/.next
+      - run: pnpm --filter @ai-influencer/panel exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+        env:
+          CI: '1'
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/panel/playwright-report
+          retention-days: 7
+
+  windows:
+    name: Windows uyumluluğu
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  secrets:
+    name: Secret taraması
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 \
+            git /repo --redact --no-banner --exit-code 1
+
+  # Branch korumasında "zorunlu kontrol" olarak bu iş seçilir
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [quality, e2e, windows, secrets]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Tüm işler başarılı mı?
+        run: |
+          echo '${{ toJSON(needs) }}' | jq -e 'to_entries | all(.value.result == "success")'

@@ -35,20 +35,34 @@ Windows ve Mac için tek yapıştırmalık komutlar, Codespaces seçeneği ve s�
 
 Kurulumdan sonra kontrol için: `pnpm doctor`
 
+## Geliştirme
+
+Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
+
+| Komut                           | Ne yapar                                                                            |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `pnpm dev`                      | Paneli başlatır → http://localhost:3000                                             |
+| `pnpm check`                    | Format + lint + typecheck + unit test (PR açmadan önce çalıştır)                    |
+| `pnpm build`                    | Production build                                                                    |
+| `pnpm test:e2e`                 | Playwright uçtan uca testleri (ilk seferde `pnpm exec playwright install chromium`) |
+| `pnpm supabase:start` / `:stop` | Yerel Supabase (opsiyonel, Docker Desktop gerekir)                                  |
+
+Supabase için varsayılan yol ortak **dev** projesidir, değerleri `.env.local`'a yazılır ve Docker gerekmez. Yerel Supabase sadece migration denemek için gerekir.
+
 ## Yol haritası
 
-| Epic | Konu |
-|---|---|
-| [#5](../../issues/5) | 1 · AI karakter oluşturma ve imaj |
-| [#9](../../issues/9) | 2 · Hesap kurulumu ve algoritma ısıtma |
-| [#14](../../issues/14) | 3 · Trend araştırması, otomasyon, AI entegrasyonları |
-| [#20](../../issues/20) | 4 · İçerik üretim hattı |
-| [#26](../../issues/26) | 5 · Yayın stratejisi ve analitik |
-| [#31](../../issues/31) | 6 · Bütçe ve monetizasyon |
-| [#35](../../issues/35) | 7 · Risk, uyum ve platform kuralları |
-| [#63](../../issues/63) | 8 · Admin panel: altyapı ve mimari |
-| [#64](../../issues/64) | 9 · Admin panel: Influencer Studio |
-| [#65](../../issues/65) | 10 · Admin panel: sosyal medya entegrasyonları ve analitik |
+| Epic                   | Konu                                                           |
+| ---------------------- | -------------------------------------------------------------- |
+| [#5](../../issues/5)   | 1 · AI karakter oluşturma ve imaj                              |
+| [#9](../../issues/9)   | 2 · Hesap kurulumu ve algoritma ısıtma                         |
+| [#14](../../issues/14) | 3 · Trend araştırması, otomasyon, AI entegrasyonları           |
+| [#20](../../issues/20) | 4 · İçerik üretim hattı                                        |
+| [#26](../../issues/26) | 5 · Yayın stratejisi ve analitik                               |
+| [#31](../../issues/31) | 6 · Bütçe ve monetizasyon                                      |
+| [#35](../../issues/35) | 7 · Risk, uyum ve platform kuralları                           |
+| [#63](../../issues/63) | 8 · Admin panel: altyapı ve mimari                             |
+| [#64](../../issues/64) | 9 · Admin panel: Influencer Studio                             |
+| [#65](../../issues/65) | 10 · Admin panel: sosyal medya entegrasyonları ve analitik     |
 | [#66](../../issues/66) | 11 · Admin panel: operasyon (içerik, yayın, maliyet, markalar) |
 
 Öncelikler `P0` / `P1` / `P2` label'larıyla işaretli. İşe `P0` ile başlanır.
@@ -70,4 +84,4 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 
 ## Durum
 
-Planlama aşamasında. Kurulum altyapısı hazır, panel kodu henüz yok.
+Proje altyapısı ve admin panel başlangıç iskeleti hazır. Influencer yönetimi ve diğer ürün özellikleri yol haritasındaki işler kapsamında geliştirilecek.

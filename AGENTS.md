@@ -9,7 +9,7 @@ AI influencer oluşturma, büyütme ve gelire dönüştürme projesi. Kodlanacak
 - **Repo:** `EBALCW/ai-influencer` (private, GitHub organization)
 - **Ekip:** 1 kişi macOS + Claude Code, 2 kişi Windows + Codex
 - **Durum:** Planlama aşamasında. Kurulum altyapısı hazır, panel kodu yok (#37 ile başlayacak)
-- **Stack (plan, #36):** TypeScript · Next.js 15 (App Router) · Tailwind + shadcn/ui · Supabase (Postgres, Auth, Storage, Edge Functions, pg_cron) · pnpm workspace
+- **Stack (plan, #36):** TypeScript · Next.js 16 (App Router) · Tailwind + shadcn/ui · Supabase (Postgres, Auth, Storage, Edge Functions, pg_cron) · pnpm workspace
 - **Sabit sürümler:** Node `.nvmrc` (24) · pnpm `package.json` → `packageManager` (10.34.7) · `engine-strict=true`
 
 ## İlk kurulum
@@ -27,11 +27,11 @@ node scripts/doctor.mjs
 
 ### Adım 2 — İşletim sistemine göre kurulum script'ini çalıştır
 
-| Ortam | Komut (repo kökünde) |
-|---|---|
-| macOS | `bash scripts/setup-mac.sh` |
+| Ortam                        | Komut (repo kökünde)                                                 |
+| ---------------------------- | -------------------------------------------------------------------- |
+| macOS                        | `bash scripts/setup-mac.sh`                                          |
 | Windows (PowerShell, native) | `powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1` |
-| Linux / WSL / container | Script yok. "Linux / WSL" bölümündeki adımları uygula |
+| Linux / WSL / container      | Script yok. "Linux / WSL" bölümündeki adımları uygula                |
 
 Script'ler idempotenttir, tekrar çalıştırmak güvenlidir. Şunları kurar: git, gh, fnm, Node 24, corepack + pnpm, VS Code + eklentiler, `pnpm install`, `.env.local`. En sonda doctor'ı çalıştırır.
 
@@ -41,12 +41,12 @@ Script'ler idempotenttir, tekrar çalıştırmak güvenlidir. Şunları kurar: g
 
 Aşağıdaki durumları agent kendisi çözemez. Kullanıcıya ne yapacağını Türkçe ve tek cümleyle söyle, bitirmesini bekle, sonra devam et:
 
-| Durum | Kullanıcıya söylenecek |
-|---|---|
+| Durum                          | Kullanıcıya söylenecek                                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Homebrew şifre istiyor (macOS) | "Terminalde Mac şifreni yaz (yazarken görünmez)." Gerekirse komutu kullanıcının kendisinin çalıştırmasını iste (Claude Code'da `! <komut>`) |
-| Windows UAC penceresi | "Açılan Windows izin penceresinde Evet'e tıkla." |
-| `gh auth login` | "Tarayıcıda açılan GitHub sayfasına terminaldeki kodu gir ve onayla." |
-| `winget` bulunamadı | "Microsoft Store'dan App Installer'ı kur/güncelle, sonra haber ver." |
+| Windows UAC penceresi          | "Açılan Windows izin penceresinde Evet'e tıkla."                                                                                            |
+| `gh auth login`                | "Tarayıcıda açılan GitHub sayfasına terminaldeki kodu gir ve onayla."                                                                       |
+| `winget` bulunamadı            | "Microsoft Store'dan App Installer'ı kur/güncelle, sonra haber ver."                                                                        |
 
 Kullanıcıdan şifre, token veya API anahtarını sohbete yazmasını **asla isteme**.
 
@@ -93,11 +93,11 @@ node scripts/doctor.mjs
 
 ## Komutlar
 
-| Komut | Ne yapar |
-|---|---|
-| `pnpm doctor` | Ortam sağlık kontrolü |
-| `pnpm setup:mac` / `pnpm setup:win` | Kurulum script'leri |
-| `pnpm install` | Bağımlılıklar |
+| Komut                               | Ne yapar              |
+| ----------------------------------- | --------------------- |
+| `pnpm doctor`                       | Ortam sağlık kontrolü |
+| `pnpm setup:mac` / `pnpm setup:win` | Kurulum script'leri   |
+| `pnpm install`                      | Bağımlılıklar         |
 
 Panel kodu geldikçe (#37) `dev`, `build`, `lint`, `typecheck`, `test` komutları buraya eklenecek.
 
