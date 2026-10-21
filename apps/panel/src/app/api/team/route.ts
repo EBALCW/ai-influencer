@@ -71,6 +71,8 @@ export async function POST(request: NextRequest) {
     const { error: memberError } = await admin.from('team_members').insert({
       user_id: userId,
       role,
+      // Servis rolüyle yazıldığı için set_created_by trigger'ı bu değere dokunmaz;
+      // gönderilmezse daveti kimin yaptığı kaybolur.
       created_by: auth.user.id,
     });
     if (memberError) {

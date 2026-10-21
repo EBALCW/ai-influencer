@@ -47,10 +47,20 @@ test('influencer selection is stored in the URL', async ({ page }) => {
   const influencerSelect = page.getByRole('combobox', {
     name: 'Aktif influencer',
   });
-  await influencerSelect.selectOption('aylin-demir');
-  await expect(page).toHaveURL(/inf=aylin-demir/);
+  await influencerSelect.selectOption('demo-creator');
+  await expect(page).toHaveURL(/inf=demo-creator/);
   await page.reload();
-  await expect(influencerSelect).toHaveValue('aylin-demir');
+  await expect(influencerSelect).toHaveValue('demo-creator');
+
+  // Menüde başka sayfaya geçince seçim kaybolmamalı (#40: tüm sayfalar seçili influencer'a göre filtrelenir)
+  await page.getByRole('link', { name: 'Analitik', exact: true }).click();
+  await expect(page).toHaveURL(/\/analytics\?inf=demo-creator/);
+  await expect(influencerSelect).toHaveValue('demo-creator');
+});
+
+test('unknown sections return 404', async ({ page }) => {
+  const response = await page.goto('/olmayan-bolum');
+  expect(response?.status()).toBe(404);
 });
 
 test('theme can be switched and stays selected after reload', async ({

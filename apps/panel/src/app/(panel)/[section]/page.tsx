@@ -42,6 +42,14 @@ const sections: Record<
   },
 };
 
+// Bölümler sabit; listede olmayan adres doğrudan 404 döner.
+// (Layout'taki Suspense sayfayı stream ettiği için notFound() tek başına 200 + "bulunamadı" içeriği döndürüyordu.)
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  return Object.keys(sections).map((section) => ({ section }));
+}
+
 export default async function SectionPage({
   params,
 }: {

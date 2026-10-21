@@ -24,7 +24,8 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "supabase:db-reset": "supabase db reset",
     "supabase:test": "supabase test db",
-    "supabase:types": "node scripts/generate-supabase-types.mjs"
+    "supabase:types": "node scripts/generate-supabase-types.mjs",
+    "owner:create": "pnpm --filter @ai-influencer/panel run owner:create"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

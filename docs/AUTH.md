@@ -4,17 +4,21 @@ Panel Supabase Auth ile e-posta magic link ve isteğe bağlı Google OAuth kulla
 
 ## ⚠️ Kayıt kapatma (hosted projede zorunlu)
 
-`supabase/config.toml` sadece **yerel** Supabase'i ayarlar. Ortak dev ve production projelerinde **Authentication → Sign In / Providers → "Allow new users to sign up"** kapatılmalıdır. Kapatılmazsa herkes magic link ile hesap açabilir. `team_members` boşken bu kişi ilk owner da olabilir.
+`supabase/config.toml` sadece **yerel** Supabase'i ayarlar. Ortak dev ve production projelerinde **Authentication → Sign In / Providers → "Allow new users to sign up"** kapatılmalıdır. Kapatılmazsa herkes magic link ile hesap açabilir. Bu kişi ekip üyesi olmadığı için panele giremez, ama gereksiz auth hesapları birikir.
 
 ## İlk owner
 
-Henüz owner yokken ilk hesabı Supabase Dashboard → Authentication → Users bölümünden e-posta daveti göndererek oluştur. Kullanıcı magic link ile ilk kez giriş yaptığında, boş `team_members` tablosunda kendi hesabını owner olarak kaydeder. Bundan sonra yeni üyeler panelde **Ayarlar → Ekip** sayfasından davet edilir. Ekipten çıkarılan biri aynı sayfadan tekrar eklenebilir; auth hesabı silinmez, sadece üyeliği kaldırılır.
+Uygulama içinden hiç kimse kendini owner yapamaz. Bunu RLS engelliyor ve tablo boşken de geçerli. İlk owner servis anahtarıyla oluşturulur:
 
-İlk owner kurulumunu proje açılır açılmaz yap. `team_members` boşken RLS, giriş yapan ilk kullanıcının kendini owner olarak eklemesine izin verir.
+```bash
+pnpm owner:create ad@ornek.com
+```
+
+Script `.env.local`'deki `NEXT_PUBLIC_SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` değerlerini kullanır. Kullanıcı yoksa davet e-postası gönderir, varsa sadece owner üyeliğini ekler. Bundan sonraki üyeler panelde **Ayarlar → Ekip** sayfasından davet edilir. Ekipten çıkarılan biri aynı sayfadan tekrar eklenebilir; auth hesabı silinmez, sadece üyeliği kaldırılır.
 
 ## Ortam değişkenleri
 
-`.env.local` içine `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` ve yalnızca sunucu tarafında kullanılan `SUPABASE_SERVICE_ROLE_KEY` eklenmelidir. Service role key hiçbir `NEXT_PUBLIC_` değişkenine taşınmamalıdır; ekip daveti ve üye listesindeki e-posta eşlemesi bu anahtarı gerektirir.
+Kökteki `.env.local` içine (`next.config.ts` bu dosyayı da yükler) `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` ve yalnızca sunucu tarafında kullanılan `SUPABASE_SERVICE_ROLE_KEY` eklenmelidir. Service role key hiçbir `NEXT_PUBLIC_` değişkenine taşınmamalıdır; ekip daveti ve üye listesindeki e-posta eşlemesi bu anahtarı gerektirir.
 
 ## Redirect ve Google OAuth
 
