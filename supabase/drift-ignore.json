@@ -1,0 +1,4 @@
+{
+  "$comment": "Sapma kontrolünde (db diff --linked) yok sayılan, Supabase platformunun kendisinin oluşturduğu nesneler. Buraya SADECE bizim migration'larımızdan gelmeyen platform nesneleri eklenir.",
+  "functions": ["public.rls_auto_enable"]
+}
