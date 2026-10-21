@@ -11,8 +11,6 @@ export type InfluencerWizardDraft = {
   language: string;
   persona: PersonaInput | null;
   promptBody: string | null;
-  referenceCount: number;
-  avatarAssetId: string | null;
 };
 
 async function loadDraft(
@@ -31,7 +29,6 @@ async function loadDraft(
   const [
     { data: persona, error: personaError },
     { data: prompt, error: promptError },
-    { count: referenceCount, error: assetsError },
   ] = await Promise.all([
     supabase
       .from('influencer_personas')
@@ -47,13 +44,8 @@ async function loadDraft(
       .order('version', { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from('assets')
-      .select('id', { count: 'exact', head: true })
-      .eq('influencer_id', influencer.id)
-      .eq('kind', 'reference'),
   ]);
-  if (personaError || promptError || assetsError)
+  if (personaError || promptError)
     throw new Error('Taslak adımları alınamadı.');
 
   return {
@@ -64,8 +56,6 @@ async function loadDraft(
     language: influencer.language,
     persona: persona ? toPersonaInput(persona) : null,
     promptBody: prompt?.body ?? null,
-    referenceCount: referenceCount ?? 0,
-    avatarAssetId: influencer.avatar_asset_id,
   } satisfies InfluencerWizardDraft;
 }
 
