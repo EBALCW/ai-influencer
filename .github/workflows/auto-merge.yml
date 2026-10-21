@@ -60,6 +60,8 @@ jobs:
 
       - name: Onayla
         if: steps.pr.outputs.number
+        # Onay zorunlu değil (ruleset: 0 onay + ci-ok); org ayarı kapanırsa merge yine de devam etsin
+        continue-on-error: true
         run: |
           gh pr review "${{ steps.pr.outputs.number }}" --approve \
             --body "✅ CI başarılı (lint, typecheck, unit, e2e, Windows, secret taraması). Otomatik onaylandı."
