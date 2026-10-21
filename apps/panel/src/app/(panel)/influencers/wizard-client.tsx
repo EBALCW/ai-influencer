@@ -66,6 +66,17 @@ export function InfluencerWizard({
   const [savedPersona, setSavedPersona] = useState<PersonaInput | null>(
     initial?.persona ?? null,
   );
+  // Liste alanları ham metin olarak tutulur; her tuşta ayrıştırıp geri yazmak
+  // sondaki virgülü/yeni satırı sildiği için ikinci öğe yazılamıyordu.
+  const [listText, setListText] = useState(() => {
+    const p = initial?.persona ?? toPersonaInput(null);
+    return {
+      adjectives: p.adjectives.join(', '),
+      hookTraits: p.hookTraits.join(', '),
+      interests: p.audience.interests.join(', '),
+      sampleCaptions: p.sampleCaptions.join('\n'),
+    };
+  });
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -80,6 +91,7 @@ export function InfluencerWizard({
 
   const updatePersona = (key: keyof PersonaInput, value: string) => {
     if (key === 'sampleCaptions') {
+      setListText((current) => ({ ...current, sampleCaptions: value }));
       setPersona((current) => ({
         ...current,
         sampleCaptions: parseCaptionList(value),
@@ -263,6 +275,7 @@ export function InfluencerWizard({
     }));
   const setAudience = (key: keyof PersonaInput['audience'], value: string) => {
     if (key === 'interests') {
+      setListText((current) => ({ ...current, interests: value }));
       setPersona((current) => ({
         ...current,
         audience: { ...current.audience, interests: parseTagList(value) },
@@ -274,8 +287,10 @@ export function InfluencerWizard({
       }));
     }
   };
-  const setTags = (key: 'adjectives' | 'hookTraits', value: string) =>
+  const setTags = (key: 'adjectives' | 'hookTraits', value: string) => {
+    setListText((current) => ({ ...current, [key]: value }));
     setPersona((current) => ({ ...current, [key]: parseTagList(value) }));
+  };
 
   return (
     <div className="page-stack max-w-4xl">
@@ -428,7 +443,7 @@ export function InfluencerWizard({
                 className={inputClass}
                 onChange={(event) => setTags('adjectives', event.target.value)}
                 placeholder="meraklı, enerjik"
-                value={persona.adjectives.join(', ')}
+                value={listText.adjectives}
               />
             </label>
             <label className={labelClass}>
@@ -461,7 +476,7 @@ export function InfluencerWizard({
                   setAudience('interests', event.target.value)
                 }
                 placeholder="moda, seyahat"
-                value={persona.audience.interests.join(', ')}
+                value={listText.interests}
               />
             </label>
           </div>
@@ -484,7 +499,7 @@ export function InfluencerWizard({
               className={inputClass}
               onChange={(event) => setTags('hookTraits', event.target.value)}
               placeholder="kırmızı gözlük, kısa mizahi yorum"
-              value={persona.hookTraits.join(', ')}
+              value={listText.hookTraits}
             />
           </label>
           <label className={labelClass}>
@@ -499,7 +514,7 @@ export function InfluencerWizard({
                 'Bugün küçük bir kaçamak yaptım…\nSence bu kombin nasıl olmuş?'
               }
               rows={4}
-              value={persona.sampleCaptions.join('\n')}
+              value={listText.sampleCaptions}
             />
             <span className="mt-1 block text-xs">
               En fazla 10 örnek; her biri en fazla 2.200 karakter.

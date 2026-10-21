@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { apiError, jsonError, requireApiRole } from '@/lib/auth-api';
 import { influencerIdFrom } from '@/lib/persona-api';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { CHARACTER_PROMPT_KEY } from '@/lib/influencer-wizard-prompt';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -42,6 +43,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
         .select('id')
         .eq('influencer_id', influencerId)
         .eq('category', 'character')
+        .eq('key', CHARACTER_PROMPT_KEY)
         .order('version', { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -58,8 +60,9 @@ export async function POST(_request: NextRequest, context: RouteContext) {
         .eq('kind', 'reference')
         .maybeSingle(),
     ]);
-    if (personaError || promptError || assetsError || avatarError)
-      throw new Error('Taslak adımları doğrulanamadı.');
+    // Gerçek hatayı fırlat: apiError loglar, genel bir mesajla maskelemek teşhisi zorlaştırır.
+    const stepError = personaError ?? promptError ?? assetsError ?? avatarError;
+    if (stepError) throw stepError;
     if (!persona) return jsonError('Persona bilgilerini tamamlayın.', 400);
     if (!prompt) return jsonError('Karakter prompt’unu kaydedin.', 400);
     if (!referenceCount)

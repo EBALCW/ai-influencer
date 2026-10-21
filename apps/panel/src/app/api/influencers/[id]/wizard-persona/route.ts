@@ -1,18 +1,10 @@
 import { revalidatePath } from 'next/cache';
 import { NextResponse, type NextRequest } from 'next/server';
 import { apiError, jsonError, parseJson, requireApiRole } from '@/lib/auth-api';
-import { personaInputSchema, toPersonaPayload } from '@/lib/persona';
+import { wizardPersonaSchema } from '@/lib/influencer-wizard';
+import { toPersonaPayload } from '@/lib/persona';
 import { influencerIdFrom, personaRpcError } from '@/lib/persona-api';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { z } from 'zod';
-
-const wizardSchema = personaInputSchema.extend({
-  bio: z.string().trim().min(1, 'Karakter hikâyesi gerekli.'),
-  tone: z.string().trim().min(1, 'Ses tonu gerekli.'),
-  audience: personaInputSchema.shape.audience.extend({
-    description: z.string().trim().min(1, 'Hedef kitle açıklaması gerekli.'),
-  }),
-});
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -22,7 +14,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (!auth.ok) return auth.response;
     const influencerId = await influencerIdFrom(context);
     if (!influencerId) return jsonError('Influencer bulunamadı.', 404);
-    const body = await parseJson(request, wizardSchema);
+    const body = await parseJson(request, wizardPersonaSchema);
     if (!body.ok) return body.response;
 
     const supabase = await createSupabaseServerClient();

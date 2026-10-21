@@ -2,6 +2,7 @@ import 'server-only';
 import type { Row } from '@ai-influencer/shared';
 import { toPersonaInput, type PersonaInput } from './persona';
 import { createSupabaseServerClient } from './supabase/server';
+import { CHARACTER_PROMPT_KEY } from './influencer-wizard-prompt';
 
 export type InfluencerWizardDraft = {
   id: string;
@@ -44,6 +45,7 @@ async function loadDraft(
       .select('body')
       .eq('influencer_id', influencer.id)
       .eq('category', 'character')
+      .eq('key', CHARACTER_PROMPT_KEY)
       .order('version', { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -53,8 +55,9 @@ async function loadDraft(
       .eq('influencer_id', influencer.id)
       .eq('kind', 'reference'),
   ]);
-  if (personaError || promptError || assetsError)
-    throw new Error('Taslak adımları alınamadı.');
+  const stepError = personaError ?? promptError ?? assetsError;
+  if (stepError)
+    throw new Error(`Taslak adımları alınamadı: ${stepError.message}`);
 
   return {
     id: influencer.id,

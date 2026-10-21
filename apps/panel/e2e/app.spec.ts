@@ -72,15 +72,41 @@ test('influencer listesi detay sayfasına gider ve ?inf= seçimini korur', async
   await expect(page.getByText('Persona kaydı yok')).toBeVisible();
 });
 
-test('taslak influencer kurulumunu referans ve özet adımlarıyla tamamlar', async ({
+test('taslak influencer listesinden kuruluma devam edilir', async ({
   page,
 }) => {
   await page.goto('/influencers?inf=demo-creator');
   await page.getByRole('link', { name: 'Kuruluma devam et' }).click();
-  await expect(page).toHaveURL(/setup/);
+  await expect(page).toHaveURL(/\/influencers\/demo-creator\/setup/);
   await expect(
     page.getByRole('heading', { name: 'Yeni influencer oluştur', level: 1 }),
   ).toBeVisible();
+});
+
+test('yeni influencer sihirbazı 1. adımdan özete kadar tamamlanır', async ({
+  page,
+}) => {
+  // Ortak seed kaydını (demo-creator) değiştirmemek için kendi taslağını oluşturur;
+  // retry'da çakışmasın diye slug benzersiz.
+  const slug = `e2e-wizard-${Date.now().toString(36)}`;
+  await page.goto('/influencers?inf=demo-creator');
+  await page.getByRole('link', { name: /Yeni influencer/ }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Yeni influencer oluştur', level: 1 }),
+  ).toBeVisible();
+  await page.getByLabel('Karakter adı').fill('E2E Sihirbaz');
+  await page.getByLabel('URL slug').fill(slug);
+  await page.getByLabel('Niş').fill('test');
+  await page.getByRole('button', { name: 'Kaydet ve devam et' }).click();
+  await expect(page).toHaveURL(new RegExp(`/influencers/${slug}/setup`));
+
+  // Liste alanları tuş tuş yazılabilmeli (virgül ve yeni satır kaybolmamalı)
+  await page
+    .getByLabel('Kişilik sıfatları')
+    .pressSequentially('meraklı, enerjik');
+  await expect(page.getByLabel('Kişilik sıfatları')).toHaveValue(
+    'meraklı, enerjik',
+  );
 
   await page.getByLabel('Karakter hikâyesi').fill('Test persona hikâyesi.');
   await page.getByLabel('Ses tonu').fill('Samimi ve açık');
@@ -128,9 +154,11 @@ test('taslak influencer kurulumunu referans ve özet adımlarıyla tamamlar', as
     page.getByRole('heading', { name: 'Taslak özeti' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Taslağı tamamla' }).click();
-  await expect(page).toHaveURL(/\/influencers\/demo-creator\?inf=demo-creator/);
+  await expect(page).toHaveURL(
+    new RegExp(`/influencers/${slug}\\?inf=${slug}`),
+  );
 
-  await page.goto('/influencers/demo-creator/assets?inf=demo-creator');
+  await page.goto(`/influencers/${slug}/assets?inf=${slug}`);
   await page.getByRole('button', { name: 'Sil', exact: true }).click();
   await page
     .getByRole('dialog')
