@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { NextResponse, type NextRequest } from 'next/server';
 import { apiError, jsonError, parseJson, requireApiRole } from '@/lib/auth-api';
 import { influencerDraftSchema } from '@/lib/influencer-wizard';
+import { influencerIdFrom } from '@/lib/persona-api';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export async function PATCH(
@@ -11,14 +12,8 @@ export async function PATCH(
   try {
     const auth = await requireApiRole('editor');
     if (!auth.ok) return auth.response;
-    const { id } = await context.params;
-    if (
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        id,
-      )
-    ) {
-      return jsonError('Influencer bulunamadı.', 404);
-    }
+    const id = await influencerIdFrom(context);
+    if (!id) return jsonError('Influencer bulunamadı.', 404);
     const body = await parseJson(request, influencerDraftSchema);
     if (!body.ok) return body.response;
 
