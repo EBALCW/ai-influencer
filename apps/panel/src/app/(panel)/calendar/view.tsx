@@ -157,7 +157,12 @@ export function CalendarView({
         </label>
         <label className={labelClass}>
           Görünüm
-          <select className={fieldClass} name="view" defaultValue={view}>
+          <select
+            aria-label="Görünüm"
+            className={fieldClass}
+            name="view"
+            defaultValue={view}
+          >
             <option value="week">Hafta</option>
             <option value="month">Ay</option>
           </select>
@@ -314,6 +319,7 @@ export function CalendarView({
               <label className={labelClass}>
                 Slot hesabı
                 <select
+                  aria-label="Slot hesabı"
                   className={fieldClass}
                   name="account_id"
                   defaultValue={
@@ -330,6 +336,7 @@ export function CalendarView({
               <label className={labelClass}>
                 Haftanın günü
                 <select
+                  aria-label="Haftanın günü"
                   className={fieldClass}
                   name="weekday"
                   defaultValue={editing?.weekday ?? 1}

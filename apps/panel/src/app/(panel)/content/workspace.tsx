@@ -525,6 +525,7 @@ function ContentEditor({
             <label className={labelClass}>
               Influencer
               <select
+                aria-label="Influencer"
                 className={fieldClass}
                 value={values.influencer_id}
                 disabled={!!item}
@@ -567,6 +568,7 @@ function ContentEditor({
             <label className={labelClass}>
               Aşama
               <select
+                aria-label="Aşama"
                 className={fieldClass}
                 value={values.stage}
                 onChange={(e) => set('stage', e.target.value as ContentStage)}
@@ -581,6 +583,7 @@ function ContentEditor({
             <label className={labelClass}>
               Sorumlu
               <select
+                aria-label="Sorumlu"
                 className={fieldClass}
                 value={values.assignee_id ?? ''}
                 onChange={(e) => set('assignee_id', e.target.value || null)}
@@ -596,6 +599,7 @@ function ContentEditor({
             <label className={labelClass}>
               Hedef hesap
               <select
+                aria-label="Hedef hesap"
                 className={fieldClass}
                 value={values.target_account_id ?? ''}
                 onChange={(e) =>
@@ -821,6 +825,7 @@ function ContentEditor({
           <label className={labelClass}>
             Yayın kararı
             <select
+              aria-label="Yayın kararı"
               className={fieldClass}
               value={values.checklist.decision}
               onChange={(e) =>
