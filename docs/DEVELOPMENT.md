@@ -122,5 +122,5 @@ Ayrıntılar `apps/panel/AGENTS.md`'de. Özet:
 - PR açmadan önce `test`'e rebase edilir. Çakışmalı PR'da CI çalışmaz ve otomatik merge olmaz.
 - İnceleme isteniyorsa PR draft açılır veya `bekle` label'ı eklenir. Aksi halde CI geçince otomatik merge olur.
 - **Aynı issue'ya ikinci PR açılmaz.** Issue'da açık bir PR varsa onun üzerinde çalışılır. Başlamadan önce `gh pr list --search "<issue no>"` ile kontrol edilir.
-- **İşe başlarken issue'yu kendine ata** (`gh issue edit <n> --add-assignee @me`). Atanmış bir issue'ya başkası başlamaz, önce sahibine sorar. Agent'lar da başlamadan önce atanmış kişiyi ve açık PR'ları kontrol eder.
+- **İşe başlarken issue'yu kendine ata ve `in progress` label'ı ekle:** `gh issue edit <n> --add-assignee @me --add-label "in progress"`. Atanmış veya `in progress` olan bir issue'ya başkası başlamaz, önce sahibine sorar. Agent'lar da başlamadan önce atanmış kişiyi, label'ı ve açık PR'ları kontrol eder. PR `Closes #n` ile merge olunca label otomatik kalkar. İşi yarıda bırakıyorsan label'ı kaldır ve issue'ya nerede kaldığını yaz.
 - Commit'ler anlamlı olur. Dosya başına bir commit (`feat: X (dosya.ts)`) atılmaz. CI'ı hiç çalışmamış bir PR "hazır" sayılmaz.

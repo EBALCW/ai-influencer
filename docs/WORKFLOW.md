@@ -19,6 +19,7 @@ feature/xyz ──PR──▶ test ──PR──▶ main
 
 ## Günlük akış
 
+0. Issue'yu kendine ata ve `in progress` label'ı ekle: `gh issue edit <n> --add-assignee @me --add-label "in progress"`
 1. `test`'ten dal aç: `git switch test && git pull && git switch -c feat/kisa-ad`
 2. Çalış, commit at, `pnpm check` ile kontrol et.
 3. PR aç:
