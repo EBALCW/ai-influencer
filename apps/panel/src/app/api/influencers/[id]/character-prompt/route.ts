@@ -16,7 +16,11 @@ export async function POST(
     const auth = await requireApiRole('editor');
     if (!auth.ok) return auth.response;
     const { id } = await context.params;
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        id,
+      )
+    ) {
       return jsonError('Influencer bulunamadı.', 404);
     }
     const parsed = await parseJson(request, promptSchema);
