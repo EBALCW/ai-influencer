@@ -81,6 +81,8 @@ node scripts/doctor.mjs
 
 ## Çalışma kuralları
 
+> **Kod yazmadan önce `docs/DEVELOPMENT.md` dosyasını oku.** Bitti tanımı, veritabanı/RLS, API, arayüz ve test kuralları orada. Panel arayüz kuralları ayrıca `apps/panel/AGENTS.md` içinde. Issue'lardaki "🧭 Uygulama Rehberi" bölümü o işe özgü dosya, tablo ve test planını verir.
+
 - **Dil:** Kullanıcıyla Türkçe konuş. Commit mesajları Türkçe ve conventional commits formatında (`feat:`, `fix:`, `docs:`, `chore:`).
 - **Branch + PR:** Akış `feature → test → main` (ayrıntı: `docs/WORKFLOW.md`). `main`'e doğrudan push yasak; işe `test`'ten dal açarak başla, PR'ı `--base test` ile aç. Branch adı `<tür>/<kısa-ad>` (ör. `feat/influencer-wizard`). PR açıklamasında `Closes #<issue>` olsun. CI geçince PR otomatik onaylanıp merge edilir. İnceleme gerekiyorsa PR'ı draft aç veya `bekle` label'ı ekle.
 - **PR açmadan önce:** `pnpm check` çalıştır.
@@ -108,6 +110,8 @@ Panel kodu geldikçe (#37) `dev`, `build`, `lint`, `typecheck`, `test` komutlar�
 AGENTS.md            agent talimatları (bu dosya)
 CLAUDE.md            Claude Code girişi (AGENTS.md'yi içe aktarır)
 docs/SETUP.md        insanlar için kurulum rehberi + sık sorunlar
+docs/DEVELOPMENT.md  geliştirme kuralları ve bitti tanımı
+docs/WORKFLOW.md     branch / PR / CI-CD akışı
 scripts/             setup-mac.sh, setup-windows.ps1, doctor.mjs
 .devcontainer/       Codespaces ortamı
 .github/             issue şablonları, CI (setup-check.yml)
