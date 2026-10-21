@@ -43,7 +43,9 @@ const latest = baseVersions.at(-1) ?? '0';
 // Release PR'ı (test → main): sıra test'e girişte zaten denetlendi. Toplu release'de main'in
 // ucundan eski bir migration olabilir (ör. test'e kural öncesi girmiş olanlar); gerçek sırasızlığı
 // deploy'daki `supabase db push` uzak veritabanının uygulanmış listesine göre reddeder.
-const isRelease = process.env.GITHUB_HEAD_REF === 'test' && process.env.GITHUB_BASE_REF === 'main';
+const isRelease =
+  process.env.GITHUB_HEAD_REF === 'test' &&
+  process.env.GITHUB_BASE_REF === 'main';
 
 const errors = [];
 for (const { status, file } of changes) {
@@ -72,7 +74,10 @@ if (errors.length) {
   for (const e of errors) console.error(`::error::${e}`);
   process.exit(1);
 }
-if (isRelease) console.log('Release PR (test → main): sıra denetimi atlandı, değişiklik/silme denetimi yapıldı.');
+if (isRelease)
+  console.log(
+    'Release PR (test → main): sıra denetimi atlandı, değişiklik/silme denetimi yapıldı.',
+  );
 console.log(
   changes.length
     ? `✓ ${changes.length} yeni migration kurallara uygun (en yeni hedef: ${latest}).`
