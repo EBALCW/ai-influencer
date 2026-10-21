@@ -3,3 +3,4 @@ export function getPanelGreeting(): string {
 }
 
 export type * from './database.js';
+export { Constants } from './database';
