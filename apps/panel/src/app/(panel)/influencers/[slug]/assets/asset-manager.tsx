@@ -128,6 +128,7 @@ export function AssetManager({
   const [filter, setFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [filterNow, setFilterNow] = useState(0);
   const [search, setSearch] = useState('');
   const [leftVersion, setLeftVersion] = useState('');
   const [rightVersion, setRightVersion] = useState('');
@@ -163,9 +164,9 @@ export function AssetManager({
   const [removing, setRemoving] = useState<AssetItem | null>(null);
   const visible = useMemo(() => {
     const cutoff =
-      dateFilter === 'all'
+      dateFilter === 'all' || !filterNow
         ? 0
-        : Date.now() - Number(dateFilter) * 24 * 60 * 60 * 1000;
+        : filterNow - Number(dateFilter) * 24 * 60 * 60 * 1000;
     return assets.filter(({ asset }) => {
       const kindMatches =
         filter === 'all' || asset.kind === filter || asset.qc_status === filter;
@@ -574,7 +575,10 @@ export function AssetManager({
             <select
               aria-label="Tarihe göre filtrele"
               className="rounded-lg border border-line bg-surface px-3 py-2"
-              onChange={(event) => setDateFilter(event.target.value)}
+              onChange={(event) => {
+                setDateFilter(event.target.value);
+                setFilterNow(Date.now());
+              }}
               value={dateFilter}
             >
               <option value="all">Tüm tarihler</option>
