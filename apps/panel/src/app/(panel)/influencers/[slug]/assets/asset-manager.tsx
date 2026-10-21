@@ -174,7 +174,7 @@ export function AssetManager({
       const dateMatches = !cutoff || Date.parse(asset.created_at) >= cutoff;
       return kindMatches && tagMatches && dateMatches;
     });
-  }, [assets, dateFilter, filter, tagFilter]);
+  }, [assets, dateFilter, filter, filterNow, tagFilter]);
   const searched = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase('tr');
     return visible.filter(
