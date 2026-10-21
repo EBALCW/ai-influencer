@@ -47,6 +47,8 @@ Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 | `pnpm test:e2e`                 | Playwright uçtan uca testleri (ilk seferde `pnpm exec playwright install chromium`) |
 | `pnpm supabase:start` / `:stop` | Yerel Supabase (opsiyonel, Docker Desktop gerekir)                                  |
 
+Branch, PR ve CI/CD akışı: **[docs/WORKFLOW.md](docs/WORKFLOW.md)** (`feature → test → main`, CI geçince otomatik onay + merge)
+
 Supabase için varsayılan yol ortak **dev** projesidir, değerleri `.env.local`'a yazılır ve Docker gerekmez. Yerel Supabase sadece migration denemek için gerekir.
 
 ## Yol haritası
