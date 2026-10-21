@@ -101,6 +101,7 @@ jobs:
           for n in $refs; do
             state=$(gh api "repos/$GH_REPO/issues/$n" --jq 'select(.pull_request == null) | .state' 2>/dev/null || true)
             [ "$state" = "open" ] || continue
+            gh issue edit "$n" --remove-label "in progress" >/dev/null 2>&1 || true
             gh issue close "$n" --reason completed \
               --comment "✅ #$NUMBER ile \`test\`'e merge edildi. Bir sonraki release ile \`main\`'e gidecek."
           done
