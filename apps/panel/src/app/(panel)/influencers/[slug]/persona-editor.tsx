@@ -182,7 +182,7 @@ export function PersonaEditor({
             Örnek caption’lar (her satıra bir tane)
             <textarea
               className={`${inputClass} min-h-28`}
-              maxLength={22000}
+              maxLength={22009}
               onChange={(event) => set('sampleCaptions', event.target.value)}
               rows={4}
               value={values.sampleCaptions}
