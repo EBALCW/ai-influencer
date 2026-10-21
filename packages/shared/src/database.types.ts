@@ -65,14 +65,14 @@ isOneToOne: false
                   ]
                 },"assets": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"updated_at": string,"version_tag": string | null,"width": number | null
+                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"thumbnail_path": string | null,"updated_at": string,"version_tag": string | null,"width": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
                   }
                   Relationships: [
                     {
