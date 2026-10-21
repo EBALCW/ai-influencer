@@ -3,7 +3,13 @@ import type { PersonaRow } from './persona';
 
 export type PersonaSnapshot = Pick<
   PersonaRow,
-  'bio' | 'tone' | 'hook_traits' | 'sample_captions' | 'personality' | 'audience' | 'appearance'
+  | 'bio'
+  | 'tone'
+  | 'hook_traits'
+  | 'sample_captions'
+  | 'personality'
+  | 'audience'
+  | 'appearance'
 >;
 
 export type DiffEntry =
