@@ -141,9 +141,8 @@ BEGIN
   IF NEW.content_item_id IS NOT NULL AND NOT EXISTS (
     SELECT 1 FROM public.content_items c JOIN public.social_accounts a ON a.id = NEW.account_id
     WHERE c.id = NEW.content_item_id AND c.influencer_id = a.influencer_id
-      AND (c.target_account_id IS NULL OR c.target_account_id = a.id)
   ) THEN
-    RAISE EXCEPTION 'Post ve içerik aynı hedef hesaba ait olmalı.' USING ERRCODE = '23514';
+    RAISE EXCEPTION 'Post ve içerik aynı influencer’a ait olmalı.' USING ERRCODE = '23514';
   END IF;
   RETURN NEW;
 END;
@@ -160,7 +159,7 @@ BEGIN
   WITH events AS (
     SELECT scheduled_at AS at FROM public.content_items planned
       WHERE target_account_id = c.target_account_id AND stage = 'scheduled' AND id <> c.id
-        AND NOT EXISTS (SELECT 1 FROM public.posts WHERE content_item_id = planned.id AND published_at IS NOT NULL)
+        AND NOT EXISTS (SELECT 1 FROM public.posts WHERE content_item_id = planned.id AND account_id = planned.target_account_id AND published_at IS NOT NULL)
     UNION ALL
     SELECT published_at FROM public.posts
       WHERE account_id = c.target_account_id AND content_item_id IS DISTINCT FROM c.id AND published_at IS NOT NULL
@@ -232,6 +231,9 @@ BEGIN
   SELECT * INTO p FROM public.posts WHERE id = p_post_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Post bulunamadı.' USING ERRCODE = 'P0002'; END IF;
   IF p.content_item_id IS NOT NULL AND p.content_item_id <> c.id THEN RAISE EXCEPTION 'Post başka bir içeriğe bağlı.' USING ERRCODE = '23505'; END IF;
+  IF c.target_account_id IS NOT NULL AND c.target_account_id <> p.account_id THEN
+    RAISE EXCEPTION 'Post hedef hesapla eşleşmeli.' USING ERRCODE = '23514';
+  END IF;
   IF p.published_at IS NULL THEN RAISE EXCEPTION 'Post henüz yayınlanmamış.' USING ERRCODE = '23514'; END IF;
   UPDATE public.posts SET content_item_id = c.id WHERE id = p.id;
   UPDATE public.content_items SET stage = 'published', target_account_id = p.account_id, scheduled_at = p.published_at

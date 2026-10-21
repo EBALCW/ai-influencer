@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(37);
+SELECT extensions.plan(39);
 
 INSERT INTO auth.users(id,aud,role,email,encrypted_password,created_at,updated_at) VALUES
  ('94000000-0000-4000-8000-000000000001','authenticated','authenticated','content-editor@example.invalid','',now(),now()),
@@ -13,13 +13,15 @@ INSERT INTO public.influencers(id,name,slug) VALUES
  ('c1000000-0000-4000-8000-000000000002','Other fixture','other-content-fixture');
 INSERT INTO public.social_accounts(id,influencer_id,platform,handle) VALUES
  ('c2000000-0000-4000-8000-000000000001','c1000000-0000-4000-8000-000000000001','instagram','content-fixture'),
- ('c2000000-0000-4000-8000-000000000002','c1000000-0000-4000-8000-000000000002','youtube','other-content-fixture');
+ ('c2000000-0000-4000-8000-000000000002','c1000000-0000-4000-8000-000000000002','youtube','other-content-fixture'),
+ ('c2000000-0000-4000-8000-000000000003','c1000000-0000-4000-8000-000000000001','youtube','content-fixture-youtube');
 INSERT INTO public.assets(id,influencer_id,kind,storage_path) VALUES
  ('c3000000-0000-4000-8000-000000000001','c1000000-0000-4000-8000-000000000001','reference','content-fixture/ref.png'),
  ('c3000000-0000-4000-8000-000000000002','c1000000-0000-4000-8000-000000000002','reference','other-content-fixture/ref.png');
 INSERT INTO public.posts(id,account_id,published_at) VALUES
  ('c4000000-0000-4000-8000-000000000001','c2000000-0000-4000-8000-000000000001','2026-11-10T12:00:00Z'),
- ('c4000000-0000-4000-8000-000000000002','c2000000-0000-4000-8000-000000000002','2026-11-10T12:00:00Z');
+ ('c4000000-0000-4000-8000-000000000002','c2000000-0000-4000-8000-000000000002','2026-11-10T12:00:00Z'),
+ ('c4000000-0000-4000-8000-000000000003','c2000000-0000-4000-8000-000000000003','2026-11-10T12:00:00Z');
 INSERT INTO public.metric_snapshots(post_id,captured_at,views) VALUES
  ('c4000000-0000-4000-8000-000000000001','2026-11-10T13:00:00Z',20),
  ('c4000000-0000-4000-8000-000000000001','2026-11-11T12:00:00Z',42);
@@ -71,9 +73,11 @@ INSERT INTO public.content_items(influencer_id,title,target_account_id,stage,sch
  SELECT 'c1000000-0000-4000-8000-000000000001','extra','c2000000-0000-4000-8000-000000000001','scheduled','2026-11-01T15:00:00Z'::timestamptz + n*interval '30 minutes',current_setting('test.ready_checklist')::jsonb FROM generate_series(1,3) n;
 SELECT extensions.is(cardinality(public.content_schedule_warnings(current_setting('test.content_id')::uuid)),2,'fifth post on same local day warns');
 SELECT extensions.throws_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000002')$$,'23514',NULL,'cross-account post matching rejected');
+SELECT extensions.throws_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000003')$$,'23514',NULL,'manual matching cannot silently switch the target account');
 SELECT extensions.lives_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000001')$$,'published post can be matched manually');
 SELECT extensions.is((SELECT stage::text FROM public.content_items WHERE id=current_setting('test.content_id')::uuid),'published','matching moves content to published');
 SELECT extensions.is((public.content_item_details(ARRAY[current_setting('test.content_id')::uuid])->0->'posts'->0->>'views')::bigint,42::bigint,'only latest snapshot contributes post metrics');
+SELECT extensions.lives_ok($$UPDATE public.posts SET content_item_id=current_setting('test.content_id')::uuid WHERE id='c4000000-0000-4000-8000-000000000003'$$,'same-influencer cross-platform posts may share content for later comparison');
 
 SELECT set_config('request.jwt.claim.sub','94000000-0000-4000-8000-000000000002',true);
 SELECT extensions.is_empty($$UPDATE public.content_items SET title='viewer' WHERE id=current_setting('test.content_id')::uuid RETURNING id$$,'viewer cannot move or edit content');
@@ -86,7 +90,7 @@ SELECT extensions.is_empty($$SELECT id FROM public.content_item_assets$$,'outsid
 SELECT extensions.is_empty($$SELECT id FROM public.posting_slots$$,'outsider cannot read posting slots');
 SELECT extensions.is(public.content_item_details(ARRAY[current_setting('test.content_id')::uuid]),'[]'::jsonb,'details RPC respects RLS');
 RESET ROLE;
-DELETE FROM public.posts WHERE account_id='c2000000-0000-4000-8000-000000000001';
+DELETE FROM public.posts WHERE account_id IN ('c2000000-0000-4000-8000-000000000001','c2000000-0000-4000-8000-000000000003');
 SELECT extensions.lives_ok($$DELETE FROM public.influencers WHERE id='c1000000-0000-4000-8000-000000000001'$$,'account SET NULL does not break influencer cascade deletion');
 SELECT * FROM extensions.finish();
 ROLLBACK;
