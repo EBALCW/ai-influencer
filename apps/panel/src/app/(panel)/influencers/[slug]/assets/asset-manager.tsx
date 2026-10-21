@@ -87,6 +87,10 @@ export function AssetManager({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkTags, setBulkTags] = useState('');
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{
     text: string;
@@ -103,6 +107,15 @@ export function AssetManager({
       ),
     [assets, filter],
   );
+  const searched = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase('tr');
+    return visible.filter(
+      ({ asset }) =>
+        !needle ||
+        asset.storage_path.toLocaleLowerCase('tr').includes(needle) ||
+        asset.tags.some((tag) => tag.toLocaleLowerCase('tr').includes(needle)),
+    );
+  }, [visible, search]);
 
   async function upload(files: FileList | null) {
     if (!files?.length) return;
@@ -204,6 +217,82 @@ export function AssetManager({
     setAssets((current) => [...current, ...nextItems]);
     setHasMore(data.length === 100);
     setLoadingMore(false);
+  }
+
+  async function applyBulkTags() {
+    const ids = [...selectedIds];
+    if (!ids.length) return;
+    const tags = [
+      ...new Set(
+        bulkTags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      ),
+    ];
+    setBusy(true);
+    const supabase = createSupabaseBrowserClient();
+    for (const id of ids) {
+      const { error } = await supabase
+        .from('assets')
+        .update({ tags })
+        .eq('id', id);
+      if (error) {
+        setMessage({
+          text: 'Etiketler uygulanırken hata oluştu; bazı dosyalar güncellenmiş olabilir.',
+          error: true,
+        });
+        setBusy(false);
+        return;
+      }
+    }
+    setAssets((current) =>
+      current.map((item) =>
+        selectedIds.has(item.asset.id)
+          ? { ...item, asset: { ...item.asset, tags } }
+          : item,
+      ),
+    );
+    setMessage({ text: `${ids.length} dosyanın etiketleri güncellendi.` });
+    setBusy(false);
+  }
+
+  async function deleteSelected() {
+    const supabase = createSupabaseBrowserClient();
+    setBusy(true);
+    for (const id of selectedIds) {
+      const item = assets.find((entry) => entry.asset.id === id);
+      if (!item) continue;
+      const { error: storageError } = await supabase.storage
+        .from('assets')
+        .remove([item.asset.storage_path]);
+      if (storageError) {
+        setMessage({
+          text: 'Toplu silme durdu; bu dosya ve kalanlar korunuyor.',
+          error: true,
+        });
+        setBusy(false);
+        setConfirmBulkDelete(false);
+        return;
+      }
+      const { error } = await supabase.from('assets').delete().eq('id', id);
+      if (error) {
+        setMessage({
+          text: 'Dosya depodan silindi ancak metadata silinemedi; sayfayı yenileyin.',
+          error: true,
+        });
+        setBusy(false);
+        setConfirmBulkDelete(false);
+        return;
+      }
+    }
+    setAssets((current) =>
+      current.filter(({ asset }) => !selectedIds.has(asset.id)),
+    );
+    setSelectedIds(new Set());
+    setMessage({ text: 'Seçilen dosyalar silindi.' });
+    setBusy(false);
+    setConfirmBulkDelete(false);
   }
 
   async function updateAsset(
@@ -317,11 +406,74 @@ export function AssetManager({
             <option value="failed">QC kaldı</option>
           </select>
         </label>
+        <label className="flex items-center gap-2 text-sm">
+          Ara
+          <input
+            aria-label="Medya etiketlerinde ve adlarında ara"
+            className="rounded-lg border border-line bg-surface px-3 py-2"
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Dosya adı veya etiket"
+            value={search}
+          />
+        </label>
+        {canEdit && selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-end gap-3 border-t border-line pt-4">
+            <label className="grid gap-1 text-sm">
+              Seçilenlere etiket uygula
+              <input
+                className="rounded-lg border border-line bg-surface px-3 py-2"
+                onChange={(event) => setBulkTags(event.target.value)}
+                placeholder="etiket1, etiket2"
+                value={bulkTags}
+              />
+            </label>
+            <button
+              className="button button-quiet"
+              disabled={busy}
+              onClick={() => void applyBulkTags()}
+              type="button"
+            >
+              Etiketleri kaydet ({selectedIds.size})
+            </button>
+            <button
+              className="button button-quiet"
+              disabled={busy}
+              onClick={() => setConfirmBulkDelete(true)}
+              type="button"
+            >
+              Seçilenleri sil ({selectedIds.size})
+            </button>
+            <button
+              className="button button-quiet"
+              onClick={() => setSelectedIds(new Set())}
+              type="button"
+            >
+              Seçimi temizle
+            </button>
+          </div>
+        )}
       </section>
-      {visible.length ? (
+      {searched.length ? (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {visible.map((item) => (
+          {searched.map((item) => (
             <article className="section-card space-y-3" key={item.asset.id}>
+              {canEdit && (
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    checked={selectedIds.has(item.asset.id)}
+                    onChange={(event) =>
+                      setSelectedIds((current) => {
+                        const next = new Set(current);
+                        if (event.target.checked) next.add(item.asset.id);
+                        else next.delete(item.asset.id);
+                        return next;
+                      })
+                    }
+                    type="checkbox"
+                  />
+                  Toplu işlem için seç
+                </label>
+              )}
               <div className="relative aspect-square overflow-hidden rounded-lg bg-surface">
                 {item.url && item.asset.mime_type?.startsWith('video/') ? (
                   <video
@@ -361,6 +513,15 @@ export function AssetManager({
               <p className="truncate text-sm text-muted">
                 {item.asset.storage_path.split('/').at(-1)}
               </p>
+              {item.asset.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {item.asset.tags.map((tag) => (
+                    <span className="soft-badge" key={tag}>
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
               <p className="text-xs text-muted">
                 {item.asset.width && item.asset.height
                   ? `${item.asset.width} × ${item.asset.height}`
@@ -491,6 +652,14 @@ export function AssetManager({
         confirmLabel="Dosyayı sil"
         onCancel={() => setRemoving(null)}
         onConfirm={() => void removeAsset()}
+      />
+      <ConfirmDialog
+        open={confirmBulkDelete}
+        title="Seçilen dosyalar silinsin mi?"
+        description={`${selectedIds.size} dosya ve metadata kayıtları silinecek. Bu işlem geri alınamaz.`}
+        confirmLabel="Seçilenleri sil"
+        onCancel={() => setConfirmBulkDelete(false)}
+        onConfirm={() => void deleteSelected()}
       />
     </div>
   );
