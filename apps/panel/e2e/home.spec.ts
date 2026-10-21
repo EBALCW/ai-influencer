@@ -8,8 +8,12 @@ test('home page shows the studio shell and overview', async ({ page }) => {
   await expect(
     page.getByRole('navigation', { name: 'Ana menü' }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: /Influencer/i })).toBeVisible();
-  await expect(page.getByLabel('Aktif influencer')).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Influencer’lar', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('combobox', { name: 'Aktif influencer' }),
+  ).toBeVisible();
 });
 
 test('all navigation sections open with an empty state', async ({ page }) => {
@@ -34,10 +38,13 @@ test('all navigation sections open with an empty state', async ({ page }) => {
 
 test('influencer selection is stored in the URL', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('Aktif influencer').selectOption('aylin-demir');
+  const influencerSelect = page.getByRole('combobox', {
+    name: 'Aktif influencer',
+  });
+  await influencerSelect.selectOption('aylin-demir');
   await expect(page).toHaveURL(/inf=aylin-demir/);
   await page.reload();
-  await expect(page.getByLabel('Aktif influencer')).toHaveValue('aylin-demir');
+  await expect(influencerSelect).toHaveValue('aylin-demir');
 });
 
 test('theme can be switched and stays selected after reload', async ({
