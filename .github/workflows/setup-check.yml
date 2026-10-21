@@ -36,6 +36,8 @@ jobs:
       - name: pnpm panel duman testi
         shell: powershell
         run: |
+          # winget'in eklediği PATH yeni adıma geçmez (kullanıcıda yeni terminal açınca geçer)
+          $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
           fnm env --shell powershell | Out-String | Invoke-Expression
           fnm use
           pnpm panel --check
