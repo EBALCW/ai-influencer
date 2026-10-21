@@ -1,11 +1,26 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-canvas: #090d18;
-  --color-surface: #111827;
-  --color-line: #263244;
-  --color-accent: #a99aff;
-  --color-mint: #74e4c4;
+/*
+ * Stil kuralı (#40 incelemesi):
+ * - Renkler TEK kaynaktan gelir: aşağıdaki :root / [data-theme='light'] değişkenleri.
+ * - Tailwind utility'leri (bg-canvas, text-muted, border-line ...) bu değişkenlere bağlı,
+ *   yani açık/koyu temaya otomatik uyar. Hex renk yazma.
+ * - Yeni bileşenlerde Tailwind utility kullan; bu dosyaya yeni bileşen sınıfı ekleme.
+ *   Aşağıdaki mevcut sınıflar (#40 iskeleti) dokunuldukça Tailwind'e taşınır.
+ */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-sidebar: var(--sidebar);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-mint: var(--mint);
 }
 
 :root {
@@ -18,7 +33,7 @@
   --line-soft: #222632;
   --text: #f4f2fa;
   --muted: #9393a3;
-  --subtle: #696b7d;
+  --subtle: #84869a; /* WCAG AA: >=4.5 surface/raised üzerinde */
   --accent: #ae9bff;
   --accent-strong: #9b83ff;
   --mint: #81dfc7;
@@ -36,10 +51,10 @@
   --line-soft: #ececf2;
   --text: #202131;
   --muted: #707285;
-  --subtle: #9395a6;
+  --subtle: #6b6d80; /* WCAG AA */
   --accent: #7055d8;
   --accent-strong: #6044c7;
-  --mint: #178b72;
+  --mint: #127a64; /* WCAG AA */
 }
 
 * {
@@ -280,7 +295,6 @@ input:focus-visible {
   border-top: 1px solid var(--line-soft);
   background: transparent;
   text-align: left;
-  cursor: pointer;
 }
 .profile-avatar {
   display: grid;

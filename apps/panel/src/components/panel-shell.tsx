@@ -46,6 +46,14 @@ const navigation: Array<{
   { label: 'Ayarlar', href: '/settings', icon: Settings2, group: 'YÖNETİM' },
 ];
 
+// Geçici: #42 (influencer listesi) gelene kadar seçici bu sabit listeden beslenir.
+// Slug'lar supabase/seed.sql ile aynı olmalı.
+const influencerOptions = [{ slug: 'demo-creator', name: 'Demo Creator' }];
+
+function withInfluencer(href: string, slug: string) {
+  return slug ? `${href}?inf=${encodeURIComponent(slug)}` : href;
+}
+
 function getStoredTheme(): 'dark' | 'light' {
   return window.localStorage.getItem('studio-theme') === 'light'
     ? 'light'
@@ -62,6 +70,9 @@ function ShellContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedInfluencer = searchParams.get('inf') ?? '';
+  const selectedInfluencerName =
+    influencerOptions.find((item) => item.slug === selectedInfluencer)?.name ??
+    'Tüm influencer’lar';
   const theme = useSyncExternalStore(
     subscribeToTheme,
     getStoredTheme,
@@ -115,7 +126,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
           <Link
             aria-label="AI Influencer Studio ana sayfa"
             className="brand"
-            href="/"
+            href={withInfluencer('/', selectedInfluencer)}
           >
             <span className="brand-mark">
               <Sparkles size={19} />
@@ -134,21 +145,13 @@ function ShellContent({ children }: { children: React.ReactNode }) {
             <X size={18} />
           </button>
         </div>
-        <button
-          aria-label="Aktif influencer seç"
-          className="workspace-switcher"
-          onClick={() => selectInfluencer('')}
-          type="button"
-        >
+        <div className="workspace-switcher">
           <span className="workspace-avatar">IS</span>
           <span className="workspace-name">
             <strong>Studio Workspace</strong>
-            <small>
-              {selectedInfluencer ? 'Aylin Demir' : 'Tüm influencer’lar'}
-            </small>
+            <small>{selectedInfluencerName}</small>
           </span>
-          <ChevronDown size={15} />
-        </button>
+        </div>
         <nav aria-label="Ana menü" className="main-nav">
           {groups.map((group) => (
             <div className="nav-group" key={group}>
@@ -162,7 +165,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
                     <Link
                       aria-current={active ? 'page' : undefined}
                       className={`nav-link ${active ? 'nav-link-active' : ''}`}
-                      href={href}
+                      href={withInfluencer(href, selectedInfluencer)}
                       key={href}
                       onClick={() => setMobileOpen(false)}
                     >
@@ -182,18 +185,18 @@ function ShellContent({ children }: { children: React.ReactNode }) {
             </span>
             <strong>Yaratıcı süreç, tek yerde.</strong>
             <small>İçerik yolculuğunuzun her adımını düzenleyin.</small>
-            <Link href="/content">
+            <Link href={withInfluencer('/content', selectedInfluencer)}>
               Çalışma alanına git <span>↗</span>
             </Link>
           </div>
-          <button className="profile-row" type="button">
-            <span className="profile-avatar">ES</span>
+          {/* #39 (auth) gelince oturumdaki kullanıcının adı ve rolü gösterilecek */}
+          <div className="profile-row">
+            <span className="profile-avatar">?</span>
             <span>
-              <strong>Emre Söyleriz</strong>
-              <small>Yönetici</small>
+              <strong>Ekip üyesi</strong>
+              <small>Giriş yakında</small>
             </span>
-            <ChevronDown size={15} />
-          </button>
+          </div>
         </div>
       </aside>
 
@@ -223,7 +226,11 @@ function ShellContent({ children }: { children: React.ReactNode }) {
                 value={selectedInfluencer}
               >
                 <option value="">Tüm influencer’lar</option>
-                <option value="aylin-demir">Aylin Demir</option>
+                {influencerOptions.map((item) => (
+                  <option key={item.slug} value={item.slug}>
+                    {item.name}
+                  </option>
+                ))}
               </select>
               <ChevronDown aria-hidden="true" size={14} />
             </label>
@@ -253,7 +260,7 @@ function ShellContent({ children }: { children: React.ReactNode }) {
               className="topbar-profile"
               type="button"
             >
-              <span className="profile-avatar profile-avatar-small">ES</span>
+              <span className="profile-avatar profile-avatar-small">?</span>
               <ChevronDown size={14} />
             </button>
           </div>
