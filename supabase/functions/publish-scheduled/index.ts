@@ -1,5 +1,5 @@
 // Yayın kuyruğu worker'ı (#58). pg_cron + pg_net her dakika, yalnız zamanı gelen iş varsa
-// `x-cron-secret` ile çağırır (migration 20261022240000_publishing.sql).
+// `x-cron-secret` ile çağırır (migration 20261023100000_publishing.sql).
 
 import { createClient } from '@supabase/supabase-js';
 import { errorResponse, json, requireCronSecret } from '../_shared/http.ts';

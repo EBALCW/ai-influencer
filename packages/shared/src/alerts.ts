@@ -1,5 +1,5 @@
 // Uyarı türleri (#56). Aynı liste en son migration'daki `alerts_type_known` CHECK
-// kısıtında (şu an `20261022240000_publishing.sql`); panel testi iki tarafın
+// kısıtında (şu an `20261023100000_publishing.sql`); panel testi iki tarafın
 // ayrışmadığını denetler.
 export const ALERT_TYPES = [
   'viral_post',
