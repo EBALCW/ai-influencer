@@ -164,6 +164,16 @@ export function formatAlert(
         href: '/settings/sync',
       };
     }
+    case 'publish_failed': {
+      const manual = p.status === 'manual_required';
+      return {
+        title: manual ? 'Elle yayın gerekli' : 'Yayınlanamadı',
+        message: manual
+          ? `${who}${platform(p)} içeriği otomatik yayınlanamıyor; uygulamadan elle yayınlayıp postu eşleştirin.`
+          : `${who}${platform(p)} yayını başarısız oldu. Ayrıntı yayın kuyruğunda.`,
+        href: withInf('/content', slug),
+      };
+    }
     default:
       return {
         title: 'Uyarı',

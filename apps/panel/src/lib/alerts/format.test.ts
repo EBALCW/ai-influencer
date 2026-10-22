@@ -56,6 +56,28 @@ describe('formatAlert', () => {
     expect(text.href).toBe('/settings/sync');
   });
 
+  it('yayın hatası ve elle yayın gereksinimi içerik sayfasına gider (#58)', () => {
+    const failed = formatAlert({
+      type: 'publish_failed',
+      payload: { platform: 'youtube', status: 'failed' },
+      influencer,
+    });
+    expect(failed.title).toBe('Yayınlanamadı');
+    expect(failed.message).toBe(
+      'Demo Creator: YouTube yayını başarısız oldu. Ayrıntı yayın kuyruğunda.',
+    );
+    expect(failed.href).toBe('/content?inf=demo-creator');
+    const manual = formatAlert({
+      type: 'publish_failed',
+      payload: { platform: 'instagram', status: 'manual_required' },
+      influencer: null,
+    });
+    expect(manual.title).toBe('Elle yayın gerekli');
+    expect(manual.message).toContain(
+      'Instagram içeriği otomatik yayınlanamıyor',
+    );
+  });
+
   it('haftalık rapor hazır: rapor sayfasına gider', () => {
     const text = formatAlert({
       type: 'weekly_report_ready',
