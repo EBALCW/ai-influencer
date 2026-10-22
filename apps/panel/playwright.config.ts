@@ -32,6 +32,12 @@ export default defineConfig({
       testMatch: /viewer\.spec\.ts/,
       use: { storageState: 'e2e/.auth/viewer.json' },
     },
+    {
+      // Post analitiği (#55): öğrenim ekleme editor yetkisi ister
+      name: 'analytics',
+      testMatch: /analytics\.spec\.ts/,
+      use: { storageState: 'e2e/.auth/editor.json' },
+    },
   ],
   webServer: {
     // CI'da build edilmiş uygulama test edilir, yerelde dev sunucusu

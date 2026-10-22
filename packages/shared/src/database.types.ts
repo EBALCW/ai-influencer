@@ -359,6 +359,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"learnings": {
+                  Row: {
+                    "body": string,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"post_id": string | null,"tags": (string)[],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"post_id"?: string | null,"tags"?: (string)[],"updated_at"?: string
+                  }
+                  Update: {
+                    "body"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"post_id"?: string | null,"tags"?: (string)[],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "learnings_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "learnings_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"metric_snapshots": {
                   Row: {
                     "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"updated_at": string,"views": number
@@ -658,10 +684,21 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"post_analytics":
+{ Args: { "p_baseline_posts"?: number,"p_post_id": string }; Returns: Json
+                           },
+"post_checkpoint_views":
+{ Args: { "p_post_ids": (string)[] }; Returns: {
+              "hours": number,"post_id": string,"target_hours": number,"views": number
+            }[]
+                           },
 "post_cost":
 { Args: { "p_currency": string,"p_post_id": string }; Returns: {
               "allocation": string,"currency": string,"entry_count": number,"generation_count": number,"missing_rate_count": number,"post_id": string,"total": number
             }[]
+                           },
+"post_segments":
+{ Args: { "p_influencer_slug"?: string,"p_target_hours"?: number }; Returns: Json
                            },
 "raise_budget_alerts":
 { Args: { "p_month": string }; Returns: number

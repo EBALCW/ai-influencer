@@ -36,7 +36,6 @@ test('navigation opens real modules and unfinished sections show empty states', 
     ).toBeVisible();
   }
   const destinations = [
-    ['Analitik', '/analytics'],
     ['Üretim', '/production'],
     ['Markalar', '/brands'],
     ['Ayarlar', '/settings'],
