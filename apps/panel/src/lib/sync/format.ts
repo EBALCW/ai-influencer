@@ -42,6 +42,8 @@ const jobs: Record<string, string> = {
   posts: 'Yeni postlar',
   accounts: 'Hesap istatistikleri',
   manual: 'Manuel',
+  comments: 'Yorumlar', // #61
+  comment_reply: 'Yorum yanıtı', // #61
 };
 const statuses: Record<string, string> = {
   running: 'Çalışıyor',

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import {
   captionOutputSchema,
   personaOutputSchema,
+  replyOutputSchema,
   scriptOutputSchema,
   weeklyOutputSchema,
   type AiTask,
@@ -17,12 +18,14 @@ const resultSchema = z.discriminatedUnion('task', [
   z.object({ task: z.literal('caption'), suggestion: captionOutputSchema }),
   z.object({ task: z.literal('script'), suggestion: scriptOutputSchema }),
   z.object({ task: z.literal('weekly'), suggestion: weeklyOutputSchema }),
+  z.object({ task: z.literal('reply'), suggestion: replyOutputSchema }),
 ]);
 const names: Record<AiTask, string> = {
   persona: 'Persona',
   caption: 'Caption ve hashtag',
   script: 'Kısa film senaryosu',
   weekly: 'Haftalık analiz',
+  reply: 'Yorum yanıtı',
 };
 export function suggestionText(result: SuggestResult): string {
   if (result.task === 'persona')
@@ -37,6 +40,7 @@ export function suggestionText(result: SuggestResult): string {
       result.suggestion.cta,
       result.suggestion.hashtags.join(' '),
     ].join('\n');
+  if (result.task === 'reply') return result.suggestion.reply;
   if (result.task === 'script')
     return [
       result.suggestion.hook,

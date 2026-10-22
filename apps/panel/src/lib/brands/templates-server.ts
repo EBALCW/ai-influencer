@@ -15,11 +15,16 @@ function repositoryRoot(): string | null {
   return dir;
 }
 
-/** Dosya yoksa boş liste döner (panel çalışmaya devam eder, bölüm boş durum gösterir). */
-export async function loadReplyTemplates(): Promise<ReplyTemplate[]> {
+/**
+ * Dosya yoksa boş liste döner (panel çalışmaya devam eder, bölüm boş durum gösterir).
+ * Varsayılan marka yanıtları; yorum gelen kutusu (#61) `comment-replies.md` okur.
+ */
+export async function loadReplyTemplates(
+  name: 'brand-replies.md' | 'comment-replies.md' = 'brand-replies.md',
+): Promise<ReplyTemplate[]> {
   const root = repositoryRoot();
   if (!root) return [];
-  const file = join(root, 'templates', 'brand-replies.md');
+  const file = join(root, 'templates', name);
   if (!existsSync(file)) return [];
   return parseReplyTemplates(await readFile(file, 'utf8'));
 }

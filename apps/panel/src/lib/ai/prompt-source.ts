@@ -12,6 +12,7 @@ import type { AiTask } from './schemas';
  * | `caption` | `caption`    | `ai-caption`    |
  * | `script`  | `short_film` | `ai-script`     |
  * | `weekly`  | `research`   | `ai-weekly`     |
+ * | `reply`   | `caption`    | `ai-reply`      |
  *
  * Kategori tek başına yetmez: `character` ve `short_film` kategorilerinde görsel/video
  * üretim şablonları da durur, AI asistanına bunlardan biri talimat olarak gitmemeli.
@@ -30,6 +31,7 @@ export const aiTaskPromptLineage: Record<
   caption: { category: 'caption', key: 'ai-caption' },
   script: { category: 'short_film', key: 'ai-script' },
   weekly: { category: 'research', key: 'ai-weekly' },
+  reply: { category: 'caption', key: 'ai-reply' },
 };
 
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
