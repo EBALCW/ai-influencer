@@ -13,6 +13,7 @@ export default async function SettingsPage({
   const query = inf ? `?inf=${encodeURIComponent(inf)}` : '';
   const aiHref = `/settings/ai${query}`;
   const notificationsHref = `/settings/notifications${query}`;
+  const syncHref = `/settings/sync${query}`;
   const { role } = await requireTeamMember();
 
   return (
@@ -49,6 +50,9 @@ export default async function SettingsPage({
         </Link>
         <Link className="button" href={notificationsHref}>
           Bildirim ayarları
+        </Link>
+        <Link className="button" href={syncHref}>
+          Senkronizasyon
         </Link>
       </section>
       <section className="section-card section-empty-card">

@@ -37,7 +37,7 @@ erDiagram
 | `social_accounts`       | Instagram, YouTube ve TikTok hesapları         | Token değeri değil, Vault secret referansı (`token_ref`) tutulur.                                                                                                 |
 | `content_items`         | Fikirden yayına içerik akışı                   | Stage enum'u: `idea` → `script` → `production` → `qc` → `edit` → `scheduled` → `published`.                                                                       |
 | `posts`                 | Platformda yayınlanmış içerik                  | Hesap ve platform kimliğiyle eşleşir; içerik planından bağımsız içe aktarılabilir.                                                                                |
-| `metric_snapshots`      | Post bazında zamanlı performans                | `views`, `likes`, `comments`, `shares`, `saves`; completion rate 0–1 aralığında.                                                                                  |
+| `metric_snapshots`      | Post bazında zamanlı performans                | `views`, `likes`, `comments`, `shares`, `saves`; completion rate 0–1 aralığında. `target_hours` (1/5/24/72/168, NULL = ad-hoc) post başına benzersiz (#53).       |
 | `account_snapshots`     | Hesap seviyesinde takipçi ve erişim            | Hesap + zaman damgası başına tek snapshot.                                                                                                                        |
 | `costs`                 | Abonelik, kredi ve araç maliyeti               | Tutar ve para birimi sayısal alanlardır; üretim kaydına bağlanabilir (üretim başına en fazla bir kayıt, biten üretimde otomatik yazılır).                         |
 | `brands`                | Marka ve iletişim notları                      | İsim büyük/küçük harf duyarsız benzersizdir.                                                                                                                      |
@@ -49,6 +49,7 @@ erDiagram
 | `exchange_rates`        | Döviz kuru                                     | 1 `currency` = `rate` `base_currency`, `valid_on` gününden itibaren. Ters kur otomatik kullanılır. Sadece owner yazar.                                            |
 | `credit_rates`          | Sağlayıcı kredisinin para karşılığı            | 1 kredi = `rate_per_credit` `currency`, `valid_from`'dan itibaren (`credits_to_money()`). Sadece owner yazar.                                                     |
 | `reports`               | Haftalık rapor (KPI özeti + AI özeti)          | `influencer_id` NULL = tümü; hafta başına tek kayıt (`NULLS NOT DISTINCT`). Sayılar `report_summary()` çıktısıdır. Ayrıntı: "Raporlama ve dışa aktarma".          |
+| `sync_runs`             | Senkronizasyon iş günlüğü (#53)                | İş/hesap başına bir satır; yalnız service role yazar, ekip okur. `failed` → `sync_failed` uyarısı. Ayrıntı: "Zamanlanmış senkronizasyon".                         |
 
 Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bulunur. `updated_at` trigger ile değiştirilir; `created_by` istemci isteklerinde `auth.uid()` ile dolar, demo seed kayıtlarında boş kalır.
 
@@ -99,16 +100,16 @@ Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bul
 
 Migration: `20261022210000_notifications.sql`. Uyarıyı tarayıcı üretmez; üreticiler veritabanındadır ve API rollerine kapalı `private` şemasında `SECURITY DEFINER` fonksiyonlardır. Her uyarı `private.raise_alert()` ile `dedupe_key` üzerinden tekrarsız yazılır.
 
-| Tür                                  | Ne zaman                                                                                                                                  | `dedupe_key`                                  |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `viral_post`                         | `metric_snapshots` ilk saat (`hours_since_publish <= 1`) izlenmesi, hesabın son 30 postunun ilk saat ortalamasının N katı (en az 3 örnek) | `viral_post:<post_id>`                        |
-| `follower_milestone`                 | `account_snapshots` önceki en yüksek değerin üstündeki en büyük eşiği geçince (ilk snapshot temel alınır)                                 | `follower_milestone:<account_id>:<eşik>`      |
-| `token_expiring`                     | `social_accounts.token_expires_at` ayardaki gün sayısından yakınsa (trigger + pg_cron)                                                    | `token_expiring:<account_id>:<bitiş günü>`    |
-| `sync_failed`                        | `social_accounts.status` `error` olunca (sync işi yazar)                                                                                  | `sync_failed:<account_id>:<gün>`              |
-| `budget_warning` / `budget_exceeded` | Bütçe oranı `warn_ratio` (varsayılan %80) / %100 (#59, `alerts_budget_dedupe_idx`)                                                        | —                                             |
-| `content_not_ready`                  | Son 24 saatte yayın saati gelen, `scheduled`/`published` olmayan içerik (pg_cron, 15 dk)                                                  | `content_not_ready:<id>:<scheduled_at epoch>` |
-| `generation_failed`                  | `generations.status` `failed` olunca                                                                                                      | `generation_failed:<id>`                      |
-| `weekly_report_ready`                | Pazartesi otomatik haftalık rapor oluşunca (#62, pg_cron)                                                                                 | `weekly_report_ready:<report_id>`             |
+| Tür                                  | Ne zaman                                                                                                                                                          | `dedupe_key`                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `viral_post`                         | `metric_snapshots` ilk saat (`target_hours = 1` veya `hours_since_publish <= 1`) izlenmesi, hesabın son 30 postunun ilk saat ortalamasının N katı (en az 3 örnek) | `viral_post:<post_id>`                        |
+| `follower_milestone`                 | `account_snapshots` önceki en yüksek değerin üstündeki en büyük eşiği geçince (ilk snapshot temel alınır)                                                         | `follower_milestone:<account_id>:<eşik>`      |
+| `token_expiring`                     | `social_accounts.token_expires_at` ayardaki gün sayısından yakınsa (trigger + pg_cron)                                                                            | `token_expiring:<account_id>:<bitiş günü>`    |
+| `sync_failed`                        | `social_accounts.status` `error` olunca veya `sync_runs.status` `failed` olunca (#53, aynı anahtar)                                                               | `sync_failed:<account_id>:<gün>`              |
+| `budget_warning` / `budget_exceeded` | Bütçe oranı `warn_ratio` (varsayılan %80) / %100 (#59, `alerts_budget_dedupe_idx`)                                                                                | —                                             |
+| `content_not_ready`                  | Son 24 saatte yayın saati gelen, `scheduled`/`published` olmayan içerik (pg_cron, 15 dk)                                                                          | `content_not_ready:<id>:<scheduled_at epoch>` |
+| `generation_failed`                  | `generations.status` `failed` olunca                                                                                                                              | `generation_failed:<id>`                      |
+| `weekly_report_ready`                | Pazartesi otomatik haftalık rapor oluşunca (#62, pg_cron)                                                                                                         | `weekly_report_ready:<report_id>`             |
 
 - **Okundu kararı:** kişi başı (`alert_reads`). Viewer da kendi okundu kaydını yazar, `alerts` satırına UPDATE politikası yoktur. `alerts.read_at` kullanılmaz. RPC'ler: `mark_alerts_read(p_alert_ids uuid[] DEFAULT NULL)` (NULL = tümü) ve `unread_alert_count()`; ikisi de `SECURITY INVOKER`.
 - **Zamanlayıcı:** `pg_cron` işi `raise-scheduled-alerts` 15 dakikada bir `private.raise_scheduled_alerts()` çalıştırır.
@@ -141,6 +142,26 @@ Migration: `20261022230000_generation_queue.sql`. Worker: `supabase/functions/pr
 - **Worker akışı:** pg_cron her dakika `private.invoke_generation_worker()` → pg_net `POST /functions/v1/process-generations` (`x-cron-secret`). Vault'ta `project_url` veya `cron_secret` yoksa ya da zamanı gelmiş iş yoksa çağrı yapılmaz. Gönderim `Idempotency-Key = generations.id`; geçici hatalar (`rejected`, `timeout`, `unavailable`) üstel geri çekilmeyle (30 sn, 60 sn …, en çok 15 dk) `max_attempts`'a kadar tekrar denenir; kalıcı hatalar hemen `failed`. Yoklama 15 sn'de bir; `running` iş 30 dk'da (`GENERATION_RUNNING_TIMEOUT_MINUTES`) bitmezse `failed`. Sonuç dosyası indirilip `assets` bucket'ına yüklenir (en çok 100 MiB).
 - **Maliyet ve uyarı:** worker maliyet yazmaz; `succeeded`/`failed` + `credits > 0` olunca mevcut `generations_record_cost` trigger'ı yazar, `failed` olunca `generation_failed` uyarısı oluşur.
 - **Panel:** `/production` kuyruk sayfası (durum, ilerleme, hata, iptal / yeniden dene; viewer salt okunur, 10 sn'de bir yenilenir). Üretim formu prompt detayında (`/prompts/[id]`): mod, referans dosyalar, çözünürlük, süre, seed, test modu, owner bütçe onayı. API: `POST /api/generations/[id]/cancel`, `POST /api/generations/[id]/retry` (editor; bütçe 402, durum çakışması 409).
+
+## Zamanlanmış senkronizasyon (#53)
+
+Migration: `20261022231000_scheduled_sync.sql`. Toplama işi Edge Function `sync-dispatch`'te koşar (`supabase/functions/`, bkz. `docs/DEVELOPMENT.md` §9). Platform toplayıcıları `supabase/functions/_shared/collectors/` altındadır (sözleşme: `types.ts`, nasıl eklenir: `README.md`).
+
+| pg_cron işi        | Zaman (UTC)    | Ne yapar                                                                                                     |
+| ------------------ | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `sync-metrics`     | `*/15 * * * *` | `due_snapshots(now())` → zamanı gelen postların metrik snapshot'ı (`target_hours` ile)                       |
+| `sync-posts`       | `7,37 * * * *` | Bağlı hesapların yeni postları → `posts` upsert                                                              |
+| `sync-accounts`    | `20 3 * * *`   | Hesap istatistikleri → `account_snapshots` (gün başına bir satır, UTC günü)                                  |
+| `sync-maintenance` | `50 * * * *`   | `private.maintain_sync_runs()`: 1 saatten uzun `running` satırı `failed` yapar, 90 günden eski günlüğü siler |
+
+- **Kontrol noktaları:** 1, 5, 24, 72 ve 168 saat. `due_snapshots(p_at, p_limit = 500, p_account_id = NULL)` zamanı parametre alır (service role'e açık). Hedef, #55 penceresi içindeyse "due" olur: 1:[1,2), 5:[5,7), 24:[24,30), 72:[72,84), 168:[168,192) saat. Cron 15 dakikada bir çalıştığı için snapshot hedeften en geç ~15 dk sonra alınır. Pencere kaçarsa o nokta boş kalır, yanlış saate etiket yazılmaz.
+- **Idempotency:** `UNIQUE (post_id, target_hours)`. Fonksiyon `ON CONFLICT DO NOTHING` ile yazar, cron'un iki kez çalışması duplicate üretmez. `hours_since_publish` gerçek geçen süredir. `post_checkpoint_views()` (#55) `target_hours`'u olan satırı önceliklidir, eski satırlarda pencere kuralı geçerlidir.
+- **Upsert kararı (#50/#51):** `posts (account_id, external_id)` ve `social_accounts (platform, external_id)` artık düz `UNIQUE` kısıttır (eski kısmi indeksler kaldırıldı, NULL'lar yine çakışmaz). supabase-js `upsert(..., { onConflict: 'account_id,external_id' })` çalışır.
+- **Hesap seçimi:** `status IN ('active','error')` ve `token_ref` dolu. Token hatası → `expired` ya da `error` (`error` #56 `sync_failed` uyarısı üretir). Hatalı hesap başarılı senkronda `active`'e döner. Toplayıcısı kayıtlı olmayan platformun hesapları atlanır (günlük satırı yok).
+- **Rate limit / kota:** hesaplar sırayla işlenir. Kısa `Retry-After` (≤30 sn) beklenir, daha uzunsa iş `partial` olarak bırakılır ve sonraki cron'a kalır. Geçici hatalar 3 denemeye kadar üstel backoff alır. Fonksiyon ~120 sn süre bütçesini aşınca kalan hesaplar sonraki çalışmaya kalır.
+- **`sync_runs`:** `job` (`metrics`/`posts`/`accounts`/`manual`), `platform`, `account_id`, `started_at`, `finished_at` (kapanırken veritabanı saatiyle dolar), `status` (`running`/`succeeded`/`partial`/`failed`), `processed_count`, `quota_units`, `error` (temizlenmiş, ≤500 karakter, token yok). RLS: ekip okur. `authenticated` rolüne yazma yetkisi verilmez.
+- **Şimdi senkronize et:** `/settings/sync` → `POST /api/sync` (editor+) → `request_sync(p_account_id?)` RPC'si (`SECURITY DEFINER`, owner/editor denetimi). Dönüş: `queued` (202), `throttled` (429, 2 dk içinde ikinci istek), `not_configured` (503), `not_found` (404). Çağrı veritabanındaki Vault sırrıyla pg_net üzerinden yapılır, panel `CRON_SECRET`'ı görmez. Kim istediği `private.sync_requests`'te tutulur.
+- **Ortam kurulumu (her ortamda bir kez, owner):** Edge Function sırrı `supabase secrets set CRON_SECRET=<rastgele>`. Vault'ta (Dashboard → Vault) `cron_secret` (aynı değer) ve `project_url` (`https://<ref>.supabase.co`, sonda `/` yok). Sırlar yoksa cron işleri sessizce atlanır (Postgres LOG satırı).
 
 ## Raporlama ve dışa aktarma (#62)
 
