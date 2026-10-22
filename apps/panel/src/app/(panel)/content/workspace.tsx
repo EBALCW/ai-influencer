@@ -703,6 +703,7 @@ function ContentEditor({
           <label className={labelClass}>
             Notlar
             <textarea
+              aria-label="Notlar"
               className={fieldClass}
               maxLength={10000}
               value={values.notes}
