@@ -10,7 +10,9 @@ export default async function SettingsPage({
   searchParams: Promise<{ inf?: string }>;
 }) {
   const inf = (await searchParams).inf;
-  const aiHref = `/settings/ai${inf ? `?inf=${encodeURIComponent(inf)}` : ''}`;
+  const query = inf ? `?inf=${encodeURIComponent(inf)}` : '';
+  const aiHref = `/settings/ai${query}`;
+  const notificationsHref = `/settings/notifications${query}`;
   const { role } = await requireTeamMember();
 
   return (
@@ -41,9 +43,12 @@ export default async function SettingsPage({
           </div>
         </section>
       )}
-      <section className="section-card">
+      <section className="section-card flex flex-wrap gap-3">
         <Link className="button" href={aiHref}>
           AI ayarları
+        </Link>
+        <Link className="button" href={notificationsHref}>
+          Bildirim ayarları
         </Link>
       </section>
       <section className="section-card section-empty-card">

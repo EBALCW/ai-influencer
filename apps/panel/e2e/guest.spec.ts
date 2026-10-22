@@ -10,7 +10,14 @@ test('giriş sayfası davetle erişimi anlatır', async ({ page }) => {
   ).toBeVisible();
 });
 
-for (const path of ['/', '/influencers', '/settings', '/settings/team']) {
+for (const path of [
+  '/',
+  '/influencers',
+  '/settings',
+  '/settings/team',
+  '/notifications',
+  '/settings/notifications',
+]) {
   test(`misafir ${path} adresinden girişe yönlenir`, async ({ page }) => {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login/);
@@ -23,6 +30,18 @@ for (const path of ['/', '/influencers', '/settings', '/settings/team']) {
 test('misafir ekip API’sine erişemez', async ({ request }) => {
   const response = await request.get('/api/team');
   expect([401, 503]).toContain(response.status());
+});
+
+test('misafir bildirim API’lerine erişemez', async ({ request }) => {
+  const id = '50000000-0000-4000-8000-000000000001';
+  for (const response of [
+    await request.get('/api/alerts'),
+    await request.post(`/api/alerts/${id}/read`),
+    await request.post('/api/alerts/read-all'),
+    await request.get('/api/notification-settings'),
+  ]) {
+    expect([401, 503]).toContain(response.status());
+  }
 });
 
 test('auth callback dış adrese yönlendirmez', async ({ page }) => {
