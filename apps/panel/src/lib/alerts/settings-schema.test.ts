@@ -63,6 +63,7 @@ describe('satır eşlemesi', () => {
         push_ntfy: false,
         push_telegram: true,
         push_email: false,
+        youtube_quota_warn_units: 8000,
         created_at: '',
         updated_at: '',
         created_by: null,

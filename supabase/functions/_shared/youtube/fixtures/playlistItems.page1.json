@@ -1,0 +1,37 @@
+{
+  "kind": "youtube#playlistItemListResponse",
+  "etag": "fixture-etag-pl-1",
+  "nextPageToken": "PAGE_2",
+  "pageInfo": {
+    "totalResults": 5,
+    "resultsPerPage": 3
+  },
+  "items": [
+    {
+      "kind": "youtube#playlistItem",
+      "etag": "fixture-etag-pi-1",
+      "id": "UExmaXh0dXJl001",
+      "contentDetails": {
+        "videoId": "vidShortV45",
+        "videoPublishedAt": "2026-10-21T18:30:00Z"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "etag": "fixture-etag-pi-2",
+      "id": "UExmaXh0dXJl002",
+      "contentDetails": {
+        "videoId": "vidPrivate01"
+      }
+    },
+    {
+      "kind": "youtube#playlistItem",
+      "etag": "fixture-etag-pi-3",
+      "id": "UExmaXh0dXJl003",
+      "contentDetails": {
+        "videoId": "vidLand2m",
+        "videoPublishedAt": "2026-10-19T10:00:00Z"
+      }
+    }
+  ]
+}

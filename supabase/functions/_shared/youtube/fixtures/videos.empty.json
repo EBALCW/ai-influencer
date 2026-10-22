@@ -1,0 +1,9 @@
+{
+  "kind": "youtube#videoListResponse",
+  "etag": "fixture-etag-empty",
+  "pageInfo": {
+    "totalResults": 0,
+    "resultsPerPage": 0
+  },
+  "items": []
+}
