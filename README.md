@@ -46,6 +46,10 @@ Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 | `pnpm build`                    | Production build                                                                    |
 | `pnpm test:e2e`                 | Playwright uçtan uca testleri (ilk seferde `pnpm exec playwright install chromium`) |
 | `pnpm supabase:start` / `:stop` | Yerel Supabase (opsiyonel, Docker Desktop gerekir)                                  |
+| `pnpm env:pull`                 | Test Supabase anahtarlarını şifreli olarak `.env.local`'e çeker                     |
+| `pnpm panel`                    | Paneli build edip başlatır, tarayıcıyı açar (günlük kullanım)                       |
+| `pnpm codemap`                  | Güncel kod haritası: sayfalar, API, modüller, migration'lar, testler                |
+| `pnpm release`                  | `test` → `main` release PR'ını açar/yeniler                                         |
 
 Geliştirme kuralları: **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** · Branch, PR ve CI/CD akışı: **[docs/WORKFLOW.md](docs/WORKFLOW.md)** (`feature → test → main`, CI geçince otomatik onay + merge)
 
@@ -69,7 +73,7 @@ Supabase için varsayılan yol ortak **dev** projesidir, değerleri `.env.local`
 
 Öncelikler `P0` / `P1` / `P2` label'larıyla işaretli. İşe `P0` ile başlanır.
 
-## Admin panel (plan)
+## Admin panel mimarisi
 
 ```
 [Ekip bilgisayarı: Next.js panel (localhost:3000)]
@@ -84,6 +88,35 @@ Supabase için varsayılan yol ortak **dev** projesidir, değerleri `.env.local`
 
 Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur. Böylece ekipteki herkes aynı veriyi görür ve istatistik toplama job'ları bilgisayarlar kapalıyken de çalışır. Mimari karar ve seçenek karşılaştırması: [ADR 0001](docs/adr/0001-admin-panel-stack.md) · [#36](../../issues/36).
 
-## Durum
+## Durum (22 Ekim 2026)
 
-Proje altyapısı ve admin panel başlangıç iskeleti hazır. Influencer yönetimi ve diğer ürün özellikleri yol haritasındaki işler kapsamında geliştirilecek.
+**Altyapı tamam, panelin çekirdek modülleri `test`'te çalışıyor.** Veri toplayıcılar (Instagram/YouTube) ve sosyal hesap bağlama sırada.
+
+| Alan                                                                                               | Durum       | Issue           |
+| -------------------------------------------------------------------------------------------------- | ----------- | --------------- |
+| Altyapı: monorepo, CI/CD, otomatik onay/merge, migration pipeline'ı (test + prod), `pnpm env:pull` | ✅          | #36 #37 #38 #93 |
+| Kimlik doğrulama, ekip ve roller (owner / editor / viewer), RLS                                    | ✅          | #39             |
+| Panel iskeleti, tema, influencer seçici                                                            | ✅          | #40             |
+| Influencer listesi, oluşturma sihirbazı, persona versiyonları                                      | ✅          | #42 #43 #44     |
+| Medya kütüphanesi (Storage)                                                                        | ✅          | #45             |
+| Prompt kütüphanesi, versiyonlama, içe/dışa aktarma                                                 | ✅          | #46             |
+| Panel içi AI asistanı (Claude)                                                                     | ✅          | #48             |
+| Genel bakış dashboard'u                                                                            | ✅          | #54             |
+| Post detay ve karşılaştırmalı analiz (`/analytics`)                                                | ✅          | #55             |
+| Bildirimler ve uyarı kuralları (zil, push opsiyonel)                                               | ✅          | #56             |
+| İçerik kanbanı ve yayın takvimi                                                                    | ✅          | #57             |
+| Maliyet ve bütçe takibi (üretim maliyeti otomatik)                                                 | ✅          | #59             |
+| Haftalık rapor, CSV dışa aktarma, PDF                                                              | ✅          | #62             |
+| AI üretim kuyruğu (Higgsfield)                                                                     | 🚧          | #47             |
+| Zamanlanmış senkronizasyon + metrik snapshot'ları                                                  | 🚧          | #53             |
+| Marka CRM'i ve medya kiti                                                                          | 🚧          | #60             |
+| Sosyal hesap bağlama (OAuth)                                                                       | 🚧 Emre     | #49             |
+| Instagram / YouTube / TikTok toplayıcıları                                                         | ⏳          | #50 #51 #52     |
+| Panelden yayınlama, yorum gelen kutusu                                                             | ⏳          | #58 #61         |
+| Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel) | #41             |
+
+**Ortamlar:** `test` dalı → AiInfTest Supabase projesi, `main` → AiInfMain (production). Veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0). Son production release: `v2026.10.21-0c1131d`. `test`'teki yenilikler `pnpm release` ile `main`'e geçer.
+
+**Bekleyen manuel adımlar:** ilk owner hesabı (`pnpm owner:create`), ekip davetleri, Meta/Google geliştirici uygulamaları (#49), Higgsfield API anahtarı (#47), bildirim ve cron sırları (Vault).
+
+Güncel açık işler: [issue listesi](../../issues) · Kod haritası: `pnpm codemap`

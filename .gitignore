@@ -19,3 +19,6 @@ backups/
 # Panelden indirilen prompt paketleri repoya girmez (repo public, #46)
 /prompts/
 ai-influencer-prompts-*.json
+
+# pnpm codemap --out çıktısı (koddan üretilir)
+.cache/

@@ -14,4 +14,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **Erişilebilirlik:** Sayfada tek `<main>` vardır (`PanelShell` içinde). `loading.tsx` / `error.tsx` ve sayfalar `<main>` açmaz. Etkileşimli öğeler gerçek `<button>`/`<a>` olsun; ne yaptığını söylemeyen buton koyma.
 - **Influencer seçimi:** Seçim URL'de `?inf=<slug>` ile taşınır. İç linklerde bu parametreyi koru (`panel-shell.tsx` → `withInfluencer`).
 - **Sahte veri yok:** Gerçek kişi adı veya uydurma metrik sabit kodlama. Henüz veri yoksa boş durum (`EmptyState`) göster. Demo içerik gerekiyorsa `supabase/seed.sql`'deki kayıtlarla aynı olsun.
-- **Veritabanı tipleri:** `@ai-influencer/shared` üzerinden import et (`Row<'influencers'>`, `TeamRole`). `packages/shared/src/database.types.ts` üretilmiş dosyadır, elle düzenleme.
+- **Veritabanı tipleri:** `@ai-influencer/shared` üzerinden import et (`Row<'influencers'>`, `TeamRole`). `packages/shared/src/database.types.ts` üretilmiş dosyadır: `pnpm supabase:types` ile üret (Docker gerekir). Docker yoksa üretilmiş formatı birebir koruyarak elle güncelle; CI'daki tip farkı denetimi doğrular.
