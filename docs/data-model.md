@@ -160,3 +160,33 @@ ve fiyatlarda sunucu sabit varsayılana dönmez. Ayarlar API'si Zod şemasıyla 
 özetini veritabanında hesaplar. Snapshot'ları toplamak yerine post başına baseline ile
 son ölçümün farkını alır; eksik baseline kapsamını döndürür. RLS nedeniyle ekip dışı
 kullanıcıya özet döndürmez. Ayrıntılar ve çağrı/maliyet sözleşmesi: [AI rehberi](AI.md).
+
+### Genel bakış dashboard’u (#54)
+
+`dashboard_overview(from, to, influencer_slug?, platform?)` yalnız authenticated
+üyelerin çağırabildiği `SECURITY INVOKER` RPC’sidir. RLS bütün alt sorgularda korunur;
+istemciye snapshot listesi indirip toplama yapılmaz. Aralık UTC günleri dahil,
+en fazla 366 gündür. Bilinmeyen influencer tüm ekibe geri düşmez.
+
+- İzlenme: her postun dönem başı baseline’ı + her UTC gününün **son** snapshot’ı.
+  Ardışık gün sonu ölçümleri farkı alınır; negatif fark sıfırlanır. Yeni post sıfırdan
+  başlar; eski postun baseline’ı yoksa ilk ölçümü artışa katılmaz. Ölçümsüz gün NULL’dır.
+  Geciken snapshot artışı yakalandığı güne yazar; gerçek izlenme gününü tahmin etmez.
+- Takipçi: hesap başına dönem sonu son bilinen değer. Bir hesap ölçümsüzse toplam NULL;
+  dönem başı baseline eksikse değişim NULL. Grafik aynı kuralı her gün/platform için uygular.
+- Etkileşim KPI: dönemde yayınlanan postların son ölçümlerindeki
+  `(likes + comments + shares + saves) / views × 100`, izlenmeye göre ağırlıklı.
+  Günlük trend, o gün ölçülen postların son ölçümlerini kullanır. Kapsam UI’da belirtilir.
+- İlk/son 5: dönemde yayınlanan ve `hours_since_publish` 24–30 olan postların ilk
+  ölçümü. #53 hedef saat kolonunu ekleyene kadar bu açık pencere kullanılır.
+  Eksik hedef ölçüm sıfır kabul edilmez, sıralamadan çıkarılır.
+- Maliyet: para birimi bazında dönem toplamı / dönem platform post sayısı;
+  doğrudan video maliyeti dağıtımı değildir. Şemada platform maliyet ataması
+  olmadığından platform filtresinde maliyet hesaplanmaz ve açıklama gösterilir.
+- Bugünün planı İstanbul takvim gününü, bekleyen işler yayınlanmamış kartları kullanır;
+  tarih aralığından bağımsızdır, influencer/platform filtresine uyar. İlk 10 kayıt ve
+  toplam sayı döner. Aynı içerik karşılaştırması son kümülatif ölçümleri, ilk 50 içeriği gösterir.
+
+Grafiklerin klavyeyle açılan veri tabloları vardır; renkler tema değişkenlerinden gelir.
+`?inf=`, platform ve 7/30/90/özel aralık filtreleri URL’dedir. Salt okuyan viewer da
+aynı dashboard’u kullanır. Yeni bağımlılık veya ortam anahtarı eklenmedi.

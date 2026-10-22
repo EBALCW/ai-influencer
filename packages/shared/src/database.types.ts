@@ -609,6 +609,9 @@ isOneToOne: false
 "current_team_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["team_role"]
                            },
+"dashboard_overview":
+{ Args: { "p_from": string,"p_influencer_slug"?: string,"p_platform"?: Database["public"]['Enums']["social_platform"],"p_to": string }; Returns: Json
+                           },
 "delete_social_token":
 { Args: { "p_account_id": string }; Returns: undefined
                            },

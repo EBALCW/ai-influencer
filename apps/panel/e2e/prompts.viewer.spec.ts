@@ -6,19 +6,25 @@ import { hasLocalSupabase } from './global-setup';
 test.skip(!hasLocalSupabase(), 'Yerel Supabase yok (pnpm supabase:start)');
 
 let promptId = '';
+let promptTitle = '';
 
-test.beforeAll(async () => {
-  const admin = createClient(
+const adminClient = () =>
+  createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
+
+test.beforeAll(async () => {
+  const admin = adminClient();
+  const fixture = crypto.randomUUID();
+  promptTitle = `Viewer görüntüleme testi ${fixture}`;
   const { data, error } = await admin
     .from('prompts')
     .insert({
       category: 'character',
-      key: `viewer-${Date.now().toString(36)}`,
-      title: 'Viewer görüntüleme testi',
+      key: `viewer-${fixture}`,
+      title: promptTitle,
       body: '{{renk}} saçlı karakter',
       version: 1,
     })
@@ -28,6 +34,15 @@ test.beforeAll(async () => {
   promptId = data.id;
 });
 
+test.afterAll(async () => {
+  if (!promptId) return;
+  const { error } = await adminClient()
+    .from('prompts')
+    .delete()
+    .eq('id', promptId);
+  if (error) throw error;
+});
+
 test('viewer kütüphaneyi görür ama prompt oluşturamaz', async ({ page }) => {
   const response = await page.goto('/prompts');
   expect(response?.status()).toBe(200);
@@ -35,7 +50,7 @@ test('viewer kütüphaneyi görür ama prompt oluşturamaz', async ({ page }) =>
     page.getByRole('heading', { name: 'Prompt kütüphanesi', level: 1 }),
   ).toBeVisible();
   await expect(
-    page.getByRole('link', { name: 'Viewer görüntüleme testi' }),
+    page.getByRole('link', { name: promptTitle, exact: true }),
   ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Yeni prompt' })).toHaveCount(0);
 
