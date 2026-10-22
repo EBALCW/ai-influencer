@@ -41,7 +41,13 @@ export default async function AnalyticsPage({
           <p>
             {influencer ? `${influencer.name} · ` : 'Tüm influencer’lar · '}
             Postları açıp ayrıntısına bakın, 2–4 postu yan yana karşılaştırın ve
-            segmentlerden öğrenim çıkarın.
+            segmentlerden öğrenim çıkarın.{' '}
+            <Link
+              className="text-accent underline"
+              href={analyticsHref('/analytics/reports', inf)}
+            >
+              Haftalık rapor ve CSV/PDF dışa aktarma
+            </Link>
           </p>
         </div>
         <nav aria-label="Kontrol noktası" className="flex flex-wrap gap-2">

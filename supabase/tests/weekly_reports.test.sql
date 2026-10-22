@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(44);
+SELECT extensions.plan(45);
 
 -- Fixture (postgres rolüyle, RLS dışında). Seed'den bağımsız.
 -- Hafta: 2026-09-07 (pazartesi) – 2026-09-13 (pazar), Europe/Istanbul (UTC+3)
@@ -69,6 +69,12 @@ VALUES
   ('c1000000-0000-4000-8000-000000000001', 'Gelecek hafta videosu', 'idea', '2026-09-15T09:00:00Z'),
   ('c1000000-0000-4000-8000-000000000001', 'İki hafta sonrası', 'idea', '2026-09-25T09:00:00Z');
 
+-- Öğrenim notları: hafta içinde yazılan sayılır, sonraki haftaki sayılmaz
+INSERT INTO public.learnings (influencer_id, post_id, body, tags, created_at)
+VALUES
+  ('c1000000-0000-4000-8000-000000000001', 'c3000000-0000-4000-8000-000000000001', 'Soru ile açılan hook daha uzun izlendi', ARRAY['hook'], '2026-09-10T09:00:00Z'),
+  ('c1000000-0000-4000-8000-000000000001', NULL, 'Sonraki haftanın notu', '{}', '2026-09-14T09:00:00Z');
+
 -- ── Yapı ve yetkiler ─────────────────────────────────────────────
 SELECT extensions.ok(
   (SELECT relrowsecurity FROM pg_class WHERE oid = 'public.reports'::regclass),
@@ -136,6 +142,12 @@ SELECT extensions.is((SELECT jsonb_array_length(j -> 'bottomPosts') FROM (SELECT
   'bottom list does not repeat posts already in the top list');
 SELECT extensions.is((SELECT (j -> 'nextPeriod' ->> 'scheduledCount')::integer FROM (SELECT public.report_summary('2026-09-07', '2026-09-13', 'c1000000-0000-4000-8000-000000000001') AS j) s), 1,
   'next week plan lists content scheduled in the following week');
+SELECT extensions.results_eq(
+  $$SELECT (j -> 'learnings' ->> 'count')::integer, j -> 'learnings' -> 'items' -> 0 ->> 'body', j -> 'learnings' -> 'items' -> 0 ->> 'postId'
+    FROM (SELECT public.report_summary('2026-09-07', '2026-09-13', 'c1000000-0000-4000-8000-000000000001') AS j) s$$,
+  $$VALUES (1, 'Soru ile açılan hook daha uzun izlendi'::text, 'c3000000-0000-4000-8000-000000000001'::text)$$,
+  'learnings written during the week are included in the report'
+);
 SELECT extensions.is(
   (SELECT (public.report_summary('2026-09-14', '2026-09-20', 'c1000000-0000-4000-8000-000000000001') ->> 'postsPublished')::integer),
   1, 'Monday 00:30 TR post belongs to the next week'

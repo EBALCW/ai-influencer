@@ -3,7 +3,7 @@
 -- reports           Kaydedilmiş dönem raporu. influencer_id NULL = tüm influencer'lar.
 --                   (influencer_id, period_start) benzersiz; NULL da tek kayıt sayılır
 --                   (NULLS NOT DISTINCT, ayrı kısmi indekse gerek kalmaz).
--- report_summary()  Rapordaki bütün sayılar burada hesaplanır. Panel ve otomatik rapor
+-- report_summary()  Rapordaki bütün sayılar ve dönemin öğrenim notları burada hesaplanır. Panel ve otomatik rapor
 --                   aynı fonksiyonu kullanır; AI özeti yalnız bu çıktıyı yorumlar.
 -- generate_weekly_report()   Tek tıkla rapor (editor/owner, RLS geçerli).
 -- generate_weekly_reports()  Pazartesi sabahı pg_cron işi: geçen haftanın raporlarını
@@ -149,6 +149,14 @@ AS $$
       COALESCE(sum(e.converted_amount), 0) AS total
     FROM public.cost_entries_converted(p_from, p_to, p_currency, p_influencer_id) e
   ),
+  learning_items AS (
+    SELECT l.id, l.body, l.tags, l.post_id, l.created_at
+    FROM public.learnings l
+    CROSS JOIN period
+    WHERE (p_influencer_id IS NULL OR l.influencer_id = p_influencer_id)
+      AND l.created_at >= period.start_at
+      AND l.created_at < period.end_at
+  ),
   next_items AS (
     SELECT c.id, c.title, c.stage, c.scheduled_at
     FROM public.content_items c
@@ -207,6 +215,17 @@ AS $$
         ORDER BY r.rank_desc DESC LIMIT 3
       ) x
     ), '[]'::jsonb),
+    -- Dönem içinde yazılan öğrenim notları (#55 learnings), en yeni 10 tanesi.
+    'learnings', jsonb_build_object(
+      'count', (SELECT count(*) FROM learning_items),
+      'items', COALESCE((
+        SELECT jsonb_agg(jsonb_build_object(
+          'id', x.id, 'body', left(x.body, 500), 'tags', to_jsonb(x.tags),
+          'postId', x.post_id, 'createdAt', x.created_at
+        ) ORDER BY x.created_at DESC, x.id)
+        FROM (SELECT * FROM learning_items ORDER BY created_at DESC, id LIMIT 10) x
+      ), '[]'::jsonb)
+    ),
     'nextPeriod', jsonb_build_object(
       'scheduledCount', (SELECT count(*) FROM next_items),
       'items', COALESCE((
