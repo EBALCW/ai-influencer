@@ -195,6 +195,20 @@ export const reportSummarySchema = z.object({
   }),
   topPosts: z.array(reportPostSchema),
   bottomPosts: z.array(reportPostSchema),
+  learnings: z
+    .object({
+      count,
+      items: z.array(
+        z.object({
+          id: z.string(),
+          body: z.string(),
+          tags: z.array(z.string()),
+          postId: z.string().nullable(),
+          createdAt: z.string(),
+        }),
+      ),
+    })
+    .default({ count: 0, items: [] }),
   nextPeriod: z.object({
     scheduledCount: count,
     items: z.array(
@@ -225,6 +239,7 @@ export function isEmptySummary(summary: ReportSummary): boolean {
     summary.engagement === 0 &&
     summary.followers.end == null &&
     summary.cost.entryCount === 0 &&
+    summary.learnings.count === 0 &&
     summary.nextPeriod.scheduledCount === 0
   );
 }

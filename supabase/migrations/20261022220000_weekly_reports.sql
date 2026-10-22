@@ -281,6 +281,37 @@ BEGIN
 END;
 $$;
 
+-- Bildirim türü (#56): "Haftalık rapor hazır". Tür listesi CHECK ile sabit olduğu için
+-- kısıt yeni türle yeniden kurulur (NOT VALID: eski satırlar taranmaz) ve push başlığı eklenir.
+-- Aynı liste packages/shared/src/alerts.ts → ALERT_TYPES içinde (Vitest eşitliği denetler).
+ALTER TABLE public.alerts DROP CONSTRAINT alerts_type_known;
+ALTER TABLE public.alerts
+  ADD CONSTRAINT alerts_type_known CHECK (type IN (
+    'viral_post', 'follower_milestone', 'token_expiring', 'sync_failed',
+    'budget_warning', 'budget_exceeded', 'content_not_ready', 'generation_failed',
+    'weekly_report_ready'
+  )) NOT VALID;
+
+CREATE OR REPLACE FUNCTION private.alert_push_title(p_type text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $fn$
+  SELECT CASE p_type
+    WHEN 'viral_post' THEN 'Viral eşik aşıldı'
+    WHEN 'follower_milestone' THEN 'Takipçi kilometre taşı'
+    WHEN 'token_expiring' THEN 'Token süresi doluyor'
+    WHEN 'sync_failed' THEN 'Senkronizasyon hatası'
+    WHEN 'budget_warning' THEN 'Bütçe uyarı eşiğine ulaştı'
+    WHEN 'budget_exceeded' THEN 'Bütçe aşıldı'
+    WHEN 'content_not_ready' THEN 'Yayın saati geldi, içerik hazır değil'
+    WHEN 'generation_failed' THEN 'Üretim başarısız'
+    WHEN 'weekly_report_ready' THEN 'Haftalık rapor hazır'
+    ELSE 'Yeni uyarı'
+  END
+$fn$;
+
 -- Otomatik rapor (pg_cron). Varsayılan dönem: Türkiye saatine göre geçen hafta.
 -- Tüm influencer'lar (NULL) + aktif/duraklatılmış her influencer için rapor açar.
 -- Var olan rapora dokunmaz (idempotent); yalnız yeni raporlar için bildirim yazar.
@@ -316,10 +347,12 @@ BEGIN
     RETURNING id, influencer_id, period_start
   ),
   notified AS (
-    INSERT INTO public.alerts (influencer_id, type, payload)
+    INSERT INTO public.alerts (influencer_id, type, payload, dedupe_key)
     SELECT c.influencer_id, 'weekly_report_ready',
-      jsonb_build_object('report_id', c.id::text, 'period_start', c.period_start::text)
+      jsonb_build_object('report_id', c.id::text, 'period_start', c.period_start::text),
+      'weekly_report_ready:' || c.id::text
     FROM created c
+    ON CONFLICT (dedupe_key) DO NOTHING
     RETURNING 1
   )
   SELECT count(*)::integer INTO v_created FROM created;

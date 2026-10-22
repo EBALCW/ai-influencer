@@ -167,10 +167,33 @@ export function ReportSummaryView({ summary }: { summary: ReportSummary }) {
 
       <section className="section-card" aria-label="Öğrenimler">
         <h2 className="mb-3 text-base font-semibold text-text">Öğrenimler</h2>
-        <EmptyState
-          title="Öğrenim kaydı henüz yok"
-          description="Post karşılaştırma ve öğrenim notları #55 ile eklenecek; geldiğinde haftalık rapora otomatik bağlanır."
-        />
+        {summary.learnings.items.length ? (
+          <>
+            <ul className="m-0 grid list-none gap-2 p-0 text-sm">
+              {summary.learnings.items.map((item) => (
+                <li key={item.id} className="text-text">
+                  {item.body}
+                  {item.tags.length > 0 && (
+                    <span className="ml-2 text-xs text-muted">
+                      {item.tags.map((tag) => `#${tag}`).join(' ')}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {summary.learnings.count > summary.learnings.items.length && (
+              <p className="mt-2 text-xs text-muted">
+                Toplam {summary.learnings.count} öğrenim; en yeni{' '}
+                {summary.learnings.items.length} tanesi gösteriliyor.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-muted">
+            Bu dönemde öğrenim notu yazılmamış. Notlar Analitik sayfasından
+            eklenir.
+          </p>
+        )}
       </section>
     </>
   );

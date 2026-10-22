@@ -110,6 +110,15 @@ test('haftalık rapor tek tıkla oluşur; CSV ve yazdırma görünümü çalış
     ]);
     if (costs.error) throw costs.error;
 
+    const learning = await admin.from('learnings').insert({
+      influencer_id: influencerId,
+      post_id: postIds[0],
+      body: 'Soru ile açılan hook daha uzun izlendi',
+      tags: ['hook'],
+      created_at: '2026-09-10T09:00:00Z',
+    });
+    if (learning.error) throw learning.error;
+
     // Canlı özet
     await page.goto(`/analytics/reports?date=${WEEK.from}&inf=${slug}`);
     await expect(
@@ -124,6 +133,12 @@ test('haftalık rapor tek tıkla oluşur; CSV ve yazdırma görünümü çalış
       page
         .getByRole('region', { name: 'En iyi içerikler' })
         .getByText('Çok güzel bir gün, ışıl ışıl'),
+    ).toBeVisible();
+
+    await expect(
+      page
+        .getByRole('region', { name: 'Öğrenimler' })
+        .getByText('Soru ile açılan hook daha uzun izlendi'),
     ).toBeVisible();
 
     // Tek tıkla kaydet → rapor sayfası
