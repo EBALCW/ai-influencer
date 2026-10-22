@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity,
-  Bell,
   CalendarDays,
   ChevronDown,
   Clapperboard,
@@ -25,6 +24,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { TeamRole } from '@ai-influencer/shared';
 import { LogoutButton } from '@/components/logout-button';
+import { NotificationBell } from '@/components/notifications';
 import { Toast } from '@/components/ui';
 
 export type ShellMember = { email: string; role: TeamRole };
@@ -134,7 +134,10 @@ function ShellContent({
 
   const groups = [...new Set(navigation.map((item) => item.group))];
   const pageName =
-    navigation.find((item) => item.href === pathname)?.label ?? 'Genel Bakış';
+    pathname === '/notifications'
+      ? 'Bildirimler'
+      : (navigation.find((item) => item.href === pathname)?.label ??
+        'Genel Bakış');
 
   return (
     <div className="studio-shell">
@@ -270,15 +273,9 @@ function ShellContent({
             >
               {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
             </button>
-            <button
-              aria-label="Bildirimler"
-              className="icon-button notification-button"
-              onClick={() => setToast('Şu anda yeni bildiriminiz yok')}
-              type="button"
-            >
-              <Bell size={17} />
-              <span />
-            </button>
+            <NotificationBell
+              allHref={withInfluencer('/notifications', selectedInfluencer)}
+            />
             <span className="topbar-divider" />
             <span
               aria-label={`${member.email} (${roleLabels[member.role]})`}

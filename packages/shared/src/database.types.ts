@@ -43,16 +43,36 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"alerts": {
+                },"alert_reads": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"payload": NonNullable<Json>,"read_at": string | null,"type": string,"updated_at": string
+                    "alert_id": string,"read_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type": string,"updated_at"?: string
+                    "alert_id": string,"read_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type"?: string,"updated_at"?: string
+                    "alert_id"?: string,"read_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "alert_reads_alert_id_fkey"
+      columns: ["alert_id"]
+isOneToOne: false
+      referencedRelation: "alerts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"alerts": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"dedupe_key": string | null,"id": string,"influencer_id": string | null,"payload": NonNullable<Json>,"read_at": string | null,"type": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"dedupe_key"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"dedupe_key"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -405,6 +425,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"notification_settings": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"follower_milestones": (number)[],"id": boolean,"push_email": boolean,"push_ntfy": boolean,"push_telegram": boolean,"token_expiry_days": number,"updated_at": string,"viral_multiplier": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"posting_slots": {
                   Row: {
                     "account_id": string,"created_at": string,"created_by": string | null,"id": string,"local_time": string,"timezone": string,"updated_at": string,"weekday": number
@@ -684,6 +718,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"mark_alerts_read":
+{ Args: { "p_alert_ids"?: (string)[] }; Returns: number
+                           },
 "post_analytics":
 { Args: { "p_baseline_posts"?: number,"p_post_id": string }; Returns: Json
                            },
@@ -762,6 +799,9 @@ isOneToOne: false
       } },
 "store_social_token":
 { Args: { "p_account_id": string,"p_expires_at"?: string,"p_token": Json }; Returns: string
+                           },
+"unread_alert_count":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "valid_sample_captions":
 { Args: { "p_values": (string)[] }; Returns: boolean
