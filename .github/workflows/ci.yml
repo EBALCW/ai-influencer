@@ -13,6 +13,11 @@ concurrency:
 permissions:
   contents: read
 
+# Supabase imajları Docker Hub'dan: public.ecr.aws anonim çekimde "Data limit exceeded"
+# veriyor; GitHub runner'ları Docker Hub kotasına takılmıyor.
+env:
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
+
 jobs:
   quality:
     name: Lint · Typecheck · Unit test · Build
@@ -30,13 +35,7 @@ jobs:
       - run: corepack enable && pnpm -v
       - run: pnpm install --frozen-lockfile
       - name: Start local Supabase
-        # public.ecr.aws anonim kota aşımında ("Data limit exceeded") Docker Hub aynasına düş
-        run: |
-          pnpm supabase:start || {
-            echo "::warning::ECR'dan imaj çekilemedi, Docker Hub ile tekrar deneniyor"
-            pnpm exec supabase stop --no-backup || true
-            SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io pnpm supabase:start
-          }
+        run: pnpm supabase:start
       - name: Reset database and apply migrations
         run: pnpm supabase:db-reset
       - name: Test database policies
@@ -89,13 +88,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Oturum ve Storage yükleme E2E testleri için yerel Supabase
       - name: Start local Supabase
-        run: |
-          args="-x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta"
-          pnpm exec supabase start $args || {
-            echo "::warning::ECR'dan imaj çekilemedi, Docker Hub ile tekrar deneniyor"
-            pnpm exec supabase stop --no-backup || true
-            SUPABASE_INTERNAL_IMAGE_REGISTRY=docker.io pnpm exec supabase start $args
-          }
+        run: pnpm exec supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local Supabase env
         run: |
           pnpm exec supabase status -o env > "$RUNNER_TEMP/sb.env"
