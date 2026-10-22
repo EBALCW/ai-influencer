@@ -48,6 +48,7 @@ erDiagram
 | `budgets`               | Aylık bütçe tavanı                             | `influencer_id` NULL = tüm ekip toplamı. Ay başına tek bütçe (kısmi benzersiz indeksler). Sadece owner yazar.                                                     |
 | `exchange_rates`        | Döviz kuru                                     | 1 `currency` = `rate` `base_currency`, `valid_on` gününden itibaren. Ters kur otomatik kullanılır. Sadece owner yazar.                                            |
 | `credit_rates`          | Sağlayıcı kredisinin para karşılığı            | 1 kredi = `rate_per_credit` `currency`, `valid_from`'dan itibaren (`credits_to_money()`). Sadece owner yazar.                                                     |
+| `reports`               | Haftalık rapor (KPI özeti + AI özeti)          | `influencer_id` NULL = tümü; hafta başına tek kayıt (`NULLS NOT DISTINCT`). Sayılar `report_summary()` çıktısıdır. Ayrıntı: "Raporlama ve dışa aktarma".          |
 
 Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bulunur. `updated_at` trigger ile değiştirilir; `created_by` istemci isteklerinde `auth.uid()` ile dolar, demo seed kayıtlarında boş kalır.
 
@@ -107,6 +108,7 @@ Migration: `20261022210000_notifications.sql`. Uyarıyı tarayıcı üretmez; ü
 | `budget_warning` / `budget_exceeded` | Bütçe oranı `warn_ratio` (varsayılan %80) / %100 (#59, `alerts_budget_dedupe_idx`)                                                        | —                                             |
 | `content_not_ready`                  | Son 24 saatte yayın saati gelen, `scheduled`/`published` olmayan içerik (pg_cron, 15 dk)                                                  | `content_not_ready:<id>:<scheduled_at epoch>` |
 | `generation_failed`                  | `generations.status` `failed` olunca                                                                                                      | `generation_failed:<id>`                      |
+| `weekly_report_ready`                | Pazartesi otomatik haftalık rapor oluşunca (#62, pg_cron)                                                                                 | `weekly_report_ready:<report_id>`             |
 
 - **Okundu kararı:** kişi başı (`alert_reads`). Viewer da kendi okundu kaydını yazar, `alerts` satırına UPDATE politikası yoktur. `alerts.read_at` kullanılmaz. RPC'ler: `mark_alerts_read(p_alert_ids uuid[] DEFAULT NULL)` (NULL = tümü) ve `unread_alert_count()`; ikisi de `SECURITY INVOKER`.
 - **Zamanlayıcı:** `pg_cron` işi `raise-scheduled-alerts` 15 dakikada bir `private.raise_scheduled_alerts()` çalıştırır.
@@ -120,6 +122,21 @@ Migration: `20261022210000_notifications.sql`. Uyarıyı tarayıcı üretmez; ü
 
 - **Panel:** üst bardaki zil (`components/notifications.tsx`, 60 sn'de bir yenilenir), `/notifications` listesi ve `/settings/notifications` (eşikler + kanal seçimi, owner/editor). API: `GET /api/alerts`, `POST /api/alerts/[id]/read`, `POST /api/alerts/read-all`, `GET|PUT /api/notification-settings`.
 - **Yeni tür eklerken:** migration'da `alerts_type_known` CHECK'ini ve `private.alert_push_title()`'ı, `packages/shared/src/alerts.ts`'teki `ALERT_TYPES`'ı ve `apps/panel/src/lib/alerts/format.ts`'i birlikte güncelle (Vitest listelerin eşitliğini denetler).
+
+## Raporlama ve dışa aktarma (#62)
+
+- **`reports`:** Kaydedilmiş haftalık rapor. `influencer_id` NULL = tüm influencer'lar. `period_start` pazartesi, `period_end` = pazar (CHECK). `(influencer_id, period_start)` için tek kayıt: `UNIQUE NULLS NOT DISTINCT`, böylece NULL (tümü) raporu da haftada bir tane olur (ayrı kısmi indekse gerek yok). `summary` (jsonb) KPI'ları, `ai_summary` Claude özetini tutar. RLS: ekip okur, owner/editor yazar; audit trigger'ları standart.
+- **`report_summary(p_from, p_to, p_influencer_id?, p_currency = 'USD')`:** Rapordaki bütün sayılar burada hesaplanır (SECURITY INVOKER, ekip dışına veri dönmez). Dönem Türkiye saatine göre `[p_from 00:00, p_to + 1 gün 00:00)` aralığıdır, UTC'ye veritabanında çevrilir. Panel tarafındaki karşılığı `apps/panel/src/lib/reports/weekly.ts`.
+  - **Takipçi değişimi:** hesap başına dönem sonundan önceki son ölçüm − dönem başındaki son ölçüm. Başlangıç ölçümü olmayan hesap karşılaştırmaya girmez (`accountsWithBaseline`).
+  - **İzlenme / etkileşim:** sayaçlar kümülatif olduğu için post başına dönem içindeki artış toplanır (etkileşim = beğeni + yorum + paylaşım + kaydetme). Dönemde yayınlanan postun başlangıcı 0'dır; daha önce yayınlanıp başlangıç ölçümü olmayan post toplanmaz, sayısı `postsWithoutBaseline` ile döner.
+  - **Maliyet:** `cost_entries_converted()` ile hedef para birimine çevrilir; eksik kurda toplam NULL. **Video başına maliyet** = toplam / dönemde yayınlanan post.
+  - **En iyi / zayıf içerikler:** dönemde yayınlanan postlar, dönem sonundaki izlenmeye göre ilk 3 ve son 3 (tekrarsız). **Gelecek dönem planı:** sonraki eşit uzunluktaki dönemde planlanmış, yayınlanmamış içerikler.
+  - **Öğrenimler:** dönem içinde yazılan `learnings` (#55) notları; sayı ve en yeni 10 not.
+- **Tek tıkla rapor:** `generate_weekly_report(p_period_start, p_influencer_id?)` (editor/owner). Aynı hafta tekrar çağrılırsa aynı satır güncellenir; sayılar değiştiyse eski AI özeti silinir. Pazartesi olmayan veya gelecekteki hafta `22023`, görünmeyen influencer `P0002` döner.
+- **Otomatik rapor:** pg_cron işi `weekly-reports`, `0 6 * * 1` (pazartesi 06:00 UTC = 09:00 Türkiye) `generate_weekly_reports()` çalıştırır: geçen hafta için tüm influencer'lar + `active`/`paused` her influencer. Var olan rapora dokunmaz (idempotent) ve yalnız yeni raporlar için `alerts`'e `weekly_report_ready` yazar (`dedupe_key = weekly_report_ready:<report_id>`). Bu tür için migration `alerts_type_known` kısıtını ve `private.alert_push_title()`'ı yeniden kurar; panelde zil ve `/notifications` raporu açar. İş migration sahibi rolüyle çalışır; panel kullanıcıları bu fonksiyonu çağıramaz. Edge Function gerekmedi: hesaplama SQL'de olduğu için ek secret veya HTTP çağrısı yok.
+- **AI özeti:** Rapor sayfasındaki düğme `POST /api/reports/{id}/ai-summary` ile #48 asistanının `weekly` görevini çalıştırır. Claude'a yalnız `reports.summary` verilir, yeni sayı üretmez. Token maliyeti `costs`'a (`ai_api`) yazılır. Otomatik rapor AI çağırmaz (API anahtarı panel sunucusunda).
+- **CSV:** `GET /api/exports/{posts|metrics|costs}?from=YYYY-MM-DD&to=YYYY-MM-DD&inf=<slug>` (viewer yeterli, en fazla 366 gün). Kullanıcı oturumuyla (RLS) sorgulanır, service role kullanılmaz. Dosya UTF-8 **BOM** ile başlar (Excel Türkçe karakterleri doğru açar), **ayraç virgül**, satır sonu CRLF (RFC 4180). `=`, `+`, `-`, `@`, sekme ile başlayan metin hücrelerinin başına `'` eklenir (formül enjeksiyonu); sayılar olduğu gibi yazılır. Zamanlar UTC ISO-8601. PostgREST 1000 satır sınırı sayfalanarak aşılır; 50.000 satırdan fazlası 413 döner.
+- **PDF:** Rapor sayfası (`/analytics/reports/{id}`) yazdırmaya göre biçimlenir (`globals.css` → `@media print`): panel kabuğu gizlenir, A4 ve açık renkler. "Yazdır / PDF olarak kaydet" tarayıcının PDF çıktısını kullanır; sunucuda PDF kütüphanesi yok. Dışa aktarılan dosyalar repoya eklenmez.
 
 ## Yetki matrisi
 

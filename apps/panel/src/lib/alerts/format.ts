@@ -136,6 +136,24 @@ export function formatAlert(
         message: `${who}${p.generation_type === 'video' ? 'Video' : 'Görsel'} üretimi başarısız oldu.`,
         href: withInf('/production', slug),
       };
+    case 'weekly_report_ready': {
+      const reportId =
+        typeof p.report_id === 'string' && /^[0-9a-f-]{36}$/.test(p.report_id)
+          ? p.report_id
+          : null;
+      const period =
+        typeof p.period_start === 'string'
+          ? `${p.period_start} haftasının `
+          : '';
+      return {
+        title: 'Haftalık rapor hazır',
+        message: `${who}${period}performans raporu oluşturuldu.`,
+        href: withInf(
+          reportId ? `/analytics/reports/${reportId}` : '/analytics/reports',
+          slug,
+        ),
+      };
+    }
     default:
       return {
         title: 'Uyarı',

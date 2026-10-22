@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -7,13 +7,20 @@ import { ALERT_TYPES } from '@ai-influencer/shared';
 import { formatAlert, formatAlertTime } from './format';
 
 const influencer = { name: 'Demo Creator', slug: 'demo-creator' };
-const migration = readFileSync(
-  join(
-    fileURLToPath(new URL('.', import.meta.url)),
-    '../../../../../supabase/migrations/20261022210000_notifications.sql',
-  ),
-  'utf8',
+// Tür listesi ve push başlıkları sonraki migration'larda yeniden tanımlanabilir
+// (ör. #62 weekly_report_ready); her biri için EN SON tanım denetlenir.
+const migrationsDir = join(
+  fileURLToPath(new URL('.', import.meta.url)),
+  '../../../../../supabase/migrations',
 );
+const migrations = readdirSync(migrationsDir)
+  .filter((name) => name.endsWith('.sql'))
+  .sort()
+  .map((name) => readFileSync(join(migrationsDir, name), 'utf8'));
+const latest = (pattern: RegExp) =>
+  migrations.filter((sql) => pattern.test(sql)).at(-1) ?? '';
+const migration = latest(/alerts_type_known CHECK \(type IN/);
+const pushTitles = latest(/FUNCTION private\.alert_push_title/);
 
 describe('uyarı türleri', () => {
   it('TS listesi migration CHECK listesiyle aynı', () => {
@@ -27,12 +34,30 @@ describe('uyarı türleri', () => {
 
   it('her tür için push başlığı SQL tarafında da tanımlı', () => {
     for (const type of ALERT_TYPES) {
-      expect(migration).toContain(`WHEN '${type}' THEN`);
+      expect(pushTitles).toContain(`WHEN '${type}' THEN`);
     }
   });
 });
 
 describe('formatAlert', () => {
+  it('haftalık rapor hazır: rapor sayfasına gider', () => {
+    const text = formatAlert({
+      type: 'weekly_report_ready',
+      payload: {
+        report_id: '30000000-0000-4000-8000-000000000001',
+        period_start: '2026-09-07',
+      },
+      influencer,
+    });
+    expect(text.title).toBe('Haftalık rapor hazır');
+    expect(text.message).toBe(
+      'Demo Creator: 2026-09-07 haftasının performans raporu oluşturuldu.',
+    );
+    expect(text.href).toBe(
+      '/analytics/reports/30000000-0000-4000-8000-000000000001?inf=demo-creator',
+    );
+  });
+
   it('viral eşik: izlenme ve oran', () => {
     const text = formatAlert({
       type: 'viral_post',
