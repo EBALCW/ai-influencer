@@ -10,6 +10,10 @@ on:
         type: string
         required: true
 
+# db diff (sapma kontrolü) gölge veritabanı için imaj çeker; ECR kotasına takılmasın
+env:
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
+
 jobs:
   migrate:
     name: Migration · ${{ inputs.environment }}
