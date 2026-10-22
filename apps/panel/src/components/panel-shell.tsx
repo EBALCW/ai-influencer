@@ -136,8 +136,11 @@ function ShellContent({
   const pageName =
     pathname === '/notifications'
       ? 'Bildirimler'
-      : (navigation.find((item) => item.href === pathname)?.label ??
-        'Genel Bakış');
+      : (navigation.find((item) =>
+          item.href === '/'
+            ? pathname === '/'
+            : pathname === item.href || pathname.startsWith(`${item.href}/`),
+        )?.label ?? 'Genel Bakış');
 
   return (
     <div className="studio-shell">

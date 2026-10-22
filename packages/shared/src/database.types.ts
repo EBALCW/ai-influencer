@@ -505,6 +505,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"reports": {
+                  Row: {
+                    "ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end"?: string,"period_start"?: string,"summary"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reports_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"social_accounts": {
                   Row: {
                     "created_at": string,"created_by": string | null,"external_id": string | null,"handle": string,"id": string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status": Database["public"]['Enums']["social_account_status"],"token_expires_at": string | null,"token_ref": string | null,"updated_at": string
@@ -678,6 +698,12 @@ isOneToOne: false
 "fx_rate":
 { Args: { "p_from": string,"p_on": string,"p_to": string }; Returns: number
                            },
+"generate_weekly_report":
+{ Args: { "p_influencer_id"?: string,"p_period_start": string }; Returns: string
+                           },
+"generate_weekly_reports":
+{ Args: { "p_period_start"?: string }; Returns: number
+                           },
 "influencer_list_stats":
 { Args: { "p_influencer_ids"?: (string)[],"p_since"?: string }; Returns: {
               "followers": number,"influencer_id": string,"platforms": (string)[],"views_7d": number
@@ -742,6 +768,9 @@ isOneToOne: false
                            },
 "read_social_token":
 { Args: { "p_account_id": string }; Returns: Json
+                           },
+"report_summary":
+{ Args: { "p_currency"?: string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: Json
                            },
 "restore_persona_version":
 { Args: { "p_change_note"?: string,"p_influencer_id": string,"p_version": number }; Returns: {
