@@ -26,16 +26,22 @@ Deno.serve(async (req) => {
   const higgsfield = higgsfieldFromEnv(Deno.env);
   if (higgsfield) providers.push(higgsfield);
 
-  const timeout = Number(Deno.env.get('GENERATION_RUNNING_TIMEOUT_MINUTES') ?? '');
+  const timeout = Number(
+    Deno.env.get('GENERATION_RUNNING_TIMEOUT_MINUTES') ?? '',
+  );
   try {
     const result = await runWorker({
       store: createSupabaseStore(db),
       providers,
-      runningTimeoutMinutes: Number.isFinite(timeout) && timeout > 0 ? timeout : 30,
+      runningTimeoutMinutes:
+        Number.isFinite(timeout) && timeout > 0 ? timeout : 30,
     });
     return json(result);
   } catch (error) {
-    console.error('process-generations', error instanceof Error ? error.message : error);
+    console.error(
+      'process-generations',
+      error instanceof Error ? error.message : error,
+    );
     return errorResponse(500, 'internal', 'Kuyruk işlenemedi');
   }
 });

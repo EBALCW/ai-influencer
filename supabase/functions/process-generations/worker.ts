@@ -37,11 +37,17 @@ export type JobPatch = Partial<{
 }>;
 
 export interface QueueStore {
-  claim(tools: string[], limit: number, leaseSeconds: number): Promise<QueueJob[]>;
+  claim(
+    tools: string[],
+    limit: number,
+    leaseSeconds: number,
+  ): Promise<QueueJob[]>;
   /** Sadece hâlâ queued/running olan satırı günceller. */
   update(id: string, patch: JobPatch): Promise<void>;
   /** Referans asset'lerin kısa ömürlü imzalı URL'leri (influencer filtresiyle). */
-  inputMedia(job: QueueJob): Promise<{ imageUrls: string[]; videoUrl: string | null }>;
+  inputMedia(
+    job: QueueJob,
+  ): Promise<{ imageUrls: string[]; videoUrl: string | null }>;
   upload(path: string, bytes: Uint8Array, contentType: string): Promise<void>;
   complete(
     id: string,
@@ -50,7 +56,11 @@ export interface QueueStore {
     size: number,
     credits: number | null,
   ): Promise<void>;
-  heartbeat(state: { providers: string[]; claimed: number; message: string | null }): Promise<void>;
+  heartbeat(state: {
+    providers: string[];
+    claimed: number;
+    message: string | null;
+  }): Promise<void>;
 }
 
 export type WorkerOptions = {
@@ -98,17 +108,22 @@ export function toSubmitJob(
   media: { imageUrls: string[]; videoUrl: string | null },
 ): SubmitJob {
   const p = job.params ?? {};
-  const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+  const str = (v: unknown) =>
+    typeof v === 'string' && v.trim() ? v.trim() : null;
   const int = (v: unknown) =>
     typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : null;
   const testMode = p.test_mode !== false;
   const resolution = testMode
     ? '480p'
-    : (resolutions.has(String(p.resolution)) ? String(p.resolution) : '720p');
+    : resolutions.has(String(p.resolution))
+      ? String(p.resolution)
+      : '720p';
   const duration = int(p.duration_seconds);
   const modelParams: SubmitJob['modelParams'] = {};
   if (p.model_params && typeof p.model_params === 'object') {
-    for (const [k, v] of Object.entries(p.model_params as Record<string, unknown>)) {
+    for (const [k, v] of Object.entries(
+      p.model_params as Record<string, unknown>,
+    )) {
       if (['string', 'number', 'boolean'].includes(typeof v)) {
         modelParams[k] = v as string | number | boolean;
       }
@@ -121,7 +136,8 @@ export function toSubmitJob(
     negative: str(p.negative),
     seed: int(p.seed),
     resolution,
-    durationSeconds: duration === null ? null : testMode ? Math.min(duration, 5) : duration,
+    durationSeconds:
+      duration === null ? null : testMode ? Math.min(duration, 5) : duration,
     imageUrls: media.imageUrls,
     videoUrl: media.videoUrl,
     modelParams,
@@ -146,13 +162,18 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
   const byTool = new Map(providers.map((p) => [p.id, p]));
   const tools = [...byTool.keys()];
   if (tools.length === 0) {
-    await store.heartbeat({ providers: [], claimed: 0, message: NOT_CONFIGURED_MESSAGE });
+    await store.heartbeat({
+      providers: [],
+      claimed: 0,
+      message: NOT_CONFIGURED_MESSAGE,
+    });
     return { configured: false, claimed: 0, outcomes: {} };
   }
 
   const jobs = await store.claim(tools, batchSize, leaseSeconds);
   const outcomes: Record<string, string> = {};
-  const at = (seconds: number) => new Date(now().getTime() + seconds * 1000).toISOString();
+  const at = (seconds: number) =>
+    new Date(now().getTime() + seconds * 1000).toISOString();
   const iso = () => now().toISOString();
 
   const fail = (job: QueueJob, error: string, credits: number | null = null) =>
@@ -169,15 +190,26 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       outcomes[job.id] = await processJob(job, provider);
     } catch (error) {
       // Beklenmeyen hata: iş kira bitince tekrar alınır. Ayrıntı loga, sır/yanıt değil.
-      console.error('Üretim işlenemedi', job.id, error instanceof Error ? error.message : error);
+      console.error(
+        'Üretim işlenemedi',
+        job.id,
+        error instanceof Error ? error.message : error,
+      );
       outcomes[job.id] = 'error';
     }
   }
 
-  await store.heartbeat({ providers: tools, claimed: jobs.length, message: null });
+  await store.heartbeat({
+    providers: tools,
+    claimed: jobs.length,
+    message: null,
+  });
   return { configured: true, claimed: jobs.length, outcomes };
 
-  async function processJob(job: QueueJob, provider: GenerationProvider): Promise<string> {
+  async function processJob(
+    job: QueueJob,
+    provider: GenerationProvider,
+  ): Promise<string> {
     // 1) İptal isteği
     if (job.cancel_requested_at) {
       if (!job.provider_job_id) {
@@ -189,7 +221,11 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
         await store.update(job.id, { status: 'cancelled', finished_at: iso() });
         return 'cancelled';
       } catch (error) {
-        if (!(error instanceof ProviderError) || error.code !== 'not_cancelable') throw error;
+        if (
+          !(error instanceof ProviderError) ||
+          error.code !== 'not_cancelable'
+        )
+          throw error;
         // Başlamış iş iptal edilemez; tamamlanana kadar izlenir (kredisi kaydedilir).
         await store.update(job.id, {
           cancel_requested_at: null,
@@ -209,7 +245,9 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       const attempts = job.attempts + 1;
       try {
         const media = await store.inputMedia(job);
-        const { providerJobId } = await provider.submit(toSubmitJob(job, media));
+        const { providerJobId } = await provider.submit(
+          toSubmitJob(job, media),
+        );
         await store.update(job.id, {
           status: 'running',
           provider_job_id: providerJobId,
@@ -226,7 +264,9 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
           await store.update(job.id, {
             attempts,
             error: error.message,
-            next_run_at: at(backoffSeconds(attempts, backoffBaseSeconds, backoffMaxSeconds)),
+            next_run_at: at(
+              backoffSeconds(attempts, backoffBaseSeconds, backoffMaxSeconds),
+            ),
           });
           return 'retry';
         }
@@ -242,8 +282,14 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
 
     // 3) Gönderilmiş iş: zaman aşımı, sonra yoklama
     const started = job.started_at ? new Date(job.started_at).getTime() : null;
-    if (started !== null && now().getTime() - started > runningTimeoutMinutes * 60_000) {
-      await fail(job, `Üretim ${runningTimeoutMinutes} dakikada tamamlanmadı (zaman aşımı).`);
+    if (
+      started !== null &&
+      now().getTime() - started > runningTimeoutMinutes * 60_000
+    ) {
+      await fail(
+        job,
+        `Üretim ${runningTimeoutMinutes} dakikada tamamlanmadı (zaman aşımı).`,
+      );
       return 'timeout';
     }
 
@@ -273,7 +319,11 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       return 'cancelled';
     }
     if (result.status === 'failed') {
-      await fail(job, result.error ?? 'Sağlayıcı üretimi tamamlayamadı.', result.credits);
+      await fail(
+        job,
+        result.error ?? 'Sağlayıcı üretimi tamamlayamadı.',
+        result.credits,
+      );
       return 'failed';
     }
 
@@ -287,7 +337,11 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       file = await download(result.resultUrl, result.contentType, job.mode);
     } catch (error) {
       if (error instanceof Error && error.message === 'unsupported') {
-        await fail(job, 'Sonuç dosyası desteklenmeyen türde veya çok büyük.', result.credits);
+        await fail(
+          job,
+          'Sonuç dosyası desteklenmeyen türde veya çok büyük.',
+          result.credits,
+        );
         return 'failed';
       }
       // Geçici indirme hatası: sağlayıcı çıktıyı en az 7 gün tutar, sonra tekrar denenir.
@@ -296,7 +350,13 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
     }
     const path = `${job.influencer_id}/generated-${job.id}.${mimeExtension[file.mime]}`;
     await store.upload(path, file.bytes, file.mime);
-    await store.complete(job.id, path, file.mime, file.bytes.byteLength, result.credits);
+    await store.complete(
+      job.id,
+      path,
+      file.mime,
+      file.bytes.byteLength,
+      result.credits,
+    );
     return 'succeeded';
   }
 
@@ -307,16 +367,25 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
   ): Promise<{ bytes: Uint8Array; mime: string }> {
     const res = await fetchImpl(url, { signal: AbortSignal.timeout(60_000) });
     if (!res.ok) throw new Error(`download ${res.status}`);
-    const header = res.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ?? '';
-    const mime = [header, hinted?.toLowerCase() ?? '', mode === 'text_to_image' ? 'image/png' : 'video/mp4']
-      .find((m) => m in mimeExtension)!;
+    const header =
+      res.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ?? '';
+    const mime = [
+      header,
+      hinted?.toLowerCase() ?? '',
+      mode === 'text_to_image' ? 'image/png' : 'video/mp4',
+    ].find((m) => m in mimeExtension)!;
     const declared = Number(res.headers.get('content-length') ?? '0');
     if (declared > maxFileBytes) throw new Error('unsupported');
-    if (header && !(header in mimeExtension) && header !== 'application/octet-stream') {
+    if (
+      header &&
+      !(header in mimeExtension) &&
+      header !== 'application/octet-stream'
+    ) {
       throw new Error('unsupported');
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.byteLength === 0 || bytes.byteLength > maxFileBytes) throw new Error('unsupported');
+    if (bytes.byteLength === 0 || bytes.byteLength > maxFileBytes)
+      throw new Error('unsupported');
     return { bytes, mime };
   }
 }

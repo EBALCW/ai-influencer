@@ -1,7 +1,8 @@
 // Görsel/video üretim sağlayıcısı sözleşmesi (ADR 0002, #47). Worker sadece bu arayüzü bilir;
 // sağlayıcıya özgü endpoint/alan ayrıntıları adaptörde kalır.
 
-export type GenerationMode = 'text_to_image' | 'image_to_video' | 'video_to_video';
+export type GenerationMode =
+  'text_to_image' | 'image_to_video' | 'video_to_video';
 
 /** Sağlayıcıya gönderilecek iş. `id` = generations.id, Idempotency-Key olarak kullanılır. */
 export type SubmitJob = {
@@ -21,7 +22,8 @@ export type SubmitJob = {
   modelParams: Record<string, string | number | boolean>;
 };
 
-export type ProviderJobStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
+export type ProviderJobStatus =
+  'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
 export type PollResult = {
   status: ProviderJobStatus;
@@ -69,7 +71,11 @@ const messages: Record<ProviderErrorCode, string> = {
 };
 
 /** Geçici hatalar: aynı iş geri çekilmeyle tekrar denenir. */
-const retryable = new Set<ProviderErrorCode>(['rejected', 'timeout', 'unavailable']);
+const retryable = new Set<ProviderErrorCode>([
+  'rejected',
+  'timeout',
+  'unavailable',
+]);
 
 export class ProviderError extends Error {
   readonly code: ProviderErrorCode;
@@ -85,7 +91,8 @@ export class ProviderError extends Error {
 /** HTTP durum kodu → hata kodu. Sağlayıcı mesajı ayrıştırılmaz (ADR 0002). */
 export function providerErrorFromStatus(status: number): ProviderError {
   if (status === 401) return new ProviderError('auth_failed');
-  if (status === 402 || status === 403) return new ProviderError('insufficient_credits');
+  if (status === 402 || status === 403)
+    return new ProviderError('insufficient_credits');
   if (status === 404) return new ProviderError('not_found');
   if (status === 422) return new ProviderError('invalid_request');
   if (status === 400 || status === 429) return new ProviderError('rejected');

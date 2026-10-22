@@ -29,7 +29,8 @@ export function createSupabaseStore(db: SupabaseClient): QueueStore {
     },
 
     async inputMedia(job) {
-      if (!job.input_asset_ids?.length) return { imageUrls: [], videoUrl: null };
+      if (!job.input_asset_ids?.length)
+        return { imageUrls: [], videoUrl: null };
       const { data, error } = await db
         .from('assets')
         .select('id, storage_path, mime_type')
@@ -39,11 +40,11 @@ export function createSupabaseStore(db: SupabaseClient): QueueStore {
       const imageUrls: string[] = [];
       let videoUrl: string | null = null;
       for (const asset of data ?? []) {
-        const signed = await db.storage.from(BUCKET).createSignedUrl(
-          asset.storage_path,
-          SIGNED_URL_SECONDS,
-        );
-        if (signed.error || !signed.data) throw new Error('signed url oluşturulamadı');
+        const signed = await db.storage
+          .from(BUCKET)
+          .createSignedUrl(asset.storage_path, SIGNED_URL_SECONDS);
+        if (signed.error || !signed.data)
+          throw new Error('signed url oluşturulamadı');
         if (String(asset.mime_type ?? '').startsWith('video/')) {
           videoUrl ??= signed.data.signedUrl;
         } else {
@@ -80,7 +81,8 @@ export function createSupabaseStore(db: SupabaseClient): QueueStore {
         claimed: state.claimed,
         message: state.message,
       });
-      if (error) console.error('generation_worker_status yazılamadı', error.message);
+      if (error)
+        console.error('generation_worker_status yazılamadı', error.message);
     },
   };
 }

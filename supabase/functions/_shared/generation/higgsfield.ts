@@ -28,7 +28,8 @@ export type HiggsfieldConfig = {
 
 /** Quickstart'taki görsel modeli ve motion transfer sayfasındaki model. */
 export const DEFAULT_IMAGE_MODEL = 'higgsfield-ai/soul/v2/standard';
-export const DEFAULT_VIDEO_TO_VIDEO_MODEL = 'higgsfield/genjutsu/motion-transfer/v1.0';
+export const DEFAULT_VIDEO_TO_VIDEO_MODEL =
+  'higgsfield/genjutsu/motion-transfer/v1.0';
 
 const statusMap: Record<string, PollResult['status']> = {
   queued: 'queued',
@@ -61,7 +62,10 @@ export class HiggsfieldProvider implements GenerationProvider {
   };
 
   constructor(private readonly config: HiggsfieldConfig) {
-    this.baseUrl = (config.baseUrl ?? 'https://api.higgsfield.ai').replace(/\/$/, '');
+    this.baseUrl = (config.baseUrl ?? 'https://api.higgsfield.ai').replace(
+      /\/$/,
+      '',
+    );
     this.fetchImpl = config.fetch ?? fetch;
     this.timeoutMs = config.timeoutMs ?? 30_000;
     this.models = {
@@ -73,7 +77,12 @@ export class HiggsfieldProvider implements GenerationProvider {
 
   async submit(job: SubmitJob): Promise<{ providerJobId: string }> {
     const { model, body } = this.requestFor(job);
-    const res = await this.send('POST', `/${model.replace(/^\//, '')}`, body, job.id);
+    const res = await this.send(
+      'POST',
+      `/${model.replace(/^\//, '')}`,
+      body,
+      job.id,
+    );
     if (!res.ok) throw providerErrorFromStatus(res.status);
     const data = await readJson(res);
     if (typeof data.request_id !== 'string' || !data.request_id) {
@@ -83,17 +92,25 @@ export class HiggsfieldProvider implements GenerationProvider {
   }
 
   async poll(providerJobId: string): Promise<PollResult> {
-    const res = await this.send('GET', `/requests/${encodeURIComponent(providerJobId)}/status`);
+    const res = await this.send(
+      'GET',
+      `/requests/${encodeURIComponent(providerJobId)}/status`,
+    );
     if (!res.ok) throw providerErrorFromStatus(res.status);
     const data = await readJson(res);
-    const status = typeof data.status === 'string' ? statusMap[data.status] : undefined;
+    const status =
+      typeof data.status === 'string' ? statusMap[data.status] : undefined;
     if (!status) throw new ProviderError('unavailable');
 
     let media: Media | undefined;
     if (status === 'succeeded') {
       const images = Array.isArray(data.images) ? (data.images as Media[]) : [];
       media = (data.video as Media | null | undefined) ?? images[0];
-      if (!media || typeof media.url !== 'string' || !media.url.startsWith('https://')) {
+      if (
+        !media ||
+        typeof media.url !== 'string' ||
+        !media.url.startsWith('https://')
+      ) {
         throw new ProviderError('unavailable');
       }
     }
@@ -101,28 +118,41 @@ export class HiggsfieldProvider implements GenerationProvider {
       status,
       progress: progressFor[status],
       resultUrl: media ? (media.url as string) : null,
-      contentType: media && typeof media.content_type === 'string' ? media.content_type : null,
+      contentType:
+        media && typeof media.content_type === 'string'
+          ? media.content_type
+          : null,
       credits: null,
-      error: data.status === 'nsfw'
-        ? 'İçerik moderasyonu tarafından reddedildi.'
-        : status === 'failed'
-        ? 'Sağlayıcı üretimi tamamlayamadı.'
-        : null,
+      error:
+        data.status === 'nsfw'
+          ? 'İçerik moderasyonu tarafından reddedildi.'
+          : status === 'failed'
+            ? 'Sağlayıcı üretimi tamamlayamadı.'
+            : null,
     };
   }
 
   async cancel(providerJobId: string): Promise<void> {
-    const res = await this.send('POST', `/requests/${encodeURIComponent(providerJobId)}/cancel`);
+    const res = await this.send(
+      'POST',
+      `/requests/${encodeURIComponent(providerJobId)}/cancel`,
+    );
     if (res.status === 400) throw new ProviderError('not_cancelable');
     if (!res.ok) throw providerErrorFromStatus(res.status);
   }
 
-  private requestFor(job: SubmitJob): { model: string; body: Record<string, unknown> } {
+  private requestFor(job: SubmitJob): {
+    model: string;
+    body: Record<string, unknown>;
+  } {
     const extra: Record<string, unknown> = { ...job.modelParams };
     if (job.mode === 'text_to_image') {
       if (job.negative) extra.negative_prompt = job.negative;
       if (job.seed !== null) extra.seed = job.seed;
-      return { model: this.models.image, body: { ...extra, prompt: job.prompt } };
+      return {
+        model: this.models.image,
+        body: { ...extra, prompt: job.prompt },
+      };
     }
     if (job.mode === 'video_to_video') {
       if (!job.videoUrl || job.imageUrls.length === 0) {
@@ -185,7 +215,8 @@ export class HiggsfieldProvider implements GenerationProvider {
 async function readJson(res: Response): Promise<Record<string, unknown>> {
   try {
     const data = await res.json();
-    if (data && typeof data === 'object') return data as Record<string, unknown>;
+    if (data && typeof data === 'object')
+      return data as Record<string, unknown>;
   } catch {
     // aşağıda unavailable
   }
@@ -195,7 +226,10 @@ async function readJson(res: Response): Promise<Record<string, unknown>> {
 type Env = { get(name: string): string | undefined };
 
 /** Anahtarlar tanımlıysa Higgsfield sağlayıcısı, değilse null (worker işleri kuyrukta bırakır). */
-export function higgsfieldFromEnv(env: Env, fetchImpl?: typeof fetch): HiggsfieldProvider | null {
+export function higgsfieldFromEnv(
+  env: Env,
+  fetchImpl?: typeof fetch,
+): HiggsfieldProvider | null {
   const keyId = env.get('HIGGSFIELD_API_KEY_ID')?.trim();
   const keySecret = env.get('HIGGSFIELD_API_KEY_SECRET')?.trim();
   if (!keyId || !keySecret) return null;

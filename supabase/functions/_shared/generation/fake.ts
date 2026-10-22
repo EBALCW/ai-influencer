@@ -32,7 +32,8 @@ export class FakeProvider implements GenerationProvider {
   poll(providerJobId: string): Promise<PollResult> {
     const queue = this.polls.get(providerJobId) ?? [{ status: 'running' }];
     const next = queue.length > 1 ? queue.shift()! : queue[0];
-    if (typeof next === 'string') return Promise.reject(new ProviderError(next));
+    if (typeof next === 'string')
+      return Promise.reject(new ProviderError(next));
     return Promise.resolve({
       status: 'running',
       progress: null,
@@ -45,7 +46,8 @@ export class FakeProvider implements GenerationProvider {
   }
 
   cancel(providerJobId: string): Promise<void> {
-    if (this.cancelError) return Promise.reject(new ProviderError(this.cancelError));
+    if (this.cancelError)
+      return Promise.reject(new ProviderError(this.cancelError));
     this.cancelled.push(providerJobId);
     return Promise.resolve();
   }

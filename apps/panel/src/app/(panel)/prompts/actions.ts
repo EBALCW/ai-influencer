@@ -5,8 +5,15 @@ import { redirect } from 'next/navigation';
 import { requireTeamMember } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import {
+  buildGenerationParams,
+  generationOptionsSchema,
+  inputRequirementError,
+  modeForCategory,
+  queueError,
+  typeForMode,
+} from '@/lib/generation-queue';
+import {
   enqueueGenerationSchema,
-  generationTypeForCategory,
   pickVariableDefinitions,
   promptVersionSchema,
   ratePromptSchema,
@@ -139,14 +146,15 @@ export async function ratePrompt(
 }
 
 /**
- * Doldurulmuş şablonu üretim kuyruğuna ekler (`generations.status = queued`).
- * Sağlayıcı burada çağrılmaz; kuyruğu işleyen worker #47 ile gelecek.
+ * Doldurulmuş şablonu üretim kuyruğuna ekler (`enqueue_generation` RPC: bütçe kontrolü ve ekleme
+ * tek transaction'da). Sağlayıcı burada çağrılmaz; kuyruğu `process-generations` worker'ı işler.
  */
 export async function enqueueGeneration(
   _prev: PromptActionState,
   formData: FormData,
 ): Promise<PromptActionState> {
-  if (!(await canEdit()))
+  const member = await requireTeamMember();
+  if (member.role === 'viewer')
     return fail('Bu işlem için düzenleme yetkisi gerekir.');
   if (!text(formData, 'influencerId'))
     return fail('Üretim için bir influencer seçin.');
@@ -155,7 +163,20 @@ export async function enqueueGeneration(
     influencerId: text(formData, 'influencerId'),
     values: prefixed(formData, 'value:'),
   });
+  const options = generationOptionsSchema.safeParse({
+    resolution: text(formData, 'resolution') || undefined,
+    durationSeconds: text(formData, 'durationSeconds'),
+    seed: text(formData, 'seed'),
+    testMode: formData.get('testMode') === 'on',
+    inputAssetIds: formData
+      .getAll('inputAssetIds')
+      .filter((value): value is string => typeof value === 'string'),
+    overrideBudget:
+      member.role === 'owner' && formData.get('overrideBudget') === 'on',
+  });
   if (!parsed.success) return fail('Üretim isteği geçersiz.');
+  if (!options.success)
+    return fail('Üretim parametreleri geçersiz (çözünürlük, süre veya seed).');
 
   const supabase = await createSupabaseServerClient();
   const { data: prompt, error: promptError } = await supabase
@@ -166,8 +187,8 @@ export async function enqueueGeneration(
   if (promptError) return fail(dbMessage(promptError));
   if (!prompt) return fail('Prompt bulunamadı.');
 
-  const type = generationTypeForCategory[prompt.category];
-  if (!type) return fail('Bu kategori görsel/video üretimine gönderilemez.');
+  const mode = modeForCategory[prompt.category];
+  if (!mode) return fail('Bu kategori görsel/video üretimine gönderilemez.');
   if (prompt.influencer_id && prompt.influencer_id !== parsed.data.influencerId)
     return fail("Bu prompt yalnızca kendi influencer'ı için kullanılabilir.");
 
@@ -175,34 +196,51 @@ export async function enqueueGeneration(
   if (rendered.missing.length)
     return fail(`Eksik değişken: ${rendered.missing.join(', ')}`);
 
+  const inputIds = [...new Set(options.data.inputAssetIds)];
+  let mimeTypes: string[] = [];
+  if (inputIds.length) {
+    const { data: assets, error: assetError } = await supabase
+      .from('assets')
+      .select('id, mime_type')
+      .in('id', inputIds)
+      .eq('influencer_id', parsed.data.influencerId);
+    if (assetError) return fail(dbMessage(assetError));
+    if ((assets ?? []).length !== inputIds.length)
+      return fail("Referans dosyalar bu influencer'a ait değil.");
+    mimeTypes = (assets ?? []).map((asset) => asset.mime_type ?? '');
+  }
+  const inputError = inputRequirementError(mode, mimeTypes);
+  if (inputError) return fail(inputError);
+
   const usedValues = Object.fromEntries(
     Object.entries(parsed.data.values).filter(
       ([name]) => !rendered.unused.includes(name),
     ),
   );
-  const { data, error } = await supabase
-    .from('generations')
-    .insert({
-      influencer_id: parsed.data.influencerId,
-      prompt_id: prompt.id,
-      tool: process.env.GENERATION_PROVIDER?.trim() || 'mock',
-      type,
-      status: 'queued',
-      params: {
-        prompt: rendered.text,
-        negative: prompt.negative,
-        variables: usedValues,
-        prompt_version: prompt.version,
-      },
-    })
-    .select('id');
-  if (error) return fail(dbMessage(error));
-  if (!data?.length) return fail('Üretim isteği kaydedilemedi.');
+  const { data, error } = await supabase.rpc('enqueue_generation', {
+    p_influencer_id: parsed.data.influencerId,
+    p_prompt_id: prompt.id,
+    p_tool: process.env.GENERATION_PROVIDER?.trim() || 'higgsfield',
+    p_type: typeForMode[mode],
+    p_mode: mode,
+    p_input_asset_ids: inputIds,
+    p_override_budget: options.data.overrideBudget,
+    p_params: buildGenerationParams({
+      prompt: rendered.text,
+      negative: prompt.negative,
+      variables: usedValues,
+      promptVersion: prompt.version,
+      options: options.data,
+    }),
+  });
+  if (error) return fail(queueError(error).message);
+  if (!data?.id) return fail('Üretim isteği kaydedilemedi.');
 
   revalidatePath(`/prompts/${prompt.id}`);
+  revalidatePath('/production');
   return {
     ok: true,
     message:
-      'Üretim kuyruğa alındı. Kuyruğu işleyen worker (#47) hazır olduğunda işlenecek.',
+      'Üretim kuyruğa alındı. Durumunu Üretim sayfasından takip edebilirsiniz.',
   };
 }
