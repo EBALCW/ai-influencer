@@ -1,0 +1,18 @@
+{
+  "data": {
+    "videos": [
+      {
+        "id": "7420000000000000003",
+        "view_count": 48210,
+        "like_count": 3904,
+        "comment_count": 112,
+        "share_count": 87
+      }
+    ]
+  },
+  "error": {
+    "code": "ok",
+    "message": "",
+    "log_id": "20261022120000FIXTURE0005"
+  }
+}

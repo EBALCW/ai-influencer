@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "API rate limit was exceeded, only 600 requests per minute are allowed.",
+    "log_id": "20261022120000FIXTURE0009"
+  }
+}

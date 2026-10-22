@@ -1,0 +1,28 @@
+{
+  "data": {
+    "videos": [
+      {
+        "id": "7420000000000000001",
+        "create_time": 1791622800,
+        "title": "",
+        "video_description": "",
+        "duration": 9,
+        "height": 1280,
+        "width": 720,
+        "share_url": "https://www.tiktok.com/@fixture.creator/video/7420000000000000001"
+      },
+      {
+        "id": "7420000000000000000",
+        "title": "Tarihsiz kayıt",
+        "duration": 15
+      }
+    ],
+    "cursor": 1791622800000,
+    "has_more": false
+  },
+  "error": {
+    "code": "ok",
+    "message": "",
+    "log_id": "20261022120000FIXTURE0004"
+  }
+}

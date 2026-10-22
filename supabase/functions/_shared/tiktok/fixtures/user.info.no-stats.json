@@ -1,0 +1,13 @@
+{
+  "data": {
+    "user": {
+      "open_id": "fixture-open-id-0001",
+      "display_name": "Fixture Creator"
+    }
+  },
+  "error": {
+    "code": "ok",
+    "message": "",
+    "log_id": "20261022120000FIXTURE0002"
+  }
+}

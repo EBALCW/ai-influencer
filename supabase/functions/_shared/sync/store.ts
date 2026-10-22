@@ -53,6 +53,7 @@ export interface AccountSnapshotRow {
   reach_day: number | null;
   profile_views: number | null;
   total_views: number | null;
+  total_likes: number | null;
 }
 
 export interface SyncStore {

@@ -1,0 +1,33 @@
+{
+  "data": {
+    "videos": [
+      {
+        "id": "7420000000000000003",
+        "create_time": 1792400400,
+        "title": "",
+        "video_description": "Sabah rutini #fixture",
+        "duration": 21,
+        "height": 1920,
+        "width": 1080,
+        "share_url": "https://www.tiktok.com/@fixture.creator/video/7420000000000000003?utm_campaign=tt4d_open_api&utm_source=fixture"
+      },
+      {
+        "id": "7420000000000000002",
+        "create_time": 1792227600,
+        "title": "Uzun anlatım",
+        "video_description": "Uzun anlatım bölüm 1",
+        "duration": 312,
+        "height": 1920,
+        "width": 1080,
+        "share_url": "https://www.tiktok.com/@fixture.creator/video/7420000000000000002"
+      }
+    ],
+    "cursor": 1792227600000,
+    "has_more": true
+  },
+  "error": {
+    "code": "ok",
+    "message": "",
+    "log_id": "20261022120000FIXTURE0003"
+  }
+}

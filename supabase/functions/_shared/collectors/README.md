@@ -118,3 +118,50 @@ Kanal başına günde ~150 birim + yeni video başına 5 birim: varsayılan kota
 
 - Google Cloud projesinde **YouTube Data API v3** ve **YouTube Analytics API** etkin olmalı. OAuth izinleri: `https://www.googleapis.com/auth/youtube.readonly` ve `https://www.googleapis.com/auth/yt-analytics.readonly` (bağlantı akışı #49).
 - Toplayıcı yalnız `ctx.token.accessToken` kullanır, ek function secret'ı gerektirmez. Access token yenileme (`GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`) #49'un `refresh-tokens` işindedir.
+
+## TikTok (#52)
+
+Kod: `tiktok.ts` (toplayıcı), `_shared/tiktok/client.ts` (HTTP + hata eşleme), `map.ts` (saf dönüşümler, alan listeleri), `fixtures/` (elle yazılmış, gerçek veri içermeyen yanıt örnekleri), `fake-fetch.ts` (yalnız testler). Testler: `tiktok.test.ts`, `_shared/tiktok/map.test.ts`. Ayrı bir `sync-tiktok` function'ı yoktur: zamanlama ve DB yazımı `sync-dispatch` (#53) üzerinden, toplayıcı `collectors/index.ts`'e kayıtlıdır.
+
+### Çağrılar (Display API v2, `https://open.tiktokapis.com/v2`)
+
+| Metot              | Çağrı                                                                                                                               | İzin                                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `fetchAccount`     | `GET user/info/?fields=open_id,display_name,follower_count,following_count,likes_count,video_count`                                 | `user.info.basic`, `user.info.stats` |
+| `fetchPosts`       | `POST video/list/?fields=id,create_time,title,video_description,duration,height,width,share_url`, gövde `{ max_count: 20, cursor }` | `video.list`                         |
+| `fetchPostMetrics` | `POST video/query/?fields=id,view_count,like_count,comment_count,share_count`, gövde `{ filters: { video_ids: [id] } }`             | `video.list`                         |
+
+- Token `Authorization: Bearer` başlığında gider. Yanıt zarfı `{ data, error: { code, message, log_id } }`; `error.code !== 'ok'` ise HTTP 200 olsa bile hata sayılır.
+- Sayfalama: `video/list` yeniden eskiye sıralıdır, `cursor` (ms) + `has_more`. İlk senkronda en çok 25 sayfa (500 video), artımlı senkronda `since - 6 sa`'ten eski videoya gelince ya da 5 sayfada durur. İlerlemeyen cursor döngüyü bitirir.
+- `fetchAccount`: hesabın `external_id`'si (TikTok `open_id`) doluysa ve token başka `open_id` döndürürse yazmaz (`PermanentError`), çünkü service role RLS'i aşar. `user.info.stats` izni yoksa sayaçlar gelmez; 0 yazmak yerine `PermanentError`.
+- Kota: TikTok'ta birim kotası yok, dakikalık istek sınırı var (uç nokta başına ~600/dk). `sync_runs.quota_units` TikTok için **istek sayısıdır** (`quota_warning` yalnız YouTube'a bakar).
+
+### Alan eşlemesi
+
+| API alanı                                                     | Toplayıcı alanı → kolon                                                                 |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `follower_count` / `following_count` / `video_count`          | `followers` / `following` / `mediaCount` → `account_snapshots.*`                        |
+| `likes_count` (hesabın toplam beğenisi)                       | `totalLikes` → `account_snapshots.total_likes` (yeni kolon, migration `20261022242000`) |
+| `id`, `create_time` (Unix sn)                                 | `externalId`, `publishedAt` → `posts.external_id`, `posts.published_at`                 |
+| `video_description` (başlık açıklamada yoksa önüne eklenir)   | `caption` → `posts.caption`                                                             |
+| `duration`                                                    | `durationS`; `isShort` = süre ≤ 180 sn (ya da bilinmiyor)                               |
+| `share_url` (sorgu parametreleri atılır)                      | `url` → `posts.url`                                                                     |
+| `view_count` / `like_count` / `comment_count` / `share_count` | `views` / `likes` / `comments` / `shares` → `metric_snapshots.*`                        |
+| —                                                             | `saves`, `reach`, `avgWatchTimeS`, `completionRate` = null (Display API vermez)         |
+
+İzlenme süresi, tamamlama oranı, erişim ve kaydetme (favori) sayısı Display API'de **yoktur** (22 Eki 2026'da developers.tiktok.com → Display API → Video Object ile doğrulandı). `raw.unavailable` bu listeyi tutar; orkestratör `saves` için `_unmeasured` yazar. Bu metrikler panelden elle girilir: post detayı → "Elle girilen metrikler" (`POST /api/posts/[postId]/manual-metrics`, `metric_snapshots.source = 'manual'`). Elle girilen kontrol noktası sync'te ezilmez: `due_snapshots()` ölçülmüş noktayı döndürmez, yazım `ON CONFLICT (post_id, target_hours) DO NOTHING`'dir.
+
+### Hata eşleme
+
+| Yanıt                                              | Hata                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `scope_not_authorized` / `scope_permission_missed` | `TokenExpiredError('error')` → `sync_failed` (yeniden bağlanmak gerekir)       |
+| 401, `access_token_invalid`                        | `TokenExpiredError('expired')`                                                 |
+| 429, `rate_limit_exceeded`                         | `RateLimitedError(account)`, `Retry-After` varsa o kadar, yoksa backoff        |
+| 5xx, 408, `internal_error`, ağ hatası              | `TransientError`                                                               |
+| diğerleri (`invalid_params`, 403, 404 …)           | `PermanentError`; mesajda yalnız durum kodu ve hata kodu (gövde/URL/token yok) |
+
+### Ortam kurulumu (hosted)
+
+- developers.tiktok.com'da uygulama: **Login Kit** + **Display API** ürünleri, izinler `user.info.basic`, `user.info.stats`, `video.list`. Uygulama incelemeden geçmeden yalnız sandbox'a eklenen test kullanıcıları bağlanabilir.
+- Toplayıcı yalnız `ctx.token.accessToken` kullanır, ek function secret'ı gerektirmez. Access token 24 saat, refresh token 365 gün geçerlidir; yenileme (`TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET`) #49'un bağlantı/yenileme işindedir.
