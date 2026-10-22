@@ -200,7 +200,9 @@ test('boş hesap CTA; canlı fixture karşılaştırma, kapsam, plan ve viewer o
     ).toBeVisible();
     await expect(page).toHaveURL(/from=2026-10-01/);
     await page.goto(`/?inf=${slug}&range=custom&from=2026-02-30&to=2026-03-01`);
-    await expect(page.getByRole('alert')).toContainText('Geçersiz filtre');
+    await expect(page.getByRole('main').getByRole('alert')).toContainText(
+      'Geçersiz filtre',
+    );
     await page.goto(`/?inf=dashboard-unknown-${crypto.randomUUID()}&${custom}`);
     await expect(
       page.getByRole('heading', { name: 'Influencer bulunamadı' }),
