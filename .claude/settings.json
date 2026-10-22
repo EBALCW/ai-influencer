@@ -1,5 +1,33 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(pnpm check)",
+      "Bash(pnpm codemap:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm doctor)",
+      "Bash(node scripts/codemap.mjs:*)",
+      "Bash(node scripts/doctor.mjs)",
+      "Bash(deno lint:*)",
+      "Bash(deno check:*)",
+      "Bash(deno test:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run list:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)"
+    ],
     "deny": [
       "mcp__supabase__execute_sql",
       "mcp__supabase__apply_migration",

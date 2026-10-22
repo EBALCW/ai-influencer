@@ -6,10 +6,10 @@ Bu dosya AI coding agent'ları (Codex, Claude Code vb.) için yazıldı. İnsanl
 
 AI influencer oluşturma, büyütme ve gelire dönüştürme projesi. Kodlanacak ana parça bir **admin panel**: influencer oluşturma ve düzenleme, Instagram / YouTube / TikTok istatistikleri, içerik takvimi, maliyet ve marka takibi.
 
-- **Repo:** `EBALCW/ai-influencer` (private, GitHub organization)
+- **Repo:** `EBALCW/ai-influencer` (**public**, GitHub organization). Koda, issue'ya, PR'a gizli bilgi yazma.
 - **Ekip:** 1 kişi macOS + Claude Code, 2 kişi Windows + Codex
-- **Durum:** Planlama aşamasında. Kurulum altyapısı hazır, panel kodu yok (#37 ile başlayacak)
-- **Stack (plan, #36):** TypeScript · Next.js 16 (App Router) · Tailwind + shadcn/ui · Supabase (Postgres, Auth, Storage, Edge Functions, pg_cron) · pnpm workspace
+- **Durum:** Çekirdek panel modülleri `test`'te çalışıyor (influencer, persona, medya, prompt, AI asistanı, dashboard, analitik, bildirim, kanban/takvim, maliyet, rapor). Güncel tablo: `README.md` → Durum.
+- **Stack:** TypeScript · Next.js 16 (App Router, `src/proxy.ts`) · Tailwind 4 · Zod · Vitest · Playwright · Supabase (Postgres + RLS, Auth, Storage, Vault, pg_cron, pg_net, Edge Functions/Deno) · pnpm workspace
 - **Sabit sürümler:** Node `.nvmrc` (24) · pnpm `package.json` → `packageManager` (10.34.7) · `engine-strict=true`
 
 ## ⛔ Veritabanı kuralı (istisnasız)
@@ -116,32 +116,69 @@ node scripts/doctor.mjs
 
 ## Komutlar
 
-| Komut                                                       | Ne yapar                                                          |
-| ----------------------------------------------------------- | ----------------------------------------------------------------- |
-| `pnpm doctor`                                               | Ortam sağlık kontrolü                                             |
-| `pnpm setup:mac` / `pnpm setup:win`                         | Kurulum script'leri                                               |
-| `pnpm install`                                              | Bağımlılıklar                                                     |
-| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`) | Paneli build edip başlatır, tarayıcıyı açar                       |
-| `pnpm backup` / `pnpm backup:restore <klasör>`              | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`) |
+| Komut                                                              | Ne yapar                                                          |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `pnpm doctor`                                                      | Ortam sağlık kontrolü                                             |
+| `pnpm setup:mac` / `pnpm setup:win`                                | Kurulum script'leri                                               |
+| `pnpm install`                                                     | Bağımlılıklar                                                     |
+| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`)        | Paneli build edip başlatır, tarayıcıyı açar                       |
+| `pnpm backup` / `pnpm backup:restore <klasör>`                     | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`) |
+| `pnpm dev` / `pnpm build`                                          | Geliştirme sunucusu / production build                            |
+| `pnpm check`                                                       | Format + lint + typecheck + unit test (PR öncesi zorunlu)         |
+| `pnpm test:e2e`                                                    | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)             |
+| `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`) | Güncel kod haritası (aşağıya bak)                                 |
+| `pnpm env:pull`                                                    | Test Supabase anahtarlarını `.env.local`'e çeker                  |
+| `pnpm release`                                                     | `test` → `main` release PR'ı                                      |
+| `cd supabase/functions && deno test --allow-env`                   | Edge Function testleri (`deno lint`, `deno check` de CI'da)       |
 
-Panel kodu geldikçe (#37) `dev`, `build`, `lint`, `typecheck`, `test` komutları buraya eklenecek.
+Ortam değişkeni ipucu: agent ortamında kurulum/komut takılırsa başına `CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0` ekle.
 
-## Repo haritası
+## Hızlı yön bulma (önce bunu yap)
+
+Kod tabanını dosya dosya taramak yerine **`pnpm codemap`** çalıştır (≈1 sn, ağsız). Çıktı koddan üretilir, her zaman günceldir ve commit'lenmez:
+
+- `--section pages` / `api`: her URL ve HTTP metodu → dosyası
+- `--section lib`: `apps/panel/src/lib`, `components`, `packages/shared` modülleri ve export adları (yardımcıyı yeniden yazmadan önce burada ara)
+- `--section db`: migration'lar sırasıyla ve her birinin oluşturduğu tablo/fonksiyon/trigger/policy/cron; en son migration zaman damgası da buradan görülür
+- `--section functions` / `tests`: Edge Function'lar ve tüm test dosyaları
+
+Sabit yerler:
 
 ```
-AGENTS.md            agent talimatları (bu dosya)
-CLAUDE.md            Claude Code girişi (AGENTS.md'yi içe aktarır)
-docs/SETUP.md        insanlar için kurulum rehberi + sık sorunlar
-docs/DEVELOPMENT.md  geliştirme kuralları ve bitti tanımı
-docs/WORKFLOW.md     branch / PR / CI-CD akışı
-scripts/             setup-mac.sh, setup-windows.ps1, doctor.mjs
-.devcontainer/       Codespaces ortamı
-.github/             issue şablonları, CI (setup-check.yml)
-apps/panel/          (planlanan) Next.js admin panel
-supabase/            (planlanan) migration'lar, edge functions
-packages/shared/     (planlanan) ortak tipler
+apps/panel/src/app/(panel)/<bölüm>/   sayfalar (server component) + istemci bileşenleri
+apps/panel/src/app/api/**/route.ts    API (requireApiRole + parseJson, docs/DEVELOPMENT.md §3)
+apps/panel/src/lib/<alan>/            saf mantık + sorgular (+ *.test.ts yanında)
+apps/panel/src/components/ui.tsx      ortak UI (StatCard, EmptyState, DataTable, Toast …)
+apps/panel/e2e/                       Playwright; projeler playwright.config.ts'de
+packages/shared/src/                  DB tipleri (database.types.ts üretilmiş), ALERT_TYPES
+supabase/migrations/                  tek doğruluk kaynağı (şema, RLS, fonksiyon, cron)
+supabase/tests/*.test.sql             pgTAP (her migration'ın testi)
+supabase/functions/                   Edge Functions (Deno), ortak kod _shared/
+supabase/seed.sql                     yerel/CI demo verisi
+docs/                                 kurallar (DEVELOPMENT, WORKFLOW, data-model, AI, AUTH …)
+scripts/                              Node script'leri (cross-platform)
 ```
+
+Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `docs/AUTH.md`, mimari kararlar `docs/adr/`.
+
+## Paralel çalışma (birden çok agent/geliştirici)
+
+- **Migration zaman damgası:** Yeni dosya, `test`'teki en son migration'dan (bkz. `pnpm codemap --section db`) **büyük** olmalı. PR açıkken başka migration merge olursa ve seninki artık eskiyse dosyayı yeniden adlandır (henüz uygulanmamış migration için serbest). Aynı anda birden çok migration'lı PR varsa merge sırasını korumak için `bekle` label'ı kullanılır.
+- **`database.types.ts` çakışması:** Elle birleştirme yaparken üretilmiş formattaki alfabetik sırayı koru. Docker varsa `pnpm supabase:types` ile yeniden üret; yoksa elle düzenle, CI'daki tip farkı denetimi doğrular.
+- **Rebase:** `git fetch && git rebase origin/test`, sonra `pnpm check`. Force push sadece `--force-with-lease` ile ve sadece kendi feature dalına.
+- **Sahiplik:** Başka bir issue'nun dosyalarına (ör. dashboard, analitik) sadece link/entegrasyon için dokun; büyük değişiklik gerekiyorsa o issue'ya yorum yaz.
+
+## Geçmiş PR'lardan öğrenilenler (tekrarlama)
+
+- Server component'ten client component'e **fonksiyon prop** (ör. lucide ikon bileşeni) geçme → 500. İkonu isimle seç ya da client sarmalayıcı yaz.
+- Supabase toplu `insert`'te tüm satırlar **aynı anahtarlara** sahip olsun; eksik anahtar null gider, NOT NULL kırılır.
+- Para toplamı SQL'de (`numeric`), JS `number` ile değil. Kur yoksa toplamı gösterme, "eksik kur" de.
+- Uyarı tipi eklerken `alerts_type_known` CHECK'i migration'da yeniden kur, `packages/shared` → `ALERT_TYPES` ve `formatAlert`'i güncelle (test bunu denetler).
+- View yazarken `WITH (security_invoker = true)`; fonksiyonlar varsayılan `SECURITY INVOKER`. `SECURITY DEFINER` sadece API rollerine kapalı `private` şemasında ve boş `search_path` ile.
+- Sırlar (token, webhook URL) migration'a yazılmaz; Vault'tan okunur. Sır yoksa iş sessizce atlanır, hata yağdırmaz.
+- Playwright'ta ekran okuyucu metni (ör. "Yeni: ") yüzünden tam eşleşen locator kırılır; `getByRole(..., { name: /…/ })` kullan.
+- Edge Function'lar ESLint/tsc ile değil `deno lint/check/test` ile denetlenir; editör "Cannot find name 'Deno'" derse yok say, CI belirleyicidir.
 
 ## Yol haritası
 
-Epic'ler: #5, #9, #14, #20, #26, #31, #35 (operasyon) · #63, #64, #65, #66 (admin panel). Öncelik label'ları `P0` > `P1` > `P2`. Panel geliştirmesi #36 (ADR) → #37 (iskelet) → #38 (DB) sırasıyla başlar.
+Epic'ler: #5, #9, #14, #20, #26, #31, #35 (operasyon) · #63, #64, #65, #66 (admin panel). Öncelik label'ları `P0` > `P1` > `P2`. Sıradaki büyük iş: sosyal hesap bağlama (#49) → toplayıcılar (#50, #51, #52) → zamanlanmış senkronizasyon (#53) → yayınlama (#58) ve yorum kutusu (#61).
