@@ -197,8 +197,16 @@ export default async function InfluencerDetailPage({
   } else {
     content = (
       <EmptyState
-        title="Henüz analitik yok"
-        description="Analitik verileri bağlandığında bu sekmede gösterilecek."
+        title="Post analitiği"
+        description="Post detayları, karşılaştırma ve segment analizi Analitik sayfasında."
+        action={
+          <Link
+            className="button button-quiet"
+            href={`/analytics?inf=${encodeURIComponent(slug)}`}
+          >
+            Analitiği aç
+          </Link>
+        }
       />
     );
   }
