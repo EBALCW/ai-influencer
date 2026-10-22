@@ -4,3 +4,4 @@ pnpm-lock.yaml
 **/test-results/
 **/next-env.d.ts
 packages/shared/src/database.types.ts
+supabase/functions/deno.lock
