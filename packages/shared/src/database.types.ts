@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "account_snapshots": {
                   Row: {
-                    "account_id": string,"captured_at": string,"created_at": string,"created_by": string | null,"followers": number,"following": number | null,"id": string,"media_count": number | null,"profile_views": number | null,"reach_day": number | null,"total_views": number | null,"updated_at": string
+                    "account_id": string,"captured_at": string,"created_at": string,"created_by": string | null,"followers": number,"following": number | null,"id": string,"media_count": number | null,"profile_views": number | null,"reach_day": number | null,"total_likes": number | null,"total_views": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_views"?: number | null,"updated_at"?: string
+                    "account_id": string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_likes"?: number | null,"total_views"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_views"?: number | null,"updated_at"?: string
+                    "account_id"?: string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_likes"?: number | null,"total_views"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -473,14 +473,14 @@ isOneToOne: false
                   ]
                 },"metric_snapshots": {
                   Row: {
-                    "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"target_hours": number | null,"updated_at": string,"views": number
+                    "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"source": string,"target_hours": number | null,"updated_at": string,"views": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id": string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id": string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"source"?: string,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
                   }
                   Update: {
-                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id"?: string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id"?: string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"source"?: string,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
                   }
                   Relationships: [
                     {
@@ -1003,6 +1003,9 @@ isOneToOne: false
                            },
 "read_social_token":
 { Args: { "p_account_id": string }; Returns: Json
+                           },
+"record_manual_metrics":
+{ Args: { "p_avg_watch_time_s"?: number,"p_comments": number,"p_completion_rate"?: number,"p_likes": number,"p_post_id": string,"p_reach"?: number,"p_saves"?: number,"p_shares": number,"p_target_hours"?: number,"p_views": number }; Returns: Json
                            },
 "report_summary":
 { Args: { "p_currency"?: string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: Json

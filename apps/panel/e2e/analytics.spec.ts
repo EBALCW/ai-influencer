@@ -344,3 +344,85 @@ test('karşılaştırma 1 veya 5 id ile anlamlı hata verir', async ({ page }) =
   );
   await expect(compareError(page)).toContainText('bulunamadı');
 });
+
+test('elle metrik girilir, tabloda görünür; API noktası ezilmez, geçersiz sayı 400', async ({
+  page,
+}) => {
+  await page.goto(`/analytics/posts/${posts.target}?inf=${slug}`);
+  const section = page.getByRole('region', { name: 'Elle girilen metrikler' });
+  await expect(section).toContainText('elle girilmiş ölçüm yok');
+  const form = page.getByRole('form', { name: 'Elle metrik gir' });
+  await form.getByLabel('Kontrol noktası').selectOption({ label: '3 gün' });
+  await form.getByLabel('İzlenme', { exact: true }).fill('640');
+  await form.getByLabel('Beğeni', { exact: true }).fill('41');
+  await form.getByLabel('Yorum', { exact: true }).fill('6');
+  await form.getByLabel('Paylaşım', { exact: true }).fill('2');
+  await form.getByLabel(/Ort\. izlenme süresi/).fill('7.5');
+  await form.getByLabel(/Tamamlama/).fill('38');
+  const saved = page.waitForResponse(
+    (r) =>
+      r.url().endsWith(`/api/posts/${posts.target}/manual-metrics`) &&
+      r.request().method() === 'POST',
+  );
+  await form.getByRole('button', { name: 'Metriği kaydet' }).click();
+  expect((await saved).status()).toBe(201);
+  const table = page.getByRole('table', { name: 'Elle girilen ölçümler' });
+  const row = table.getByRole('row', { name: /3 gün/ });
+  await expect(row).toContainText('640');
+  await expect(row).toContainText('7,5 sn');
+  await expect(row).toContainText('%38');
+  // Kontrol noktası tablosu elle girilen 72 sa değerini kullanır
+  await expect(
+    page
+      .getByRole('table', { name: 'Kontrol noktaları' })
+      .getByRole('row', { name: /3 gün/ }),
+  ).toContainText('640');
+
+  // Aynı nokta tekrar girilirse düzeltilir (200)
+  const corrected = await page.request.post(
+    `/api/posts/${posts.target}/manual-metrics`,
+    {
+      data: { targetHours: 72, views: 650, likes: 41, comments: 6, shares: 2 },
+    },
+  );
+  expect(corrected.status()).toBe(200);
+
+  // API'den ölçülmüş 7 gün noktası elle ezilmez (409)
+  await must(
+    admin.from('metric_snapshots').insert({
+      post_id: posts.target,
+      captured_at: '2026-09-12T10:05:00Z',
+      hours_since_publish: 168.08,
+      target_hours: 168,
+      views: 900,
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      saves: 0,
+    }),
+  );
+  const conflict = await page.request.post(
+    `/api/posts/${posts.target}/manual-metrics`,
+    {
+      data: { targetHours: 168, views: 1, likes: 1, comments: 1, shares: 1 },
+    },
+  );
+  expect(conflict.status()).toBe(409);
+  const api = await must(
+    admin
+      .from('metric_snapshots')
+      .select('views, source')
+      .eq('post_id', posts.target)
+      .eq('target_hours', 168)
+      .single(),
+  );
+  expect(api).toEqual({ views: 900, source: 'api' });
+
+  const invalid = await page.request.post(
+    `/api/posts/${posts.target}/manual-metrics`,
+    {
+      data: { targetHours: 24, views: -5, likes: 1, comments: 1, shares: 1 },
+    },
+  );
+  expect(invalid.status()).toBe(400);
+});

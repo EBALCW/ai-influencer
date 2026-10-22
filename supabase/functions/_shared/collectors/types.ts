@@ -49,6 +49,8 @@ export interface CollectedAccount {
   profileViews?: number | null;
   /** Hesabın toplam görüntülenmesi (YouTube kanal viewCount, #51); yoksa null. */
   totalViews?: number | null;
+  /** Hesabın toplam beğenisi (TikTok likes_count, #52); yoksa null. */
+  totalLikes?: number | null;
 }
 
 /** posts satırı; (account_id, external_id) ile upsert edilir. */

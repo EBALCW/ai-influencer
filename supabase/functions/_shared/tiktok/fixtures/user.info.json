@@ -1,0 +1,17 @@
+{
+  "data": {
+    "user": {
+      "open_id": "fixture-open-id-0001",
+      "display_name": "Fixture Creator",
+      "follower_count": 12840,
+      "following_count": 37,
+      "likes_count": 456789,
+      "video_count": 64
+    }
+  },
+  "error": {
+    "code": "ok",
+    "message": "",
+    "log_id": "20261022120000FIXTURE0001"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "scope_not_authorized",
+    "message": "The user did not authorize the scope required for completing this request.",
+    "log_id": "20261022120000FIXTURE0008"
+  }
+}

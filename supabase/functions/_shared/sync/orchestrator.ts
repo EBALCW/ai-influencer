@@ -353,6 +353,7 @@ async function syncAccount(
             reach_day: count(a.reachDay),
             profile_views: count(a.profileViews),
             total_views: count(a.totalViews),
+            total_likes: count(a.totalLikes),
           });
           processed += 1;
         } else {
