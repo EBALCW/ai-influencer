@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { AiSuggestion } from '@/components/ai-suggestion';
 import { EmptyState, Toast } from '@/components/ui';
 import { platformLabels } from '@/lib/analytics/links';
@@ -387,6 +387,9 @@ function ReplyForm({
 }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
+  // Metin kutusu label'ın içinde olursa erişilebilir adı yazılan metni de içerir;
+  // açık id/htmlFor ile ad hep "Yanıt" kalır.
+  const replyId = useId();
   const language = comment.influencer.language === 'en' ? 'en' : 'tr';
 
   async function submit(event: React.FormEvent) {
@@ -431,16 +434,17 @@ function ReplyForm({
           </select>
         </label>
       )}
-      <label className={labelClass}>
+      <label className={labelClass} htmlFor={replyId}>
         Yanıt
-        <textarea
-          className={fieldClass}
-          rows={3}
-          maxLength={REPLY_MAX_LENGTH}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
       </label>
+      <textarea
+        id={replyId}
+        className={fieldClass}
+        rows={3}
+        maxLength={REPLY_MAX_LENGTH}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
       <p className="text-xs text-muted">
         {text.length}/{REPLY_MAX_LENGTH} · Yanıt yalnız “Yanıtı gönder”e
         bastığınızda, karakterin hesabından gönderilir.
