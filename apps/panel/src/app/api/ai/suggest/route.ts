@@ -9,6 +9,7 @@ import { libraryPromptSource } from '@/lib/ai/prompt-source';
 import { aiApiRequestSchema } from '@/lib/ai/schemas';
 import { suggest } from '@/lib/ai/suggest';
 import { recordAiUsage } from '@/lib/ai/usage-cost';
+import { loadReplyContext } from '@/lib/inbox/reply-context';
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireApiRole('editor');
@@ -46,11 +47,18 @@ export async function POST(request: NextRequest) {
       if (summary.error) throw new Error('weekly_read');
       metrics = summary.data;
     }
+    // Yorum yanıtı (#61): yorum/persona sunucuda okunur, istemci yalnız id verir.
+    let replyContext;
+    if (input.task === 'reply') {
+      replyContext = await loadReplyContext(db, influencerId, input.input);
+      if (!replyContext) return jsonError('Yorum bulunamadı.', 404);
+    }
     const result = await suggest(input, {
       client: createClaudeClient(config.apiKey),
       model: config.model,
       source,
       metrics,
+      replyContext,
       onUsage: async (usage, model) => {
         try {
           await recordAiUsage(db, {

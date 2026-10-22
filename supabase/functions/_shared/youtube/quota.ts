@@ -11,6 +11,9 @@ export const YOUTUBE_QUOTA_COST = {
   'playlistItems.list': 1,
   'videos.list': 1,
   'search.list': 100,
+  // Yorum gelen kutusu (#61): okuma 1, yanıt yazma 50 birim.
+  'commentThreads.list': 1,
+  'comments.insert': 50,
 } as const;
 
 export type YoutubeDataEndpoint = keyof typeof YOUTUBE_QUOTA_COST;

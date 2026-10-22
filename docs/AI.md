@@ -18,6 +18,7 @@ Model çıktısı yayınlama, araç çağırma veya üretim başlatma yetkisine 
    | caption  | `caption`    | `ai-caption` | "AI Caption"   |
    | senaryo  | `short_film` | `ai-script`  | "AI Script"    |
    | haftalık | `research`   | `ai-weekly`  | "AI Weekly"    |
+   | yanıt    | `caption`    | `ai-reply`   | "AI Reply"     |
 
    Influencer'a özel soy globalden önce gelir; soyun en yüksek versiyonu okunur. Kütüphane metni koddaki ortak güvenlik/çıktı kurallarına **eklenir**, onları değiştirmez. Eşleşen prompt yoksa koddaki yerleşik talimat kullanılır (`promptId`: `builtin:<görev>@1`). Aynı kategorideki görsel/video üretim şablonları AI asistanına gitmez.
 
@@ -46,6 +47,12 @@ kaydedilir. Sağlayıcı kullanım bilgisi döndürmeden ağ/SDK hatası oluşur
 Maliyet yazımı başarısızsa öneri başarı diye sunulmaz: 503 döner; tekrar çağırmadan kayıtlar
 kontrol edilmelidir. Sunucu loguna yalnız sabit hata kodu yazılır. Anahtar, prompt, kullanıcı
 girdisi, model yanıtı ve sağlayıcı hata nesnesi loglanmaz.
+
+## Yorum yanıtı (#61)
+
+Gelen kutusunda (`/inbox`) her yorumun yanıt kutusunda **AI ile öner** görevi `reply` çalıştırır. İstemci yalnız `{ commentId, language }` gönderir; route yorum metnini, post caption'ını ve influencer'ın güncel persona tonu/bio'sunu kullanıcının oturumuyla (RLS) okur. Yorum seçilen influencer'ın hesabına ait değilse 404 döner. Modele **yorum yazarının adı, hesap bilgisi veya başka yorumlar gönderilmez**. Çıktı `{ reply }` (1–1000 karakter; talimat 300 karakter, en fazla 1 emoji, hashtag/link yok ister). AI olduğu sorulursa karakter bunu açıkça söyler (`docs/compliance.md`); fiyat/anlaşma sözü verilmez, iletişim bilgisi uydurulmaz.
+
+Öneri yalnız **taslaktır**: "Öneriyi forma uygula" yanıt kutusunu doldurur, gönderim ayrı "Yanıtı gönder" tıklamasıyla kuyruğa alınır. Otomatik veya toplu yanıt yoktur. Maliyet diğer görevler gibi `costs`'a (`ai_api`) yazılır.
 
 ## Haftalık veri
 
@@ -78,8 +85,8 @@ kapsamıyorsa modelden bu sınırları açıklaması istenir. Öneriler insan in
 }
 ```
 
-Diğer görevler `persona`, `script` (`topic`, `durationSeconds`, `language`) ve `weekly`
-(`language`). Yanıt `{task,suggestion,warnings,usage,model,promptId}` şeklindedir.
+Diğer görevler `persona`, `script` (`topic`, `durationSeconds`, `language`), `weekly`
+(`language`) ve `reply` (`commentId`, `language`; #61). Yanıt `{task,suggestion,warnings,usage,model,promptId}` şeklindedir.
 `GET /api/ai/settings` ekip okumasıdır; anahtarın yalnız tanımlı olup olmadığını döner.
 `PUT /api/ai/settings` owner yazımıdır. Başarı dışında 400 (girdi), 401/403 (yetki),
 404 (influencer), 422 (red), 429 (hız sınırı), 502/504 (sağlayıcı/çıktı), 503

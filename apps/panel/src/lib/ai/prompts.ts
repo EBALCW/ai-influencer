@@ -1,6 +1,10 @@
 import type { AiTask, CaptionInput, PersonaInput } from './schemas';
 import type { z } from 'zod';
-import type { scriptInputSchema, weeklyInputSchema } from './schemas';
+import type {
+  ReplyContext,
+  scriptInputSchema,
+  weeklyInputSchema,
+} from './schemas';
 
 /**
  * Bir AI görevinin talimatları. Ortak güvenlik ve çıktı kuralları kodda kalır;
@@ -23,6 +27,7 @@ type TemplateMap = {
   weekly: PromptTemplate<
     z.infer<typeof weeklyInputSchema> & { metrics?: unknown }
   >;
+  reply: PromptTemplate<ReplyContext>;
 };
 
 const dataBlock = (input: unknown) =>
@@ -41,6 +46,24 @@ const sharedRules = [
 ];
 
 const defaults: TemplateMap = {
+  reply: {
+    id: 'builtin:reply',
+    version: 1,
+    effort: 'low',
+    system: [
+      'Bir AI influencer hesabına gelen yoruma, karakterin sesiyle kısa bir yanıt TASLAĞI yaz.',
+      ...sharedRules,
+      'Kurallar:',
+      '- reply: en fazla 300 karakter, en fazla 1 emoji, hashtag ve link içermez.',
+      '- Persona tonuna sadık kal; yorumdaki soruya doğrudan ve nazikçe cevap ver.',
+      '- Karakterin AI olup olmadığı sorulursa açıkça AI ile oluşturulmuş kurgusal bir karakter olduğunu söyle.',
+      '- Fiyat, indirim, anlaşma veya iş birliği sözü verme. İş birliği sorusunda yalnız profildeki iş iletişim kanalına yönlendir; e-posta adresi veya telefon uydurma.',
+      '- Kişisel bilgi isteme veya tekrar etme; DM, telefon ya da adres isteme.',
+      '- Hakaret, taciz veya spam içeren yorumu tırmandırma; kısa ve sakin kal.',
+      'Yanıtı girdideki dilde ver.',
+    ].join('\n'),
+    buildUserMessage: dataBlock,
+  },
   script: {
     id: 'builtin:script',
     version: 1,

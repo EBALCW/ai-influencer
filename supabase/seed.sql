@@ -95,3 +95,21 @@ ON CONFLICT (id) DO UPDATE SET
   type = EXCLUDED.type,
   payload = EXCLUDED.payload,
   dedupe_key = EXCLUDED.dedupe_key;
+
+-- Demo yorumları (#61): gelen kutusundaki örnekler. Yazar adları ve metinler uydurmadır.
+INSERT INTO public.comments (id, post_id, account_id, platform, external_id, author_name, text, published_at, like_count, is_brand_inquiry)
+VALUES
+  ('60000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000005', '20000000-0000-4000-8000-000000000001', 'instagram',
+   'demo-ig-comment-01', 'demo.izleyici', 'Bu ışık ayarı çok güzel olmuş, hangi saatte çektiniz?', now() - interval '3 hours', 2, false),
+  ('60000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000005', '20000000-0000-4000-8000-000000000001', 'instagram',
+   'demo-ig-comment-02', 'demo.marka', 'Merhaba, bir iş birliği için iletişime geçmek istiyoruz.', now() - interval '1 day', 0, true),
+  ('60000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000009', '20000000-0000-4000-8000-000000000002', 'youtube',
+   'demo-yt-comment-01', 'Demo İzleyici', 'Bir sonraki videoyu merakla bekliyorum!', now() - interval '2 days', 5, false)
+ON CONFLICT (id) DO UPDATE SET
+  post_id = EXCLUDED.post_id,
+  external_id = EXCLUDED.external_id,
+  author_name = EXCLUDED.author_name,
+  text = EXCLUDED.text,
+  published_at = EXCLUDED.published_at,
+  like_count = EXCLUDED.like_count,
+  is_brand_inquiry = EXCLUDED.is_brand_inquiry;

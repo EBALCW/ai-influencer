@@ -223,6 +223,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"comment_replies": {
+                  Row: {
+                    "attempts": number,"body": string,"comment_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"id": string,"next_attempt_at": string,"sent_at": string | null,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"body": string,"comment_id": string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"id"?: string,"next_attempt_at"?: string,"sent_at"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "attempts"?: number,"body"?: string,"comment_id"?: string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"id"?: string,"next_attempt_at"?: string,"sent_at"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "comment_replies_comment_id_fkey"
+      columns: ["comment_id"]
+isOneToOne: false
+      referencedRelation: "comments"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"comments": {
+                  Row: {
+                    "account_id": string,"author_name": string,"brand_deal_id": string | null,"created_at": string,"created_by": string | null,"external_id": string,"id": string,"is_brand_inquiry": boolean,"like_count": number | null,"parent_external_id": string | null,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"replied_at": string | null,"status": string,"text": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"author_name"?: string,"brand_deal_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"external_id": string,"id"?: string,"is_brand_inquiry"?: boolean,"like_count"?: number | null,"parent_external_id"?: string | null,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"replied_at"?: string | null,"status"?: string,"text": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"author_name"?: string,"brand_deal_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"external_id"?: string,"id"?: string,"is_brand_inquiry"?: boolean,"like_count"?: number | null,"parent_external_id"?: string | null,"platform"?: Database["public"]['Enums']["social_platform"],"post_id"?: string,"published_at"?: string,"replied_at"?: string | null,"status"?: string,"text"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "comments_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "comments_brand_deal_id_fkey"
+      columns: ["brand_deal_id"]
+isOneToOne: false
+      referencedRelation: "brand_deals"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "comments_post_id_fkey"
+      columns: ["post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"content_item_assets": {
                   Row: {
                     "asset_id": string | null,"content_item_id": string,"created_at": string,"created_by": string | null,"generation_id": string | null,"id": string,"updated_at": string

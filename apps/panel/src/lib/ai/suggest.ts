@@ -5,10 +5,13 @@ import { loadPromptTemplate, type PromptSource } from './prompts';
 import {
   captionOutputSchema,
   personaOutputSchema,
+  replyOutputSchema,
   scriptOutputSchema,
   weeklyOutputSchema,
   type CaptionSuggestion,
   type PersonaSuggestion,
+  type ReplyContext,
+  type ReplySuggestion,
   type ScriptSuggestion,
   type WeeklySuggestion,
   type SuggestRequest,
@@ -18,13 +21,16 @@ export type SuggestDeps = {
   model: string;
   source?: PromptSource;
   metrics?: unknown;
+  /** `reply` görevinin sunucuda kurulan bağlamı (route okur; istemciden gelmez). */
+  replyContext?: ReplyContext;
   onUsage?: (usage: AiUsage, model: string) => Promise<void>;
 };
 export type SuggestResult =
   | { task: 'persona'; suggestion: PersonaSuggestion }
   | { task: 'caption'; suggestion: CaptionSuggestion }
   | { task: 'script'; suggestion: ScriptSuggestion }
-  | { task: 'weekly'; suggestion: WeeklySuggestion };
+  | { task: 'weekly'; suggestion: WeeklySuggestion }
+  | { task: 'reply'; suggestion: ReplySuggestion };
 export type SuggestResponse = SuggestResult & {
   warnings: string[];
   usage: AiUsage;
@@ -41,11 +47,16 @@ export async function suggest(
     caption: captionOutputSchema,
     script: scriptOutputSchema,
     weekly: weeklyOutputSchema,
+    reply: replyOutputSchema,
   }[request.task];
+  if (request.task === 'reply' && !deps.replyContext)
+    throw new Error('reply_context_missing');
   const input =
     request.task === 'weekly'
       ? { ...request.input, metrics: deps.metrics }
-      : request.input;
+      : request.task === 'reply'
+        ? deps.replyContext
+        : request.input;
   const result = await runStructured(deps.client, {
     model: deps.model,
     system: template.system,
@@ -81,6 +92,14 @@ export async function suggest(
       throw new AiError('invalid_output');
     }
     return { task: 'script', suggestion: data, warnings: [], ...common };
+  }
+  if (request.task === 'reply') {
+    const parsed = replyOutputSchema.safeParse(result.data);
+    if (!parsed.success) {
+      const { AiError } = await import('./errors');
+      throw new AiError('invalid_output');
+    }
+    return { task: 'reply', suggestion: parsed.data, warnings: [], ...common };
   }
   return {
     task: 'weekly',

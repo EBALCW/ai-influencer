@@ -25,6 +25,9 @@ erDiagram
   CONTENT_ITEMS ||--o{ PUBLISH_JOBS : publishes
   SOCIAL_ACCOUNTS ||--o{ PUBLISH_JOBS : targets
   BRAND_DEALS ||--o{ BRAND_DEAL_FILES : stores
+  POSTS ||--o{ COMMENTS : receives
+  COMMENTS ||--o{ COMMENT_REPLIES : queues
+  BRAND_DEALS o|--o{ COMMENTS : sources
 ```
 
 `influencers.avatar_asset_id`, `generations.output_asset_id` ve `posts.content_item_id` isteğe bağlıdır. Üretilen varlıkları silmek, geçmiş üretim kayıtlarını silmez; varlık bağlantısı `NULL` olur.
@@ -58,6 +61,8 @@ erDiagram
 | `reports`                  | Haftalık rapor (KPI özeti + AI özeti)          | `influencer_id` NULL = tümü; hafta başına tek kayıt (`NULLS NOT DISTINCT`). Sayılar `report_summary()` çıktısıdır. Ayrıntı: "Raporlama ve dışa aktarma".                                   |
 | `sync_runs`                | Senkronizasyon iş günlüğü (#53)                | İş/hesap başına bir satır; yalnız service role yazar, ekip okur. `failed` → `sync_failed` uyarısı. Ayrıntı: "Zamanlanmış senkronizasyon".                                                  |
 | `publish_jobs`             | Yayın kuyruğu (#58)                            | İçerik + hesap başına tek açık/yayınlanmış iş; worker alanları yalnız sunucu, istemci yalnız kuyruktaki işi iptal eder. Ayrıntı: "Yayınlama".                                              |
+| `comments`                 | Instagram/YouTube yorumları (#61)              | `(account_id, external_id)` benzersiz; yalnız service role yazar, editor yalnız `status`/`brand_deal_id` değiştirir. 90 gün saklanır. Ayrıntı: "Yorum gelen kutusu".                       |
+| `comment_replies`          | Yorum yanıt kuyruğu (#61)                      | Editor yalnız `comment_id` + `body` ekler; gönderimi Edge Function yapar. Yorum başına tek etkin yanıt (kısmi UNIQUE, `failed` hariç).                                                     |
 
 Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bulunur. `updated_at` trigger ile değiştirilir; `created_by` istemci isteklerinde `auth.uid()` ile dolar, demo seed kayıtlarında boş kalır.
 
@@ -169,7 +174,7 @@ Migration: `20261022231000_scheduled_sync.sql`. Toplama işi Edge Function `sync
 - **Upsert kararı (#50/#51):** `posts (account_id, external_id)` ve `social_accounts (platform, external_id)` artık düz `UNIQUE` kısıttır (eski kısmi indeksler kaldırıldı, NULL'lar yine çakışmaz). supabase-js `upsert(..., { onConflict: 'account_id,external_id' })` çalışır.
 - **Hesap seçimi:** `status IN ('active','error')` ve `token_ref` dolu. Token hatası → `expired` ya da `error` (`error` #56 `sync_failed` uyarısı üretir). Hatalı hesap başarılı senkronda `active`'e döner. Toplayıcısı kayıtlı olmayan platformun hesapları atlanır (günlük satırı yok).
 - **Rate limit / kota:** hesaplar sırayla işlenir. Kısa `Retry-After` (≤30 sn) beklenir, daha uzunsa iş `partial` olarak bırakılır ve sonraki cron'a kalır. Geçici hatalar 3 denemeye kadar üstel backoff alır. Fonksiyon ~120 sn süre bütçesini aşınca kalan hesaplar sonraki çalışmaya kalır.
-- **`sync_runs`:** `job` (`metrics`/`posts`/`accounts`/`manual`), `platform`, `account_id`, `started_at`, `finished_at` (kapanırken veritabanı saatiyle dolar), `status` (`running`/`succeeded`/`partial`/`failed`), `processed_count`, `quota_units`, `error` (temizlenmiş, ≤500 karakter, token yok). RLS: ekip okur. `authenticated` rolüne yazma yetkisi verilmez.
+- **`sync_runs`:** `job` (`metrics`/`posts`/`accounts`/`manual`; #61: `comments`/`comment_reply`), `platform`, `account_id`, `started_at`, `finished_at` (kapanırken veritabanı saatiyle dolar), `status` (`running`/`succeeded`/`partial`/`failed`), `processed_count`, `quota_units`, `error` (temizlenmiş, ≤500 karakter, token yok). RLS: ekip okur. `authenticated` rolüne yazma yetkisi verilmez.
 - **Şimdi senkronize et:** `/settings/sync` → `POST /api/sync` (editor+) → `request_sync(p_account_id?)` RPC'si (`SECURITY DEFINER`, owner/editor denetimi). Dönüş: `queued` (202), `throttled` (429, 2 dk içinde ikinci istek), `not_configured` (503), `not_found` (404). Çağrı veritabanındaki Vault sırrıyla pg_net üzerinden yapılır, panel `CRON_SECRET`'ı görmez. Kim istediği `private.sync_requests`'te tutulur.
 - **Ortam kurulumu (her ortamda bir kez, owner):** Edge Function sırrı `supabase secrets set CRON_SECRET=<rastgele>`. Vault'ta (Dashboard → Vault) `cron_secret` (aynı değer) ve `project_url` (`https://<ref>.supabase.co`, sonda `/` yok). Sırlar yoksa cron işleri sessizce atlanır (Postgres LOG satırı).
 
@@ -215,6 +220,25 @@ Migration: `20261022242000_tiktok_manual_metrics.sql`. Kod: `supabase/functions/
   - Boş `p_saves` 0 yazılır ve `raw_payload._unmeasured`'a eklenir.
 - **Sync elle girilen değeri ezmez:** `due_snapshots()` ölçülmüş noktayı döndürmez; orkestratör `ON CONFLICT (post_id, target_hours) DO NOTHING` ile yazar (pgTAP: `tiktok_manual_metrics.test.sql`).
 - **Panel:** `/analytics/posts/[postId]` → "Elle girilen metrikler" (liste herkese, form editor/owner'a) → `POST /api/posts/[postId]/manual-metrics` (Zod: sayaçlar negatif olmayan tam sayı, tamamlama 0–1). Yanıt: 201 eklendi, 200 düzeltildi, 409 API noktası, 400 geçersiz, 403 viewer, 404 post yok, 422 nokta henüz gelmedi.
+
+## Yorum gelen kutusu (#61)
+
+Panel: `/inbox` (menü → YAYIN → Gelen kutusu). Yorum toplama ve yanıt gönderimi Edge Function `comments-dispatch`'te (`supabase/functions/_shared/comments/`); token Vault'tan okunur, panele gelmez.
+
+| İş (pg_cron)           | Zamanlama (UTC) | Ne yapar                                                                                                          |
+| ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `comments-fetch`       | `12,42 * * * *` | `private.invoke_comments('fetch')`: bağlı hesapların son 7 günde yayınlanan postlarındaki son 7 günün yorumları   |
+| `comments-reply`       | `*/5 * * * *`   | `private.invoke_comments('reply')`: bekleyen yanıt varsa gönderim (yeni yanıt eklenince trigger da hemen çağırır) |
+| `comments-maintenance` | `55 3 * * *`    | `private.maintain_comments()`: 15 dk'dan uzun `sending` yanıtı `failed` yapar, 90 günden eski yorumları siler     |
+
+- **`comments`:** `post_id`, `account_id` ve `platform` (posttan trigger ile türetilir), `external_id`, `parent_external_id` (şimdilik yalnız üst düzey yorumlar), `author_name`, `text`, `published_at`, `like_count`, `is_brand_inquiry`, `status` (`new`/`read`/`replied`/`hidden`), `replied_at`, `brand_deal_id`. Tekrar çekimde metin/beğeni güncellenir; panel durumu ve lead bağlantısı korunur. Hesabın kendi yorumları alınmaz.
+- **Durum kuralları:** `replied` yalnız gönderilen yanıtla olur (`replied_at` CHECK); yanıtlanmış yorumun gizlemesi kaldırılınca yine `replied` olur. `hidden` yalnız panelde gizler, platformda yorumu gizlemez/silmez. `brand_deal_id` aynı influencer'ın deal'i olmalı (23514).
+- **İş birliği etiketi:** toplama sırasında `_shared/comments/detect.ts` (`collab`, `sponsor`, `iş birliği`/`işbirliği`, `partnership`, e-posta adresi). Türkçe harfler `toLocaleLowerCase('tr')` + aksan katlama ile eşlenir (`İŞ BİRLİĞİ` = `is birligi`).
+- **`comment_replies`:** `body` (1–1000), `status` (`queued` → `sending` → `sent`/`failed`), `attempts`, `next_attempt_at`, `external_id`, `error`, `sent_at`. RLS: ekip okur; owner/editor yalnız `comment_id`, `body` kolonlarıyla ekler (durum/sonuç yazamaz). Yorum başına tek etkin yanıt: çift tıklama ikinci satırı 23505 ile reddeder, API mevcut yanıtı 200 ile döner. Gönderim `queued → sending` koşullu güncellemeyle alınır (iki çalışma aynı yanıtı alamaz). Rate limit'te yeniden sıraya alınır (en fazla 5 deneme); ağ hatası ve 5xx **tekrar denenmez** (platformda idempotency yok, çift yanıt riski) ve `failed` olur, kullanıcı platformda kontrol edip yeniden gönderebilir.
+- **Kota ve günlük:** her hesap için toplama `sync_runs.job = 'comments'`, her yanıt `comment_reply` satırı açar. YouTube: `commentThreads.list` sayfa başına 1, `comments.insert` 50 birim; `quota_units`'e yazılır ve `quota_warning` toplamına girer. Post başına en fazla 5 sayfa, hesap başına en yeni 25 post.
+- **Yetki:** viewer listeyi okur; durum değiştiremez, yanıt/lead açamaz (UI'da düğme yok, API 403, RLS). Yanıt API'si: `POST /api/comments/{id}/reply` (202 kuyrukta, 200 zaten var, 422 TikTok). Durum: `PATCH /api/comments/{id}`. Lead: `POST /api/comments/{id}/lead` (#60 CRM'de `lead` aşamasında deal açar).
+- **Kişisel veri ve saklama:** yorum yazarlarının yalnız platformdaki görünen adı tutulur (profil id'si, fotoğraf, e-posta, takipçi bilgisi yok; ek profilleme yapılmaz). Yorumlar `published_at`'ten 90 gün sonra silinir (yanıt kayıtları cascade). AI önerisine yazar adı gönderilmez. Lead notuna yorum metni kopyalanmaz (kaynak: platform, görünen ad, tarih, post linki). Test fixture'ları uydurmadır.
+- **Kapsam dışı:** Instagram DM (ayrı `instagram_business_manage_messages` izni, App Review ve 24 saatlik mesaj penceresi; uygunluk doğrulanmadan koda girmez), TikTok yorumları (resmi API yorum okuma/yanıt vermiyor), toplu/otomatik yanıt. Yanıt için hesap bağlantısında (#49) YouTube `youtube.force-ssl`, Instagram `instagram_business_manage_comments` kapsamı gerekir; kapsam yoksa yanıt `failed` (izin yok) olur.
 
 ## Raporlama ve dışa aktarma (#62)
 

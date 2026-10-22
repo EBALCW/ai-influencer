@@ -11,6 +11,8 @@ import {
 describe('sync format', () => {
   it('etiketler bilinmeyen değeri olduğu gibi gösterir', () => {
     expect(jobLabel('metrics')).toBe('Metrik snapshot');
+    expect(jobLabel('comments')).toBe('Yorumlar');
+    expect(jobLabel('comment_reply')).toBe('Yorum yanıtı');
     expect(statusLabel('partial')).toBe('Kısmi');
     expect(platformLabel('youtube')).toBe('YouTube');
     expect(platformLabel(null)).toBe('—');
