@@ -30,16 +30,14 @@ test('navigation opens real modules and unfinished sections show empty states', 
     ['İçerik akışı', '/content'],
     ['Yayın takvimi', '/calendar'],
     ['Üretim', '/production'],
+    ['Markalar', '/brands'],
   ] as const) {
     await page.goto(href);
     await expect(
       page.getByRole('heading', { name: label, level: 1 }),
     ).toBeVisible();
   }
-  const destinations = [
-    ['Markalar', '/brands'],
-    ['Ayarlar', '/settings'],
-  ];
+  const destinations = [['Ayarlar', '/settings']];
   for (const [label, href] of destinations) {
     await page.goto(href);
     await expect(

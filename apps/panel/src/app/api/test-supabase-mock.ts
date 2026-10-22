@@ -8,7 +8,7 @@ export type SupabaseMockState = {
   role: string | null;
   writes: Array<{
     table: string;
-    op: 'insert' | 'update';
+    op: 'insert' | 'update' | 'delete';
     values: Record<string, unknown>;
   }>;
   /** Yazma sonrası `.select().single()` sonucu */
@@ -48,6 +48,10 @@ export function createSupabaseMock(state: SupabaseMockState) {
       },
       update: (values: Record<string, unknown>) => {
         state.writes.push({ table, op: 'update', values });
+        return writeChain;
+      },
+      delete: () => {
+        state.writes.push({ table, op: 'delete', values: {} });
         return writeChain;
       },
     }),

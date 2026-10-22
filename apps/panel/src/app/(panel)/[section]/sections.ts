@@ -2,10 +2,4 @@
 export const sections: Record<
   string,
   { title: string; description: string; icon: string }
-> = {
-  brands: {
-    title: 'Markalar',
-    description: 'Marka iş birliklerini ve medya kitinizi yönetin.',
-    icon: '◇',
-  },
-};
+> = {};
