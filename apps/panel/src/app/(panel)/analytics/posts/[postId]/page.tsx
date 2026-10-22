@@ -25,9 +25,11 @@ import {
   getPostAnalytics,
   getPostCostForDetail,
 } from '@/lib/analytics/queries';
+import { getManualSnapshots } from '@/lib/analytics/manual-queries';
 import { supportedCurrencies } from '@/lib/costs/schemas';
 import { AnalyticsStat } from '../../stat';
 import { LearningPanel } from '../../learning-panel';
+import { ManualMetricsPanel } from '../../manual-metrics-panel';
 import { ViewsChart } from '../../views-chart';
 
 const stageLabels: Record<string, string> = {
@@ -58,10 +60,11 @@ export default async function PostDetailPage({
   )
     ? (query.cur as string)
     : 'USD';
-  const [data, learnings, postCost] = await Promise.all([
+  const [data, learnings, postCost, manualEntries] = await Promise.all([
     getPostAnalytics(postId),
     getLearnings({ postId }),
     getPostCostForDetail(postId, currency),
+    getManualSnapshots(postId),
   ]);
   const cost = postCostDisplay(postCost);
   // Layout varlığı doğruladı; arada silinirse yine 404 (stream başlamışsa 200 olabilir)
@@ -309,6 +312,13 @@ export default async function PostDetailPage({
           />
         )}
       </section>
+
+      <ManualMetricsPanel
+        canWrite={member.role !== 'viewer'}
+        entries={manualEntries}
+        platform={post.platform}
+        postId={post.id}
+      />
 
       <LearningPanel
         canWrite={member.role !== 'viewer'}
