@@ -129,6 +129,7 @@ Ayrıntılar `apps/panel/AGENTS.md`'de. Özet:
   - kişisel bilgiler
   - parola, token, kurtarma kodu
   - özel paylaşım linkleri
+  - prompt metinleri (işin ticari değeri). Prompt'lar panelde tutulur; panelden indirilen paketler (`ai-influencer-prompts-*.json`) repoya eklenmez
 - Operasyonel kayıtlar ekibin erişimi kısıtlı alanında tutulur.
 
 > Neden: `docs/incidents.md` başlangıçta gerçek olay kaydı için tasarlanmıştı (#79).

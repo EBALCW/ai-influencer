@@ -12,6 +12,8 @@ const state = vi.hoisted(() => ({
   rows: [] as Record<string, unknown>[],
   create: vi.fn(),
   category: '',
+  key: '',
+  promptError: false,
 }));
 const pricing = {
   currency: 'USD',
@@ -41,6 +43,7 @@ vi.mock('@/lib/supabase/server', () => ({
         select: () => chain,
         eq: (key: string, value: string) => {
           if (key === 'category') state.category = value;
+          if (key === 'key') state.key = value;
           return chain;
         },
         or: () => chain,
@@ -59,7 +62,10 @@ vi.mock('@/lib/supabase/server', () => ({
                 : state.prompt
                   ? { id: 'p1', version: 2, body: 'Kütüphane talimatı' }
                   : null,
-          error: null,
+          error:
+            table === 'prompts' && state.promptError
+              ? { message: 'private' }
+              : null,
         }),
         insert: (values: Record<string, unknown>) => {
           state.rows.push(values);
@@ -111,6 +117,9 @@ beforeEach(() => {
   state.role = 'editor';
   state.inf = true;
   state.prompt = true;
+  state.promptError = false;
+  state.category = '';
+  state.key = '';
   state.billingError = false;
   state.config = true;
   state.rows = [];
@@ -150,16 +159,29 @@ describe('AI route, SDK → maliyet entegrasyonu', () => {
       (await call({ ...body, request: { task: 'caption', input: {} } })).status,
     ).toBe(400);
   });
-  it('ayar yoksa 503, hesap yoksa 404, prompt yoksa 503; çağrı yok', async () => {
+  it('ayar yoksa 503, hesap yoksa 404; çağrı yok', async () => {
     state.config = false;
     expect((await call()).status).toBe(503);
     state.config = true;
     state.inf = false;
     expect((await call()).status).toBe(404);
-    state.inf = true;
-    state.prompt = false;
-    expect((await call()).status).toBe(503);
     expect(state.create).not.toHaveBeenCalled();
+  });
+  it('kütüphanede ai-caption yoksa yerleşik talimata düşer', async () => {
+    state.prompt = false;
+    const r = await call();
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ promptId: 'builtin:caption@1' });
+    expect(state.create.mock.calls[0]![0].system).not.toContain(
+      'Kütüphane talimatı',
+    );
+  });
+  it('prompt okuma hatası yutulmaz: 500, sağlayıcı çağrılmaz', async () => {
+    state.promptError = true;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect((await call()).status).toBe(500);
+    expect(state.create).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
   it('prompt kütüphanesinden önerir ve maliyeti costs modülüne yazar', async () => {
     const r = await call();
@@ -172,6 +194,7 @@ describe('AI route, SDK → maliyet entegrasyonu', () => {
       'Kütüphane talimatı',
     );
     expect(state.category).toBe('caption');
+    expect(state.key).toBe('ai-caption');
     expect(state.rows).toHaveLength(1);
     expect(state.rows[0]).toMatchObject({
       category: 'ai_api',
@@ -206,6 +229,7 @@ describe('AI route, SDK → maliyet entegrasyonu', () => {
     expect(params.messages[0].content).toContain('observedViewIncrease');
     expect(params.messages[0].content).not.toContain('token_ref');
     expect(state.category).toBe('research');
+    expect(state.key).toBe('ai-weekly');
   });
   it('10/dk sınırı 429 ve Retry-After verir', async () => {
     for (let i = 0; i < 10; i++) expect((await call()).status).toBe(200);

@@ -76,3 +76,33 @@ test('viewer önizleyebilir; puanlama, üretim ve yeni versiyon yok', async ({
   for (const name of ['Üretime gönder', 'Puanla', 'Yeni versiyonu kaydet'])
     await expect(page.getByRole('button', { name })).toHaveCount(0);
 });
+
+test('viewer dışa aktarabilir ama içe aktaramaz: form yok, API 403', async ({
+  page,
+}) => {
+  await page.goto('/prompts');
+  await expect(
+    page.getByRole('form', { name: 'Prompt içe aktar' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Tümünü dışa aktar' }),
+  ).toBeVisible();
+  const response = await page.request.post('/api/prompts/import', {
+    multipart: {
+      file: {
+        name: 'prompts.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(
+          JSON.stringify({
+            format: 'ai-influencer/prompts',
+            version: 1,
+            prompts: [
+              { category: 'caption', key: 'viewer', title: 'V', body: 'V' },
+            ],
+          }),
+        ),
+      },
+    },
+  });
+  expect(response.status()).toBe(403);
+});

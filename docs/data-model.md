@@ -77,6 +77,8 @@ Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bul
   - `prompt_lineages`: her soyun en son versiyonu + `version_count`.
   - `prompt_stats`: versiyon başına `total`, `succeeded`, `failed`, `pending`, `success_rate` = başarılı / (başarılı + başarısız) (biten üretim yoksa NULL), `avg_credits` (sadece başarılılar).
 - **Şablon sözdizimi:** `{{degisken}}`, kaçış `\{{`. Motor: `apps/panel/src/lib/prompt-template.ts`.
+- **İçe/dışa aktarma:** `/prompts` sayfasından seçilen veya filtredeki tüm prompt'ların son versiyonları tek bir JSON paketi olarak indirilir (`GET /api/prompts/export`, ekip üyesi). Paket aynı sayfadan geri yüklenir (`POST /api/prompts/import`, en az editor): her prompt `create_prompt_version()` ile yeni versiyon olur, son versiyonla aynı içerik atlanır. Paket önce bütünüyle doğrulanır (Zod, `apps/panel/src/lib/prompt-bundle.ts`); tek hata varsa hiçbir şey yazılmaz. Influencer'lar ortamlar arası `slug` ile taşınır. **Repo public olduğu için prompt dosyaları repoya commit'lenmez** (`.gitignore`: `/prompts/`, `ai-influencer-prompts-*.json`); ekibin kısıtlı paylaşım alanında saklanır.
+- **AI asistanı:** görev → soy eşlemesi `docs/AI.md` → Yapılandırma.
 
 ## Maliyet ve bütçe (#59)
 
