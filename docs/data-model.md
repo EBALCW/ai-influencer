@@ -22,6 +22,8 @@ erDiagram
   INFLUENCERS ||--o{ BRAND_DEALS : promotes
   BRAND_DEALS ||--o{ BRAND_DEAL_CONTENT_ITEMS : links
   CONTENT_ITEMS ||--o{ BRAND_DEAL_CONTENT_ITEMS : sponsors
+  CONTENT_ITEMS ||--o{ PUBLISH_JOBS : publishes
+  SOCIAL_ACCOUNTS ||--o{ PUBLISH_JOBS : targets
   BRAND_DEALS ||--o{ BRAND_DEAL_FILES : stores
 ```
 
@@ -55,6 +57,7 @@ erDiagram
 | `credit_rates`             | Sağlayıcı kredisinin para karşılığı            | 1 kredi = `rate_per_credit` `currency`, `valid_from`'dan itibaren (`credits_to_money()`). Sadece owner yazar.                                                                              |
 | `reports`                  | Haftalık rapor (KPI özeti + AI özeti)          | `influencer_id` NULL = tümü; hafta başına tek kayıt (`NULLS NOT DISTINCT`). Sayılar `report_summary()` çıktısıdır. Ayrıntı: "Raporlama ve dışa aktarma".                                   |
 | `sync_runs`                | Senkronizasyon iş günlüğü (#53)                | İş/hesap başına bir satır; yalnız service role yazar, ekip okur. `failed` → `sync_failed` uyarısı. Ayrıntı: "Zamanlanmış senkronizasyon".                                                  |
+| `publish_jobs`             | Yayın kuyruğu (#58)                            | İçerik + hesap başına tek açık/yayınlanmış iş; worker alanları yalnız sunucu, istemci yalnız kuyruktaki işi iptal eder. Ayrıntı: "Yayınlama".                                              |
 
 Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bulunur. `updated_at` trigger ile değiştirilir; `created_by` istemci isteklerinde `auth.uid()` ile dolar, demo seed kayıtlarında boş kalır.
 
@@ -116,6 +119,7 @@ Migration: `20261022210000_notifications.sql`. Uyarıyı tarayıcı üretmez; ü
 | `generation_failed`                  | `generations.status` `failed` olunca                                                                                                                              | `generation_failed:<id>`                      |
 | `weekly_report_ready`                | Pazartesi otomatik haftalık rapor oluşunca (#62, pg_cron)                                                                                                         | `weekly_report_ready:<report_id>`             |
 | `quota_warning`                      | O Pasifik günündeki YouTube `sync_runs.quota_units` toplamı `notification_settings.youtube_quota_warn_units`'i (varsayılan 8.000) geçince (#51, trigger)          | `quota_warning:youtube:<Pasifik günü>`        |
+| `publish_failed`                     | `publish_jobs.status` `failed` veya `manual_required` olunca (#58, trigger; payload `status`)                                                                     | `publish_failed:<publish_job_id>`             |
 
 - **Okundu kararı:** kişi başı (`alert_reads`). Viewer da kendi okundu kaydını yazar, `alerts` satırına UPDATE politikası yoktur. `alerts.read_at` kullanılmaz. RPC'ler: `mark_alerts_read(p_alert_ids uuid[] DEFAULT NULL)` (NULL = tümü) ve `unread_alert_count()`; ikisi de `SECURITY INVOKER`.
 - **Zamanlayıcı:** `pg_cron` işi `raise-scheduled-alerts` 15 dakikada bir `private.raise_scheduled_alerts()` çalıştırır.

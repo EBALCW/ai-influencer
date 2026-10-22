@@ -10,6 +10,7 @@ import { contentSchema, type ContentInput } from '@/lib/content/schemas';
 import { localInput, localToIso } from '@/lib/content/schedule-rules';
 import { stages, type ContentStage } from '@/lib/content/stage-rules';
 import type { ContentCard, ContentWorkspace } from '@/lib/content/queries';
+import { PublishControls, PublishQueue } from './publish-panel';
 
 export const fieldClass =
   'mt-1 w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent disabled:opacity-70';
@@ -348,6 +349,12 @@ export function ContentBoard({ workspace }: { workspace: ContentWorkspace }) {
                           ))}
                         </select>
                       </label>
+                      <PublishControls
+                        item={item}
+                        workspace={workspace}
+                        pending={pending}
+                        mutate={mutate}
+                      />
                       {canEdit && item.target_account_id && (
                         <details className="mt-3 text-xs">
                           <summary className="cursor-pointer text-accent">
@@ -413,6 +420,7 @@ export function ContentBoard({ workspace }: { workspace: ContentWorkspace }) {
           ))}
         </div>
       </div>
+      <PublishQueue workspace={workspace} />
       <ContentPagination workspace={workspace} path="/content" />
     </div>
   );
