@@ -6,6 +6,9 @@ import {
   generationTypeForCategory,
   parseVariableDefinitions,
 } from '@/lib/prompt-schemas';
+import { listReferenceAssets } from '@/lib/generation-queries';
+import { modeForCategory } from '@/lib/generation-queue';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import {
   getPromptLineage,
   listInfluencerChoices,
@@ -44,6 +47,14 @@ export default async function PromptDetailPage({
     canEdit && !influencer ? listInfluencerChoices() : Promise.resolve([]),
     resolveInfluencerSlug(inf),
   ]);
+  const canGenerate =
+    canEdit && generationTypeForCategory[current.category] !== null;
+  const referenceAssets = canGenerate
+    ? await listReferenceAssets(
+        await createSupabaseServerClient(),
+        influencer ? [influencer.id] : choices.map((item) => item.id),
+      )
+    : [];
   const definitions = parseVariableDefinitions(current.variables);
   const defaults = Object.fromEntries(
     Object.entries(definitions).map(([name, item]) => [
@@ -111,13 +122,14 @@ export default async function PromptDetailPage({
         </h2>
         <PreviewPanel
           body={current.body}
-          canGenerate={
-            canEdit && generationTypeForCategory[current.category] !== null
-          }
+          assets={referenceAssets}
+          canGenerate={canGenerate}
           defaultInfluencerId={selected?.id ?? null}
           defaults={defaults}
           fixedInfluencer={influencer}
           influencers={choices}
+          isOwner={role === 'owner'}
+          mode={modeForCategory[current.category]}
           negative={current.negative}
           promptId={current.id}
         />

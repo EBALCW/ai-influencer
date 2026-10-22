@@ -29,6 +29,7 @@ test('navigation opens real modules and unfinished sections show empty states', 
   for (const [label, href] of [
     ['İçerik akışı', '/content'],
     ['Yayın takvimi', '/calendar'],
+    ['Üretim', '/production'],
   ] as const) {
     await page.goto(href);
     await expect(
@@ -36,7 +37,6 @@ test('navigation opens real modules and unfinished sections show empty states', 
     ).toBeVisible();
   }
   const destinations = [
-    ['Üretim', '/production'],
     ['Markalar', '/brands'],
     ['Ayarlar', '/settings'],
   ];

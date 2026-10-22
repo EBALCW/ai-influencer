@@ -3,6 +3,11 @@
 import { useActionState, useMemo, useState } from 'react';
 import { Toast } from '@/components/ui';
 import { renderTemplate, extractVariables } from '@/lib/prompt-template';
+import {
+  modeLabels,
+  resolutions,
+  type GenerationMode,
+} from '@/lib/generation-queue';
 import { enqueueGeneration } from '../actions';
 import { fieldClass, labelClass } from '../prompt-form';
 
@@ -16,6 +21,9 @@ export function PreviewPanel({
   influencers,
   fixedInfluencer,
   defaultInfluencerId,
+  mode,
+  assets,
+  isOwner,
 }: {
   promptId: string;
   body: string;
@@ -27,6 +35,16 @@ export function PreviewPanel({
   /** Influencer'a özel prompt: üretim sadece o influencer için. */
   fixedInfluencer: { id: string; name: string } | null;
   defaultInfluencerId: string | null;
+  /** Kategoriden gelen üretim modu (görsel / görselden video / video-to-video). */
+  mode: GenerationMode | null;
+  /** Referans olarak seçilebilecek dosyalar (influencer'a göre süzülür). */
+  assets: Array<{
+    id: string;
+    influencerId: string;
+    label: string;
+    mimeType: string;
+  }>;
+  isOwner: boolean;
 }) {
   const names = useMemo(() => extractVariables(body), [body]);
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -34,6 +52,12 @@ export function PreviewPanel({
   );
   const preview = renderTemplate(body, values);
   const [state, action, pending] = useActionState(enqueueGeneration, null);
+  const [influencerId, setInfluencerId] = useState(
+    fixedInfluencer?.id ?? defaultInfluencerId ?? '',
+  );
+  const [testMode, setTestMode] = useState(true);
+  const choices = assets.filter((asset) => asset.influencerId === influencerId);
+  const isVideo = mode !== null && mode !== 'text_to_image';
 
   return (
     <form action={action} className="space-y-4" aria-label="Önizleme ve üretim">
@@ -83,6 +107,86 @@ export function PreviewPanel({
       </div>
 
       {canGenerate && (
+        <fieldset className="space-y-3 rounded-lg border border-line p-3">
+          <legend className="px-1 text-xs font-medium text-muted">
+            Üretim parametreleri
+          </legend>
+          <label className="flex items-center gap-2 text-sm text-text">
+            <input
+              checked={testMode}
+              name="testMode"
+              onChange={(event) => setTestMode(event.target.checked)}
+              type="checkbox"
+            />
+            Test modu (480p{isVideo ? ', en çok 5 sn' : ''}, düşük kredi)
+          </label>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <label className={labelClass}>
+              Çözünürlük
+              <select
+                className={fieldClass}
+                defaultValue="720p"
+                disabled={testMode}
+                name="resolution"
+              >
+                {resolutions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {isVideo && (
+              <label className={labelClass}>
+                Süre (sn)
+                <input
+                  className={fieldClass}
+                  max={60}
+                  min={1}
+                  name="durationSeconds"
+                  type="number"
+                />
+              </label>
+            )}
+            <label className={labelClass}>
+              Seed (isteğe bağlı)
+              <input className={fieldClass} min={0} name="seed" type="number" />
+            </label>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted">Referans dosyalar</p>
+            {choices.length === 0 ? (
+              <p className="mt-1 text-sm text-muted">
+                {influencerId
+                  ? "Bu influencer'ın kütüphanesinde dosya yok."
+                  : 'Dosyaları görmek için influencer seçin.'}
+              </p>
+            ) : (
+              <ul className="mt-1 grid gap-1 sm:grid-cols-2">
+                {choices.map((asset) => (
+                  <li key={asset.id}>
+                    <label className="flex items-center gap-2 text-sm text-text">
+                      <input
+                        name="inputAssetIds"
+                        type="checkbox"
+                        value={asset.id}
+                      />
+                      {asset.label}
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {isOwner && (
+            <label className="flex items-center gap-2 text-sm text-text">
+              <input name="overrideBudget" type="checkbox" />
+              Bütçe dolduysa owner olarak onaylıyorum
+            </label>
+          )}
+        </fieldset>
+      )}
+      {canGenerate && (
         <div className="flex flex-wrap items-end gap-3">
           {fixedInfluencer ? (
             <>
@@ -100,9 +204,10 @@ export function PreviewPanel({
               Influencer
               <select
                 className={fieldClass}
-                defaultValue={defaultInfluencerId ?? ''}
                 name="influencerId"
+                onChange={(event) => setInfluencerId(event.target.value)}
                 required
+                value={influencerId}
               >
                 <option disabled value="">
                   Seçin
@@ -114,6 +219,9 @@ export function PreviewPanel({
                 ))}
               </select>
             </label>
+          )}
+          {mode && (
+            <p className="text-sm text-muted">Mod: {modeLabels[mode]}</p>
           )}
           <button
             className="button button-primary"
