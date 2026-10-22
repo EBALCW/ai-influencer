@@ -183,6 +183,22 @@ test('boş hesap CTA; canlı fixture karşılaştırma, kapsam, plan ve viewer o
     } finally {
       await viewer.close();
     }
+    // Scope changes reset table search/pagination while retaining the date filter.
+    const best = page.getByRole('region', {
+      name: 'En iyi 5 post',
+      exact: true,
+    });
+    await best.getByLabel('Tabloda ara').fill('no dashboard match');
+    const selection = page.getByLabel('Aktif influencer', { exact: true });
+    await selection.selectOption('');
+    await expect(kpi(page, 'Paylaşılan video')).not.toHaveText('2');
+    await selection.selectOption(slug);
+    await expect(kpi(page, 'Dönem izlenmesi')).toHaveText('300');
+    await expect(best.getByLabel('Tabloda ara')).toHaveValue('');
+    await expect(
+      best.getByRole('cell', { name: '200', exact: true }),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/from=2026-10-01/);
     await page.goto(`/?inf=${slug}&range=custom&from=2026-02-30&to=2026-03-01`);
     await expect(page.getByRole('alert')).toContainText('Geçersiz filtre');
     await page.goto(`/?inf=dashboard-unknown-${crypto.randomUUID()}&${custom}`);

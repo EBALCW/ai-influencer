@@ -26,5 +26,5 @@ export default async function HomePage({
     );
   }
   const data = await getDashboard(filter);
-  return <Dashboard data={data} filter={filter} />;
+  return <Dashboard key={JSON.stringify(filter)} data={data} filter={filter} />;
 }
