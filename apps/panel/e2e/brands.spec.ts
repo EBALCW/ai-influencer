@@ -78,7 +78,7 @@ test('deal uçtan uca takip edilir: marka → deal → aşamalar → içerik →
     const dealForm = page.getByRole('form', { name: 'Yeni deal formu' });
     await dealForm.getByLabel('Marka').selectOption({ label: brandName });
     await dealForm
-      .getByLabel('Influencer', { exact: true })
+      .locator('select[name="influencerId"]')
       .selectOption(influencerId);
     await dealForm.getByLabel('Ücret').fill('1500,50');
     await dealForm.getByLabel('Para birimi').selectOption('USD');

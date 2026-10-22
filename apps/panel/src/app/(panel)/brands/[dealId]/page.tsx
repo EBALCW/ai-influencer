@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { z } from 'zod';
 import { requireTeamMember } from '@/lib/auth';
 import { getDealDetail } from '@/lib/brands/queries';
 import { loadReplyTemplates } from '@/lib/brands/templates-server';
@@ -10,6 +11,8 @@ export default async function DealPage({
   params: Promise<{ dealId: string }>;
 }) {
   const [member, { dealId }] = await Promise.all([requireTeamMember(), params]);
+  // Layout ile paralel render edilebilir; geçersiz id'yi veritabanına göndermeden ele
+  if (!z.uuid().safeParse(dealId).success) notFound();
   const [detail, templates] = await Promise.all([
     getDealDetail(dealId),
     loadReplyTemplates(),
