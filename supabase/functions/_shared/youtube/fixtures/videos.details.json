@@ -1,0 +1,323 @@
+{
+  "kind": "youtube#videoListResponse",
+  "etag": "fixture-etag-videos",
+  "pageInfo": {
+    "totalResults": 9,
+    "resultsPerPage": 9
+  },
+  "items": [
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidShortV45",
+      "id": "vidShortV45",
+      "snippet": {
+        "publishedAt": "2026-10-21T18:30:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Kısa deneme #shorts",
+        "description": "Açıklama satırı",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT45S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidShortV45\"></iframe>",
+        "embedWidth": "360",
+        "embedHeight": "640"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidShort2m30",
+      "id": "vidShort2m30",
+      "snippet": {
+        "publishedAt": "2026-10-20T10:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "İki buçuk dakikalık dikey",
+        "description": "",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT2M30S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidShort2m30\"></iframe>",
+        "embedWidth": "360",
+        "embedHeight": "640"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidLand2m",
+      "id": "vidLand2m",
+      "snippet": {
+        "publishedAt": "2026-10-19T10:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Yatay iki dakika",
+        "description": "Yatay video",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT2M",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidLand2m\"></iframe>",
+        "embedWidth": "640",
+        "embedHeight": "360"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidLongForm1",
+      "id": "vidLongForm1",
+      "snippet": {
+        "publishedAt": "2026-10-15T09:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Uzun video",
+        "description": "Bölüm 1",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT1H2M3S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidLongForm1\"></iframe>",
+        "embedWidth": "640",
+        "embedHeight": "360"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidNoDim50",
+      "id": "vidNoDim50",
+      "snippet": {
+        "publishedAt": "2026-10-14T09:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Boyutsuz 50 sn",
+        "description": "",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT50S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidNoDim50\"></iframe>"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidNoDim90",
+      "id": "vidNoDim90",
+      "snippet": {
+        "publishedAt": "2026-10-13T09:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Boyutsuz 90 sn",
+        "description": "",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT1M30S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidNoDim90\"></iframe>"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidLiveRep",
+      "id": "vidLiveRep",
+      "snippet": {
+        "publishedAt": "2026-10-12T09:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Canlı yayın tekrarı",
+        "description": "",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT40S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidLiveRep\"></iframe>",
+        "embedWidth": "360",
+        "embedHeight": "640"
+      },
+      "liveStreamingDetails": {
+        "actualStartTime": "2026-10-12T09:00:00Z",
+        "actualEndTime": "2026-10-12T09:00:00Z"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidPrivate01",
+      "id": "vidPrivate01",
+      "snippet": {
+        "publishedAt": "2026-10-11T09:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Özel video",
+        "description": "",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "none"
+      },
+      "contentDetails": {
+        "duration": "PT30S",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "private",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidPrivate01\"></iframe>",
+        "embedWidth": "360",
+        "embedHeight": "640"
+      }
+    },
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vidUpcoming",
+      "id": "vidUpcoming",
+      "snippet": {
+        "publishedAt": "2026-10-25T09:00:00Z",
+        "channelId": "UCfixtureChannel000000001",
+        "title": "Yaklaşan yayın",
+        "description": "",
+        "channelTitle": "Fixture Kanal",
+        "categoryId": "22",
+        "liveBroadcastContent": "upcoming"
+      },
+      "contentDetails": {
+        "duration": "P0D",
+        "dimension": "2d",
+        "definition": "hd",
+        "caption": "false",
+        "licensedContent": false,
+        "projection": "rectangular"
+      },
+      "status": {
+        "uploadStatus": "processed",
+        "privacyStatus": "public",
+        "license": "youtube",
+        "embeddable": true,
+        "publicStatsViewable": true,
+        "madeForKids": false
+      },
+      "player": {
+        "embedHtml": "<iframe src=\"//www.youtube.com/embed/vidUpcoming\"></iframe>"
+      }
+    }
+  ]
+}

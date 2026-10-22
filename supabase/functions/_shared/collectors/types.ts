@@ -47,6 +47,8 @@ export interface CollectedAccount {
   mediaCount?: number | null;
   reachDay?: number | null;
   profileViews?: number | null;
+  /** Hesabın toplam görüntülenmesi (YouTube kanal viewCount, #51); yoksa null. */
+  totalViews?: number | null;
 }
 
 /** posts satırı; (account_id, external_id) ile upsert edilir. */

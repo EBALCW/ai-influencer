@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "account_snapshots": {
                   Row: {
-                    "account_id": string,"captured_at": string,"created_at": string,"created_by": string | null,"followers": number,"following": number | null,"id": string,"media_count": number | null,"profile_views": number | null,"reach_day": number | null,"updated_at": string
+                    "account_id": string,"captured_at": string,"created_at": string,"created_by": string | null,"followers": number,"following": number | null,"id": string,"media_count": number | null,"profile_views": number | null,"reach_day": number | null,"total_views": number | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"updated_at"?: string
+                    "account_id": string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_views"?: number | null,"updated_at"?: string
                   }
                   Update: {
-                    "account_id"?: string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"updated_at"?: string
+                    "account_id"?: string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_views"?: number | null,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -447,14 +447,14 @@ isOneToOne: false
                   ]
                 },"notification_settings": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"follower_milestones": (number)[],"id": boolean,"push_email": boolean,"push_ntfy": boolean,"push_telegram": boolean,"token_expiry_days": number,"updated_at": string,"viral_multiplier": number
+                    "created_at": string,"created_by": string | null,"follower_milestones": (number)[],"id": boolean,"push_email": boolean,"push_ntfy": boolean,"push_telegram": boolean,"token_expiry_days": number,"updated_at": string,"viral_multiplier": number,"youtube_quota_warn_units": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number
+                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number,"youtube_quota_warn_units"?: number
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number
+                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number,"youtube_quota_warn_units"?: number
                   }
                   Relationships: [
                     

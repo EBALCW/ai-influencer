@@ -154,6 +154,16 @@ export function formatAlert(
         ),
       };
     }
+    case 'quota_warning': {
+      const limit = num(p.daily_limit_units);
+      return {
+        title: 'YouTube API kotası sınıra yaklaştı',
+        message: `Bugün ${count(p.used_units)}${
+          limit === null ? '' : ` / ${count(limit)}`
+        } birim kullanıldı. Kota Pasifik saatiyle gece yarısı sıfırlanır; dolarsa YouTube senkronu o güne kadar durur.`,
+        href: '/settings/sync',
+      };
+    }
     default:
       return {
         title: 'Uyarı',

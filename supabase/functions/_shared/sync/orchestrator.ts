@@ -352,6 +352,7 @@ async function syncAccount(
             media_count: count(a.mediaCount),
             reach_day: count(a.reachDay),
             profile_views: count(a.profileViews),
+            total_views: count(a.totalViews),
           });
           processed += 1;
         } else {

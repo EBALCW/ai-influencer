@@ -40,6 +40,22 @@ describe('uyarı türleri', () => {
 });
 
 describe('formatAlert', () => {
+  it('YouTube kota uyarısı: kullanılan/limit ve senkron ayarları', () => {
+    const text = formatAlert({
+      type: 'quota_warning',
+      payload: {
+        platform: 'youtube',
+        used_units: 8500,
+        threshold_units: 8000,
+        daily_limit_units: 10000,
+      },
+      influencer: null,
+    });
+    expect(text.title).toBe('YouTube API kotası sınıra yaklaştı');
+    expect(text.message).toContain('8.500 / 10.000 birim');
+    expect(text.href).toBe('/settings/sync');
+  });
+
   it('haftalık rapor hazır: rapor sayfasına gider', () => {
     const text = formatAlert({
       type: 'weekly_report_ready',

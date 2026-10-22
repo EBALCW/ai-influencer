@@ -1,5 +1,5 @@
 // Uyarı türleri (#56). Aynı liste en son migration'daki `alerts_type_known` CHECK
-// kısıtında (şu an `20261022220000_weekly_reports.sql`); panel testi iki tarafın
+// kısıtında (şu an `20261022233000_youtube_collector.sql`); panel testi iki tarafın
 // ayrışmadığını denetler.
 export const ALERT_TYPES = [
   'viral_post',
@@ -11,6 +11,7 @@ export const ALERT_TYPES = [
   'content_not_ready',
   'generation_failed',
   'weekly_report_ready',
+  'quota_warning',
 ] as const;
 
 export type AlertType = (typeof ALERT_TYPES)[number];

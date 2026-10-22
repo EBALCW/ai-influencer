@@ -52,6 +52,7 @@ export interface AccountSnapshotRow {
   media_count: number | null;
   reach_day: number | null;
   profile_views: number | null;
+  total_views: number | null;
 }
 
 export interface SyncStore {

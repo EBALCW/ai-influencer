@@ -110,6 +110,7 @@ Migration: `20261022210000_notifications.sql`. Uyarıyı tarayıcı üretmez; ü
 | `content_not_ready`                  | Son 24 saatte yayın saati gelen, `scheduled`/`published` olmayan içerik (pg_cron, 15 dk)                                                                          | `content_not_ready:<id>:<scheduled_at epoch>` |
 | `generation_failed`                  | `generations.status` `failed` olunca                                                                                                                              | `generation_failed:<id>`                      |
 | `weekly_report_ready`                | Pazartesi otomatik haftalık rapor oluşunca (#62, pg_cron)                                                                                                         | `weekly_report_ready:<report_id>`             |
+| `quota_warning`                      | O Pasifik günündeki YouTube `sync_runs.quota_units` toplamı `notification_settings.youtube_quota_warn_units`'i (varsayılan 8.000) geçince (#51, trigger)          | `quota_warning:youtube:<Pasifik günü>`        |
 
 - **Okundu kararı:** kişi başı (`alert_reads`). Viewer da kendi okundu kaydını yazar, `alerts` satırına UPDATE politikası yoktur. `alerts.read_at` kullanılmaz. RPC'ler: `mark_alerts_read(p_alert_ids uuid[] DEFAULT NULL)` (NULL = tümü) ve `unread_alert_count()`; ikisi de `SECURITY INVOKER`.
 - **Zamanlayıcı:** `pg_cron` işi `raise-scheduled-alerts` 15 dakikada bir `private.raise_scheduled_alerts()` çalıştırır.
@@ -162,6 +163,28 @@ Migration: `20261022231000_scheduled_sync.sql`. Toplama işi Edge Function `sync
 - **`sync_runs`:** `job` (`metrics`/`posts`/`accounts`/`manual`), `platform`, `account_id`, `started_at`, `finished_at` (kapanırken veritabanı saatiyle dolar), `status` (`running`/`succeeded`/`partial`/`failed`), `processed_count`, `quota_units`, `error` (temizlenmiş, ≤500 karakter, token yok). RLS: ekip okur. `authenticated` rolüne yazma yetkisi verilmez.
 - **Şimdi senkronize et:** `/settings/sync` → `POST /api/sync` (editor+) → `request_sync(p_account_id?)` RPC'si (`SECURITY DEFINER`, owner/editor denetimi). Dönüş: `queued` (202), `throttled` (429, 2 dk içinde ikinci istek), `not_configured` (503), `not_found` (404). Çağrı veritabanındaki Vault sırrıyla pg_net üzerinden yapılır, panel `CRON_SECRET`'ı görmez. Kim istediği `private.sync_requests`'te tutulur.
 - **Ortam kurulumu (her ortamda bir kez, owner):** Edge Function sırrı `supabase secrets set CRON_SECRET=<rastgele>`. Vault'ta (Dashboard → Vault) `cron_secret` (aynı değer) ve `project_url` (`https://<ref>.supabase.co`, sonda `/` yok). Sırlar yoksa cron işleri sessizce atlanır (Postgres LOG satırı).
+
+### YouTube toplayıcı (#51)
+
+Migration: `20261022233000_youtube_collector.sql`. Kod: `supabase/functions/_shared/collectors/youtube.ts` + `_shared/youtube/` (istemci, eşleme, kota). Ayrıntılı alan eşlemesi ve kota tahmini: `supabase/functions/_shared/collectors/README.md` → "YouTube".
+
+| API alanı                                                         | Kolon                                                                                   |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `channels.statistics.subscriberCount`                             | `account_snapshots.followers` (gizliyse 0 + uyarı)                                      |
+| `channels.statistics.videoCount`                                  | `account_snapshots.media_count`                                                         |
+| `channels.statistics.viewCount`                                   | `account_snapshots.total_views` (yeni kolon, diğer platformlarda NULL)                  |
+| `videos.id` / `snippet.publishedAt`                               | `posts.external_id` / `posts.published_at`                                              |
+| `snippet.title` + `snippet.description`                           | `posts.caption` (başlık, boş satır, açıklama)                                           |
+| `contentDetails.duration` (ISO 8601)                              | `posts.duration_s`                                                                      |
+| süre + `player.embedWidth/embedHeight`                            | `posts.is_short` (≤180 sn ve dikey/kare; boyut yoksa ≤60 sn), `posts.url` (`/shorts/…`) |
+| `videos.statistics.viewCount/likeCount/commentCount`              | `metric_snapshots.views/likes/comments`                                                 |
+| Analytics `shares`                                                | `metric_snapshots.shares` (Analytics yoksa 0 + `_unmeasured`)                           |
+| Analytics `averageViewDuration`                                   | `metric_snapshots.avg_watch_time_s`                                                     |
+| Analytics `averageViewPercentage`                                 | `metric_snapshots.completion_rate` (÷100, 1'e kırpılır)                                 |
+| Analytics `estimatedMinutesWatched`, `subscribersGained`, `views` | `metric_snapshots.raw_payload.analytics`                                                |
+
+- **Analytics gecikmesi:** 1 ve 5 saat noktalarında yalnız Data API sayaçları yazılır. 24 saatten itibaren Analytics sorgulanır; boş dönerse snapshot Data API sayaçlarıyla yine yazılır (`raw_payload.analyticsState = 'empty'`) ve izleme süresi/tamamlama sonraki noktada (72/168 sa) dolar. Snapshot (post, nokta) başına bir kez yazıldığı için aynı nokta sonradan güncellenmez.
+- **Kota:** her çalışmanın Data API birimi `sync_runs.quota_units`'e yazılır. Analytics API bu kotaya dahil değildir. Eşik geçilince `quota_warning` uyarısı (bkz. Bildirimler). Kota dolarsa (`quotaExceeded`) o çalışmada YouTube hesaplarının tamamı atlanır, iş `partial` kalır.
 
 ## Raporlama ve dışa aktarma (#62)
 
