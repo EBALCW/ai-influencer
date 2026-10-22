@@ -10,7 +10,7 @@ test.describe.configure({ mode: 'serial' });
 test('home page shows the studio shell and overview', async ({ page }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { name: /İçerik üretiminiz için/i }),
+    page.getByRole('heading', { name: /Genel bakış/i }),
   ).toBeVisible();
   await expect(
     page.getByRole('navigation', { name: 'Ana menü' }),

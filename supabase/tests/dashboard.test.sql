@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(23);
+SELECT extensions.plan(28);
 INSERT INTO auth.users(id,aud,role,email,encrypted_password,created_at,updated_at) VALUES
  ('97000000-0000-4000-8000-000000000001','authenticated','authenticated','dash-viewer@example.invalid','',now(),now()),
  ('97000000-0000-4000-8000-000000000002','authenticated','authenticated','dash-outsider@example.invalid','',now(),now());
@@ -58,6 +58,23 @@ INSERT INTO public.posts(id,account_id,published_at) SELECT md5('dashboard-post-
 INSERT INTO public.metric_snapshots(post_id,captured_at,views) SELECT md5('dashboard-post-'||n)::uuid,'2026-11-05T00:00Z',1 FROM generate_series(1,1001) n;
 SET LOCAL ROLE authenticated;
 SELECT extensions.is((public.dashboard_overview('2026-11-03','2026-11-05','dashboard-fixture')->>'views')::integer,1650,'aggregates beyond 1000 rows');
+RESET ROLE;
+INSERT INTO public.social_accounts(id,influencer_id,platform,handle) VALUES
+ ('f2000000-0000-4000-8000-000000000003','f1000000-0000-4000-8000-000000000001','tiktok','dash-missing');
+INSERT INTO public.posts(id,account_id,published_at) VALUES
+ ('f3000000-0000-4000-8000-000000000004','f2000000-0000-4000-8000-000000000003','2026-10-01T00:00Z');
+INSERT INTO public.metric_snapshots(post_id,captured_at,views) VALUES
+ ('f3000000-0000-4000-8000-000000000004','2026-11-03T12:00Z',400),
+ ('f3000000-0000-4000-8000-000000000004','2026-11-04T12:00Z',350),
+ ('f3000000-0000-4000-8000-000000000004','2026-11-05T12:00Z',500);
+INSERT INTO public.content_items(influencer_id,title,scheduled_at,target_account_id) VALUES
+ ('f1000000-0000-4000-8000-000000000001','Today fixture',now(),'f2000000-0000-4000-8000-000000000003');
+SET LOCAL ROLE authenticated;
+SELECT extensions.is((public.dashboard_overview('2026-11-03','2026-11-05','dashboard-fixture','tiktok')->>'views')::integer,150,'missing baseline excluded and negative daily deltas clamped');
+SELECT extensions.is((public.dashboard_overview('2026-11-03','2026-11-05','dashboard-fixture','tiktok')->>'postsWithoutBaseline')::integer,1,'missing baseline coverage explicit');
+SELECT extensions.is(public.dashboard_overview('2026-11-03','2026-11-05','dashboard-fixture','tiktok')->'followers','null'::jsonb,'missing follower measurements are not zero');
+SELECT extensions.is(public.dashboard_overview('2026-11-03','2026-11-05','dashboard-fixture','tiktok')->'best','[]'::jsonb,'missing target-hour measurements not ranked');
+SELECT extensions.is((public.dashboard_overview('2026-11-03','2026-11-05','dashboard-fixture','tiktok')->>'todayCount')::integer,1,'today plan is Istanbul date and keeps platform filter');
 SELECT set_config('request.jwt.claim.sub','97000000-0000-4000-8000-000000000002',true);
 SELECT extensions.is((public.dashboard_overview('2026-11-03','2026-11-05')->>'accounts')::integer,0,'outsider cannot read aggregate data');
 SELECT extensions.is(public.dashboard_overview('2026-11-03','2026-11-05','dashboard-fixture')->'validInfluencer','false'::jsonb,'outsider cannot resolve influencer');
