@@ -45,3 +45,7 @@ port = 54324
 # Üretim kuyruğu worker'ı (#47): pg_cron çağırır, doğrulama x-cron-secret ile.
 [functions.process-generations]
 verify_jwt = false
+
+# #53: pg_cron/pg_net çağırır; doğrulama JWT yerine x-cron-secret ile (docs/DEVELOPMENT.md §9).
+[functions.sync-dispatch]
+verify_jwt = false

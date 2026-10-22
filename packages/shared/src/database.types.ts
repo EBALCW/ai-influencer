@@ -427,14 +427,14 @@ isOneToOne: false
                   ]
                 },"metric_snapshots": {
                   Row: {
-                    "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"updated_at": string,"views": number
+                    "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"target_hours": number | null,"updated_at": string,"views": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id": string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"updated_at"?: string,"views"?: number
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id": string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
                   }
                   Update: {
-                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id"?: string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"updated_at"?: string,"views"?: number
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id"?: string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
                   }
                   Relationships: [
                     {
@@ -562,6 +562,26 @@ isOneToOne: false
       columns: ["influencer_id"]
 isOneToOne: false
       referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"sync_runs": {
+                  Row: {
+                    "account_id": string | null,"created_at": string,"created_by": string | null,"error": string | null,"finished_at": string | null,"id": string,"job": string,"platform": Database["public"]['Enums']["social_platform"] | null,"processed_count": number,"quota_units": number | null,"started_at": string,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job": string,"platform"?: Database["public"]['Enums']["social_platform"] | null,"processed_count"?: number,"quota_units"?: number | null,"started_at"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job"?: string,"platform"?: Database["public"]['Enums']["social_platform"] | null,"processed_count"?: number,"quota_units"?: number | null,"started_at"?: string,"status"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "sync_runs_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
       referencedColumns: ["id"]
     }
                   ]
@@ -817,6 +837,11 @@ isOneToOne: false
 "delete_social_token":
 { Args: { "p_account_id": string }; Returns: undefined
                            },
+"due_snapshots":
+{ Args: { "p_account_id"?: string,"p_at": string,"p_limit"?: number }; Returns: {
+              "account_id": string,"due_at": string,"external_id": string,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"target_hours": number
+            }[]
+                           },
 "enqueue_generation":
 { Args: { "p_influencer_id": string,"p_input_asset_ids"?: (string)[],"p_mode"?: string,"p_override_budget"?: boolean,"p_params"?: Json,"p_prompt_id"?: string,"p_retry_of"?: string,"p_tool": string,"p_type": Database["public"]['Enums']["generation_type"] }; Returns: {
               "attempts": number,
@@ -927,6 +952,9 @@ isOneToOne: false
                            },
 "report_summary":
 { Args: { "p_currency"?: string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: Json
+                           },
+"request_sync":
+{ Args: { "p_account_id"?: string }; Returns: string
                            },
 "restore_persona_version":
 { Args: { "p_change_note"?: string,"p_influencer_id": string,"p_version": number }; Returns: {
