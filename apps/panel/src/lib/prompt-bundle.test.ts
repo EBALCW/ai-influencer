@@ -62,6 +62,7 @@ describe('parsePromptBundle', () => {
       JSON.stringify({ prompts: [entry] }),
       /prompt paketi değil/,
     ],
+    ['başka format, prompt yok', '{"format":"baska"}', /prompt paketi değil/],
     ['boş paket', bundle([]), /en az bir prompt/],
     [
       'çok fazla prompt',

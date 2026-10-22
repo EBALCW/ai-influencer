@@ -95,15 +95,23 @@ export function parsePromptBundle(text: string): ParsedBundle {
     return { ok: false, errors: ['Dosya geçerli bir JSON değil.'] };
   }
   const envelope = envelopeSchema.safeParse(json);
-  if (!envelope.success)
+  if (!envelope.success) {
+    const { issues } = envelope.error;
+    // Başlık doğru ama prompt sayısı sınır dışıysa onu söyle; aksi halde dosya paket değil
+    const sizeIssue = issues.find(
+      (issue) =>
+        issue.path[0] === 'prompts' &&
+        (issue.code === 'too_small' || issue.code === 'too_big'),
+    );
     return {
       ok: false,
       errors: [
-        envelope.error.issues.some((issue) => issue.path[0] === 'prompts')
-          ? (envelope.error.issues[0]?.message ?? 'Paket geçersiz.')
+        sizeIssue && issues.length === 1
+          ? sizeIssue.message
           : `Dosya bir prompt paketi değil (format: "${PROMPT_BUNDLE_FORMAT}", version: ${PROMPT_BUNDLE_VERSION}).`,
       ],
     };
+  }
 
   const errors: string[] = [];
   const prompts: PromptBundleEntry[] = [];
