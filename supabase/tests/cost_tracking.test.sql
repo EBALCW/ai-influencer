@@ -48,12 +48,16 @@ VALUES
   ('b3000000-0000-4000-8000-000000000002', '2026-08-21T11:00:00Z', 3000),
   ('b3000000-0000-4000-8000-000000000003', '2026-07-21T11:00:00Z', 9999);
 
+-- Bu test maliyet kayıtlarını elle kurar; otomatik üretim maliyeti (generation_costs.test.sql)
+-- fixture sırasında kapatılır ki toplamlar sabit kalsın.
+ALTER TABLE public.generations DISABLE TRIGGER generations_record_cost;
 INSERT INTO public.generations (id, influencer_id, tool, type, status, credits, created_at)
 VALUES
   ('b4000000-0000-4000-8000-000000000001', 'b1000000-0000-4000-8000-000000000001', 'higgsfield', 'video', 'succeeded', 20, '2026-08-05T10:00:00Z'),
   ('b4000000-0000-4000-8000-000000000002', 'b1000000-0000-4000-8000-000000000001', 'higgsfield', 'video', 'succeeded', 20, '2026-08-06T10:00:00Z'),
   ('b4000000-0000-4000-8000-000000000003', 'b1000000-0000-4000-8000-000000000001', 'higgsfield', 'image', 'succeeded', 5, '2026-08-07T10:00:00Z'),
   ('b4000000-0000-4000-8000-000000000004', 'b1000000-0000-4000-8000-000000000001', 'higgsfield', 'video', 'failed', 12.5, '2026-08-08T10:00:00Z');
+ALTER TABLE public.generations ENABLE TRIGGER generations_record_cost;
 
 -- A: 10 USD + 400 TRY (= 10 USD) + 2 USD (başarısız üretimin kredisi) = 22 USD
 INSERT INTO public.costs (influencer_id, category, amount, currency, incurred_on, generation_id, credits)

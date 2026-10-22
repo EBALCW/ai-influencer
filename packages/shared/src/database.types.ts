@@ -236,7 +236,7 @@ isOneToOne: false
                     {
       foreignKeyName: "costs_generation_id_fkey"
       columns: ["generation_id"]
-isOneToOne: false
+isOneToOne: true
       referencedRelation: "generations"
       referencedColumns: ["id"]
     },{
@@ -655,6 +655,11 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"post_cost":
+{ Args: { "p_currency": string,"p_post_id": string }; Returns: {
+              "allocation": string,"currency": string,"entry_count": number,"generation_count": number,"missing_rate_count": number,"post_id": string,"total": number
+            }[]
+                           },
 "raise_budget_alerts":
 { Args: { "p_month": string }; Returns: number
                            },
