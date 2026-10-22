@@ -571,6 +571,44 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"publish_jobs": {
+                  Row: {
+                    "account_id": string,"asset_id": string | null,"attempts": number,"caption": string,"container_created_at": string | null,"content_item_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"finished_at": string | null,"id": string,"max_attempts": number,"next_attempt_at": string,"paid_partnership": boolean,"platform": Database["public"]['Enums']["social_platform"],"provider_container_id": string | null,"provider_upload_url": string | null,"published_post_id": string | null,"scheduled_for": string,"started_at": string | null,"status": Database["public"]['Enums']["publish_job_status"],"tags": (string)[],"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_id": string,"asset_id"?: string | null,"attempts"?: number,"caption"?: string,"container_created_at"?: string | null,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"finished_at"?: string | null,"id"?: string,"max_attempts"?: number,"next_attempt_at"?: string,"paid_partnership"?: boolean,"platform": Database["public"]['Enums']["social_platform"],"provider_container_id"?: string | null,"provider_upload_url"?: string | null,"published_post_id"?: string | null,"scheduled_for"?: string,"started_at"?: string | null,"status"?: Database["public"]['Enums']["publish_job_status"],"tags"?: (string)[],"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "account_id"?: string,"asset_id"?: string | null,"attempts"?: number,"caption"?: string,"container_created_at"?: string | null,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"finished_at"?: string | null,"id"?: string,"max_attempts"?: number,"next_attempt_at"?: string,"paid_partnership"?: boolean,"platform"?: Database["public"]['Enums']["social_platform"],"provider_container_id"?: string | null,"provider_upload_url"?: string | null,"published_post_id"?: string | null,"scheduled_for"?: string,"started_at"?: string | null,"status"?: Database["public"]['Enums']["publish_job_status"],"tags"?: (string)[],"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "publish_jobs_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "social_accounts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "publish_jobs_asset_id_fkey"
+      columns: ["asset_id"]
+isOneToOne: false
+      referencedRelation: "assets"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "publish_jobs_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "publish_jobs_published_post_id_fkey"
+      columns: ["published_post_id"]
+isOneToOne: false
+      referencedRelation: "posts"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"reports": {
                   Row: {
                     "ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string
@@ -732,6 +770,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"cancel_publish_job":
+{ Args: { "p_id": string }; Returns: string
+                           },
 "claim_generations":
 { Args: { "p_lease_seconds"?: number,"p_limit"?: number,"p_tools": (string)[] }; Returns: {
               "attempts": number,
@@ -763,6 +804,40 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "generations"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
+"claim_publish_jobs":
+{ Args: { "p_lease_seconds"?: number,"p_limit"?: number }; Returns: {
+              "account_id": string,
+"asset_id": string | null,
+"attempts": number,
+"caption": string,
+"container_created_at": string | null,
+"content_item_id": string,
+"created_at": string,
+"created_by": string | null,
+"error": string | null,
+"external_id": string | null,
+"finished_at": string | null,
+"id": string,
+"max_attempts": number,
+"next_attempt_at": string,
+"paid_partnership": boolean,
+"platform": Database["public"]['Enums']["social_platform"],
+"provider_container_id": string | null,
+"provider_upload_url": string | null,
+"published_post_id": string | null,
+"scheduled_for": string,
+"started_at": string | null,
+"status": Database["public"]['Enums']["publish_job_status"],
+"tags": (string)[],
+"title": string,
+"updated_at": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "publish_jobs"
         isOneToOne: false
         isSetofReturn: true
       } },
@@ -800,6 +875,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"complete_publish_job":
+{ Args: { "p_duration_s"?: number,"p_external_id": string,"p_id": string,"p_is_short"?: boolean,"p_published_at": string,"p_url": string }; Returns: string
+                           },
 "content_checklist_ready":
 { Args: { "p_checklist": Json }; Returns: boolean
                            },
@@ -930,6 +1008,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"enqueue_publish_job":
+{ Args: { "p_caption"?: string,"p_content_id": string,"p_scheduled_for"?: string,"p_tags"?: (string)[],"p_title": string }; Returns: string
+                           },
 "fx_rate":
 { Args: { "p_from": string,"p_on": string,"p_to": string }; Returns: number
                            },
@@ -1112,7 +1193,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
+            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1232,7 +1313,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
+            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"publish_job_status": ["queued", "processing", "published", "failed", "manual_required", "cancelled"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
           }
         }
 } as const
