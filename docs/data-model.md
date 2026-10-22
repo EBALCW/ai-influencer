@@ -20,36 +20,41 @@ erDiagram
   INFLUENCERS ||--o{ COSTS : incurs
   BRANDS ||--o{ BRAND_DEALS : offers
   INFLUENCERS ||--o{ BRAND_DEALS : promotes
+  BRAND_DEALS ||--o{ BRAND_DEAL_CONTENT_ITEMS : links
+  CONTENT_ITEMS ||--o{ BRAND_DEAL_CONTENT_ITEMS : sponsors
+  BRAND_DEALS ||--o{ BRAND_DEAL_FILES : stores
 ```
 
 `influencers.avatar_asset_id`, `generations.output_asset_id` ve `posts.content_item_id` isteğe bağlıdır. Üretilen varlıkları silmek, geçmiş üretim kayıtlarını silmez; varlık bağlantısı `NULL` olur.
 
 ## Tablolar
 
-| Tablo                   | Sorumluluk                                     | Önemli kurallar                                                                                                                                                   |
-| ----------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `team_members`          | Supabase Auth kullanıcısının rolü              | `owner`, `editor`, `viewer`; son owner silinemez. İlk doğrulanmış kullanıcı yalnızca boş workspace'te owner olarak kaydolabilir.                                  |
-| `influencers`           | Karakterin kimliği ve yaşam döngüsü            | Benzersiz URL dostu `slug`; durum `draft`, `active`, `paused`, `archived`.                                                                                        |
-| `influencer_personas`   | Persona metni ve versiyonları                  | Influencer başına versiyon numarası benzersiz; aynı anda en fazla bir güncel sürüm.                                                                               |
-| `assets`                | Storage'daki görsel/video metadata'sı          | `storage_path` benzersiz; dosyanın kendisi private Storage bucket'ta tutulur.                                                                                     |
-| `prompts`               | Global veya influencer'a özel prompt sürümleri | Soy = kapsam + kategori + `key`; versiyon başına bir satır. Versiyon içeriği **değiştirilemez** (trigger), yeni versiyon `create_prompt_version()` ile. Puan 1–5. |
-| `generations`           | Görsel/video üretim isteği ve sonucu           | Sağlayıcı, durum, kredi, süre ve çıktı asset'i kaydedilir. `params` (jsonb) doldurulmuş prompt ve değişken değerlerini taşır; sır tutulmaz.                       |
-| `social_accounts`       | Instagram, YouTube ve TikTok hesapları         | Token değeri değil, Vault secret referansı (`token_ref`) tutulur.                                                                                                 |
-| `content_items`         | Fikirden yayına içerik akışı                   | Stage enum'u: `idea` → `script` → `production` → `qc` → `edit` → `scheduled` → `published`.                                                                       |
-| `posts`                 | Platformda yayınlanmış içerik                  | Hesap ve platform kimliğiyle eşleşir; içerik planından bağımsız içe aktarılabilir.                                                                                |
-| `metric_snapshots`      | Post bazında zamanlı performans                | `views`, `likes`, `comments`, `shares`, `saves`; completion rate 0–1 aralığında. `target_hours` (1/5/24/72/168, NULL = ad-hoc) post başına benzersiz (#53).       |
-| `account_snapshots`     | Hesap seviyesinde takipçi ve erişim            | Hesap + zaman damgası başına tek snapshot.                                                                                                                        |
-| `costs`                 | Abonelik, kredi ve araç maliyeti               | Tutar ve para birimi sayısal alanlardır; üretim kaydına bağlanabilir (üretim başına en fazla bir kayıt, biten üretimde otomatik yazılır).                         |
-| `brands`                | Marka ve iletişim notları                      | İsim büyük/küçük harf duyarsız benzersizdir.                                                                                                                      |
-| `brand_deals`           | Marka iş birliği süreci                        | Aşama, ücret, teslimatlar ve son tarih tutulur.                                                                                                                   |
-| `alerts`                | Panel uyarıları                                | Tür listesi CHECK ile sabit (`ALERT_TYPES`); `dedupe_key` benzersiz; payload sadece id/sayı. Satırlar değiştirilmez.                                              |
-| `alert_reads`           | Kişi başı okundu bilgisi                       | `(alert_id, user_id)`; kullanıcı sadece kendi kaydını görür/yazar, viewer dahil.                                                                                  |
-| `notification_settings` | Uyarı eşikleri ve push kanal seçimi            | Tek satır. Ekip okur, owner/editor günceller. Kanal sırları Vault'ta.                                                                                             |
-| `budgets`               | Aylık bütçe tavanı                             | `influencer_id` NULL = tüm ekip toplamı. Ay başına tek bütçe (kısmi benzersiz indeksler). Sadece owner yazar.                                                     |
-| `exchange_rates`        | Döviz kuru                                     | 1 `currency` = `rate` `base_currency`, `valid_on` gününden itibaren. Ters kur otomatik kullanılır. Sadece owner yazar.                                            |
-| `credit_rates`          | Sağlayıcı kredisinin para karşılığı            | 1 kredi = `rate_per_credit` `currency`, `valid_from`'dan itibaren (`credits_to_money()`). Sadece owner yazar.                                                     |
-| `reports`               | Haftalık rapor (KPI özeti + AI özeti)          | `influencer_id` NULL = tümü; hafta başına tek kayıt (`NULLS NOT DISTINCT`). Sayılar `report_summary()` çıktısıdır. Ayrıntı: "Raporlama ve dışa aktarma".          |
-| `sync_runs`             | Senkronizasyon iş günlüğü (#53)                | İş/hesap başına bir satır; yalnız service role yazar, ekip okur. `failed` → `sync_failed` uyarısı. Ayrıntı: "Zamanlanmış senkronizasyon".                         |
+| Tablo                      | Sorumluluk                                     | Önemli kurallar                                                                                                                                                   |
+| -------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `team_members`             | Supabase Auth kullanıcısının rolü              | `owner`, `editor`, `viewer`; son owner silinemez. İlk doğrulanmış kullanıcı yalnızca boş workspace'te owner olarak kaydolabilir.                                  |
+| `influencers`              | Karakterin kimliği ve yaşam döngüsü            | Benzersiz URL dostu `slug`; durum `draft`, `active`, `paused`, `archived`.                                                                                        |
+| `influencer_personas`      | Persona metni ve versiyonları                  | Influencer başına versiyon numarası benzersiz; aynı anda en fazla bir güncel sürüm.                                                                               |
+| `assets`                   | Storage'daki görsel/video metadata'sı          | `storage_path` benzersiz; dosyanın kendisi private Storage bucket'ta tutulur.                                                                                     |
+| `prompts`                  | Global veya influencer'a özel prompt sürümleri | Soy = kapsam + kategori + `key`; versiyon başına bir satır. Versiyon içeriği **değiştirilemez** (trigger), yeni versiyon `create_prompt_version()` ile. Puan 1–5. |
+| `generations`              | Görsel/video üretim isteği ve sonucu           | Sağlayıcı, durum, kredi, süre ve çıktı asset'i kaydedilir. `params` (jsonb) doldurulmuş prompt ve değişken değerlerini taşır; sır tutulmaz.                       |
+| `social_accounts`          | Instagram, YouTube ve TikTok hesapları         | Token değeri değil, Vault secret referansı (`token_ref`) tutulur.                                                                                                 |
+| `content_items`            | Fikirden yayına içerik akışı                   | Stage enum'u: `idea` → `script` → `production` → `qc` → `edit` → `scheduled` → `published`.                                                                       |
+| `posts`                    | Platformda yayınlanmış içerik                  | Hesap ve platform kimliğiyle eşleşir; içerik planından bağımsız içe aktarılabilir.                                                                                |
+| `metric_snapshots`         | Post bazında zamanlı performans                | `views`, `likes`, `comments`, `shares`, `saves`; completion rate 0–1 aralığında. `target_hours` (1/5/24/72/168, NULL = ad-hoc) post başına benzersiz (#53).       |
+| `account_snapshots`        | Hesap seviyesinde takipçi ve erişim            | Hesap + zaman damgası başına tek snapshot.                                                                                                                        |
+| `costs`                    | Abonelik, kredi ve araç maliyeti               | Tutar ve para birimi sayısal alanlardır; üretim kaydına bağlanabilir (üretim başına en fazla bir kayıt, biten üretimde otomatik yazılır).                         |
+| `brands`                   | Marka ve iletişim notları                      | İsim büyük/küçük harf duyarsız benzersizdir.                                                                                                                      |
+| `brand_deals`              | Marka iş birliği süreci                        | Aşama, ücret, teslimatlar, son tarih, brief (jsonb nesne) ve `paid_at` tutulur.                                                                                   |
+| `brand_deal_content_items` | Deal ↔ içerik kartı bağlantısı                 | Çift başına tek satır; içerik deal ile aynı influencer'a ait olmalı (trigger, 23514).                                                                             |
+| `brand_deal_files`         | Deal dosyaları (sözleşme)                      | Nesne private `contracts` bucket'ında `<deal_id>/<uuid>.<uzantı>`; kayıt başka deal klasörünü gösteremez.                                                         |
+| `alerts`                   | Panel uyarıları                                | Tür listesi CHECK ile sabit (`ALERT_TYPES`); `dedupe_key` benzersiz; payload sadece id/sayı. Satırlar değiştirilmez.                                              |
+| `alert_reads`              | Kişi başı okundu bilgisi                       | `(alert_id, user_id)`; kullanıcı sadece kendi kaydını görür/yazar, viewer dahil.                                                                                  |
+| `notification_settings`    | Uyarı eşikleri ve push kanal seçimi            | Tek satır. Ekip okur, owner/editor günceller. Kanal sırları Vault'ta.                                                                                             |
+| `budgets`                  | Aylık bütçe tavanı                             | `influencer_id` NULL = tüm ekip toplamı. Ay başına tek bütçe (kısmi benzersiz indeksler). Sadece owner yazar.                                                     |
+| `exchange_rates`           | Döviz kuru                                     | 1 `currency` = `rate` `base_currency`, `valid_on` gününden itibaren. Ters kur otomatik kullanılır. Sadece owner yazar.                                            |
+| `credit_rates`             | Sağlayıcı kredisinin para karşılığı            | 1 kredi = `rate_per_credit` `currency`, `valid_from`'dan itibaren (`credits_to_money()`). Sadece owner yazar.                                                     |
+| `reports`                  | Haftalık rapor (KPI özeti + AI özeti)          | `influencer_id` NULL = tümü; hafta başına tek kayıt (`NULLS NOT DISTINCT`). Sayılar `report_summary()` çıktısıdır. Ayrıntı: "Raporlama ve dışa aktarma".          |
+| `sync_runs`                | Senkronizasyon iş günlüğü (#53)                | İş/hesap başına bir satır; yalnız service role yazar, ekip okur. `failed` → `sync_failed` uyarısı. Ayrıntı: "Zamanlanmış senkronizasyon".                         |
 
 Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bulunur. `updated_at` trigger ile değiştirilir; `created_by` istemci isteklerinde `auth.uid()` ile dolar, demo seed kayıtlarında boş kalır.
 
@@ -280,3 +285,25 @@ en fazla 366 gündür. Bilinmeyen influencer tüm ekibe geri düşmez.
 Grafiklerin klavyeyle açılan veri tabloları vardır; renkler tema değişkenlerinden gelir.
 `?inf=`, platform ve 7/30/90/özel aralık filtreleri URL’dedir. Salt okuyan viewer da
 aynı dashboard’u kullanır. Yeni bağımlılık veya ortam anahtarı eklenmedi.
+
+### Marka CRM'i ve medya kiti (#60)
+
+- **Pipeline:** `brand_deals.stage` UI'da Lead → Görüşme → Anlaşma → Teslim → Ödendi / Kaybedildi
+  (`lead`/`negotiation`/`signed`/`delivered`/`paid`/`lost`). Pipeline toplamı para birimi başına,
+  dönüşümsüz gösterilir; `lost` ve ücretsiz deal'ler girmez.
+- **`paid_at`:** Yalnız `paid` aşamasında dolu olabilir (CHECK). Trigger, `paid`'e geçişte boşsa
+  bugünün Türkiye tarihini yazar; `paid`'den çıkışta temizler. Aylık gelir `paid_at`'e göre hesaplanır.
+- **Gelir raporu:** `brand_deal_revenue(from, to, currency, influencer?)` (SECURITY INVOKER) ödenmiş
+  deal'leri ödeme günü kuruyla (`fx_rate`) hedef para birimine çevirir; kur yoksa `converted_fee` NULL.
+  Aylık toplama ve kâr/zarar panelde `money.ts` ile (float yok) yapılır; maliyet `cost_summary()`'den gelir.
+  Eksik kurlu ay toplamı gösterilmez.
+- **Brief:** `brand_deals.brief` JSON nesnesi (#30 / 6.4 alanları), panelde Zod ile doğrulanır.
+- **Dosyalar:** `contracts` bucket'ı private, 20 MB, PDF/DOCX/JPEG/PNG. Storage politikaları tablo RLS'iyle
+  aynı: ekip okur, owner/editor yalnız var olan bir deal klasörüne (`brand_file_in_deal_folder`) yazar,
+  ekip dışı hiçbir şey görmez. İndirme 60 sn'lik signed URL ile.
+- **Yanıt şablonları:** `templates/brand-replies.md` dosyasından okunur (`##` başlığı = şablon); koda gömülmez.
+- **Medya kiti:** `/brands/media-kit?inf=<slug>` önizleme, `GET /api/media-kit/<slug>` PDF (viewer dahil
+  ekip; oturumsuz 401, ekip dışı 403). Sayılar yalnız `account_snapshots` ve `metric_snapshots`'tan, son
+  30 günden hesaplanır (`lib/media-kit/build.ts`); tarih aralığı ve AI açıklaması PDF'te yazar. Veri yoksa
+  "veri yok" yazılır; kitle demografisi şemada olmadığından (#50/#51) her zaman "veri yok"dur.
+  PDF saf JS ile üretilir (`pdf-lib` + `@pdf-lib/fontkit`, Geist fontu `geist` paketinden); native bağımlılık yok.

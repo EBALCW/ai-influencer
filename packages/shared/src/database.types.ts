@@ -117,16 +117,62 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"brand_deals": {
+                },"brand_deal_content_items": {
                   Row: {
-                    "brand_id": string,"created_at": string,"created_by": string | null,"currency": string,"deliverables": NonNullable<Json>,"due_date": string | null,"fee": number | null,"id": string,"influencer_id": string,"notes": string,"stage": Database["public"]['Enums']["brand_deal_stage"],"updated_at": string
+                    "brand_deal_id": string,"content_item_id": string,"created_at": string,"created_by": string | null,"id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "brand_id": string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id": string,"notes"?: string,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
+                    "brand_deal_id": string,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "brand_id"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
+                    "brand_deal_id"?: string,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "brand_deal_content_items_brand_deal_id_fkey"
+      columns: ["brand_deal_id"]
+isOneToOne: false
+      referencedRelation: "brand_deals"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deal_content_items_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"brand_deal_files": {
+                  Row: {
+                    "brand_deal_id": string,"created_at": string,"created_by": string | null,"file_name": string,"file_size_bytes": number | null,"id": string,"mime_type": string | null,"storage_path": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "brand_deal_id": string,"created_at"?: string,"created_by"?: string | null,"file_name": string,"file_size_bytes"?: number | null,"id"?: string,"mime_type"?: string | null,"storage_path": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "brand_deal_id"?: string,"created_at"?: string,"created_by"?: string | null,"file_name"?: string,"file_size_bytes"?: number | null,"id"?: string,"mime_type"?: string | null,"storage_path"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "brand_deal_files_brand_deal_id_fkey"
+      columns: ["brand_deal_id"]
+isOneToOne: false
+      referencedRelation: "brand_deals"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"brand_deals": {
+                  Row: {
+                    "brand_id": string,"brief": NonNullable<Json>,"created_at": string,"created_by": string | null,"currency": string,"deliverables": NonNullable<Json>,"due_date": string | null,"fee": number | null,"id": string,"influencer_id": string,"notes": string,"paid_at": string | null,"stage": Database["public"]['Enums']["brand_deal_stage"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "brand_id": string,"brief"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id": string,"notes"?: string,"paid_at"?: string | null,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
+                  }
+                  Update: {
+                    "brand_id"?: string,"brief"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"paid_at"?: string | null,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -631,6 +677,14 @@ isOneToOne: false
 { Args: { "p_as_of"?: string,"p_influencer_id": string }; Returns: Json
                            },
 "asset_object_in_influencer_folder":
+{ Args: { "object_name": string }; Returns: boolean
+                           },
+"brand_deal_revenue":
+{ Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
+              "converted_fee": number,"currency": string,"fee": number,"id": string,"influencer_id": string,"paid_at": string
+            }[]
+                           },
+"brand_file_in_deal_folder":
 { Args: { "object_name": string }; Returns: boolean
                            },
 "budget_status":
