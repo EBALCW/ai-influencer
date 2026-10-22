@@ -113,7 +113,13 @@ export function NotificationBell({ allHref }: { allHref: string }) {
         <Bell aria-hidden="true" size={17} />
         {unread > 0 && <span aria-hidden="true" />}
       </button>
-      <span className="sr-only" role="status">
+      {/* role="status" değil: sayfadaki tekil durum mesajlarıyla (Toast vb.) çakışmasın */}
+      <span
+        aria-atomic="true"
+        aria-live="polite"
+        className="sr-only"
+        data-testid="unread-announcer"
+      >
         {unread > 0 ? `${unread} okunmamış bildirim` : ''}
       </span>
       {open && (

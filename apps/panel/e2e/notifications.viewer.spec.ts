@@ -41,9 +41,10 @@ test('zil seed uyarılarını listeler, klavyeyle açılıp Escape ile kapanır'
 }) => {
   await page.goto('/');
   await expect(bell(page)).toHaveAccessibleName(/Bildirimler, \d+ okunmamış/);
-  await expect(
-    page.getByRole('status').filter({ hasText: /\d+ okunmamış bildirim/ }),
-  ).toHaveCount(1);
+  // Okunmamış sayısı canlı bölgeden ekran okuyucuya duyurulur
+  const announcer = page.getByTestId('unread-announcer');
+  await expect(announcer).toHaveText(/\d+ okunmamış bildirim/);
+  await expect(announcer).toHaveAttribute('aria-live', 'polite');
   await expect(bell(page)).toHaveAttribute('aria-expanded', 'false');
 
   await bell(page).focus();
