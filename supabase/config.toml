@@ -55,3 +55,7 @@ verify_jwt = false
 # #53: pg_cron/pg_net çağırır; doğrulama JWT yerine x-cron-secret ile (docs/DEVELOPMENT.md §9).
 [functions.sync-dispatch]
 verify_jwt = false
+
+# #58 yayın kuyruğu: pg_cron/pg_net çağırır; doğrulama x-cron-secret ile.
+[functions.publish-scheduled]
+verify_jwt = false
