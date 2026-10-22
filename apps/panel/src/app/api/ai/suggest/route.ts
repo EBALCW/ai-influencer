@@ -5,15 +5,10 @@ import { createClaudeClient } from '@/lib/ai/claude';
 import { getAiConfig } from '@/lib/ai/config';
 import { AiError } from '@/lib/ai/errors';
 import { aiRateLimiter } from '@/lib/ai/rate-limit';
-import { aiApiRequestSchema, type AiTask } from '@/lib/ai/schemas';
+import { libraryPromptSource } from '@/lib/ai/prompt-source';
+import { aiApiRequestSchema } from '@/lib/ai/schemas';
 import { suggest } from '@/lib/ai/suggest';
 import { recordAiUsage } from '@/lib/ai/usage-cost';
-const categories = {
-  persona: 'character',
-  caption: 'caption',
-  script: 'short_film',
-  weekly: 'research',
-} as const;
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireApiRole('editor');
@@ -40,19 +35,8 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (inf.error) throw new Error('influencer_read');
     if (!inf.data) return jsonError('Influencer bulunamadı.', 404);
-    const source = async (task: AiTask) => {
-      const p = await db
-        .from('prompts')
-        .select('id,version,body')
-        .eq('category', categories[task])
-        .or(`influencer_id.eq.${influencerId},influencer_id.is.null`)
-        .order('influencer_id', { ascending: true, nullsFirst: false })
-        .order('version', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (p.error || !p.data?.body.trim()) throw new AiError('not_configured');
-      return p.data;
-    };
+    // Görev → kütüphane soyu eşlemesi ve yerleşik talimata düşme: lib/ai/prompt-source.ts
+    const source = libraryPromptSource(db, influencerId);
     // Veri okuma/prompt çözme çağrıdan önce tamamlanır; sadece sayısal özet gönderilir.
     let metrics: unknown;
     if (input.task === 'weekly') {

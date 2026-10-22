@@ -10,11 +10,20 @@ Model çıktısı yayınlama, araç çağırma veya üretim başlatma yetkisine 
 1. Sunucuda `ANTHROPIC_API_KEY` tanımlı olmalıdır. Anahtar tarayıcıya gönderilmez ve panel formuna girilmez.
 2. Owner, **Ayarlar → AI** (`/settings/ai`) sayfasında model ID'sini ve milyon token başına USD fiyatlarını kaydeder.
 3. Giriş, çıkış, cache okuma, 5 dakikalık ve 1 saatlik cache yazma fiyatları ayrı girilir. En fazla 4 ondalık kullanılır.
-4. Prompt kütüphanesinde görev kategorileri bulunmalıdır: persona=`character`, caption=`caption`, senaryo=`short_film`, haftalık=`research`. Influencer'a özel talimat globalden önce gelir; seçilen kapsamın en yüksek versiyonu okunur. Prompt yoksa çağrı yapılmaz, 503 döner.
+4. Görev talimatı isteğe bağlı olarak prompt kütüphanesinden (#46) gelir. Her görev sabit bir soya (kategori + `key`) eşlenir; eşleme `apps/panel/src/lib/ai/prompt-source.ts` içindedir:
+
+   | Görev    | Kategori     | `key`        | Panelde başlık |
+   | -------- | ------------ | ------------ | -------------- |
+   | persona  | `character`  | `ai-persona` | "AI Persona"   |
+   | caption  | `caption`    | `ai-caption` | "AI Caption"   |
+   | senaryo  | `short_film` | `ai-script`  | "AI Script"    |
+   | haftalık | `research`   | `ai-weekly`  | "AI Weekly"    |
+
+   Influencer'a özel soy globalden önce gelir; soyun en yüksek versiyonu okunur. Kütüphane metni koddaki ortak güvenlik/çıktı kurallarına **eklenir**, onları değiştirmez. Eşleşen prompt yoksa koddaki yerleşik talimat kullanılır (`promptId`: `builtin:<görev>@1`). Aynı kategorideki görsel/video üretim şablonları AI asistanına gitmez.
 
 Model ve fiyat için sabit varsayılan yoktur; eski `ANTHROPIC_MODEL` env'i kullanılmaz.
-Eksik anahtar/ayar halinde düğme pasiftir; build ve CI anahtarsız çalışır. Eksik prompt
-istek sırasında bildirilir. Yalnız owner model/fiyatı değiştirir; ekip okuyabilir, viewer öneri isteyemez.
+Eksik anahtar/ayar halinde düğme pasiftir; build ve CI anahtarsız çalışır. Kütüphanede
+prompt olmaması hata değildir, yerleşik talimat kullanılır. Yalnız owner model/fiyatı değiştirir; ekip okuyabilir, viewer öneri isteyemez.
 
 Model ID ve fiyatlar şu resmi kaynaklardan doğrulanır (okuma: 2026-10-21):
 [model listesi](https://platform.claude.com/docs/en/models/overview),
