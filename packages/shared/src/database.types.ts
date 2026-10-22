@@ -307,7 +307,7 @@ isOneToOne: false
                     "claimed"?: number,"id"?: boolean,"last_run_at"?: string,"message"?: string | null,"providers"?: (string)[],"updated_at"?: string
                   }
                   Relationships: [
-
+                    
                   ]
                 },"generations": {
                   Row: {
