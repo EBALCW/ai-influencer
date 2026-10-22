@@ -145,6 +145,8 @@ RESET ROLE;
 
 -- ── Worker: claim (kira + SKIP LOCKED), tamamla ──────────────────
 SET LOCAL ROLE service_role;
+-- Worker'ın oturumu yok (auth.uid() NULL)
+SELECT set_config('request.jwt.claim.sub', '', true);
 SELECT extensions.is(
   (SELECT count(*)::integer FROM public.claim_generations(ARRAY['other'], 10, 60)),
   0, 'claim ignores tools that are not configured'
