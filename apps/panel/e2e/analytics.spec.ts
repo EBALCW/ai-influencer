@@ -92,6 +92,16 @@ test.beforeAll(async () => {
       .single(),
   );
   await must(
+    admin.from('costs').insert({
+      influencer_id: influencerId,
+      category: 'credits',
+      description: 'Analitik test üretimi',
+      amount: 2.5,
+      currency: 'USD',
+      generation_id: generation.id,
+    }),
+  );
+  await must(
     admin
       .from('content_item_assets')
       .insert({ content_item_id: content.id, generation_id: generation.id }),
@@ -232,7 +242,13 @@ test('post detayı zaman çizelgesi, skor, ilk test dalgası, bağlı içerik ve
   await expect(
     content.getByRole('link', { name: /Analitik test promptu/ }),
   ).toHaveAttribute('href', new RegExp(`inf=${slug}`));
-  await expect(page.getByText('Maliyet', { exact: true })).toBeVisible();
+  // Maliyet (#59 post_cost): bağlı üretimin maliyet kaydı doğrudan gösterilir
+  const costCard = page
+    .getByRole('article')
+    .filter({ has: page.getByText('Maliyet', { exact: true }) });
+  await expect(costCard).toContainText('2,50');
+  await expect(costCard).toContainText('Doğrudan: 1 bağlı üretim');
+  await expect(content).toContainText('Doğrudan: 1 bağlı üretim');
 
   await page.getByRole('link', { name: '← Analitik' }).click();
   await expect(page).toHaveURL(new RegExp(`/analytics\\?inf=${slug}`));

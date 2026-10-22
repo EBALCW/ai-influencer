@@ -20,7 +20,13 @@ import {
   scoreToneLabels,
   segmentKeyLabel,
 } from '@/lib/analytics/metrics';
-import { getLearnings, getPostAnalytics } from '@/lib/analytics/queries';
+import { postCostDisplay } from '@/lib/analytics/cost-display';
+import {
+  getLearnings,
+  getPostAnalytics,
+  getPostCostForDetail,
+} from '@/lib/analytics/queries';
+import { supportedCurrencies } from '@/lib/costs/schemas';
 import { LearningPanel } from '../../learning-panel';
 import { ViewsChart } from '../../views-chart';
 
@@ -39,7 +45,7 @@ export default async function PostDetailPage({
   searchParams,
 }: {
   params: Promise<{ postId: string }>;
-  searchParams: Promise<{ inf?: string }>;
+  searchParams: Promise<{ inf?: string; cur?: string }>;
 }) {
   const [{ postId }, query, member] = await Promise.all([
     params,
@@ -47,10 +53,17 @@ export default async function PostDetailPage({
     requireTeamMember(),
   ]);
   const inf = typeof query.inf === 'string' ? query.inf : '';
-  const [data, learnings] = await Promise.all([
+  const currency = (supportedCurrencies as readonly string[]).includes(
+    query.cur ?? '',
+  )
+    ? (query.cur as string)
+    : 'USD';
+  const [data, learnings, postCost] = await Promise.all([
     getPostAnalytics(postId),
     getLearnings({ postId }),
+    getPostCostForDetail(postId, currency),
   ]);
+  const cost = postCostDisplay(postCost);
   // Layout varlığı doğruladı; arada silinirse yine 404 (stream başlamışsa 200 olabilir)
   if (!data) notFound();
 
@@ -141,11 +154,10 @@ export default async function PostDetailPage({
           icon={Gauge}
           tone="blue"
         />
-        {/* TODO(#59): post maliyeti SQL yardımcısı gelince burada gösterilecek. */}
         <StatCard
           label="Maliyet"
-          value="—"
-          detail="Post başına üretim maliyeti henüz bağlı değil"
+          value={cost.value}
+          detail={cost.detail}
           icon={Coins}
         />
       </section>
@@ -277,9 +289,10 @@ export default async function PostDetailPage({
                 'Bağlı üretimde prompt yok'
               )}
             </dd>
-            {/* TODO(#59): üretim maliyeti post maliyeti yardımcısından gelecek. */}
             <dt className="text-muted">Üretim maliyeti</dt>
-            <dd>—</dd>
+            <dd>
+              {cost.value} <span className="text-muted">({cost.detail})</span>
+            </dd>
           </dl>
         ) : (
           <EmptyState

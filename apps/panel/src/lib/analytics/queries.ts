@@ -1,5 +1,6 @@
 import 'server-only';
 import type { Row, SocialPlatform } from '@ai-influencer/shared';
+import { getPostCost } from '@/lib/costs/post-cost';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { CheckpointHours } from './metrics';
 import {
@@ -44,6 +45,12 @@ export async function postExists(postId: string) {
     .maybeSingle();
   check(error, 'Post');
   return data !== null;
+}
+
+/** Post maliyeti (#59 `post_cost`): doğrudan bağlı üretimler veya ay ortalaması. */
+export async function getPostCostForDetail(postId: string, currency: string) {
+  const supabase = await createSupabaseServerClient();
+  return getPostCost(supabase, postId, currency);
 }
 
 export async function getPostsForCompare(ids: readonly string[]) {
