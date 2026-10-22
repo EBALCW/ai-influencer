@@ -147,12 +147,12 @@ SELECT extensions.results_eq(
 
 -- ── Yanıt kuyruğu ───────────────────────────────────────────────────────────
 SELECT extensions.lives_ok(
-  $$INSERT INTO public.comment_replies (id, comment_id, body)
-    VALUES ('a6170000-0000-4000-8000-000000000001', 'a6160000-0000-4000-8000-000000000001', 'Teşekkürler!')$$,
+  $$INSERT INTO public.comment_replies (comment_id, body)
+    VALUES ('a6160000-0000-4000-8000-000000000001', 'Teşekkürler!')$$,
   'editor queues a reply'
 );
 SELECT extensions.results_eq(
-  $$SELECT status, attempts::integer, created_by FROM public.comment_replies WHERE id = 'a6170000-0000-4000-8000-000000000001'$$,
+  $$SELECT status, attempts::integer, created_by FROM public.comment_replies WHERE comment_id = 'a6160000-0000-4000-8000-000000000001'$$,
   $$VALUES ('queued'::text, 0, 'a6100000-0000-4000-8000-000000000002'::uuid)$$,
   'reply starts queued and records the requester'
 );
@@ -165,7 +165,7 @@ SELECT extensions.throws_ok(
   '42501', NULL, 'editor cannot insert a reply as already sent'
 );
 SELECT extensions.throws_ok(
-  $$UPDATE public.comment_replies SET status = 'sent' WHERE id = 'a6170000-0000-4000-8000-000000000001'$$,
+  $$UPDATE public.comment_replies SET status = 'sent' WHERE comment_id = 'a6160000-0000-4000-8000-000000000001'$$,
   '42501', NULL, 'editor cannot change the reply status (only the function does)'
 );
 SELECT extensions.throws_ok(
@@ -181,9 +181,9 @@ RESET ROLE;
 -- Gönderim (Edge Function, service role): yorum yanıtlandı olur.
 SET LOCAL ROLE service_role;
 UPDATE public.comment_replies SET status = 'sending', attempts = 1
-WHERE id = 'a6170000-0000-4000-8000-000000000001' AND status = 'queued';
+WHERE comment_id = 'a6160000-0000-4000-8000-000000000001' AND status = 'queued';
 UPDATE public.comment_replies SET status = 'sent', sent_at = now(), external_id = 'yt-reply-1'
-WHERE id = 'a6170000-0000-4000-8000-000000000001';
+WHERE comment_id = 'a6160000-0000-4000-8000-000000000001';
 RESET ROLE;
 SELECT extensions.results_eq(
   $$SELECT status, replied_at IS NOT NULL FROM public.comments WHERE id = 'a6160000-0000-4000-8000-000000000001'$$,
