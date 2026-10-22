@@ -275,7 +275,7 @@ test('seçilen prompt dosya olarak indirilir, düzenlenip geri yüklenince yeni 
   ).toBeVisible();
 
   // Aynı dosya tekrar yüklenirse gereksiz versiyon oluşmaz
-  await importForm.getByLabel(/Prompt paketi seçin/).setInputFiles(file);
+  await importForm.getByLabel(/prompts\.json/).setInputFiles(file);
   await importForm.getByRole('button', { name: 'İçe aktar' }).click();
   await expect(
     page.getByText('0 yeni versiyon oluşturuldu, 2 prompt zaten günceldi.'),
