@@ -1,154 +1,304 @@
 // @vitest-environment node
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
-
 vi.mock('server-only', () => ({}));
-
-const auth = vi.hoisted(() => ({
-  user: null as { id: string } | null,
-  role: null as string | null,
+const state = vi.hoisted(() => ({
+  user: { id: 'editor' } as { id: string } | null,
+  role: 'editor' as string | null,
+  inf: true,
+  prompt: true,
+  billingError: false,
+  config: true,
+  rows: [] as Record<string, unknown>[],
+  create: vi.fn(),
+  category: '',
 }));
-
-// Gerçek requireApiRole çalışsın; sadece Supabase istemcisi sahte
+const pricing = {
+  currency: 'USD',
+  inputPerMTok: '4',
+  outputPerMTok: '20',
+  cacheReadPerMTok: '0.2',
+  cacheWritePerMTok: '5',
+  cacheWrite1hPerMTok: '8',
+};
+vi.mock('@/lib/ai/config', () => ({
+  getAiConfig: async () =>
+    state.config
+      ? { apiKey: 'fixture-key', model: 'claude-fixture', pricing }
+      : null,
+}));
+vi.mock('@/lib/ai/claude', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/ai/claude')>()),
+  createClaudeClient: () => ({ beta: { messages: { create: state.create } } }),
+}));
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseServerClient: async () => ({
     auth: {
-      getUser: async () => ({
-        data: { user: auth.user },
-        error: auth.user ? null : new Error('no session'),
-      }),
+      getUser: async () => ({ data: { user: state.user }, error: null }),
     },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: async () => ({
-            data: auth.role ? { role: auth.role } : null,
-            error: null,
-          }),
+    from: (table: string) => {
+      const chain = {
+        select: () => chain,
+        eq: (key: string, value: string) => {
+          if (key === 'category') state.category = value;
+          return chain;
+        },
+        or: () => chain,
+        order: () => chain,
+        limit: () => chain,
+        maybeSingle: async () => ({
+          data:
+            table === 'team_members'
+              ? state.role
+                ? { role: state.role }
+                : null
+              : table === 'influencers'
+                ? state.inf
+                  ? { id: 'e1000000-0000-4000-8000-000000000001' }
+                  : null
+                : state.prompt
+                  ? { id: 'p1', version: 2, body: 'Kütüphane talimatı' }
+                  : null,
+          error: null,
         }),
-      }),
+        insert: (values: Record<string, unknown>) => {
+          state.rows.push(values);
+          return {
+            select: () => ({
+              single: async () => ({
+                data: { id: 'cost-1' },
+                error: state.billingError ? { message: 'private' } : null,
+              }),
+            }),
+          };
+        },
+      };
+      return chain;
+    },
+    rpc: async () => ({
+      data: {
+        from: '2026-11-01',
+        to: '2026-11-08',
+        observedViewIncrease: 42,
+        postsWithViewBaseline: 1,
+      },
+      error: null,
     }),
   }),
 }));
-
-const suggestMock = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/ai/suggest', () => ({ suggest: suggestMock }));
-
 const { POST } = await import('./route');
 const { aiRateLimiter } = await import('@/lib/ai/rate-limit');
-const { AiError } = await import('@/lib/ai/errors');
-
-const validBody = {
-  task: 'caption',
-  input: {
-    persona: { name: 'Mina Arven', niche: 'AI ve gündelik teknoloji' },
-    topic: 'Açık kalan sekmeler',
+const body = {
+  influencerId: 'e1000000-0000-4000-8000-000000000001',
+  request: {
+    task: 'caption',
+    input: {
+      persona: { name: 'Fixture', niche: 'Teknoloji' },
+      topic: 'Sekmeler',
+    },
   },
 };
-
-function call(body: unknown) {
-  const request = new Request('http://127.0.0.1:3000/api/ai/suggest', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: typeof body === 'string' ? body : JSON.stringify(body),
-  });
-  return POST(request as unknown as NextRequest);
-}
-
+const call = (value: unknown = body) =>
+  POST(
+    new Request('http://localhost/api/ai/suggest', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(value),
+    }) as NextRequest,
+  );
 beforeEach(() => {
-  auth.user = { id: 'user-editor' };
-  auth.role = 'editor';
-  vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
+  state.user = { id: 'editor' };
+  state.role = 'editor';
+  state.inf = true;
+  state.prompt = true;
+  state.billingError = false;
+  state.config = true;
+  state.rows = [];
+  state.create.mockReset();
+  state.create.mockResolvedValue({
+    model: 'claude-fixture',
+    stop_reason: 'end_turn',
+    usage: { input_tokens: 1000, output_tokens: 1000 },
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          caption: 'Merhaba',
+          hashtags: ['#ai', '#teknoloji', '#kurgu'],
+          cta: 'Sen?',
+        }),
+      },
+    ],
+  });
   aiRateLimiter.reset();
-  suggestMock.mockReset();
-  suggestMock.mockResolvedValue({
-    task: 'caption',
-    suggestion: { caption: 'Merhaba', hashtags: ['#ai'], cta: 'Sen?' },
-    warnings: [],
-    usage: { inputTokens: 1, outputTokens: 1, cacheReadInputTokens: 0 },
-    model: 'claude-opus-5-5',
-    promptId: 'builtin:caption@1',
-  });
 });
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
-
-describe('POST /api/ai/suggest', () => {
-  it('oturum yoksa 401', async () => {
-    auth.user = null;
-    expect((await call(validBody)).status).toBe(401);
-    expect(suggestMock).not.toHaveBeenCalled();
+describe('AI route, SDK → maliyet entegrasyonu', () => {
+  it('oturum yok 401, viewer/outsider 403; sağlayıcı çağrılmaz', async () => {
+    state.user = null;
+    expect((await call()).status).toBe(401);
+    state.user = { id: 'viewer' };
+    state.role = 'viewer';
+    expect((await call()).status).toBe(403);
+    state.role = null;
+    expect((await call()).status).toBe(403);
+    expect(state.create).not.toHaveBeenCalled();
   });
-
-  it('viewer 403 alır', async () => {
-    auth.role = 'viewer';
-    expect((await call(validBody)).status).toBe(403);
-    expect(suggestMock).not.toHaveBeenCalled();
+  it('geçersiz/eksik UUID ve girdi 400', async () => {
+    expect((await call({ request: body.request })).status).toBe(400);
+    expect((await call({ ...body, influencerId: 'x' })).status).toBe(400);
+    expect(
+      (await call({ ...body, request: { task: 'caption', input: {} } })).status,
+    ).toBe(400);
   });
-
-  it('ekip üyesi olmayan 403 alır', async () => {
-    auth.role = null;
-    expect((await call(validBody)).status).toBe(403);
+  it('ayar yoksa 503, hesap yoksa 404, prompt yoksa 503; çağrı yok', async () => {
+    state.config = false;
+    expect((await call()).status).toBe(503);
+    state.config = true;
+    state.inf = false;
+    expect((await call()).status).toBe(404);
+    state.inf = true;
+    state.prompt = false;
+    expect((await call()).status).toBe(503);
+    expect(state.create).not.toHaveBeenCalled();
   });
-
-  it('geçersiz gövde 400', async () => {
-    expect((await call('{bozuk')).status).toBe(400);
-    expect((await call({ task: 'script', input: {} })).status).toBe(400);
-    expect((await call({ task: 'caption', input: { topic: '' } })).status).toBe(
-      400,
-    );
-    expect(suggestMock).not.toHaveBeenCalled();
-  });
-
-  it('anahtar tanımlı değilse 503 ve anlaşılır mesaj', async () => {
-    vi.stubEnv('ANTHROPIC_API_KEY', '');
-    const response = await call(validBody);
-    expect(response.status).toBe(503);
-    expect((await response.json()).error).toContain('ANTHROPIC_API_KEY');
-    expect(suggestMock).not.toHaveBeenCalled();
-  });
-
-  it('editor öneri alır', async () => {
-    const response = await call(validBody);
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
+  it('prompt kütüphanesinden önerir ve maliyeti costs modülüne yazar', async () => {
+    const r = await call();
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({
       task: 'caption',
-      suggestion: { caption: 'Merhaba' },
+      promptId: 'prompt:p1@2',
     });
-    expect(suggestMock).toHaveBeenCalledWith(
-      expect.objectContaining({ task: 'caption' }),
-      expect.objectContaining({ model: 'claude-opus-5-5' }),
+    expect(state.create.mock.calls[0]![0].system).toContain(
+      'Kütüphane talimatı',
     );
+    expect(state.category).toBe('caption');
+    expect(state.rows).toHaveLength(1);
+    expect(state.rows[0]).toMatchObject({
+      category: 'ai_api',
+      amount: '0.0240',
+      currency: 'USD',
+      influencer_id: body.influencerId,
+    });
+    expect(state.rows[0]).not.toHaveProperty('created_by');
   });
-
-  it('kullanıcı başına dakikada 10 istekten sonra 429 + Retry-After', async () => {
-    for (let i = 0; i < 10; i++) {
-      expect((await call(validBody)).status).toBe(200);
-    }
-    const limited = await call(validBody);
-    expect(limited.status).toBe(429);
-    expect(Number(limited.headers.get('Retry-After'))).toBeGreaterThan(0);
+  it('bozuk model çıktısı 502 olsa da kullanım maliyeti kaydedilir', async () => {
+    state.create.mockResolvedValue({
+      model: 'claude-fixture',
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 1000, output_tokens: 1000 },
+      content: [{ type: 'text', text: 'invalid JSON' }],
+    });
+    expect((await call()).status).toBe(502);
+    expect(state.rows).toHaveLength(1);
   });
-
-  it('AI hatası kullanıcı mesajı ve doğru durum koduyla döner', async () => {
-    suggestMock.mockRejectedValue(new AiError('invalid_output'));
+  it('maliyet yazılamazsa öneriyi başarı diye sunmaz', async () => {
+    state.billingError = true;
+    const r = await call();
+    expect(r.status).toBe(503);
+    expect((await r.json()).error).toContain('maliyeti');
+  });
+  it('haftalık görevde yalnız RPC sayısal özeti gönderilir', async () => {
+    await call({
+      ...body,
+      request: { task: 'weekly', input: { language: 'tr' } },
+    });
+    const params = state.create.mock.calls[0]![0];
+    expect(params.messages[0].content).toContain('observedViewIncrease');
+    expect(params.messages[0].content).not.toContain('token_ref');
+    expect(state.category).toBe('research');
+  });
+  it('10/dk sınırı 429 ve Retry-After verir', async () => {
+    for (let i = 0; i < 10; i++) expect((await call()).status).toBe(200);
+    const r = await call();
+    expect(r.status).toBe(429);
+    expect(Number(r.headers.get('Retry-After'))).toBeGreaterThan(0);
+    expect(state.create).toHaveBeenCalledTimes(10);
+  });
+  it('beklenmeyen hata metni loga veya cevaba sızmaz', async () => {
+    state.create.mockRejectedValue(new Error('sk-ant-private'));
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const response = await call(validBody);
-    expect(response.status).toBe(502);
-    expect((await response.json()).error).toBe(
-      new AiError('invalid_output').message,
-    );
+    const r = await call();
+    expect(JSON.stringify(await r.json())).not.toContain('sk-ant-private');
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('sk-ant-private');
     warn.mockRestore();
   });
+});
 
-  it('beklenmeyen hatada iç ayrıntı sızmaz', async () => {
-    suggestMock.mockRejectedValue(new Error('sk-ant-gizli iç hata'));
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const response = await call(validBody);
-    expect(response.status).toBe(500);
-    expect(JSON.stringify(await response.json())).not.toContain('sk-ant');
-    error.mockRestore();
+it.each([
+  [
+    'persona',
+    { name: 'Fixture', niche: 'Teknoloji' },
+    {
+      bio: 'AI karakteri',
+      personality: ['sakin', 'meraklı', 'neşeli'],
+      tone: {
+        do: ['Açık ol', 'Kısa konuş', 'Soru sor'],
+        dont: ['Abartma', 'Taklit etme', 'Vaat verme'],
+      },
+      sampleCaptions: ['Bir', 'İki', 'Üç'],
+      hookTraits: ['İmza aksesuar', 'Dönüşüm'],
+    },
+  ],
+  [
+    'script',
+    { topic: 'Kısa sahne', durationSeconds: 30 },
+    {
+      hook: 'Kanca',
+      scenes: [{ seconds: 10, visual: 'Sahne', narration: 'Metin' }],
+      caption: 'Caption',
+    },
+  ],
+  [
+    'weekly',
+    { language: 'tr' },
+    {
+      summary: 'Özet',
+      observations: ['Ölçülen veri'],
+      suggestions: ['Yeni test'],
+      limitations: ['Baseline eksik'],
+    },
+  ],
+] as const)(
+  '%s görevi geçerli öneri ve tek maliyet satırı üretir',
+  async (task, input, suggestion) => {
+    state.create.mockResolvedValue({
+      model: 'claude-fixture',
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 1000, output_tokens: 1000 },
+      content: [{ type: 'text', text: JSON.stringify(suggestion) }],
+    });
+    const r = await call({ ...body, request: { task, input } });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toMatchObject({ task });
+    expect(state.rows).toHaveLength(1);
+  },
+);
+it('istenen süreyi aşan senaryo reddedilir ve maliyeti kalır', async () => {
+  state.create.mockResolvedValue({
+    model: 'claude-fixture',
+    stop_reason: 'end_turn',
+    usage: { input_tokens: 1000, output_tokens: 1000 },
+    content: [
+      {
+        type: 'text',
+        text: JSON.stringify({
+          hook: 'Kanca',
+          scenes: [{ seconds: 10, visual: 'Sahne', narration: 'Metin' }],
+          caption: 'Caption',
+        }),
+      },
+    ],
   });
+  expect(
+    (
+      await call({
+        ...body,
+        request: {
+          task: 'script',
+          input: { topic: 'Sahne', durationSeconds: 5 },
+        },
+      })
+    ).status,
+  ).toBe(502);
+  expect(state.rows).toHaveLength(1);
 });

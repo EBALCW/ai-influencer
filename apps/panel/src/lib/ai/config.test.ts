@@ -1,31 +1,55 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
-
-const { DEFAULT_AI_MODEL, getAiConfig } = await import('./config');
-
-afterEach(() => {
-  vi.unstubAllEnvs();
+const state = vi.hoisted(() => ({
+  data: null as unknown,
+  error: null as unknown,
+}));
+vi.mock('@/lib/supabase/server', () => ({
+  createSupabaseServerClient: async () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: state.data, error: state.error }),
+        }),
+      }),
+    }),
+  }),
+}));
+const { getAiConfig, readAiSettings } = await import('./config');
+const config = {
+  model: 'claude-fixture',
+  pricing: {
+    currency: 'USD',
+    inputPerMTok: '4',
+    outputPerMTok: '20',
+    cacheReadPerMTok: '0.2',
+    cacheWritePerMTok: '5',
+    cacheWrite1hPerMTok: '8',
+  },
+};
+beforeEach(() => {
+  state.data = { value: config };
+  state.error = null;
+  vi.stubEnv('ANTHROPIC_API_KEY', 'fixture-key');
 });
-
-describe('getAiConfig', () => {
-  it('anahtar yoksa null döner', () => {
+afterEach(() => vi.unstubAllEnvs());
+describe('AI config', () => {
+  it('anahtar yoksa null', async () => {
     vi.stubEnv('ANTHROPIC_API_KEY', '');
-    expect(getAiConfig()).toBeNull();
+    expect(await getAiConfig()).toBeNull();
   });
-
-  it('model tanımlı değilse varsayılanı kullanır', () => {
-    vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
-    vi.stubEnv('ANTHROPIC_MODEL', '');
-    expect(getAiConfig()).toEqual({
-      apiKey: 'test-key',
-      model: DEFAULT_AI_MODEL,
-    });
+  it('model ve fiyat ayarlardan gelir; env modelini kullanmaz', async () => {
+    vi.stubEnv('ANTHROPIC_MODEL', 'ignored-model');
+    expect(await getAiConfig()).toEqual({ ...config, apiKey: 'fixture-key' });
   });
-
-  it('ANTHROPIC_MODEL ile model değiştirilebilir', () => {
-    vi.stubEnv('ANTHROPIC_API_KEY', 'test-key');
-    vi.stubEnv('ANTHROPIC_MODEL', 'claude-sonnet-5-5');
-    expect(getAiConfig()?.model).toBe('claude-sonnet-5-5');
+  it('boş veya geçersiz ayarda sabit modele dönmez', async () => {
+    state.data = null;
+    expect(await getAiConfig()).toBeNull();
+    state.data = { value: { model: 'x' } };
+    expect(await readAiSettings()).toBeNull();
+  });
+  it('DB hatası yutulmaz ve iç hata gösterilmez', async () => {
+    state.error = { message: 'private details' };
+    await expect(readAiSettings()).rejects.toThrow('AI ayarları okunamadı.');
   });
 });

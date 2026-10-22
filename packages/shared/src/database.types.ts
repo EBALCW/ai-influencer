@@ -63,6 +63,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"app_settings": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"key": string,"updated_at": string,"value": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"key": string,"updated_at"?: string,"value": NonNullable<Json>
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"key"?: string,"updated_at"?: string,"value"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"assets": {
                   Row: {
                     "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"thumbnail_path": string | null,"updated_at": string,"version_tag": string | null,"width": number | null
@@ -493,7 +507,10 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "asset_object_in_influencer_folder":
+            "ai_weekly_summary":
+{ Args: { "p_as_of"?: string,"p_influencer_id": string }; Returns: Json
+                           },
+"asset_object_in_influencer_folder":
 { Args: { "object_name": string }; Returns: boolean
                            },
 "budget_status":

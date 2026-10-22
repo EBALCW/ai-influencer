@@ -8,12 +8,19 @@ export type AiErrorCode =
   | 'unavailable'
   | 'refused'
   | 'invalid_output'
-  | 'bad_request';
+  | 'bad_request'
+  | 'billing_failed';
 
 const userMessages: Record<AiErrorCode, { status: number; message: string }> = {
+  billing_failed: {
+    status: 503,
+    message:
+      'AI kullanım maliyeti kaydedilemedi. Tekrar denemeden maliyet kayıtlarını kontrol edin.',
+  },
   not_configured: {
     status: 503,
-    message: 'AI asistanı yapılandırılmamış (ANTHROPIC_API_KEY tanımlı değil).',
+    message:
+      'AI asistanı yapılandırılmamış. ANTHROPIC_API_KEY ve Ayarlar → AI alanını kontrol edin.',
   },
   auth_failed: {
     status: 503,

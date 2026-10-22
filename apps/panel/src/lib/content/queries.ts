@@ -12,7 +12,9 @@ export type ContentWorkspace = {
   page: number;
   role: TeamRole;
   slug: string;
-  influencers: Array<Pick<Row<'influencers'>, 'id' | 'name' | 'slug'>>;
+  influencers: Array<
+    Pick<Row<'influencers'>, 'id' | 'name' | 'slug' | 'niche' | 'language'>
+  >;
   accounts: Array<
     Pick<Row<'social_accounts'>, 'id' | 'influencer_id' | 'platform' | 'handle'>
   >;
@@ -47,7 +49,7 @@ export async function getContentWorkspace(options: {
   const supabase = await createSupabaseServerClient();
   const influencers = await supabase
     .from('influencers')
-    .select('id,name,slug')
+    .select('id,name,slug,niche,language')
     .order('name');
   check(influencers.error);
   const selected = options.slug

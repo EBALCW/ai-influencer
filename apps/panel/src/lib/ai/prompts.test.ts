@@ -22,9 +22,11 @@ describe('prompt library bridge (#46)', () => {
     expect(template).toMatchObject({
       id: 'prompt:abc',
       version: 3,
-      system: 'Kütüphane talimatı',
+
       effort: builtin.effort,
     });
+    expect(template.system).toContain('Kütüphane talimatı');
+    expect(template.system).toContain('kurgusal');
     expect(template.buildUserMessage).toBe(builtin.buildUserMessage);
   });
 
@@ -33,10 +35,10 @@ describe('prompt library bridge (#46)', () => {
     expect(
       applyLibraryPrompt(builtin, { id: 'x', version: 1, body: '  ' }),
     ).toBe(builtin);
-    expect(
-      await loadPromptTemplate('persona', async () => {
+    await expect(
+      loadPromptTemplate('persona', async () => {
         throw new Error('db down');
       }),
-    ).toBe(builtin);
+    ).rejects.toThrow('db down');
   });
 });

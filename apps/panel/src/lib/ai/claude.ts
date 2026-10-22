@@ -8,33 +8,17 @@ export type AiUsage = {
   inputTokens: number;
   outputTokens: number;
   cacheReadInputTokens: number;
+  cacheCreationInputTokens?: number;
+  cacheCreation1hInputTokens?: number;
 };
-
 export type AiResult<T> = { data: T; usage: AiUsage; model: string };
-
-/** Testlerde sahte istemci verebilmek için SDK'nın kullandığımız kısmı. */
 export type ClaudeClient = {
-  beta: { messages: Pick<Anthropic['beta']['messages'], 'parse'> };
+  beta: { messages: Pick<Anthropic['beta']['messages'], 'create'> };
 };
-
-const REQUEST_TIMEOUT_MS = 30_000;
-
-/** Sunucu tarafı fallback'i destekleyen modeller ("default" form, Claude API). */
-const FALLBACK_MODELS = new Set([
-  'claude-fable-5-1',
-  'claude-opus-5-5',
-  'claude-opus-5',
-  'claude-sonnet-5-5',
-]);
-
 export function createClaudeClient(apiKey: string): ClaudeClient {
-  return new Anthropic({
-    apiKey,
-    timeout: REQUEST_TIMEOUT_MS,
-    maxRetries: 1,
-  });
+  // Otomatik tekrar/fallback yok: tek kullanıcı eylemi tek ücretli çağrı yapar.
+  return new Anthropic({ apiKey, timeout: 30_000, maxRetries: 0 });
 }
-
 type StructuredRequest<S extends z.ZodType> = {
   model: string;
   system: string;
@@ -42,57 +26,56 @@ type StructuredRequest<S extends z.ZodType> = {
   schema: S;
   effort: 'low' | 'medium' | 'high';
   maxTokens?: number;
+  onUsage?: (usage: AiUsage, model: string) => Promise<void>;
 };
-
-/**
- * Tek bir yapılandırılmış çıktı isteği. Model yanıtı Zod şemasıyla doğrulanır;
- * doğrulanamazsa, model reddederse veya sağlayıcı hata verirse AiError fırlatır.
- */
 export async function runStructured<S extends z.ZodType>(
   client: ClaudeClient,
   request: StructuredRequest<S>,
 ): Promise<AiResult<z.infer<S>>> {
-  const useFallback = FALLBACK_MODELS.has(request.model);
-
   let response;
   try {
-    response = await client.beta.messages.parse({
+    response = await client.beta.messages.create({
       model: request.model,
       max_tokens: request.maxTokens ?? 8000,
+      stream: false,
       system: request.system,
       messages: [{ role: 'user', content: request.userMessage }],
       output_config: {
         effort: request.effort,
         format: betaZodOutputFormat(request.schema),
       },
-      // Güvenlik sınıflandırıcısı reddederse istek aynı çağrıda başka modelle denenir
-      ...(useFallback
-        ? {
-            betas: ['server-side-fallback-2026-07-01'],
-            fallbacks: 'default' as const,
-          }
-        : {}),
     });
   } catch (error) {
     throw toAiError(error);
   }
-
+  const write1h = response.usage.cache_creation?.ephemeral_1h_input_tokens ?? 0;
+  const write5m = Math.max(
+    0,
+    (response.usage.cache_creation_input_tokens ?? 0) - write1h,
+  );
+  const usage: AiUsage = {
+    inputTokens: response.usage.input_tokens,
+    outputTokens: response.usage.output_tokens,
+    cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
+    ...(write5m ? { cacheCreationInputTokens: write5m } : {}),
+    ...(write1h ? { cacheCreation1hInputTokens: write1h } : {}),
+  };
+  // JSON geçersiz, kesilmiş veya reddedilmiş olsa da bilinen kullanım önce kaydedilir.
+  await request.onUsage?.(usage, response.model);
   if (response.stop_reason === 'refusal') throw new AiError('refused');
-  if (
-    response.stop_reason === 'max_tokens' ||
-    response.parsed_output === null ||
-    response.parsed_output === undefined
-  ) {
+  if (response.stop_reason !== 'end_turn') throw new AiError('invalid_output');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(
+      response.content
+        .filter((c) => c.type === 'text')
+        .map((c) => c.text)
+        .join(''),
+    );
+  } catch {
     throw new AiError('invalid_output');
   }
-
-  return {
-    data: response.parsed_output as z.infer<S>,
-    usage: {
-      inputTokens: response.usage.input_tokens,
-      outputTokens: response.usage.output_tokens,
-      cacheReadInputTokens: response.usage.cache_read_input_tokens ?? 0,
-    },
-    model: response.model,
-  };
+  const checked = request.schema.safeParse(parsed);
+  if (!checked.success) throw new AiError('invalid_output');
+  return { data: checked.data, usage, model: response.model };
 }

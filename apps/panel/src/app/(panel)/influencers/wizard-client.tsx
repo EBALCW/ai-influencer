@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AiSuggestion } from '@/components/ai-suggestion';
 import { useState } from 'react';
 import {
   appearanceFields,
@@ -425,6 +426,42 @@ export function InfluencerWizard({
               Bu bilgiler persona v1 olarak kaydedilir.
             </p>
           </div>
+          {draft && (
+            <AiSuggestion
+              influencerId={draft.id}
+              tasks={['persona']}
+              disabled={pending}
+              requestFor={() => ({
+                task: 'persona',
+                input: {
+                  name,
+                  niche,
+                  language: language === 'en' ? 'en' : 'tr',
+                },
+              })}
+              onApply={(result) => {
+                if (result.task !== 'persona') return;
+                const p = result.suggestion;
+                const adjectives = p.personality.slice(0, 10),
+                  hookTraits = p.hookTraits.slice(0, 10),
+                  sampleCaptions = p.sampleCaptions.slice(0, 10);
+                setPersona((v) => ({
+                  ...v,
+                  bio: p.bio,
+                  tone: p.tone.do.join('; ').slice(0, 200),
+                  adjectives,
+                  hookTraits,
+                  sampleCaptions,
+                }));
+                setListText((v) => ({
+                  ...v,
+                  adjectives: adjectives.join(', '),
+                  hookTraits: hookTraits.join(', '),
+                  sampleCaptions: sampleCaptions.join('\n'),
+                }));
+              }}
+            />
+          )}
           <label className={labelClass}>
             Karakter hikâyesi
             <textarea
