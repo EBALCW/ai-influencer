@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Coins, Eye, Gauge, Heart } from 'lucide-react';
-import { EmptyState, StatCard } from '@/components/ui';
+import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { analyticsHref, platformLabels } from '@/lib/analytics/links';
 import {
@@ -27,6 +26,7 @@ import {
   getPostCostForDetail,
 } from '@/lib/analytics/queries';
 import { supportedCurrencies } from '@/lib/costs/schemas';
+import { AnalyticsStat } from '../../stat';
 import { LearningPanel } from '../../learning-panel';
 import { ViewsChart } from '../../views-chart';
 
@@ -122,7 +122,7 @@ export default async function PostDetailPage({
       </section>
 
       <section className="stats-grid" aria-label="Post özeti">
-        <StatCard
+        <AnalyticsStat
           label="Son izlenme"
           value={formatCount(latest?.views)}
           detail={
@@ -130,9 +130,9 @@ export default async function PostDetailPage({
               ? `${data.snapshots.length} snapshot · ${formatDateTime(latest.capturedAt)}`
               : 'Henüz ölçüm yok'
           }
-          icon={Eye}
+          icon="Eye"
         />
-        <StatCard
+        <AnalyticsStat
           label="Etkileşim oranı"
           value={formatPercent(rate)}
           detail={
@@ -140,10 +140,10 @@ export default async function PostDetailPage({
               ? `${formatCount(latest.likes)} beğeni · ${formatCount(latest.comments)} yorum · ${formatCount(latest.shares)} paylaşım · ${formatCount(latest.saves)} kayıt`
               : 'Henüz ölçüm yok'
           }
-          icon={Heart}
+          icon="Heart"
           tone="mint"
         />
-        <StatCard
+        <AnalyticsStat
           label="Performans skoru"
           value={formatRatio(primary?.score)}
           detail={
@@ -151,14 +151,14 @@ export default async function PostDetailPage({
               ? `${checkpointLabel(primary.hours)} izlenme / hesap medyanı · ${scoreToneLabels[tone]}`
               : scoreToneLabels.unknown
           }
-          icon={Gauge}
+          icon="Gauge"
           tone="blue"
         />
-        <StatCard
+        <AnalyticsStat
           label="Maliyet"
           value={cost.value}
           detail={cost.detail}
-          icon={Coins}
+          icon="Coins"
         />
       </section>
 

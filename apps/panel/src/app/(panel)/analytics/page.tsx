@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { BarChart3, Eye, Send } from 'lucide-react';
-import { EmptyState, StatCard } from '@/components/ui';
+import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { analyticsHref } from '@/lib/analytics/links';
 import {
@@ -10,6 +9,7 @@ import {
 } from '@/lib/analytics/metrics';
 import { getAnalyticsOverview } from '@/lib/analytics/queries';
 import { parseTargetHours } from '@/lib/analytics/schemas';
+import { AnalyticsStat } from './stat';
 import { LearningPanel } from './learning-panel';
 import { PostPicker } from './post-picker';
 import { SegmentTables } from './segment-tables';
@@ -79,24 +79,24 @@ export default async function AnalyticsPage({
       ) : (
         <>
           <section className="stats-grid" aria-label="Analitik özeti">
-            <StatCard
+            <AnalyticsStat
               label="Yayınlanan post"
               value={formatCount(segments.overall.posts)}
               detail={`${formatCount(segments.overall.measured)} postta ${metric} ölçümü var`}
-              icon={Send}
+              icon="Send"
             />
-            <StatCard
+            <AnalyticsStat
               label={`Medyan ${metric}`}
               value={formatCount(segments.overall.median)}
               detail="Segment endeksleri bu değere göre"
-              icon={BarChart3}
+              icon="BarChart3"
               tone="blue"
             />
-            <StatCard
+            <AnalyticsStat
               label={`Ortalama ${metric}`}
               value={formatCount(segments.overall.average)}
               detail="Uç değerlerden etkilenir; medyanla birlikte okuyun"
-              icon={Eye}
+              icon="Eye"
               tone="mint"
             />
           </section>

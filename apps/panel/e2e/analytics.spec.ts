@@ -140,6 +140,11 @@ test.beforeAll(async () => {
           captured_at: at(1),
           hours_since_publish: 1,
           views: f.h1,
+          // Toplu insert'te tüm satırlar aynı anahtarları taşımalı (yoksa null gider)
+          likes: 0,
+          comments: 0,
+          shares: 0,
+          saves: 0,
         },
         {
           post_id: post.id,
