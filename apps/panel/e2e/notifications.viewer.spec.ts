@@ -58,7 +58,8 @@ test('zil seed uyarılarını listeler, klavyeyle açılıp Escape ile kapanır'
     'Senkronizasyon hatası',
     'Yayın saati geldi, içerik hazır değil',
   ]) {
-    await expect(panel.getByText(title, { exact: true })).toBeVisible();
+    // Okunmamış başlıklar ekran okuyucu için "Yeni:" önekiyle başlar
+    await expect(panel.getByText(title).first()).toBeVisible();
   }
 
   await page.keyboard.press('Escape');
@@ -117,7 +118,7 @@ test('bildirim sayfası listeler ve tümünü okundu işaretler', async ({
     page.getByRole('heading', { name: 'Bildirimler', level: 1 }),
   ).toBeVisible();
   const list = page.getByRole('region', { name: 'Bildirim listesi' });
-  await expect(list.getByText('Takipçi kilometre taşı')).toBeVisible();
+  await expect(list.getByText('Takipçi kilometre taşı').first()).toBeVisible();
   await list.getByRole('button', { name: 'Tümünü okundu işaretle' }).click();
   await expect(list.getByText('Tüm bildirimler okundu.').first()).toBeVisible();
   await expect(bell(page)).toHaveAccessibleName('Bildirimler');
