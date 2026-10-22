@@ -75,7 +75,7 @@ SELECT extensions.ok(
   'reports has RLS enabled'
 );
 SELECT extensions.results_eq(
-  $$SELECT policyname::text FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' ORDER BY 1$$,
+  $$SELECT policyname::text COLLATE "default" FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' ORDER BY 1$$,
   $$VALUES ('reports_team_read'), ('reports_team_write')$$,
   'reports has team read and team write policies'
 );
