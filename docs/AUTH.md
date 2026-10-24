@@ -36,7 +36,7 @@ Supabase Authentication → URL Configuration bölümünde yerel panel URL'sini 
 | `src/lib/auth-api.ts`        | API route'ları için `requireApiRole('owner' \| 'editor' \| 'viewer')`, `parseJson(request, zodSchema)`, `apiError()`   |
 | `src/lib/safe-redirect.ts`   | `next` parametresini aynı origin'e indirger (open redirect koruması)                                                   |
 | `src/lib/supabase/admin.ts`  | Service role istemcisi, `server-only`. Sadece RLS'i bilerek aşmak gereken yerlerde (davet, e-posta listesi) kullanılır |
-| `src/app/auth/signout`       | Çıkış (POST form) ve üye olmayanların oturumunu kapatma (GET)                                                          |
+| `src/app/auth/signout`       | Çıkış yalnız POST form. GET sadece `?error=not_allowed` ile ve kullanıcı gerçekten üye değilse oturumu kapatır (CSRF)  |
 
 Kurallar:
 

@@ -177,9 +177,11 @@ SELECT extensions.is(
   1, 'later snapshots of the same viral post do not duplicate'
 );
 
--- Başarısız üretim
+-- Başarısız üretim (durumu worker yazar)
+RESET ROLE;
 INSERT INTO public.generations (id, influencer_id, tool, type, status)
 VALUES ('e5400000-0000-4000-8000-000000000001', 'e5100000-0000-4000-8000-000000000001', 'mock', 'image', 'failed');
+SET LOCAL ROLE authenticated;
 SELECT extensions.is(
   (SELECT count(*)::integer FROM public.alerts
    WHERE type = 'generation_failed' AND payload ->> 'generation_id' = 'e5400000-0000-4000-8000-000000000001'),

@@ -1,10 +1,11 @@
-import { assert, assertEquals } from '@std/assert';
+import { assert, assertEquals, assertRejects } from '@std/assert';
 import { FakeProvider } from '../_shared/generation/fake.ts';
 import {
   backoffSeconds,
   type JobPatch,
   NOT_CONFIGURED_MESSAGE,
   type QueueJob,
+  readLimited,
   type QueueStore,
   runWorker,
   toSubmitJob,
@@ -412,5 +413,69 @@ Deno.test('backoffSeconds üstel ve tavanlı', () => {
   assertEquals(
     [1, 2, 3, 10].map((n) => backoffSeconds(n)),
     [30, 60, 120, 900],
+  );
+});
+
+/** content-length başlığı olmayan, `chunks` parça üreten akış; kaç parça okunduğunu sayar. */
+function chunkedBody(chunks: number, size: number) {
+  const state = { pulled: 0, cancelled: false };
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (state.pulled >= chunks) return controller.close();
+      state.pulled++;
+      controller.enqueue(new Uint8Array(size).fill(7));
+    },
+    cancel() {
+      state.cancelled = true;
+    },
+  });
+  return { body, state };
+}
+
+Deno.test(
+  'content-length olmadan sınırı aşan indirme akış okunurken kesilir',
+  async () => {
+    const store = new MemoryStore(() => T0);
+    const provider = new FakeProvider();
+    store.add('g1', {
+      status: 'running',
+      provider_job_id: 'job-g1',
+      started_at: T0.toISOString(),
+    });
+    provider.polls.set('job-g1', [
+      { status: 'succeeded', resultUrl: 'https://cdn.example/big.png' },
+    ]);
+    const stream = chunkedBody(1000, 1024);
+    const fetchImpl: typeof fetch = () =>
+      Promise.resolve(
+        new Response(stream.body, { headers: { 'content-type': 'image/png' } }),
+      );
+    const result = await runWorker({
+      store,
+      providers: [provider],
+      fetch: fetchImpl,
+      now: () => T0,
+      maxFileBytes: 4096,
+    });
+    assertEquals(result.outcomes.g1, 'failed');
+    assertEquals(
+      store.get('g1').error,
+      'Sonuç dosyası desteklenmeyen türde veya çok büyük.',
+    );
+    assert(stream.state.cancelled, 'akış iptal edilir');
+    assert(stream.state.pulled < 10, 'dosyanın tamamı okunmaz');
+    assertEquals(store.uploads.size, 0);
+  },
+);
+
+Deno.test('readLimited sınır içindeki parçaları birleştirir', async () => {
+  const stream = chunkedBody(3, 4);
+  const bytes = await readLimited(new Response(stream.body), 12);
+  assertEquals(bytes.byteLength, 12);
+  assertEquals(bytes[11], 7);
+  await assertRejects(
+    () => readLimited(new Response(chunkedBody(4, 4).body), 12),
+    Error,
+    'unsupported',
   );
 });
