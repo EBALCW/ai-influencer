@@ -69,3 +69,9 @@ start/callback, sağlayıcı token değişimleri, Vault yazımı, revoke, yenile
 ve hesaplar arayüzü tamamlanmadan sosyal hesap bağlama kullanılabilir sayılmaz.
 Canlı kabul için sağlayıcı uygulamaları ve en az iki platform test hesabıyla
 bağlantı doğrulaması gerekir; bu bilgiler public repoya veya sohbete yazılmaz.
+
+Kalıcı adaptör: `src/lib/oauth/store.ts`. `createOAuthStateStore()` yalnız servis
+anahtarıyla public state RPC'lerini çağırır; zaman kontrolünü DB yapar. Verifier
+ve sağlayıcı ayrıntıları hata mesajlarına dahil edilmez. Şema:
+`20261024100000_oauth_state_store.sql`; yetki/TTL/replay testleri:
+`supabase/tests/oauth_state.test.sql`. Route entegrasyonu henüz tamamlanmadı.

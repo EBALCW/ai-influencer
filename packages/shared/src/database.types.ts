@@ -1115,6 +1115,12 @@ isOneToOne: false
 "mark_alerts_read":
 { Args: { "p_alert_ids"?: (string)[] }; Returns: number
                            },
+"oauth_state_consume":
+{ Args: { "p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string }; Returns: Json
+                           },
+"oauth_state_save":
+{ Args: { "p_expires_at": string,"p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string,"p_verifier": string }; Returns: undefined
+                           },
 "post_analytics":
 { Args: { "p_baseline_posts"?: number,"p_post_id": string }; Returns: Json
                            },
