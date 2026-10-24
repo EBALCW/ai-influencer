@@ -7,7 +7,7 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 const state = vi.hoisted(() => ({
   user: { id: 'editor' } as { id: string } | null,
   role: 'editor' as string | null,
-  error: null as { code: string; message: string } | null,
+  error: null as { code: string; message: string; hint?: string } | null,
   existing: null as Record<string, unknown> | null,
   calls: [] as Array<{ name: string; args: Record<string, unknown> }>,
 }));
@@ -117,6 +117,56 @@ describe('içerik mutasyonları', () => {
     expect(r.status).toBe(201);
     expect(state.calls[0]?.args.p_values).toMatchObject({ stage: 'edit' });
     expect(state.calls[0]?.args.p_values).not.toHaveProperty('created_by');
+  });
+  it('v2v kaynak ve puanlayan engellerini (HINT) anlaşılır 422 mesajına çevirir', async () => {
+    state.error = {
+      code: '23514',
+      message: 'db',
+      hint: 'source_missing',
+    };
+    let r = await PATCH(req({ stage: 'script' }), ctx);
+    expect(r.status).toBe(422);
+    expect(((await r.json()) as { error: string }).error).toMatch(
+      /Video-to-video içerikte kaynak bilgisi/,
+    );
+    state.error = { code: '23514', message: 'db', hint: 'scorer_is_producer' };
+    r = await PATCH(req({ stage: 'script' }), ctx);
+    expect(r.status).toBe(422);
+    expect(((await r.json()) as { error: string }).error).toMatch(
+      /Puanlayan kişi üreten kişiden farklı/,
+    );
+  });
+  it('kaynak alanlarını RPC’ye taşır, üçüncü kişi kaynakta lisans ister, kontrol edeni istemciden almaz', async () => {
+    const bad = await POST(
+      req({ ...input, source_type: 'third_party', source_owner: '@kanal' }),
+    );
+    expect(bad.status).toBe(422);
+    expect(state.calls).toEqual([]);
+    expect((await POST(req({ ...input, source_type: 'pirated' }))).status).toBe(
+      400,
+    );
+    const ok = await POST(
+      req({
+        ...input,
+        source_type: 'stock',
+        source_owner: 'Stok sağlayıcı',
+        source_license: 'Lisans 42',
+        source_checked_by: 'spoof',
+        checklist_scored_by: 'spoof',
+      }),
+    );
+    expect(ok.status).toBe(201);
+    expect(state.calls[0]?.args.p_values).toMatchObject({
+      source_type: 'stock',
+      source_owner: 'Stok sağlayıcı',
+      source_license: 'Lisans 42',
+    });
+    expect(state.calls[0]?.args.p_values).not.toHaveProperty(
+      'source_checked_by',
+    );
+    expect(state.calls[0]?.args.p_values).not.toHaveProperty(
+      'checklist_scored_by',
+    );
   });
   it('UUID, URL ve katı PATCH gövdesi doğrulanır', async () => {
     expect(

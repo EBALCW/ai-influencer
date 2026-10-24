@@ -28,7 +28,7 @@ INSERT INTO public.metric_snapshots(post_id,captured_at,views) VALUES
 SELECT set_config('test.ready_checklist', jsonb_build_object('items',
  (SELECT jsonb_object_agg(key,true) FROM unnest(ARRAY[
  'hook_opening','hook_character','hook_pacing','hook_payoff','hook_loop',
- 'engagement_reason','engagement_caption','engagement_honesty',
+ 'engagement_reason','engagement_caption','engagement_hashtags','engagement_honesty',
  'quality_format','quality_anatomy','quality_text','quality_silent','quality_audio','quality_cover',
  'ai_disclosure','ai_identity','ai_consent','ai_claims','ai_brands',
  'commercial_disclosure','commercial_tool','commercial_rights','commercial_engagement','commercial_minor'
@@ -56,7 +56,7 @@ UPDATE public.content_items SET checklist='{"hookScore":2,"engagementScore":4}',
 SELECT extensions.is((SELECT stage::text FROM public.content_items WHERE id=current_setting('test.content_id')::uuid),'edit','score below three returns card to edit');
 SELECT extensions.throws_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000001')$$,'23514',NULL,'post matching cannot bypass incomplete checklist');
 SELECT extensions.is((SELECT content_item_id FROM public.posts WHERE id='c4000000-0000-4000-8000-000000000001'),NULL::uuid,'failed post matching rolls back the post link');
-SELECT extensions.lives_ok($$UPDATE public.content_items SET checklist=current_setting('test.ready_checklist')::jsonb,stage='scheduled',target_account_id='c2000000-0000-4000-8000-000000000001',scheduled_at='2026-11-01T09:00:00Z' WHERE id=current_setting('test.content_id')::uuid$$,'complete checklist can schedule');
+SELECT extensions.lives_ok($$UPDATE public.content_items SET checklist=current_setting('test.ready_checklist')::jsonb,assignee_id='94000000-0000-4000-8000-000000000002',stage='scheduled',target_account_id='c2000000-0000-4000-8000-000000000001',scheduled_at='2026-11-01T09:00:00Z' WHERE id=current_setting('test.content_id')::uuid$$,'complete checklist can schedule');
 SELECT extensions.throws_ok($$UPDATE public.content_items SET target_account_id='c2000000-0000-4000-8000-000000000002' WHERE id=current_setting('test.content_id')::uuid$$,'23514',NULL,'cross-influencer account rejected');
 SELECT extensions.throws_ok($$INSERT INTO public.content_item_assets(content_item_id,asset_id) VALUES(current_setting('test.content_id')::uuid,'c3000000-0000-4000-8000-000000000002')$$,'23514',NULL,'cross-influencer asset rejected');
 SELECT extensions.throws_ok($$SELECT public.save_content_item(current_setting('test.content_id')::uuid,'{"title":"must roll back"}',ARRAY['c3000000-0000-4000-8000-000000000002']::uuid[])$$,'23514',NULL,'invalid media rolls back the content change');
@@ -64,13 +64,14 @@ SELECT extensions.is((SELECT title FROM public.content_items WHERE id=current_se
 SELECT extensions.throws_ok($$SELECT public.save_content_item(current_setting('test.content_id')::uuid,'{"title":"stale"}',NULL,NULL,'2000-01-01T00:00:00Z')$$,'40001',NULL,'stale update rejected');
 SELECT extensions.lives_ok($$INSERT INTO public.posting_slots(account_id,weekday,local_time,timezone) VALUES('c2000000-0000-4000-8000-000000000001',1,'12:00','Europe/Istanbul')$$,'editor creates posting slot');
 SELECT extensions.throws_ok($$INSERT INTO public.posting_slots(account_id,weekday,local_time,timezone) VALUES('c2000000-0000-4000-8000-000000000001',2,'12:00','Unknown/Zone')$$,'23514',NULL,'invalid timezone rejected');
-INSERT INTO public.content_items(id,influencer_id,title,target_account_id,stage,scheduled_at,checklist) VALUES
- ('c5000000-0000-4000-8000-000000000002','c1000000-0000-4000-8000-000000000001','Second','c2000000-0000-4000-8000-000000000001','scheduled','2026-11-01T14:00:00Z',current_setting('test.ready_checklist')::jsonb);
+-- Puanlayan (editor) üretenden farklı olsun diye üretim viewer'a atanır (#22).
+INSERT INTO public.content_items(id,influencer_id,title,target_account_id,stage,scheduled_at,checklist,assignee_id) VALUES
+ ('c5000000-0000-4000-8000-000000000002','c1000000-0000-4000-8000-000000000001','Second','c2000000-0000-4000-8000-000000000001','scheduled','2026-11-01T14:00:00Z',current_setting('test.ready_checklist')::jsonb,'94000000-0000-4000-8000-000000000002');
 SELECT extensions.is(cardinality(public.content_schedule_warnings(current_setting('test.content_id')::uuid)),0,'exactly five hours is allowed');
 UPDATE public.content_items SET scheduled_at='2026-11-01T13:59:00Z' WHERE id='c5000000-0000-4000-8000-000000000002';
 SELECT extensions.is(cardinality(public.content_schedule_warnings(current_setting('test.content_id')::uuid)),1,'four hours fifty-nine minutes warns');
-INSERT INTO public.content_items(influencer_id,title,target_account_id,stage,scheduled_at,checklist)
- SELECT 'c1000000-0000-4000-8000-000000000001','extra','c2000000-0000-4000-8000-000000000001','scheduled','2026-11-01T15:00:00Z'::timestamptz + n*interval '30 minutes',current_setting('test.ready_checklist')::jsonb FROM generate_series(1,3) n;
+INSERT INTO public.content_items(influencer_id,title,target_account_id,stage,scheduled_at,checklist,assignee_id)
+ SELECT 'c1000000-0000-4000-8000-000000000001','extra','c2000000-0000-4000-8000-000000000001','scheduled','2026-11-01T15:00:00Z'::timestamptz + n*interval '30 minutes',current_setting('test.ready_checklist')::jsonb,'94000000-0000-4000-8000-000000000002' FROM generate_series(1,3) n;
 SELECT extensions.is(cardinality(public.content_schedule_warnings(current_setting('test.content_id')::uuid)),2,'fifth post on same local day warns');
 SELECT extensions.throws_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000002')$$,'23514',NULL,'cross-account post matching rejected');
 SELECT extensions.throws_ok($$SELECT public.link_content_post(current_setting('test.content_id')::uuid,'c4000000-0000-4000-8000-000000000003')$$,'23514',NULL,'manual matching cannot silently switch the target account');
