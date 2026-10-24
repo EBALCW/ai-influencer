@@ -160,12 +160,26 @@ export default async function InfluencerDetailPage({
     );
   } else if (tab === 'prompts') {
     content = (
-      <RecordList
-        rows={data.prompts.map((prompt) => ({
-          title: `${prompt.category} · v${prompt.version}`,
-          detail: prompt.body,
-        }))}
-      />
+      <div className="page-stack">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted">
+            Bu influencer&apos;a özel prompt&apos;lar. Global prompt&apos;lar,
+            versiyonlar ve içe/dışa aktarma kütüphanededir.
+          </p>
+          <Link
+            className="button button-quiet"
+            href={`/prompts?inf=${encodeURIComponent(influencer.slug)}`}
+          >
+            Prompt kütüphanesinde aç
+          </Link>
+        </div>
+        <RecordList
+          rows={data.prompts.map((prompt) => ({
+            title: `${prompt.category} · v${prompt.version}`,
+            detail: prompt.body,
+          }))}
+        />
+      </div>
     );
   } else if (tab === 'accounts') {
     content = (
@@ -197,8 +211,16 @@ export default async function InfluencerDetailPage({
   } else {
     content = (
       <EmptyState
-        title="Henüz analitik yok"
-        description="Analitik verileri bağlandığında bu sekmede gösterilecek."
+        title="Post analitiği"
+        description="Post detayları, karşılaştırma ve segment analizi Analitik sayfasında."
+        action={
+          <Link
+            className="button button-quiet"
+            href={`/analytics?inf=${encodeURIComponent(slug)}`}
+          >
+            Analitiği aç
+          </Link>
+        }
       />
     );
   }

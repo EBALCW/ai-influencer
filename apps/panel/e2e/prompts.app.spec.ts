@@ -183,7 +183,7 @@ test('kütüphanede başarı oranı ve ortalama kredi görünür', async ({ page
   await expect(row).toContainText('v2');
   await expect(row).toContainText('4/5');
   await expect(row).toContainText('(1/2)');
-  await expect(row.getByRole('cell').nth(6)).toHaveText('3');
+  await expect(row.getByRole('cell').nth(7)).toHaveText('3');
 });
 
 test("influencer'a özel prompt sadece kendi influencer'ında görünür", async ({
@@ -219,4 +219,97 @@ test('olmayan veya geçersiz prompt kimliği 404 döner', async ({ page }) => {
     const response = await page.goto(path);
     expect(response?.status()).toBe(404);
   }
+});
+
+test('seçilen prompt dosya olarak indirilir, düzenlenip geri yüklenince yeni versiyon olur', async ({
+  page,
+}) => {
+  await page.goto('/prompts?inf=e2e-prompt-a');
+  const exportSelected = page.getByRole('button', {
+    name: /Seçilenleri dışa aktar/,
+  });
+  await expect(exportSelected).toBeDisabled();
+  await page.getByLabel(`${title} dışa aktarılsın`).check();
+  await expect(exportSelected).toHaveText(/\(1\)/);
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    exportSelected.click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(
+    /^ai-influencer-prompts-\d{4}-\d{2}-\d{2}\.json$/,
+  );
+  const chunks: Buffer[] = [];
+  for await (const chunk of await download.createReadStream())
+    chunks.push(chunk as Buffer);
+  const bundle = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  expect(bundle.prompts).toHaveLength(1);
+  expect(bundle.prompts[0]).toMatchObject({
+    title,
+    influencer: null,
+    version: 2,
+  });
+
+  bundle.prompts[0].body += ', yağmur';
+  bundle.prompts.push({
+    category: 'caption',
+    key: `ice-aktarilan-${run}`,
+    title: `E2E içe aktarılan ${run}`,
+    body: 'A için içe aktarılan caption',
+    influencer: 'e2e-prompt-a',
+  });
+  const file = {
+    name: 'prompts.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify(bundle)),
+  };
+  const importForm = page.getByRole('form', { name: 'Prompt içe aktar' });
+  await importForm.getByLabel(/Prompt paketi seçin/).setInputFiles(file);
+  await importForm.getByRole('button', { name: 'İçe aktar' }).click();
+  await expect(page.getByText('2 yeni versiyon oluşturuldu.')).toBeVisible();
+  await expect(
+    page.getByRole('row', { name: new RegExp(title) }),
+  ).toContainText('v3');
+  await expect(
+    page.getByRole('link', { name: `E2E içe aktarılan ${run}` }),
+  ).toBeVisible();
+
+  // Aynı dosya tekrar yüklenirse gereksiz versiyon oluşmaz
+  await importForm.getByLabel(/prompts\.json/).setInputFiles(file);
+  await importForm.getByRole('button', { name: 'İçe aktar' }).click();
+  await expect(
+    page.getByText('0 yeni versiyon oluşturuldu, 2 prompt zaten günceldi.'),
+  ).toBeVisible();
+  // v2 değişmedi (versiyonlar değiştirilemez)
+  const { data } = await admin()
+    .from('prompts')
+    .select('version, body')
+    .eq('id', v2Id)
+    .single();
+  expect(data?.version).toBe(2);
+  expect(data?.body).not.toContain('yağmur');
+});
+
+test('hatalı prompt dosyası reddedilir', async ({ page }) => {
+  await page.goto('/prompts');
+  const importForm = page.getByRole('form', { name: 'Prompt içe aktar' });
+  await importForm.getByLabel(/Prompt paketi seçin/).setInputFiles({
+    name: 'bozuk.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"format":"baska"}'),
+  });
+  await importForm.getByRole('button', { name: 'İçe aktar' }).click();
+  await expect(page.getByText(/prompt paketi değil/)).toBeVisible();
+});
+
+test("influencer detayındaki Prompt'lar sekmesi kütüphaneye filtreyle bağlanır", async ({
+  page,
+}) => {
+  await page.goto('/influencers/e2e-prompt-a?tab=prompts');
+  await page.getByRole('link', { name: 'Prompt kütüphanesinde aç' }).click();
+  await expect(page).toHaveURL(/\/prompts\?inf=e2e-prompt-a$/);
+  await expect(
+    page.getByText("Global prompt'lar ve E2E Prompt A için özel olanlar."),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: specificTitle })).toBeVisible();
 });

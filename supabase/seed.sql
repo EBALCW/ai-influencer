@@ -71,3 +71,45 @@ ON CONFLICT (id) DO UPDATE SET
   saves = EXCLUDED.saves,
   avg_watch_time_s = EXCLUDED.avg_watch_time_s,
   completion_rate = EXCLUDED.completion_rate;
+
+-- Demo uyarıları (#56): bildirim merkezinde görünen örnekler. Payload'da sadece id, sayı ve enum değerleri var.
+INSERT INTO public.alerts (id, influencer_id, type, payload, dedupe_key, created_at)
+VALUES
+  ('50000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'viral_post',
+   '{"post_id": "30000000-0000-4000-8000-000000000009", "account_id": "20000000-0000-4000-8000-000000000002", "platform": "youtube", "views": 9600, "baseline": 2730, "ratio": 3.5, "multiplier": 3}',
+   'viral_post:30000000-0000-4000-8000-000000000009', now() - interval '20 minutes'),
+  ('50000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', 'follower_milestone',
+   '{"account_id": "20000000-0000-4000-8000-000000000001", "platform": "instagram", "milestone": 10000, "followers": 10240}',
+   'follower_milestone:20000000-0000-4000-8000-000000000001:10000', now() - interval '2 hours'),
+  ('50000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', 'token_expiring',
+   '{"account_id": "20000000-0000-4000-8000-000000000001", "platform": "instagram", "days_left": 5}',
+   'token_expiring:20000000-0000-4000-8000-000000000001:demo', now() - interval '5 hours'),
+  ('50000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'sync_failed',
+   '{"account_id": "20000000-0000-4000-8000-000000000002", "platform": "youtube"}',
+   'sync_failed:20000000-0000-4000-8000-000000000002:demo', now() - interval '1 day'),
+  ('50000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000001', 'content_not_ready',
+   '{"content_item_id": "00000000-0000-4000-8000-000000000000", "stage": "edit"}',
+   'content_not_ready:demo', now() - interval '2 days')
+ON CONFLICT (id) DO UPDATE SET
+  influencer_id = EXCLUDED.influencer_id,
+  type = EXCLUDED.type,
+  payload = EXCLUDED.payload,
+  dedupe_key = EXCLUDED.dedupe_key;
+
+-- Demo yorumları (#61): gelen kutusundaki örnekler. Yazar adları ve metinler uydurmadır.
+INSERT INTO public.comments (id, post_id, account_id, platform, external_id, author_name, text, published_at, like_count, is_brand_inquiry)
+VALUES
+  ('60000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000005', '20000000-0000-4000-8000-000000000001', 'instagram',
+   'demo-ig-comment-01', 'demo.izleyici', 'Bu ışık ayarı çok güzel olmuş, hangi saatte çektiniz?', now() - interval '3 hours', 2, false),
+  ('60000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000005', '20000000-0000-4000-8000-000000000001', 'instagram',
+   'demo-ig-comment-02', 'demo.marka', 'Merhaba, bir iş birliği için iletişime geçmek istiyoruz.', now() - interval '1 day', 0, true),
+  ('60000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000009', '20000000-0000-4000-8000-000000000002', 'youtube',
+   'demo-yt-comment-01', 'Demo İzleyici', 'Bir sonraki videoyu merakla bekliyorum!', now() - interval '2 days', 5, false)
+ON CONFLICT (id) DO UPDATE SET
+  post_id = EXCLUDED.post_id,
+  external_id = EXCLUDED.external_id,
+  author_name = EXCLUDED.author_name,
+  text = EXCLUDED.text,
+  published_at = EXCLUDED.published_at,
+  like_count = EXCLUDED.like_count,
+  is_brand_inquiry = EXCLUDED.is_brand_inquiry;

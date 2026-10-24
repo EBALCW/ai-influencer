@@ -209,7 +209,7 @@ describe('enqueueGeneration', () => {
         : { data: [{ id: 'gen-1' }], error: null };
   };
 
-  it('queues a generation with the rendered prompt; the provider is not called', async () => {
+  it('queues a generation via enqueue_generation; the provider is not called', async () => {
     respondWith(prompt());
     const state = await enqueueGeneration(
       null,
@@ -219,23 +219,84 @@ describe('enqueueGeneration', () => {
         'value:kıyafet': 'trençkot',
         'value:mekan': 'sahil',
         'value:fazla': 'x',
+        testMode: 'on',
+        resolution: '1080p',
+        seed: '42',
+        overrideBudget: 'on',
       }),
     );
     expect(state?.ok).toBe(true);
-    const insert = db.calls.find((call) => call.op === 'insert');
-    expect(insert?.payload).toEqual({
-      influencer_id: INF_A,
-      prompt_id: PROMPT_ID,
-      tool: 'mock',
-      type: 'image',
-      status: 'queued',
-      params: {
-        prompt: 'trençkot @ sahil',
-        negative: 'bulanık',
-        variables: { kıyafet: 'trençkot', mekan: 'sahil' },
-        prompt_version: 2,
+    expect(db.calls.some((call) => call.op === 'insert')).toBe(false);
+    expect(db.rpcCalls).toEqual([
+      {
+        name: 'enqueue_generation',
+        args: {
+          p_influencer_id: INF_A,
+          p_prompt_id: PROMPT_ID,
+          p_tool: 'higgsfield',
+          p_type: 'image',
+          p_mode: 'text_to_image',
+          p_input_asset_ids: [],
+          // editor bütçe onayı veremez
+          p_override_budget: false,
+          p_params: {
+            prompt: 'trençkot @ sahil',
+            negative: 'bulanık',
+            variables: { kıyafet: 'trençkot', mekan: 'sahil' },
+            prompt_version: 2,
+            test_mode: true,
+            resolution: '480p',
+            seed: 42,
+          },
+        },
       },
+    ]);
+  });
+
+  it('owner can approve the budget; test mode off keeps the resolution', async () => {
+    auth.role = 'owner';
+    respondWith(prompt({ body: 'Sabit' }));
+    await enqueueGeneration(
+      null,
+      form({
+        promptId: PROMPT_ID,
+        influencerId: INF_A,
+        resolution: '1080p',
+        overrideBudget: 'on',
+      }),
+    );
+    const args = db.rpcCalls[0]?.args as Record<string, unknown>;
+    expect(args.p_override_budget).toBe(true);
+    expect(args.p_params).toMatchObject({
+      test_mode: false,
+      resolution: '1080p',
     });
+  });
+
+  it('shows a clear message when the budget is exceeded', async () => {
+    respondWith(prompt({ body: 'Sabit' }));
+    db.rpcResult = {
+      data: null,
+      error: { code: 'P0001', message: 'x', hint: 'budget_exceeded' } as never,
+    };
+    const state = await enqueueGeneration(
+      null,
+      form({ promptId: PROMPT_ID, influencerId: INF_A, testMode: 'on' }),
+    );
+    expect(state).toEqual({
+      ok: false,
+      message: 'Bu ayın bütçesi doldu. Yeni üretim için owner onayı gerekli.',
+    });
+  });
+
+  it('video prompts need reference files for their mode', async () => {
+    respondWith(prompt({ category: 'short_film', body: 'Sahne' }));
+    const state = await enqueueGeneration(
+      null,
+      form({ promptId: PROMPT_ID, influencerId: INF_A, testMode: 'on' }),
+    );
+    expect(state?.message).toMatch(/en az bir referans görsel/);
+    expect(db.rpcCalls).toHaveLength(0);
   });
 
   it('refuses when a variable is missing', async () => {
@@ -249,7 +310,7 @@ describe('enqueueGeneration', () => {
       }),
     );
     expect(state).toEqual({ ok: false, message: 'Eksik değişken: mekan' });
-    expect(db.calls.some((call) => call.op === 'insert')).toBe(false);
+    expect(db.rpcCalls).toHaveLength(0);
   });
 
   it('refuses text-only categories (caption/research)', async () => {
@@ -268,7 +329,7 @@ describe('enqueueGeneration', () => {
       form({ promptId: PROMPT_ID, influencerId: INF_B }),
     );
     expect(state?.message).toMatch(/yalnızca kendi/);
-    expect(db.calls.some((call) => call.op === 'insert')).toBe(false);
+    expect(db.rpcCalls).toHaveLength(0);
   });
 
   it('requires an influencer and rejects viewers', async () => {

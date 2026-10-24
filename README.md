@@ -46,6 +46,10 @@ Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 | `pnpm build`                    | Production build                                                                    |
 | `pnpm test:e2e`                 | Playwright uçtan uca testleri (ilk seferde `pnpm exec playwright install chromium`) |
 | `pnpm supabase:start` / `:stop` | Yerel Supabase (opsiyonel, Docker Desktop gerekir)                                  |
+| `pnpm env:pull`                 | Test Supabase anahtarlarını şifreli olarak `.env.local`'e çeker                     |
+| `pnpm panel`                    | Paneli build edip başlatır, tarayıcıyı açar (günlük kullanım)                       |
+| `pnpm codemap`                  | Güncel kod haritası: sayfalar, API, modüller, migration'lar, testler                |
+| `pnpm release`                  | `test` → `main` release PR'ını açar/yeniler                                         |
 
 Geliştirme kuralları: **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** · Branch, PR ve CI/CD akışı: **[docs/WORKFLOW.md](docs/WORKFLOW.md)** (`feature → test → main`, CI geçince otomatik onay + merge)
 
@@ -69,7 +73,7 @@ Supabase için varsayılan yol ortak **dev** projesidir, değerleri `.env.local`
 
 Öncelikler `P0` / `P1` / `P2` label'larıyla işaretli. İşe `P0` ile başlanır.
 
-## Admin panel (plan)
+## Admin panel mimarisi
 
 ```
 [Ekip bilgisayarı: Next.js panel (localhost:3000)]
@@ -84,6 +88,44 @@ Supabase için varsayılan yol ortak **dev** projesidir, değerleri `.env.local`
 
 Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur. Böylece ekipteki herkes aynı veriyi görür ve istatistik toplama job'ları bilgisayarlar kapalıyken de çalışır. Mimari karar ve seçenek karşılaştırması: [ADR 0001](docs/adr/0001-admin-panel-stack.md) · [#36](../../issues/36).
 
-## Durum
+## Durum (23 Ekim 2026)
 
-Proje altyapısı ve admin panel başlangıç iskeleti hazır. Influencer yönetimi ve diğer ürün özellikleri yol haritasındaki işler kapsamında geliştirilecek.
+**Panelin tüm modülleri `test`'te.** Gerçek veri için kalan kod işi sosyal hesap bağlama (#49) ve Instagram toplayıcısı (#50); gerisi hosted kurulum (sırlar, geliştirici uygulamaları).
+
+| Alan                                                                                               | Durum       | Issue           |
+| -------------------------------------------------------------------------------------------------- | ----------- | --------------- |
+| Altyapı: monorepo, CI/CD, otomatik onay/merge, migration pipeline'ı (test + prod), `pnpm env:pull` | ✅          | #36 #37 #38 #93 |
+| Kimlik doğrulama, ekip ve roller (owner / editor / viewer), RLS                                    | ✅          | #39             |
+| Panel iskeleti, tema, influencer seçici                                                            | ✅          | #40             |
+| Influencer listesi, oluşturma sihirbazı, persona versiyonları                                      | ✅          | #42 #43 #44     |
+| Medya kütüphanesi (Storage)                                                                        | ✅          | #45             |
+| Prompt kütüphanesi, versiyonlama, içe/dışa aktarma                                                 | ✅          | #46             |
+| Panel içi AI asistanı (Claude)                                                                     | ✅          | #48             |
+| Genel bakış dashboard'u                                                                            | ✅          | #54             |
+| Post detay ve karşılaştırmalı analiz (`/analytics`)                                                | ✅          | #55             |
+| Bildirimler ve uyarı kuralları (zil, push opsiyonel)                                               | ✅          | #56             |
+| İçerik kanbanı ve yayın takvimi                                                                    | ✅          | #57             |
+| Maliyet ve bütçe takibi (üretim maliyeti otomatik)                                                 | ✅          | #59             |
+| Haftalık rapor, CSV dışa aktarma, PDF                                                              | ✅          | #62             |
+| AI üretim kuyruğu (Higgsfield worker, `/production`)                                               | ✅          | #47             |
+| Zamanlanmış senkronizasyon + 1s/5s/24s/72s/7g snapshot'ları                                        | ✅          | #53             |
+| Marka CRM'i ve PDF medya kiti                                                                      | ✅          | #60             |
+| Sosyal hesap bağlama (OAuth)                                                                       | 🚧 Emre     | #49             |
+| YouTube ve TikTok toplayıcıları, manuel metrik girişi                                              | ✅          | #51 #52         |
+| Instagram toplayıcısı                                                                              | 🚧 Emre     | #50             |
+| Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅          | #58             |
+| Birleşik yorum gelen kutusu                                                                        | ✅          | #61             |
+| Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel) | #41             |
+
+**Ortamlar:** `test` dalı → AiInfTest Supabase projesi, `main` → AiInfMain (production). Veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0). Son production release: `v2026.10.21-0c1131d`. `test`'teki yenilikler `pnpm release` ile `main`'e geçer.
+
+**Bekleyen manuel adımlar (owner):**
+
+- İlk owner hesabı (`pnpm owner:create`) ve ekip davetleri
+- Supabase: Edge Function secret'ları `CRON_SECRET`, `HIGGSFIELD_API_KEY_ID` / `HIGGSFIELD_API_KEY_SECRET`; Vault'ta `cron_secret` (aynı değer) ve `project_url`. Bunlar yoksa zamanlanmış işler sessizce bekler.
+- Google Cloud: YouTube Data API v3 + YouTube Analytics API; OAuth scope'ları `youtube.readonly`, `yt-analytics.readonly`, `youtube.upload`, `youtube.force-ssl`
+- Meta: Instagram Login uygulaması; `instagram_business_content_publish`, `instagram_business_manage_comments`
+- TikTok: Login Kit + Display API uygulaması; `user.info.basic`, `user.info.stats`, `video.list`
+- Bildirim kanalları (isteğe bağlı): Vault'ta `notify_*` sırları
+
+Güncel açık işler: [issue listesi](../../issues) · Kod haritası: `pnpm codemap`

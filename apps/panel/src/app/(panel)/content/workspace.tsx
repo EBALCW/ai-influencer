@@ -1,4 +1,5 @@
 'use client';
+import { AiSuggestion, suggestionText } from '@/components/ai-suggestion';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,6 +10,7 @@ import { contentSchema, type ContentInput } from '@/lib/content/schemas';
 import { localInput, localToIso } from '@/lib/content/schedule-rules';
 import { stages, type ContentStage } from '@/lib/content/stage-rules';
 import type { ContentCard, ContentWorkspace } from '@/lib/content/queries';
+import { PublishControls, PublishQueue } from './publish-panel';
 
 export const fieldClass =
   'mt-1 w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent disabled:opacity-70';
@@ -347,6 +349,12 @@ export function ContentBoard({ workspace }: { workspace: ContentWorkspace }) {
                           ))}
                         </select>
                       </label>
+                      <PublishControls
+                        item={item}
+                        workspace={workspace}
+                        pending={pending}
+                        mutate={mutate}
+                      />
                       {canEdit && item.target_account_id && (
                         <details className="mt-3 text-xs">
                           <summary className="cursor-pointer text-accent">
@@ -412,6 +420,7 @@ export function ContentBoard({ workspace }: { workspace: ContentWorkspace }) {
           ))}
         </div>
       </div>
+      <PublishQueue workspace={workspace} />
       <ContentPagination workspace={workspace} path="/content" />
     </div>
   );
@@ -702,6 +711,7 @@ function ContentEditor({
           <label className={labelClass}>
             Notlar
             <textarea
+              aria-label="Notlar"
               className={fieldClass}
               maxLength={10000}
               value={values.notes}
@@ -764,6 +774,54 @@ function ContentEditor({
               </fieldset>
             ))}
           </div>
+          {!readonly && (
+            <AiSuggestion
+              influencerId={values.influencer_id}
+              tasks={['caption', 'script', 'weekly']}
+              disabled={pending}
+              requestFor={(task) =>
+                task === 'caption'
+                  ? {
+                      task: 'caption',
+                      input: {
+                        persona: {
+                          name:
+                            workspace.influencers.find(
+                              (i) => i.id === values.influencer_id,
+                            )?.name ?? '',
+                          niche:
+                            workspace.influencers.find(
+                              (i) => i.id === values.influencer_id,
+                            )?.niche || 'Niş belirtilmedi',
+                        },
+                        topic: values.title,
+                        format: values.format,
+                        language: 'tr',
+                      },
+                    }
+                  : task === 'script'
+                    ? {
+                        task: 'script',
+                        input: {
+                          topic: values.title,
+                          durationSeconds: 30,
+                          language: 'tr',
+                        },
+                      }
+                    : { task: 'weekly', input: { language: 'tr' } }
+              }
+              onApply={(result) => {
+                const next = [values.notes, suggestionText(result)]
+                  .filter(Boolean)
+                  .join('\n\n');
+                if (next.length > 10000)
+                  throw new Error(
+                    'Notlar 10.000 karakteri aşacak. Önce mevcut notları kısaltın.',
+                  );
+                set('notes', next);
+              }}
+            />
+          )}
           <div className="space-y-4">
             <h3 className="text-base font-semibold">
               Yayın öncesi kontrol listesi

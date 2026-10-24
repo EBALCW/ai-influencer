@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "invalid_params",
+    "message": "Invalid fields: secret_field",
+    "log_id": "20261022120000FIXTURE0011"
+  }
+}

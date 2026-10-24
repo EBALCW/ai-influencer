@@ -38,6 +38,28 @@ public = false
 file_size_limit = "100MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/webp", "image/avif", "video/mp4", "video/webm"]
 
+# Marka deal dosyaları (sözleşme). Migration 20261022232000_brand_crm.sql ile aynı sınırlar.
+[storage.buckets.contracts]
+public = false
+file_size_limit = "20MiB"
+allowed_mime_types = ["application/pdf", "image/jpeg", "image/png", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+
 [inbucket]
 enabled = true
 port = 54324
+
+# Üretim kuyruğu worker'ı (#47): pg_cron çağırır, doğrulama x-cron-secret ile.
+[functions.process-generations]
+verify_jwt = false
+
+# #53: pg_cron/pg_net çağırır; doğrulama JWT yerine x-cron-secret ile (docs/DEVELOPMENT.md §9).
+[functions.sync-dispatch]
+verify_jwt = false
+
+# #58 yayın kuyruğu: pg_cron/pg_net çağırır; doğrulama x-cron-secret ile.
+[functions.publish-scheduled]
+verify_jwt = false
+
+# #61: yorum toplama/yanıt gönderimi; pg_cron/pg_net çağırır, doğrulama x-cron-secret ile.
+[functions.comments-dispatch]
+verify_jwt = false

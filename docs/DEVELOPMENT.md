@@ -129,6 +129,7 @@ Ayrıntılar `apps/panel/AGENTS.md`'de. Özet:
   - kişisel bilgiler
   - parola, token, kurtarma kodu
   - özel paylaşım linkleri
+  - prompt metinleri (işin ticari değeri). Prompt'lar panelde tutulur; panelden indirilen paketler (`ai-influencer-prompts-*.json`) repoya eklenmez
 - Operasyonel kayıtlar ekibin erişimi kısıtlı alanında tutulur.
 
 > Neden: `docs/incidents.md` başlangıçta gerçek olay kaydı için tasarlanmıştı (#79).
@@ -141,3 +142,17 @@ Ayrıntılar `apps/panel/AGENTS.md`'de. Özet:
 - **Aynı issue'ya ikinci PR açılmaz.** Issue'da açık bir PR varsa onun üzerinde çalışılır. Başlamadan önce `gh pr list --search "<issue no>"` ile kontrol edilir.
 - **İşe başlarken issue'yu kendine ata ve `in progress` label'ı ekle:** `gh issue edit <n> --add-assignee @me --add-label "in progress"`. Atanmış veya `in progress` olan bir issue'ya başkası başlamaz, önce sahibine sorar. Agent'lar da başlamadan önce atanmış kişiyi, label'ı ve açık PR'ları kontrol eder. PR `Closes #n` ile merge olunca label otomatik kalkar. İşi yarıda bırakıyorsan label'ı kaldır ve issue'ya nerede kaldığını yaz.
 - Commit'ler anlamlı olur. Dosya başına bir commit (`feat: X (dosya.ts)`) atılmaz. CI'ı hiç çalışmamış bir PR "hazır" sayılmaz.
+
+## 9. Edge Functions (Supabase, Deno)
+
+Panel ekip bilgisayarlarında çalışır; zamanlanmış/arka plan işleri (senkronizasyon #53, üretim kuyruğu #47) **Supabase Edge Functions** üzerinde koşar.
+
+- Yer: `supabase/functions/<ad>/index.ts`, ortak kod `supabase/functions/_shared/`. Bağımlılıklar `supabase/functions/deno.json` import map'inde **sabit sürümle** (`npm:`/`jsr:`). URL import (`https://esm.sh/...`) kullanma.
+- Testler aynı klasörde `*.test.ts` (Deno.test). CI'da `Edge Functions (Deno)` işi `deno lint`, `deno check`, `deno test` çalıştırır; `ci-ok` buna bağlı. Yerelde: `cd supabase/functions && deno test --allow-env`.
+- Formatı prettier yapar (`pnpm format`); ESLint/tsc bu klasörü taramaz.
+- **Zamanlanmış çağrı:** pg_cron + pg_net fonksiyonu `x-cron-secret` başlığıyla çağırır; fonksiyon ilk satırda `requireCronSecret(req)` (`_shared/http.ts`) kontrol eder. Sır yoksa 503, yanlışsa 401. Bu fonksiyonlar için `supabase/config.toml` içinde `[functions.<ad>] verify_jwt = false` verilir (doğrulamayı sır yapar). Sır değerleri: fonksiyon tarafında `supabase secrets set CRON_SECRET=...` (pipeline/owner), veritabanı tarafında Vault'ta `cron_secret` adıyla; migration sırrın **değerini asla** içermez, sadece Vault'tan okur.
+- Fonksiyon içinde veritabanına service role ile bağlanılır (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` platform tarafından otomatik verilir). Service role RLS'i aşar: her sorguda `influencer_id`/`account_id` filtresini açıkça yaz.
+- Fonksiyonun URL'i pg_cron/pg_net tarafında Vault'taki `project_url` sırrından türetilir (`<project_url>/functions/v1/<ad>`); örnek: `private.invoke_sync()` (#53). Vault sırları yoksa çağrı sessizce atlanır.
+- Sosyal platform veri toplayıcıları `_shared/collectors/` altındaki `Collector` sözleşmesini uygular (`collectors/README.md`). Zamanlama, tekrar deneme ve DB yazımı `_shared/sync/` orkestratöründedir.
+- Dış API (Meta, Google, Higgsfield) çağrıları bir adaptör arkasında olur; testlerde `fetch` sahte implementasyonla değiştirilir, CI'da gerçek ağ çağrısı yapılmaz.
+- Deploy: `test`/`main` pipeline'ı migration'lardan sonra `supabase functions deploy` çalıştırır (`_migrate.yml`). Elle deploy yok.

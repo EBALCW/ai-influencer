@@ -10,7 +10,7 @@ test.describe.configure({ mode: 'serial' });
 test('home page shows the studio shell and overview', async ({ page }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { name: /İçerik üretiminiz için/i }),
+    page.getByRole('heading', { name: /Genel bakış/i }),
   ).toBeVisible();
   await expect(
     page.getByRole('navigation', { name: 'Ana menü' }),
@@ -29,18 +29,15 @@ test('navigation opens real modules and unfinished sections show empty states', 
   for (const [label, href] of [
     ['İçerik akışı', '/content'],
     ['Yayın takvimi', '/calendar'],
+    ['Üretim', '/production'],
+    ['Markalar', '/brands'],
   ] as const) {
     await page.goto(href);
     await expect(
       page.getByRole('heading', { name: label, level: 1 }),
     ).toBeVisible();
   }
-  const destinations = [
-    ['Analitik', '/analytics'],
-    ['Üretim', '/production'],
-    ['Markalar', '/brands'],
-    ['Ayarlar', '/settings'],
-  ];
+  const destinations = [['Ayarlar', '/settings']];
   for (const [label, href] of destinations) {
     await page.goto(href);
     await expect(

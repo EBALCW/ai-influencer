@@ -20,32 +20,49 @@ erDiagram
   INFLUENCERS ||--o{ COSTS : incurs
   BRANDS ||--o{ BRAND_DEALS : offers
   INFLUENCERS ||--o{ BRAND_DEALS : promotes
+  BRAND_DEALS ||--o{ BRAND_DEAL_CONTENT_ITEMS : links
+  CONTENT_ITEMS ||--o{ BRAND_DEAL_CONTENT_ITEMS : sponsors
+  CONTENT_ITEMS ||--o{ PUBLISH_JOBS : publishes
+  SOCIAL_ACCOUNTS ||--o{ PUBLISH_JOBS : targets
+  BRAND_DEALS ||--o{ BRAND_DEAL_FILES : stores
+  POSTS ||--o{ COMMENTS : receives
+  COMMENTS ||--o{ COMMENT_REPLIES : queues
+  BRAND_DEALS o|--o{ COMMENTS : sources
 ```
 
 `influencers.avatar_asset_id`, `generations.output_asset_id` ve `posts.content_item_id` isteğe bağlıdır. Üretilen varlıkları silmek, geçmiş üretim kayıtlarını silmez; varlık bağlantısı `NULL` olur.
 
 ## Tablolar
 
-| Tablo                 | Sorumluluk                                     | Önemli kurallar                                                                                                                                                   |
-| --------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `team_members`        | Supabase Auth kullanıcısının rolü              | `owner`, `editor`, `viewer`; son owner silinemez. İlk doğrulanmış kullanıcı yalnızca boş workspace'te owner olarak kaydolabilir.                                  |
-| `influencers`         | Karakterin kimliği ve yaşam döngüsü            | Benzersiz URL dostu `slug`; durum `draft`, `active`, `paused`, `archived`.                                                                                        |
-| `influencer_personas` | Persona metni ve versiyonları                  | Influencer başına versiyon numarası benzersiz; aynı anda en fazla bir güncel sürüm.                                                                               |
-| `assets`              | Storage'daki görsel/video metadata'sı          | `storage_path` benzersiz; dosyanın kendisi private Storage bucket'ta tutulur.                                                                                     |
-| `prompts`             | Global veya influencer'a özel prompt sürümleri | Soy = kapsam + kategori + `key`; versiyon başına bir satır. Versiyon içeriği **değiştirilemez** (trigger), yeni versiyon `create_prompt_version()` ile. Puan 1–5. |
-| `generations`         | Görsel/video üretim isteği ve sonucu           | Sağlayıcı, durum, kredi, süre ve çıktı asset'i kaydedilir. `params` (jsonb) doldurulmuş prompt ve değişken değerlerini taşır; sır tutulmaz.                       |
-| `social_accounts`     | Instagram, YouTube ve TikTok hesapları         | Token değeri değil, Vault secret referansı (`token_ref`) tutulur.                                                                                                 |
-| `content_items`       | Fikirden yayına içerik akışı                   | Stage enum'u: `idea` → `script` → `production` → `qc` → `edit` → `scheduled` → `published`.                                                                       |
-| `posts`               | Platformda yayınlanmış içerik                  | Hesap ve platform kimliğiyle eşleşir; içerik planından bağımsız içe aktarılabilir.                                                                                |
-| `metric_snapshots`    | Post bazında zamanlı performans                | `views`, `likes`, `comments`, `shares`, `saves`; completion rate 0–1 aralığında.                                                                                  |
-| `account_snapshots`   | Hesap seviyesinde takipçi ve erişim            | Hesap + zaman damgası başına tek snapshot.                                                                                                                        |
-| `costs`               | Abonelik, kredi ve araç maliyeti               | Tutar ve para birimi sayısal alanlardır; üretim kaydına bağlanabilir.                                                                                             |
-| `brands`              | Marka ve iletişim notları                      | İsim büyük/küçük harf duyarsız benzersizdir.                                                                                                                      |
-| `brand_deals`         | Marka iş birliği süreci                        | Aşama, ücret, teslimatlar ve son tarih tutulur.                                                                                                                   |
-| `alerts`              | Panel uyarıları                                | Tip serbest metindir; payload JSONB'dir, okundu zamanı `read_at` ile saklanır.                                                                                    |
-| `budgets`             | Aylık bütçe tavanı                             | `influencer_id` NULL = tüm ekip toplamı. Ay başına tek bütçe (kısmi benzersiz indeksler). Sadece owner yazar.                                                     |
-| `exchange_rates`      | Döviz kuru                                     | 1 `currency` = `rate` `base_currency`, `valid_on` gününden itibaren. Ters kur otomatik kullanılır. Sadece owner yazar.                                            |
-| `credit_rates`        | Sağlayıcı kredisinin para karşılığı            | 1 kredi = `rate_per_credit` `currency`, `valid_from`'dan itibaren (`credits_to_money()`). Sadece owner yazar.                                                     |
+| Tablo                      | Sorumluluk                                     | Önemli kurallar                                                                                                                                                                            |
+| -------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `team_members`             | Supabase Auth kullanıcısının rolü              | `owner`, `editor`, `viewer`; son owner silinemez. İlk doğrulanmış kullanıcı yalnızca boş workspace'te owner olarak kaydolabilir.                                                           |
+| `influencers`              | Karakterin kimliği ve yaşam döngüsü            | Benzersiz URL dostu `slug`; durum `draft`, `active`, `paused`, `archived`.                                                                                                                 |
+| `influencer_personas`      | Persona metni ve versiyonları                  | Influencer başına versiyon numarası benzersiz; aynı anda en fazla bir güncel sürüm.                                                                                                        |
+| `assets`                   | Storage'daki görsel/video metadata'sı          | `storage_path` benzersiz; dosyanın kendisi private Storage bucket'ta tutulur.                                                                                                              |
+| `prompts`                  | Global veya influencer'a özel prompt sürümleri | Soy = kapsam + kategori + `key`; versiyon başına bir satır. Versiyon içeriği **değiştirilemez** (trigger), yeni versiyon `create_prompt_version()` ile. Puan 1–5.                          |
+| `generations`              | Görsel/video üretim isteği ve sonucu           | Sağlayıcı, durum, kredi, süre ve çıktı asset'i kaydedilir. `params` (jsonb) doldurulmuş prompt ve değişken değerlerini taşır; sır tutulmaz.                                                |
+| `social_accounts`          | Instagram, YouTube ve TikTok hesapları         | Token değeri değil, Vault secret referansı (`token_ref`) tutulur.                                                                                                                          |
+| `content_items`            | Fikirden yayına içerik akışı                   | Stage enum'u: `idea` → `script` → `production` → `qc` → `edit` → `scheduled` → `published`.                                                                                                |
+| `posts`                    | Platformda yayınlanmış içerik                  | Hesap ve platform kimliğiyle eşleşir; içerik planından bağımsız içe aktarılabilir.                                                                                                         |
+| `metric_snapshots`         | Post bazında zamanlı performans                | `views`, `likes`, `comments`, `shares`, `saves`; completion rate 0–1 aralığında. `target_hours` (1/5/24/72/168, NULL = ad-hoc) post başına benzersiz (#53). `source` `api`/`manual` (#52). |
+| `account_snapshots`        | Hesap seviyesinde takipçi ve erişim            | Hesap + zaman damgası başına tek snapshot. `total_views` (YouTube) ve `total_likes` (TikTok) diğer platformlarda NULL.                                                                     |
+| `costs`                    | Abonelik, kredi ve araç maliyeti               | Tutar ve para birimi sayısal alanlardır; üretim kaydına bağlanabilir (üretim başına en fazla bir kayıt, biten üretimde otomatik yazılır).                                                  |
+| `brands`                   | Marka ve iletişim notları                      | İsim büyük/küçük harf duyarsız benzersizdir.                                                                                                                                               |
+| `brand_deals`              | Marka iş birliği süreci                        | Aşama, ücret, teslimatlar, son tarih, brief (jsonb nesne) ve `paid_at` tutulur.                                                                                                            |
+| `brand_deal_content_items` | Deal ↔ içerik kartı bağlantısı                 | Çift başına tek satır; içerik deal ile aynı influencer'a ait olmalı (trigger, 23514).                                                                                                      |
+| `brand_deal_files`         | Deal dosyaları (sözleşme)                      | Nesne private `contracts` bucket'ında `<deal_id>/<uuid>.<uzantı>`; kayıt başka deal klasörünü gösteremez.                                                                                  |
+| `alerts`                   | Panel uyarıları                                | Tür listesi CHECK ile sabit (`ALERT_TYPES`); `dedupe_key` benzersiz; payload sadece id/sayı. Satırlar değiştirilmez.                                                                       |
+| `alert_reads`              | Kişi başı okundu bilgisi                       | `(alert_id, user_id)`; kullanıcı sadece kendi kaydını görür/yazar, viewer dahil.                                                                                                           |
+| `notification_settings`    | Uyarı eşikleri ve push kanal seçimi            | Tek satır. Ekip okur, owner/editor günceller. Kanal sırları Vault'ta.                                                                                                                      |
+| `budgets`                  | Aylık bütçe tavanı                             | `influencer_id` NULL = tüm ekip toplamı. Ay başına tek bütçe (kısmi benzersiz indeksler). Sadece owner yazar.                                                                              |
+| `exchange_rates`           | Döviz kuru                                     | 1 `currency` = `rate` `base_currency`, `valid_on` gününden itibaren. Ters kur otomatik kullanılır. Sadece owner yazar.                                                                     |
+| `credit_rates`             | Sağlayıcı kredisinin para karşılığı            | 1 kredi = `rate_per_credit` `currency`, `valid_from`'dan itibaren (`credits_to_money()`). Sadece owner yazar.                                                                              |
+| `reports`                  | Haftalık rapor (KPI özeti + AI özeti)          | `influencer_id` NULL = tümü; hafta başına tek kayıt (`NULLS NOT DISTINCT`). Sayılar `report_summary()` çıktısıdır. Ayrıntı: "Raporlama ve dışa aktarma".                                   |
+| `sync_runs`                | Senkronizasyon iş günlüğü (#53)                | İş/hesap başına bir satır; yalnız service role yazar, ekip okur. `failed` → `sync_failed` uyarısı. Ayrıntı: "Zamanlanmış senkronizasyon".                                                  |
+| `publish_jobs`             | Yayın kuyruğu (#58)                            | İçerik + hesap başına tek açık/yayınlanmış iş; worker alanları yalnız sunucu, istemci yalnız kuyruktaki işi iptal eder. Ayrıntı: "Yayınlama".                                              |
+| `comments`                 | Instagram/YouTube yorumları (#61)              | `(account_id, external_id)` benzersiz; yalnız service role yazar, editor yalnız `status`/`brand_deal_id` değiştirir. 90 gün saklanır. Ayrıntı: "Yorum gelen kutusu".                       |
+| `comment_replies`          | Yorum yanıt kuyruğu (#61)                      | Editor yalnız `comment_id` + `body` ekler; gönderimi Edge Function yapar. Yorum başına tek etkin yanıt (kısmi UNIQUE, `failed` hariç).                                                     |
 
 Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bulunur. `updated_at` trigger ile değiştirilir; `created_by` istemci isteklerinde `auth.uid()` ile dolar, demo seed kayıtlarında boş kalır.
 
@@ -77,16 +94,166 @@ Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bul
   - `prompt_lineages`: her soyun en son versiyonu + `version_count`.
   - `prompt_stats`: versiyon başına `total`, `succeeded`, `failed`, `pending`, `success_rate` = başarılı / (başarılı + başarısız) (biten üretim yoksa NULL), `avg_credits` (sadece başarılılar).
 - **Şablon sözdizimi:** `{{degisken}}`, kaçış `\{{`. Motor: `apps/panel/src/lib/prompt-template.ts`.
+- **İçe/dışa aktarma:** `/prompts` sayfasından seçilen veya filtredeki tüm prompt'ların son versiyonları tek bir JSON paketi olarak indirilir (`GET /api/prompts/export`, ekip üyesi). Paket aynı sayfadan geri yüklenir (`POST /api/prompts/import`, en az editor): her prompt `create_prompt_version()` ile yeni versiyon olur, son versiyonla aynı içerik atlanır. Paket önce bütünüyle doğrulanır (Zod, `apps/panel/src/lib/prompt-bundle.ts`); tek hata varsa hiçbir şey yazılmaz. Influencer'lar ortamlar arası `slug` ile taşınır. **Repo public olduğu için prompt dosyaları repoya commit'lenmez** (`.gitignore`: `/prompts/`, `ai-influencer-prompts-*.json`); ekibin kısıtlı paylaşım alanında saklanır.
+- **AI asistanı:** görev → soy eşlemesi `docs/AI.md` → Yapılandırma.
 
 ## Maliyet ve bütçe (#59)
 
 - Para her yerde `numeric`. Farklı para birimleri dönüşümsüz toplanmaz: `cost_entries_converted()` her kaydı `incurred_on` gününün kuruyla (`fx_rate()`) hedef para birimine çevirir. Kuru bulunamayan kayıt sayılır ve toplamlar `NULL` döner, panel "eksik kur" uyarısı gösterir.
 - Özetler SQL'de hesaplanır (`cost_summary`, `cost_daily`, `cost_by_category`, `budget_status`). Hepsi `SECURITY INVOKER`, çağıranın RLS'i geçerli.
-  - **Video başına maliyet:** dönem toplam maliyeti / dönemde yayınlanan post sayısı. Post ↔ üretim bağı şemada henüz yok, bu yüzden video başına dağıtım yapılmıyor.
+  - **Video başına maliyet (dönem):** dönem toplam maliyeti / dönemde yayınlanan post sayısı (`cost_summary.cost_per_video`).
+  - **Post başına maliyet:** `post_cost(post_id, currency)` (panelde `getPostCost()`, `apps/panel/src/lib/costs/post-cost.ts`). Bağ: post → `content_item_id` → `content_item_assets` → üretim (doğrudan `generation_id` veya `asset_id = generations.output_asset_id`). Bağlı üretim varsa `allocation = 'direct'` ve toplam bu üretimlerin maliyet kayıtlarıdır; aynı içerik birden çok hesapta yayınlandıysa her post içeriğin tüm maliyetini gösterir (bölüştürülmez). Bağlı üretim yoksa `allocation = 'average'` ve postun yayın ayındaki influencer ortalaması döner. `SECURITY INVOKER`: ekip dışı kullanıcıya satır dönmez.
   - **1000 izlenme başına:** toplam maliyet × 1000 / dönemde yayınlanan postların en son izlenme toplamı.
   - **Başarısız üretim:** `generations.status = 'failed'` olan üretimler sayılır. Kredileri ve bağlı `costs` kayıtları toplama dahildir, ayrıca raporlanır.
 - **Bütçe uyarıları:** `costs` veya `budgets` değişince trigger `raise_budget_alerts()`'ı çalıştırır. Oran `warn_ratio`'yu (varsayılan 0.8) geçince `budget_warning`, 1'i geçince `budget_exceeded` yazılır. Aynı bütçe, ay ve seviye için tek kayıt oluşur (`alerts_budget_dedupe_idx`). Uyarıyı tarayıcı değil veritabanı üretir.
-- AI API maliyeti `cost_category = 'ai_api'` ile kaydedilir (`recordAiUsage()`).
+- **Üretim maliyeti otomatik:** `generations` satırı `succeeded` veya `failed` olduğunda ve `credits > 0` ise trigger (`generations_record_cost`) `costs`'a tek bir `credits` kaydı yazar: tutar `credits_to_money(tool, credits, üretim günü)`, `generation_id` bağlı, `incurred_on` = üretimin oluşturulduğu gün. Başarısız üretim de yazılır (kredi harcanmıştır); `cancelled` ve kredisiz üretim yazılmaz. `costs.generation_id` benzersizdir: durum tekrar değişse veya kredi sonradan güncellense de ikinci kayıt oluşmaz, mevcut kayıt ezilmez. Kredi fiyatı yoksa kayıt yazılmaz (yanlış 0 yerine); owner `credit_rates`'e fiyat girince `valid_from`'dan itibaren biten ve kaydı olmayan üretimler otomatik tamamlanır. Fiyat değişikliği eski kayıtları yeniden fiyatlandırmaz.
+- AI API maliyeti `cost_category = 'ai_api'` ile kaydedilir (`recordAiUsage()`, `/api/ai/suggest` her Claude çağrısından sonra çağırır; yazılamazsa öneri dönmez).
+
+## Bildirimler (#56)
+
+Migration: `20261022210000_notifications.sql`. Uyarıyı tarayıcı üretmez; üreticiler veritabanındadır ve API rollerine kapalı `private` şemasında `SECURITY DEFINER` fonksiyonlardır. Her uyarı `private.raise_alert()` ile `dedupe_key` üzerinden tekrarsız yazılır.
+
+| Tür                                  | Ne zaman                                                                                                                                                          | `dedupe_key`                                  |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `viral_post`                         | `metric_snapshots` ilk saat (`target_hours = 1` veya `hours_since_publish <= 1`) izlenmesi, hesabın son 30 postunun ilk saat ortalamasının N katı (en az 3 örnek) | `viral_post:<post_id>`                        |
+| `follower_milestone`                 | `account_snapshots` önceki en yüksek değerin üstündeki en büyük eşiği geçince (ilk snapshot temel alınır)                                                         | `follower_milestone:<account_id>:<eşik>`      |
+| `token_expiring`                     | `social_accounts.token_expires_at` ayardaki gün sayısından yakınsa (trigger + pg_cron)                                                                            | `token_expiring:<account_id>:<bitiş günü>`    |
+| `sync_failed`                        | `social_accounts.status` `error` olunca veya `sync_runs.status` `failed` olunca (#53, aynı anahtar)                                                               | `sync_failed:<account_id>:<gün>`              |
+| `budget_warning` / `budget_exceeded` | Bütçe oranı `warn_ratio` (varsayılan %80) / %100 (#59, `alerts_budget_dedupe_idx`)                                                                                | —                                             |
+| `content_not_ready`                  | Son 24 saatte yayın saati gelen, `scheduled`/`published` olmayan içerik (pg_cron, 15 dk)                                                                          | `content_not_ready:<id>:<scheduled_at epoch>` |
+| `generation_failed`                  | `generations.status` `failed` olunca                                                                                                                              | `generation_failed:<id>`                      |
+| `weekly_report_ready`                | Pazartesi otomatik haftalık rapor oluşunca (#62, pg_cron)                                                                                                         | `weekly_report_ready:<report_id>`             |
+| `quota_warning`                      | O Pasifik günündeki YouTube `sync_runs.quota_units` toplamı `notification_settings.youtube_quota_warn_units`'i (varsayılan 8.000) geçince (#51, trigger)          | `quota_warning:youtube:<Pasifik günü>`        |
+| `publish_failed`                     | `publish_jobs.status` `failed` veya `manual_required` olunca (#58, trigger; payload `status`)                                                                     | `publish_failed:<publish_job_id>`             |
+
+- **Okundu kararı:** kişi başı (`alert_reads`). Viewer da kendi okundu kaydını yazar, `alerts` satırına UPDATE politikası yoktur. `alerts.read_at` kullanılmaz. RPC'ler: `mark_alerts_read(p_alert_ids uuid[] DEFAULT NULL)` (NULL = tümü) ve `unread_alert_count()`; ikisi de `SECURITY INVOKER`.
+- **Zamanlayıcı:** `pg_cron` işi `raise-scheduled-alerts` 15 dakikada bir `private.raise_scheduled_alerts()` çalıştırır.
+- **Push (opsiyonel):** Yeni uyarıda `notification_settings`'te açık olan ve sırrı tanımlı kanallara `pg_net` ile asenkron istek gider. Metin sadece uyarı başlığıdır (isim/token yok). Kanal hatası (istek oluşturulamaması veya sağlayıcının 500 dönmesi) uyarı yazımını etkilemez; loga adres/token yazılmaz. Sırlar Supabase Vault'ta (Dashboard → Vault) şu adlarla tutulur:
+
+  | Kanal    | Vault sır adları                                                                      |
+  | -------- | ------------------------------------------------------------------------------------- |
+  | ntfy     | `notify_ntfy_url` (`https://sunucu/konu`), ops. `notify_ntfy_token`                   |
+  | Telegram | `notify_telegram_bot_token`, `notify_telegram_chat_id`                                |
+  | E-posta  | `notify_resend_api_key`, `notify_email_from`, `notify_email_to` (virgülle birden çok) |
+
+- **Panel:** üst bardaki zil (`components/notifications.tsx`, 60 sn'de bir yenilenir), `/notifications` listesi ve `/settings/notifications` (eşikler + kanal seçimi, owner/editor). API: `GET /api/alerts`, `POST /api/alerts/[id]/read`, `POST /api/alerts/read-all`, `GET|PUT /api/notification-settings`.
+- **Yeni tür eklerken:** migration'da `alerts_type_known` CHECK'ini ve `private.alert_push_title()`'ı, `packages/shared/src/alerts.ts`'teki `ALERT_TYPES`'ı ve `apps/panel/src/lib/alerts/format.ts`'i birlikte güncelle (Vitest listelerin eşitliğini denetler).
+
+## Üretim kuyruğu (#47)
+
+Migration: `20261022230000_generation_queue.sql`. Worker: `supabase/functions/process-generations/` (Deno Edge Function). Sağlayıcı adaptörü: `supabase/functions/_shared/generation/` (Higgsfield, ADR 0002).
+
+- **Yeni kolonlar (`generations`):** `mode` (`text_to_image` · `image_to_video` · `video_to_video`; verilmezse türden türetilir, `type` ile tutarlı olmalı), `provider_job_id`, `progress` (0–100), `attempts` / `max_attempts` (varsayılan 3), `next_run_at`, `started_at`, `finished_at`, `cancel_requested_at`, `retry_of`. Worker kolonlarını yalnız sunucu (service role / RPC) değiştirir: istemci INSERT'inde varsayılana çekilir, UPDATE'te `42501`.
+- **`params`:** `prompt`, `negative`, `variables`, `prompt_version`, `test_mode` (varsayılan açık: 480p, video en çok 5 sn), `resolution`, `duration_seconds`, `seed`, `model_params`; owner bütçe onayında `budget_override_by`.
+- **`generation_worker_status`:** tek satır; worker'ın son çalışması ve yapılandırılmış sağlayıcılar. `providers` boşsa panel "sağlayıcı yapılandırılmamış" gösterir. Ekip okur, yalnız service role yazar.
+- **RPC'ler:**
+  | Fonksiyon                                            | Kim                              | Ne yapar                                                                                                                                                                                                                                                            |
+  | ---------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `enqueue_generation(...)`                            | editor+ (INVOKER)                | Bütçe kontrolü + ekleme tek transaction'da (advisory lock). Ayın toplam/influencer bütçesi dolduysa (`budget_status.ratio >= 1`) `P0001` + hint `budget_exceeded` (panel 402); owner `p_override_budget` ile açar. Referans asset'ler aynı influencer'a ait olmalı. |
+  | `retry_generation(id, override)`                     | editor+                          | Sadece `failed`/`cancelled`: aynı parametrelerle **yeni** satır (`retry_of`), eski satır ve maliyeti değişmez.                                                                                                                                                      |
+  | `cancel_generation(id)`                              | editor+ (DEFINER, rol denetimli) | Gönderilmemiş iş anında `cancelled`; gönderilmiş işte `cancel_requested_at` işaretlenir, worker sağlayıcıda iptal eder (başlamışsa iptal reddedilir, iş izlenmeye devam eder).                                                                                      |
+  | `claim_generations(tools, limit, lease)`             | service role                     | `FOR UPDATE SKIP LOCKED` + kira: zamanı gelmiş `queued`/`running` işleri alır, `next_run_at`'i kira kadar ileri atar.                                                                                                                                               |
+  | `complete_generation(id, path, mime, size, credits)` | service role                     | `assets` satırı (`kind = generated`, `<influencer_id>/generated-<id>.<ext>`) + üretimi `succeeded` olarak tek transaction'da bağlar; tekrar çağrı aynı asset'i kullanır.                                                                                            |
+- **Worker akışı:** pg_cron her dakika `private.invoke_generation_worker()` → pg_net `POST /functions/v1/process-generations` (`x-cron-secret`). Vault'ta `project_url` veya `cron_secret` yoksa ya da zamanı gelmiş iş yoksa çağrı yapılmaz. Gönderim `Idempotency-Key = generations.id`; geçici hatalar (`rejected`, `timeout`, `unavailable`) üstel geri çekilmeyle (30 sn, 60 sn …, en çok 15 dk) `max_attempts`'a kadar tekrar denenir; kalıcı hatalar hemen `failed`. Yoklama 15 sn'de bir; `running` iş 30 dk'da (`GENERATION_RUNNING_TIMEOUT_MINUTES`) bitmezse `failed`. Sonuç dosyası indirilip `assets` bucket'ına yüklenir (en çok 100 MiB).
+- **Maliyet ve uyarı:** worker maliyet yazmaz; `succeeded`/`failed` + `credits > 0` olunca mevcut `generations_record_cost` trigger'ı yazar, `failed` olunca `generation_failed` uyarısı oluşur.
+- **Panel:** `/production` kuyruk sayfası (durum, ilerleme, hata, iptal / yeniden dene; viewer salt okunur, 10 sn'de bir yenilenir). Üretim formu prompt detayında (`/prompts/[id]`): mod, referans dosyalar, çözünürlük, süre, seed, test modu, owner bütçe onayı. API: `POST /api/generations/[id]/cancel`, `POST /api/generations/[id]/retry` (editor; bütçe 402, durum çakışması 409).
+
+## Zamanlanmış senkronizasyon (#53)
+
+Migration: `20261022231000_scheduled_sync.sql`. Toplama işi Edge Function `sync-dispatch`'te koşar (`supabase/functions/`, bkz. `docs/DEVELOPMENT.md` §9). Platform toplayıcıları `supabase/functions/_shared/collectors/` altındadır (sözleşme: `types.ts`, nasıl eklenir: `README.md`).
+
+| pg_cron işi        | Zaman (UTC)    | Ne yapar                                                                                                     |
+| ------------------ | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| `sync-metrics`     | `*/15 * * * *` | `due_snapshots(now())` → zamanı gelen postların metrik snapshot'ı (`target_hours` ile)                       |
+| `sync-posts`       | `7,37 * * * *` | Bağlı hesapların yeni postları → `posts` upsert                                                              |
+| `sync-accounts`    | `20 3 * * *`   | Hesap istatistikleri → `account_snapshots` (gün başına bir satır, UTC günü)                                  |
+| `sync-maintenance` | `50 * * * *`   | `private.maintain_sync_runs()`: 1 saatten uzun `running` satırı `failed` yapar, 90 günden eski günlüğü siler |
+
+- **Kontrol noktaları:** 1, 5, 24, 72 ve 168 saat. `due_snapshots(p_at, p_limit = 500, p_account_id = NULL)` zamanı parametre alır (service role'e açık). Hedef, #55 penceresi içindeyse "due" olur: 1:[1,2), 5:[5,7), 24:[24,30), 72:[72,84), 168:[168,192) saat. Cron 15 dakikada bir çalıştığı için snapshot hedeften en geç ~15 dk sonra alınır. Pencere kaçarsa o nokta boş kalır, yanlış saate etiket yazılmaz.
+- **Idempotency:** `UNIQUE (post_id, target_hours)`. Fonksiyon `ON CONFLICT DO NOTHING` ile yazar, cron'un iki kez çalışması duplicate üretmez. `hours_since_publish` gerçek geçen süredir. `post_checkpoint_views()` (#55) `target_hours`'u olan satırı önceliklidir, eski satırlarda pencere kuralı geçerlidir.
+- **Upsert kararı (#50/#51):** `posts (account_id, external_id)` ve `social_accounts (platform, external_id)` artık düz `UNIQUE` kısıttır (eski kısmi indeksler kaldırıldı, NULL'lar yine çakışmaz). supabase-js `upsert(..., { onConflict: 'account_id,external_id' })` çalışır.
+- **Hesap seçimi:** `status IN ('active','error')` ve `token_ref` dolu. Token hatası → `expired` ya da `error` (`error` #56 `sync_failed` uyarısı üretir). Hatalı hesap başarılı senkronda `active`'e döner. Toplayıcısı kayıtlı olmayan platformun hesapları atlanır (günlük satırı yok).
+- **Rate limit / kota:** hesaplar sırayla işlenir. Kısa `Retry-After` (≤30 sn) beklenir, daha uzunsa iş `partial` olarak bırakılır ve sonraki cron'a kalır. Geçici hatalar 3 denemeye kadar üstel backoff alır. Fonksiyon ~120 sn süre bütçesini aşınca kalan hesaplar sonraki çalışmaya kalır.
+- **`sync_runs`:** `job` (`metrics`/`posts`/`accounts`/`manual`; #61: `comments`/`comment_reply`), `platform`, `account_id`, `started_at`, `finished_at` (kapanırken veritabanı saatiyle dolar), `status` (`running`/`succeeded`/`partial`/`failed`), `processed_count`, `quota_units`, `error` (temizlenmiş, ≤500 karakter, token yok). RLS: ekip okur. `authenticated` rolüne yazma yetkisi verilmez.
+- **Şimdi senkronize et:** `/settings/sync` → `POST /api/sync` (editor+) → `request_sync(p_account_id?)` RPC'si (`SECURITY DEFINER`, owner/editor denetimi). Dönüş: `queued` (202), `throttled` (429, 2 dk içinde ikinci istek), `not_configured` (503), `not_found` (404). Çağrı veritabanındaki Vault sırrıyla pg_net üzerinden yapılır, panel `CRON_SECRET`'ı görmez. Kim istediği `private.sync_requests`'te tutulur.
+- **Ortam kurulumu (her ortamda bir kez, owner):** Edge Function sırrı `supabase secrets set CRON_SECRET=<rastgele>`. Vault'ta (Dashboard → Vault) `cron_secret` (aynı değer) ve `project_url` (`https://<ref>.supabase.co`, sonda `/` yok). Sırlar yoksa cron işleri sessizce atlanır (Postgres LOG satırı).
+
+### YouTube toplayıcı (#51)
+
+Migration: `20261022233000_youtube_collector.sql`. Kod: `supabase/functions/_shared/collectors/youtube.ts` + `_shared/youtube/` (istemci, eşleme, kota). Ayrıntılı alan eşlemesi ve kota tahmini: `supabase/functions/_shared/collectors/README.md` → "YouTube".
+
+| API alanı                                                         | Kolon                                                                                   |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `channels.statistics.subscriberCount`                             | `account_snapshots.followers` (gizliyse 0 + uyarı)                                      |
+| `channels.statistics.videoCount`                                  | `account_snapshots.media_count`                                                         |
+| `channels.statistics.viewCount`                                   | `account_snapshots.total_views` (yeni kolon, diğer platformlarda NULL)                  |
+| `videos.id` / `snippet.publishedAt`                               | `posts.external_id` / `posts.published_at`                                              |
+| `snippet.title` + `snippet.description`                           | `posts.caption` (başlık, boş satır, açıklama)                                           |
+| `contentDetails.duration` (ISO 8601)                              | `posts.duration_s`                                                                      |
+| süre + `player.embedWidth/embedHeight`                            | `posts.is_short` (≤180 sn ve dikey/kare; boyut yoksa ≤60 sn), `posts.url` (`/shorts/…`) |
+| `videos.statistics.viewCount/likeCount/commentCount`              | `metric_snapshots.views/likes/comments`                                                 |
+| Analytics `shares`                                                | `metric_snapshots.shares` (Analytics yoksa 0 + `_unmeasured`)                           |
+| Analytics `averageViewDuration`                                   | `metric_snapshots.avg_watch_time_s`                                                     |
+| Analytics `averageViewPercentage`                                 | `metric_snapshots.completion_rate` (÷100, 1'e kırpılır)                                 |
+| Analytics `estimatedMinutesWatched`, `subscribersGained`, `views` | `metric_snapshots.raw_payload.analytics`                                                |
+
+- **Analytics gecikmesi:** 1 ve 5 saat noktalarında yalnız Data API sayaçları yazılır. 24 saatten itibaren Analytics sorgulanır; boş dönerse snapshot Data API sayaçlarıyla yine yazılır (`raw_payload.analyticsState = 'empty'`) ve izleme süresi/tamamlama sonraki noktada (72/168 sa) dolar. Snapshot (post, nokta) başına bir kez yazıldığı için aynı nokta sonradan güncellenmez.
+- **Kota:** her çalışmanın Data API birimi `sync_runs.quota_units`'e yazılır. Analytics API bu kotaya dahil değildir. Eşik geçilince `quota_warning` uyarısı (bkz. Bildirimler). Kota dolarsa (`quotaExceeded`) o çalışmada YouTube hesaplarının tamamı atlanır, iş `partial` kalır.
+
+### TikTok toplayıcı ve elle metrik girişi (#52)
+
+Migration: `20261022242000_tiktok_manual_metrics.sql`. Kod: `supabase/functions/_shared/collectors/tiktok.ts` + `_shared/tiktok/` (istemci, eşleme). Alan eşlemesi, sayfalama, hata eşleme ve TikTok uygulama kurulumu: `supabase/functions/_shared/collectors/README.md` → "TikTok".
+
+| API alanı (Display API v2)                                                         | Kolon                                                                                             |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `user/info` `follower_count` / `following_count` / `video_count`                   | `account_snapshots.followers` / `following` / `media_count`                                       |
+| `user/info` `likes_count`                                                          | `account_snapshots.total_likes` (yeni kolon)                                                      |
+| `video/list` `id` / `create_time` / `video_description` / `duration` / `share_url` | `posts.external_id` / `published_at` / `caption` / `duration_s` / `url`                           |
+| `video/query` `view_count` / `like_count` / `comment_count` / `share_count`        | `metric_snapshots.views` / `likes` / `comments` / `shares`                                        |
+| — (API vermez)                                                                     | `saves` 0 + `_unmeasured`; `reach`, `avg_watch_time_s`, `completion_rate` NULL → elle girilebilir |
+
+- **`metric_snapshots.source`:** `text NOT NULL DEFAULT 'api'`, `CHECK (source IN ('api','manual'))`. Toplayıcı satırları `api` (varsayılan), panelden girilenler `manual`.
+- **`record_manual_metrics(p_post_id, p_views, p_likes, p_comments, p_shares, p_target_hours?, p_saves?, p_reach?, p_avg_watch_time_s?, p_completion_rate?)`:** `SECURITY INVOKER`, `can_write_data()` (owner/editor) denetimi; RLS geçerli. Dönüş `{ status, id }`:
+  - `p_target_hours` verilirse satır kontrol noktasına yazılır (`captured_at = published_at + saat`, `hours_since_publish = saat`). Yayın zamanı yoksa ya da nokta henüz gelmediyse `22023`.
+  - `UNIQUE (post_id, target_hours)` çakışması: mevcut satır `manual` ise güncellenir (`updated`), `api` ise **yazılmaz** (`conflict`, panel 409).
+  - `p_target_hours` NULL ise şimdiki zamana ad-hoc ölçüm eklenir (`created`).
+  - Boş `p_saves` 0 yazılır ve `raw_payload._unmeasured`'a eklenir.
+- **Sync elle girilen değeri ezmez:** `due_snapshots()` ölçülmüş noktayı döndürmez; orkestratör `ON CONFLICT (post_id, target_hours) DO NOTHING` ile yazar (pgTAP: `tiktok_manual_metrics.test.sql`).
+- **Panel:** `/analytics/posts/[postId]` → "Elle girilen metrikler" (liste herkese, form editor/owner'a) → `POST /api/posts/[postId]/manual-metrics` (Zod: sayaçlar negatif olmayan tam sayı, tamamlama 0–1). Yanıt: 201 eklendi, 200 düzeltildi, 409 API noktası, 400 geçersiz, 403 viewer, 404 post yok, 422 nokta henüz gelmedi.
+
+## Yorum gelen kutusu (#61)
+
+Panel: `/inbox` (menü → YAYIN → Gelen kutusu). Yorum toplama ve yanıt gönderimi Edge Function `comments-dispatch`'te (`supabase/functions/_shared/comments/`); token Vault'tan okunur, panele gelmez.
+
+| İş (pg_cron)           | Zamanlama (UTC) | Ne yapar                                                                                                          |
+| ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `comments-fetch`       | `12,42 * * * *` | `private.invoke_comments('fetch')`: bağlı hesapların son 7 günde yayınlanan postlarındaki son 7 günün yorumları   |
+| `comments-reply`       | `*/5 * * * *`   | `private.invoke_comments('reply')`: bekleyen yanıt varsa gönderim (yeni yanıt eklenince trigger da hemen çağırır) |
+| `comments-maintenance` | `55 3 * * *`    | `private.maintain_comments()`: 15 dk'dan uzun `sending` yanıtı `failed` yapar, 90 günden eski yorumları siler     |
+
+- **`comments`:** `post_id`, `account_id` ve `platform` (posttan trigger ile türetilir), `external_id`, `parent_external_id` (şimdilik yalnız üst düzey yorumlar), `author_name`, `text`, `published_at`, `like_count`, `is_brand_inquiry`, `status` (`new`/`read`/`replied`/`hidden`), `replied_at`, `brand_deal_id`. Tekrar çekimde metin/beğeni güncellenir; panel durumu ve lead bağlantısı korunur. Hesabın kendi yorumları alınmaz.
+- **Durum kuralları:** `replied` yalnız gönderilen yanıtla olur (`replied_at` CHECK); yanıtlanmış yorumun gizlemesi kaldırılınca yine `replied` olur. `hidden` yalnız panelde gizler, platformda yorumu gizlemez/silmez. `brand_deal_id` aynı influencer'ın deal'i olmalı (23514).
+- **İş birliği etiketi:** toplama sırasında `_shared/comments/detect.ts` (`collab`, `sponsor`, `iş birliği`/`işbirliği`, `partnership`, e-posta adresi). Türkçe harfler `toLocaleLowerCase('tr')` + aksan katlama ile eşlenir (`İŞ BİRLİĞİ` = `is birligi`).
+- **`comment_replies`:** `body` (1–1000), `status` (`queued` → `sending` → `sent`/`failed`), `attempts`, `next_attempt_at`, `external_id`, `error`, `sent_at`. RLS: ekip okur; owner/editor yalnız `comment_id`, `body` kolonlarıyla ekler (durum/sonuç yazamaz). Yorum başına tek etkin yanıt: çift tıklama ikinci satırı 23505 ile reddeder, API mevcut yanıtı 200 ile döner. Gönderim `queued → sending` koşullu güncellemeyle alınır (iki çalışma aynı yanıtı alamaz). Rate limit'te yeniden sıraya alınır (en fazla 5 deneme); ağ hatası ve 5xx **tekrar denenmez** (platformda idempotency yok, çift yanıt riski) ve `failed` olur, kullanıcı platformda kontrol edip yeniden gönderebilir.
+- **Kota ve günlük:** her hesap için toplama `sync_runs.job = 'comments'`, her yanıt `comment_reply` satırı açar. YouTube: `commentThreads.list` sayfa başına 1, `comments.insert` 50 birim; `quota_units`'e yazılır ve `quota_warning` toplamına girer. Post başına en fazla 5 sayfa, hesap başına en yeni 25 post.
+- **Yetki:** viewer listeyi okur; durum değiştiremez, yanıt/lead açamaz (UI'da düğme yok, API 403, RLS). Yanıt API'si: `POST /api/comments/{id}/reply` (202 kuyrukta, 200 zaten var, 422 TikTok). Durum: `PATCH /api/comments/{id}`. Lead: `POST /api/comments/{id}/lead` (#60 CRM'de `lead` aşamasında deal açar).
+- **Kişisel veri ve saklama:** yorum yazarlarının yalnız platformdaki görünen adı tutulur (profil id'si, fotoğraf, e-posta, takipçi bilgisi yok; ek profilleme yapılmaz). Yorumlar `published_at`'ten 90 gün sonra silinir (yanıt kayıtları cascade). AI önerisine yazar adı gönderilmez. Lead notuna yorum metni kopyalanmaz (kaynak: platform, görünen ad, tarih, post linki). Test fixture'ları uydurmadır.
+- **Kapsam dışı:** Instagram DM (ayrı `instagram_business_manage_messages` izni, App Review ve 24 saatlik mesaj penceresi; uygunluk doğrulanmadan koda girmez), TikTok yorumları (resmi API yorum okuma/yanıt vermiyor), toplu/otomatik yanıt. Yanıt için hesap bağlantısında (#49) YouTube `youtube.force-ssl`, Instagram `instagram_business_manage_comments` kapsamı gerekir; kapsam yoksa yanıt `failed` (izin yok) olur.
+
+## Raporlama ve dışa aktarma (#62)
+
+- **`reports`:** Kaydedilmiş haftalık rapor. `influencer_id` NULL = tüm influencer'lar. `period_start` pazartesi, `period_end` = pazar (CHECK). `(influencer_id, period_start)` için tek kayıt: `UNIQUE NULLS NOT DISTINCT`, böylece NULL (tümü) raporu da haftada bir tane olur (ayrı kısmi indekse gerek yok). `summary` (jsonb) KPI'ları, `ai_summary` Claude özetini tutar. RLS: ekip okur, owner/editor yazar; audit trigger'ları standart.
+- **`report_summary(p_from, p_to, p_influencer_id?, p_currency = 'USD')`:** Rapordaki bütün sayılar burada hesaplanır (SECURITY INVOKER, ekip dışına veri dönmez). Dönem Türkiye saatine göre `[p_from 00:00, p_to + 1 gün 00:00)` aralığıdır, UTC'ye veritabanında çevrilir. Panel tarafındaki karşılığı `apps/panel/src/lib/reports/weekly.ts`.
+  - **Takipçi değişimi:** hesap başına dönem sonundan önceki son ölçüm − dönem başındaki son ölçüm. Başlangıç ölçümü olmayan hesap karşılaştırmaya girmez (`accountsWithBaseline`).
+  - **İzlenme / etkileşim:** sayaçlar kümülatif olduğu için post başına dönem içindeki artış toplanır (etkileşim = beğeni + yorum + paylaşım + kaydetme). Dönemde yayınlanan postun başlangıcı 0'dır; daha önce yayınlanıp başlangıç ölçümü olmayan post toplanmaz, sayısı `postsWithoutBaseline` ile döner.
+  - **Maliyet:** `cost_entries_converted()` ile hedef para birimine çevrilir; eksik kurda toplam NULL. **Video başına maliyet** = toplam / dönemde yayınlanan post.
+  - **En iyi / zayıf içerikler:** dönemde yayınlanan postlar, dönem sonundaki izlenmeye göre ilk 3 ve son 3 (tekrarsız). **Gelecek dönem planı:** sonraki eşit uzunluktaki dönemde planlanmış, yayınlanmamış içerikler.
+  - **Öğrenimler:** dönem içinde yazılan `learnings` (#55) notları; sayı ve en yeni 10 not.
+- **Tek tıkla rapor:** `generate_weekly_report(p_period_start, p_influencer_id?)` (editor/owner). Aynı hafta tekrar çağrılırsa aynı satır güncellenir; sayılar değiştiyse eski AI özeti silinir. Pazartesi olmayan veya gelecekteki hafta `22023`, görünmeyen influencer `P0002` döner.
+- **Otomatik rapor:** pg_cron işi `weekly-reports`, `0 6 * * 1` (pazartesi 06:00 UTC = 09:00 Türkiye) `generate_weekly_reports()` çalıştırır: geçen hafta için tüm influencer'lar + `active`/`paused` her influencer. Var olan rapora dokunmaz (idempotent) ve yalnız yeni raporlar için `alerts`'e `weekly_report_ready` yazar (`dedupe_key = weekly_report_ready:<report_id>`). Bu tür için migration `alerts_type_known` kısıtını ve `private.alert_push_title()`'ı yeniden kurar; panelde zil ve `/notifications` raporu açar. İş migration sahibi rolüyle çalışır; panel kullanıcıları bu fonksiyonu çağıramaz. Edge Function gerekmedi: hesaplama SQL'de olduğu için ek secret veya HTTP çağrısı yok.
+- **AI özeti:** Rapor sayfasındaki düğme `POST /api/reports/{id}/ai-summary` ile #48 asistanının `weekly` görevini çalıştırır. Claude'a yalnız `reports.summary` verilir, yeni sayı üretmez. Token maliyeti `costs`'a (`ai_api`) yazılır. Otomatik rapor AI çağırmaz (API anahtarı panel sunucusunda).
+- **CSV:** `GET /api/exports/{posts|metrics|costs}?from=YYYY-MM-DD&to=YYYY-MM-DD&inf=<slug>` (viewer yeterli, en fazla 366 gün). Kullanıcı oturumuyla (RLS) sorgulanır, service role kullanılmaz. Dosya UTF-8 **BOM** ile başlar (Excel Türkçe karakterleri doğru açar), **ayraç virgül**, satır sonu CRLF (RFC 4180). `=`, `+`, `-`, `@`, sekme ile başlayan metin hücrelerinin başına `'` eklenir (formül enjeksiyonu); sayılar olduğu gibi yazılır. Zamanlar UTC ISO-8601. PostgREST 1000 satır sınırı sayfalanarak aşılır; 50.000 satırdan fazlası 413 döner.
+- **PDF:** Rapor sayfası (`/analytics/reports/{id}`) yazdırmaya göre biçimlenir (`globals.css` → `@media print`): panel kabuğu gizlenir, A4 ve açık renkler. "Yazdır / PDF olarak kaydet" tarayıcının PDF çıktısını kullanır; sunucuda PDF kütüphanesi yok. Dışa aktarılan dosyalar repoya eklenmez.
 
 ## Yetki matrisi
 
@@ -148,3 +315,67 @@ callback'i/yenileme job'u için sunucu altyapısıdır; tarayıcıdan çağrılm
 Kaynak: [Supabase Vault resmi dokümanı](https://supabase.com/docs/guides/database/vault)
 (okuma: 2026-10-21). pgTAP `oauth_vault.test.sql`: rol sınırları, şifreleme/rotasyon,
 referans izolasyonu, girdi doğrulaması, bağlantıyı kaldırma ve cascade temizliği.
+
+### AI asistanı (#48)
+
+`app_settings`: `key='ai'` tekil ayarı, model ID ve USD token fiyatlarını `value` JSON'unda
+tutar. API anahtarı içermez. Ekip SELECT yapar; yalnız owner INSERT/UPDATE/DELETE yapabilir.
+Audit trigger'ları `created_by` ve `updated_at` alanlarını yönetir. Geçersiz/eksik model
+ve fiyatlarda sunucu sabit varsayılana dönmez. Ayarlar API'si Zod şemasıyla doğrular.
+
+`ai_weekly_summary(influencer_id, as_of)` SECURITY INVOKER RPC'si son 7 günün sayısal
+özetini veritabanında hesaplar. Snapshot'ları toplamak yerine post başına baseline ile
+son ölçümün farkını alır; eksik baseline kapsamını döndürür. RLS nedeniyle ekip dışı
+kullanıcıya özet döndürmez. Ayrıntılar ve çağrı/maliyet sözleşmesi: [AI rehberi](AI.md).
+
+### Genel bakış dashboard’u (#54)
+
+`dashboard_overview(from, to, influencer_slug?, platform?)` yalnız authenticated
+üyelerin çağırabildiği `SECURITY INVOKER` RPC’sidir. RLS bütün alt sorgularda korunur;
+istemciye snapshot listesi indirip toplama yapılmaz. Aralık UTC günleri dahil,
+en fazla 366 gündür. Bilinmeyen influencer tüm ekibe geri düşmez.
+
+- İzlenme: her postun dönem başı baseline’ı + her UTC gününün **son** snapshot’ı.
+  Ardışık gün sonu ölçümleri farkı alınır; negatif fark sıfırlanır. Yeni post sıfırdan
+  başlar; eski postun baseline’ı yoksa ilk ölçümü artışa katılmaz. Ölçümsüz gün NULL’dır.
+  Geciken snapshot artışı yakalandığı güne yazar; gerçek izlenme gününü tahmin etmez.
+- Takipçi: hesap başına dönem sonu son bilinen değer. Bir hesap ölçümsüzse toplam NULL;
+  dönem başı baseline eksikse değişim NULL. Grafik aynı kuralı her gün/platform için uygular.
+- Etkileşim KPI: dönemde yayınlanan postların son ölçümlerindeki
+  `(likes + comments + shares + saves) / views × 100`, izlenmeye göre ağırlıklı.
+  Günlük trend, o gün ölçülen postların son ölçümlerini kullanır. Kapsam UI’da belirtilir.
+- İlk/son 5: dönemde yayınlanan ve `hours_since_publish` 24–30 olan postların ilk
+  ölçümü. #53 hedef saat kolonunu ekleyene kadar bu açık pencere kullanılır.
+  Eksik hedef ölçüm sıfır kabul edilmez, sıralamadan çıkarılır.
+- Maliyet: para birimi bazında dönem toplamı / dönem platform post sayısı;
+  doğrudan video maliyeti dağıtımı değildir. Şemada platform maliyet ataması
+  olmadığından platform filtresinde maliyet hesaplanmaz ve açıklama gösterilir.
+- Bugünün planı İstanbul takvim gününü, bekleyen işler yayınlanmamış kartları kullanır;
+  tarih aralığından bağımsızdır, influencer/platform filtresine uyar. İlk 10 kayıt ve
+  toplam sayı döner. Aynı içerik karşılaştırması son kümülatif ölçümleri, ilk 50 içeriği gösterir.
+
+Grafiklerin klavyeyle açılan veri tabloları vardır; renkler tema değişkenlerinden gelir.
+`?inf=`, platform ve 7/30/90/özel aralık filtreleri URL’dedir. Salt okuyan viewer da
+aynı dashboard’u kullanır. Yeni bağımlılık veya ortam anahtarı eklenmedi.
+
+### Marka CRM'i ve medya kiti (#60)
+
+- **Pipeline:** `brand_deals.stage` UI'da Lead → Görüşme → Anlaşma → Teslim → Ödendi / Kaybedildi
+  (`lead`/`negotiation`/`signed`/`delivered`/`paid`/`lost`). Pipeline toplamı para birimi başına,
+  dönüşümsüz gösterilir; `lost` ve ücretsiz deal'ler girmez.
+- **`paid_at`:** Yalnız `paid` aşamasında dolu olabilir (CHECK). Trigger, `paid`'e geçişte boşsa
+  bugünün Türkiye tarihini yazar; `paid`'den çıkışta temizler. Aylık gelir `paid_at`'e göre hesaplanır.
+- **Gelir raporu:** `brand_deal_revenue(from, to, currency, influencer?)` (SECURITY INVOKER) ödenmiş
+  deal'leri ödeme günü kuruyla (`fx_rate`) hedef para birimine çevirir; kur yoksa `converted_fee` NULL.
+  Aylık toplama ve kâr/zarar panelde `money.ts` ile (float yok) yapılır; maliyet `cost_summary()`'den gelir.
+  Eksik kurlu ay toplamı gösterilmez.
+- **Brief:** `brand_deals.brief` JSON nesnesi (#30 / 6.4 alanları), panelde Zod ile doğrulanır.
+- **Dosyalar:** `contracts` bucket'ı private, 20 MB, PDF/DOCX/JPEG/PNG. Storage politikaları tablo RLS'iyle
+  aynı: ekip okur, owner/editor yalnız var olan bir deal klasörüne (`brand_file_in_deal_folder`) yazar,
+  ekip dışı hiçbir şey görmez. İndirme 60 sn'lik signed URL ile.
+- **Yanıt şablonları:** `templates/brand-replies.md` dosyasından okunur (`##` başlığı = şablon); koda gömülmez.
+- **Medya kiti:** `/brands/media-kit?inf=<slug>` önizleme, `GET /api/media-kit/<slug>` PDF (viewer dahil
+  ekip; oturumsuz 401, ekip dışı 403). Sayılar yalnız `account_snapshots` ve `metric_snapshots`'tan, son
+  30 günden hesaplanır (`lib/media-kit/build.ts`); tarih aralığı ve AI açıklaması PDF'te yazar. Veri yoksa
+  "veri yok" yazılır; kitle demografisi şemada olmadığından (#50/#51) her zaman "veri yok"dur.
+  PDF saf JS ile üretilir (`pdf-lib` + `@pdf-lib/fontkit`, Geist fontu `geist` paketinden); native bağımlılık yok.

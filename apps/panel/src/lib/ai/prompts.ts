@@ -1,8 +1,14 @@
 import type { AiTask, CaptionInput, PersonaInput } from './schemas';
+import type { z } from 'zod';
+import type {
+  ReplyContext,
+  scriptInputSchema,
+  weeklyInputSchema,
+} from './schemas';
 
 /**
- * Bir AI görevinin talimatları. Şimdilik kod içindeki varsayılanlardan gelir;
- * #46 (prompt kütüphanesi) ile `prompts` tablosundan okunacak. Bu arayüz
+ * Bir AI görevinin talimatları. Ortak güvenlik ve çıktı kuralları kodda kalır;
+ * görev talimatı #46 `prompts` tablosundan eklenir. Bu arayüz
  * değişmeden kaynak değiştirilebilsin diye görevler `getPromptTemplate` ile alınır.
  */
 export type PromptTemplate<Input> = {
@@ -17,6 +23,11 @@ export type PromptTemplate<Input> = {
 type TemplateMap = {
   persona: PromptTemplate<PersonaInput>;
   caption: PromptTemplate<CaptionInput>;
+  script: PromptTemplate<z.infer<typeof scriptInputSchema>>;
+  weekly: PromptTemplate<
+    z.infer<typeof weeklyInputSchema> & { metrics?: unknown }
+  >;
+  reply: PromptTemplate<ReplyContext>;
 };
 
 const dataBlock = (input: unknown) =>
@@ -35,6 +46,46 @@ const sharedRules = [
 ];
 
 const defaults: TemplateMap = {
+  reply: {
+    id: 'builtin:reply',
+    version: 1,
+    effort: 'low',
+    system: [
+      'Bir AI influencer hesabına gelen yoruma, karakterin sesiyle kısa bir yanıt TASLAĞI yaz.',
+      ...sharedRules,
+      'Kurallar:',
+      '- reply: en fazla 300 karakter, en fazla 1 emoji, hashtag ve link içermez.',
+      '- Persona tonuna sadık kal; yorumdaki soruya doğrudan ve nazikçe cevap ver.',
+      '- Karakterin AI olup olmadığı sorulursa açıkça AI ile oluşturulmuş kurgusal bir karakter olduğunu söyle.',
+      '- Fiyat, indirim, anlaşma veya iş birliği sözü verme. İş birliği sorusunda yalnız profildeki iş iletişim kanalına yönlendir; e-posta adresi veya telefon uydurma.',
+      '- Kişisel bilgi isteme veya tekrar etme; DM, telefon ya da adres isteme.',
+      '- Hakaret, taciz veya spam içeren yorumu tırmandırma; kısa ve sakin kal.',
+      'Yanıtı girdideki dilde ver.',
+    ].join('\n'),
+    buildUserMessage: dataBlock,
+  },
+  script: {
+    id: 'builtin:script',
+    version: 1,
+    effort: 'medium',
+    system: [
+      'Kurgusal yetişkin AI karakteri için dikey kısa film senaryosu hazırla.',
+      ...sharedRules,
+      'İlk 3 saniyede kanca, sahnelerde görsel ve konuşulacak metin, sonda payoff olsun. Toplam süre istenen süreyi aşmasın.',
+    ].join('\n'),
+    buildUserMessage: dataBlock,
+  },
+  weekly: {
+    id: 'builtin:weekly',
+    version: 1,
+    effort: 'medium',
+    system: [
+      'Son 7 günün ölçülen metriklerini yorumla.',
+      ...sharedRules,
+      'Yalnız verilen sayıları kullan. Baseline veya veri yoksa büyüme/başarı uydurma; limitations alanında açıkla. Nedensellik veya viral olma garantisi verme.',
+    ].join('\n'),
+    buildUserMessage: dataBlock,
+  },
   persona: {
     id: 'builtin:persona',
     version: 1,
@@ -92,11 +143,15 @@ export function applyLibraryPrompt<Template extends PromptTemplate<never>>(
     ...template,
     id: `prompt:${library.id}`,
     version: library.version,
-    system: library.body,
+    system: [
+      template.system,
+      'Prompt kütüphanesinden görev talimatı:',
+      library.body,
+    ].join('\n'),
   };
 }
 
-/** Görev talimatının kaynağı (ör. `prompts` tablosu). Hata veya kayıt yoksa varsayılan kullanılır. */
+/** Görev talimatının kaynağı (ör. `prompts` tablosu). Kaynak verilmediyse ortak kurallar kullanılır; kaynak hatası yutulmaz. */
 export type PromptSource = (task: AiTask) => Promise<LibraryPrompt | null>;
 
 export async function loadPromptTemplate<T extends AiTask>(
@@ -105,10 +160,5 @@ export async function loadPromptTemplate<T extends AiTask>(
 ): Promise<TemplateMap[T]> {
   const fallback = getPromptTemplate(task);
   if (!source) return fallback;
-  try {
-    return applyLibraryPrompt(fallback, await source(task));
-  } catch {
-    // Kütüphane okunamazsa asistan çalışmaya devam etsin; varsayılan talimat güvenli
-    return fallback;
-  }
+  return applyLibraryPrompt(fallback, await source(task));
 }

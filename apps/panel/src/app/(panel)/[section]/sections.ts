@@ -2,20 +2,4 @@
 export const sections: Record<
   string,
   { title: string; description: string; icon: string }
-> = {
-  analytics: {
-    title: 'Analitik',
-    description: 'Platform performansını ve büyüme metriklerini inceleyin.',
-    icon: '⌁',
-  },
-  production: {
-    title: 'Üretim',
-    description: 'Görsel ve video üretimlerinizi buradan takip edin.',
-    icon: '▷',
-  },
-  brands: {
-    title: 'Markalar',
-    description: 'Marka iş birliklerini ve medya kitinizi yönetin.',
-    icon: '◇',
-  },
-};
+> = {};

@@ -13,6 +13,11 @@ concurrency:
 permissions:
   contents: read
 
+# Supabase imajları Docker Hub'dan: public.ecr.aws anonim çekimde "Data limit exceeded"
+# veriyor; GitHub runner'ları Docker Hub kotasına takılmıyor.
+env:
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
+
 jobs:
   quality:
     name: Lint · Typecheck · Unit test · Build
@@ -138,6 +143,23 @@ jobs:
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 \
             git /repo --redact --no-banner --exit-code 1
 
+  functions:
+    name: Edge Functions (Deno)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.7
+      - run: deno lint
+      - name: Tip kontrolü
+        run: deno check $(find . -name '*.ts' -not -path './node_modules/*')
+      - run: deno test --allow-env --permit-no-files
+
   # Branch korumasında "zorunlu kontrol" olarak bu iş seçilir
   migrations:
     name: Migration kuralları
@@ -156,7 +178,7 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [quality, e2e, windows, secrets, migrations]
+    needs: [quality, e2e, windows, secrets, migrations, functions]
     runs-on: ubuntu-latest
     steps:
       - name: Tüm işler başarılı mı?

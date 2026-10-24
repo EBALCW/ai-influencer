@@ -24,13 +24,20 @@ export default defineConfig({
     {
       // Ayrı oturum: app.spec'teki çıkış testi owner oturumunu iptal eder
       name: 'editor',
-      testMatch: /(?:persona|content)\.spec\.ts/,
+      testMatch:
+        /(?:persona|content|ai|dashboard|reports|sync|brands|publish|inbox)\.spec\.ts/,
       use: { storageState: 'e2e/.auth/editor.json' },
     },
     {
       name: 'viewer',
       testMatch: /viewer\.spec\.ts/,
       use: { storageState: 'e2e/.auth/viewer.json' },
+    },
+    {
+      // Post analitiği (#55): öğrenim ekleme editor yetkisi ister
+      name: 'analytics',
+      testMatch: /analytics\.spec\.ts/,
+      use: { storageState: 'e2e/.auth/editor.json' },
     },
   ],
   webServer: {

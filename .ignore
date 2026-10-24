@@ -1,0 +1,4 @@
+# ripgrep/arama araçları için: agent aramalarında gürültü yapan üretilmiş dosyalar
+# (.gitignore zaten uygulanır; bunlar git'te olup aramada gereksiz olanlar)
+pnpm-lock.yaml
+supabase/functions/deno.lock

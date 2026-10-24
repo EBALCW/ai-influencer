@@ -1,0 +1,21 @@
+{
+  "kind": "youtube#videoListResponse",
+  "etag": "fixture-etag-vstats",
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 1
+  },
+  "items": [
+    {
+      "kind": "youtube#video",
+      "etag": "fixture-etag-vs",
+      "id": "vidShortV45",
+      "statistics": {
+        "viewCount": "15230",
+        "likeCount": "1204",
+        "favoriteCount": "0",
+        "commentCount": "87"
+      }
+    }
+  ]
+}

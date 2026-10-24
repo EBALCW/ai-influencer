@@ -1,0 +1,21 @@
+{
+  "kind": "youtube#channelListResponse",
+  "etag": "fixture-etag-ch-stats",
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 1
+  },
+  "items": [
+    {
+      "kind": "youtube#channel",
+      "etag": "fixture-etag-ch",
+      "id": "UCfixtureChannel000000001",
+      "statistics": {
+        "viewCount": "1234567",
+        "subscriberCount": "8910",
+        "hiddenSubscriberCount": false,
+        "videoCount": "42"
+      }
+    }
+  ]
+}

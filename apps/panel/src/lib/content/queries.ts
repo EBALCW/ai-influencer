@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { notFound } from 'next/navigation';
 import type { Row, TeamRole } from '@ai-influencer/shared';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { PUBLISH_JOB_COLUMNS, type PublishJobView } from './publish';
 import { detailSchema, type ContentDetails } from './schemas';
 
 export type ContentCard = Row<'content_items'> & { details: ContentDetails };
@@ -12,7 +13,9 @@ export type ContentWorkspace = {
   page: number;
   role: TeamRole;
   slug: string;
-  influencers: Array<Pick<Row<'influencers'>, 'id' | 'name' | 'slug'>>;
+  influencers: Array<
+    Pick<Row<'influencers'>, 'id' | 'name' | 'slug' | 'niche' | 'language'>
+  >;
   accounts: Array<
     Pick<Row<'social_accounts'>, 'id' | 'influencer_id' | 'platform' | 'handle'>
   >;
@@ -33,6 +36,8 @@ export type ContentWorkspace = {
     >
   >;
   slots: Row<'posting_slots'>[];
+  /** Görünen kartların yayın işleri (#58), en yeni önce. */
+  publishJobs: PublishJobView[];
 };
 function check(error: { message: string } | null) {
   if (error) throw new Error('İçerik verileri alınamadı.');
@@ -47,7 +52,7 @@ export async function getContentWorkspace(options: {
   const supabase = await createSupabaseServerClient();
   const influencers = await supabase
     .from('influencers')
-    .select('id,name,slug')
+    .select('id,name,slug,niche,language')
     .order('name');
   check(influencers.error);
   const selected = options.slug
@@ -95,9 +100,10 @@ export async function getContentWorkspace(options: {
   for (const r of [items, accounts, members, assets, generations])
     check(r.error);
   const accountIds = accounts.data?.map((a) => a.id) ?? [];
-  const [details, posts, slots] = await Promise.all([
+  const itemIds = items.data?.map((item) => item.id) ?? [];
+  const [details, posts, slots, publishJobs] = await Promise.all([
     supabase.rpc('content_item_details', {
-      p_ids: items.data?.map((item) => item.id) ?? [],
+      p_ids: itemIds,
     }),
     accountIds.length
       ? supabase
@@ -116,8 +122,16 @@ export async function getContentWorkspace(options: {
           .order('weekday')
           .order('local_time')
       : { data: [], error: null },
+    itemIds.length
+      ? supabase
+          .from('publish_jobs')
+          .select(PUBLISH_JOB_COLUMNS)
+          .in('content_item_id', itemIds)
+          .order('created_at', { ascending: false })
+          .limit(300)
+      : { data: [], error: null },
   ]);
-  for (const r of [details, posts, slots]) check(r.error);
+  for (const r of [details, posts, slots, publishJobs]) check(r.error);
   const parsed = z.array(detailSchema).parse(details.data ?? []);
   const byId = new Map(parsed.map((d) => [d.id, d]));
   return {
@@ -142,5 +156,6 @@ export async function getContentWorkspace(options: {
     generations: generations.data ?? [],
     posts: posts.data ?? [],
     slots: slots.data ?? [],
+    publishJobs: (publishJobs.data ?? []) as PublishJobView[],
   };
 }

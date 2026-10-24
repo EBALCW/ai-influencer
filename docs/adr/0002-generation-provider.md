@@ -68,10 +68,32 @@ Bu belgedeki her bilgi resmi dokümandan alındı ve kaynak linki verildi. Doğr
 
 Testler (`*.test.ts`): ortak sözleşme suite'i hem `MockProvider` hem de bellek içi sahte Higgsfield API'siyle koşar. Gerçek ağ çağrısı yok.
 
+## Dilim 2: kuyruk ve worker (#47)
+
+Kuyruk veritabanında, worker Supabase Edge Function'da (`supabase/functions/process-generations/`, Deno) çalışır; ayrıntı `docs/data-model.md` → "Üretim kuyruğu". Sağlayıcı sözleşmesi Deno tarafında `supabase/functions/_shared/generation/provider.ts`: `submit(job) → providerJobId`, `poll(id) → durum/ilerleme/sonuç URL'i/kredi`, `cancel(id)`, tipli `ProviderError` (geçici: `rejected`, `timeout`, `unavailable`). Higgsfield adaptörü `higgsfield.ts`; testler `FakeProvider` ve sahte `fetch` ile, ağsız.
+
+- **Polling seçildi, webhook yok.** İmza belgelenmediği için webhook zaten sadece "şimdi kontrol et" sinyali olacaktı (Öneri 3). Worker dakikada bir çalışıp 15 sn aralıkla yokluyor; gecikme en çok ~1 dk. Webhook ileride eklenirse sadece `next_run_at = now()` yapması yeterli.
+- **Anahtar yoksa** (`HIGGSFIELD_API_KEY_ID` / `HIGGSFIELD_API_KEY_SECRET` function secret'ı) worker iş almaz, işler `queued` kalır, `generation_worker_status.providers` boş yazılır ve panel "sağlayıcı yapılandırılmamış" gösterir.
+- `apps/panel/src/lib/generation/` (Dilim 1, Node) panelde sağlayıcı çağırmadığı için kuyrukta kullanılmıyor; sözleşme testleri referans olarak duruyor.
+
+### Adaptördeki varsayımlar (doğrulanmadı)
+
+| Konu              | Varsayım                                                                                                                                                       | Doğrulanınca                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Görsel modeli     | Varsayılan `higgsfield-ai/soul/v2/standard` (Quickstart örneği); `HIGGSFIELD_IMAGE_MODEL` ile değişir                                                          | Hesaptaki model listesine göre secret'ı ayarla            |
+| Görsel alanları   | Gövde `{ prompt, ...model_params }`; negatif prompt ve seed sadece doluysa `negative_prompt` / `seed` adıyla gönderilir. Model desteklemezse 422 → iş `failed` | Model sayfasındaki adlarla `higgsfield.ts` → `requestFor` |
+| Image-to-video    | Model `HIGGSFIELD_IMAGE_TO_VIDEO_MODEL` verilmezse iş "yapılandırılmamış" hatasıyla biter. Gövde `{ image_url, prompt, duration, resolution }`                 | Model ve alan adları                                      |
+| İlerleme          | Yanıtta yok; durumdan türetilir (queued 10, in_progress 50, completed 100)                                                                                     | Yanıtta yüzde varsa `poll` içinde oku                     |
+| Kredi             | Yanıtta yok; `credits = null`, bu yüzden otomatik `costs` kaydı oluşmaz                                                                                        | Kredi alanı veya estimate endpoint'i                      |
+| 400 yanıtı        | Eşzamanlılık sınırı ile parametre hatası aynı kodla dönüyor; geçici sayılır, `max_attempts` sonra `failed`                                                     | —                                                         |
+| Referans dosyalar | Worker 1 saatlik imzalı Storage URL'i gönderir; sağlayıcının bu URL'leri indirebildiği varsayılır                                                              | —                                                         |
+| Çıktı boyutu      | Edge Function belleğine indirilip yüklenir, 100 MiB sınırı                                                                                                     | Büyük videolar için akışlı yükleme                        |
+
 ## Açık sorular
 
 - **Image-to-video:** Hangi Higgsfield modeli kullanılacak ve alan adları neler? Model sayfası doğrulanmadığı için adaptörde bu işlem şimdilik `not_configured` dönüyor.
 - **Görsel model alanları:** Negatif prompt, seed ve en-boy oranı modele özgü. Doğrulanana kadar sadece `modelParams` ile, model sayfasındaki adlarıyla gönderilir. `negativePrompt`/`seed` verilirse istek reddedilir.
 - **Kredi tahmini:** Faturalandırma sayfası bir "estimate" endpoint'inden bahsediyor ama yolu doğrulanamadı. Bütçe koruması (`checkBudget`) için gönderimden önce maliyet tahmini gerekiyor.
 - **Webhook imzası** belgelenmemiş (bkz. Öneri 3).
+- **Kredi bilgisi:** Status yanıtında kredi alanı belgelenmemiş. Kredi gelmedikçe başarısız/başarılı üretimler `costs`'a otomatik yazılmaz (kredi fiyatı olsa bile); hesap ekstresinden elle girilmeli veya estimate endpoint'i doğrulanmalı.
 - **Hesap/abonelik:** Ekip API için ayrı bir Higgsfield Cloud hesabı ve bakiye açmalı (minimum yükleme ve fiyatlar console'dan kontrol edilmeli).

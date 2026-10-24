@@ -4,7 +4,16 @@ import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { canManageTeam } from '@/lib/team-roles';
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ inf?: string }>;
+}) {
+  const inf = (await searchParams).inf;
+  const query = inf ? `?inf=${encodeURIComponent(inf)}` : '';
+  const aiHref = `/settings/ai${query}`;
+  const notificationsHref = `/settings/notifications${query}`;
+  const syncHref = `/settings/sync${query}`;
   const { role } = await requireTeamMember();
 
   return (
@@ -35,6 +44,17 @@ export default async function SettingsPage() {
           </div>
         </section>
       )}
+      <section className="section-card flex flex-wrap gap-3">
+        <Link className="button" href={aiHref}>
+          AI ayarları
+        </Link>
+        <Link className="button" href={notificationsHref}>
+          Bildirim ayarları
+        </Link>
+        <Link className="button" href={syncHref}>
+          Senkronizasyon
+        </Link>
+      </section>
       <section className="section-card section-empty-card">
         <EmptyState
           title="Ayarlar alanı hazır"
