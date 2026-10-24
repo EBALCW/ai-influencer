@@ -7,11 +7,12 @@
 import type { Collector, SocialPlatform } from './types.ts';
 import { tiktokCollector } from './tiktok.ts';
 import { youtubeCollector } from './youtube.ts';
+import { instagramCollector } from './instagram.ts';
 
 export type CollectorRegistry = Partial<Record<SocialPlatform, Collector>>;
 
 export const collectors: CollectorRegistry = {
-  // instagram: instagramCollector, // #50
+  instagram: instagramCollector, // #50
   youtube: youtubeCollector, // #51
   tiktok: tiktokCollector, // #52
 };
