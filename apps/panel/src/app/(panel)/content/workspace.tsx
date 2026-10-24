@@ -9,6 +9,14 @@ import { checklistGroups, readChecklist } from '@/lib/content/checklist-schema';
 import { contentSchema, type ContentInput } from '@/lib/content/schemas';
 import { localInput, localToIso } from '@/lib/content/schedule-rules';
 import { stages, type ContentStage } from '@/lib/content/stage-rules';
+import {
+  SCORER_IS_PRODUCER_MESSAGE,
+  scorerIsProducer,
+  sourceDetailsError,
+  sourceTypeLabels,
+  sourceTypes,
+  type SourceType,
+} from '@/lib/content/source-rules';
 import type { ContentCard, ContentWorkspace } from '@/lib/content/queries';
 import { PublishControls, PublishQueue } from './publish-panel';
 
@@ -148,6 +156,19 @@ export function ContentBoard({ workspace }: { workspace: ContentWorkspace }) {
           >
             Yayın takvimi
           </Link>
+          <Link
+            className="button"
+            aria-current={workspace.sourceMissing ? 'page' : undefined}
+            href={contentHref(
+              '/content',
+              workspace.slug,
+              workspace.sourceMissing ? {} : { source: 'missing' },
+            )}
+          >
+            {workspace.sourceMissing
+              ? 'Tüm içerikler'
+              : 'Kaynak bilgisi eksik v2v'}
+          </Link>
           {canEdit && workspace.influencers.length > 0 && (
             <button
               className="button button-primary"
@@ -207,7 +228,19 @@ export function ContentBoard({ workspace }: { workspace: ContentWorkspace }) {
           </div>
         ))}
       </div>
-      {workspace.count === 0 && (
+      {workspace.sourceMissing && (
+        <p className="text-sm text-muted" role="status">
+          Filtre: kaynak bilgisi eksik video-to-video içerikler (aylık kontrol,
+          docs/compliance.md).
+        </p>
+      )}
+      {workspace.count === 0 && workspace.sourceMissing && (
+        <EmptyState
+          title="Kaynak bilgisi eksik v2v içerik yok"
+          description="Bütün video-to-video içeriklerde kaynak türü kayıtlı."
+        />
+      )}
+      {workspace.count === 0 && !workspace.sourceMissing && (
         <EmptyState
           title="Henüz içerik yok"
           description={
@@ -305,6 +338,14 @@ export function ContentBoard({ workspace }: { workspace: ContentWorkspace }) {
                         {item.details.asset_ids.length} asset ·{' '}
                         {item.details.generation_ids.length} üretim
                       </p>
+                      {item.details.source_missing && (
+                        <p
+                          className="mt-2 rounded-lg border border-line p-2 text-xs"
+                          role="status"
+                        >
+                          Kaynak bilgisi eksik (v2v)
+                        </p>
+                      )}
                       {item.details.warnings.map((w) => (
                         <p
                           className="mt-2 rounded-lg border border-line p-2 text-xs"
@@ -465,6 +506,16 @@ function ContentEditor({
   );
   const [error, setError] = useState('');
   const readonly = workspace.role === 'viewer';
+  const v2v =
+    (values.generation_ids ?? []).some(
+      (id) =>
+        workspace.generations.find((g) => g.id === id)?.mode ===
+        'video_to_video',
+    ) || !!item?.details.v2v;
+  const memberLabel = (userId: string) => {
+    const m = workspace.members.find((x) => x.user_id === userId);
+    return `${m?.role ?? 'eski üye'} · ${userId.slice(0, 8)}`;
+  };
   const set = <K extends keyof ContentInput>(key: K, value: ContentInput[K]) =>
     setValues((current) => ({ ...current, [key]: value }));
   function toggle(
@@ -508,6 +559,11 @@ function ContentEditor({
             });
             if (!parsed.success) {
               setError('Alanları ve yayın checklist’ini kontrol edin.');
+              return;
+            }
+            const sourceError = sourceDetailsError(parsed.data);
+            if (sourceError) {
+              setError(sourceError);
               return;
             }
             void onSave({
@@ -699,6 +755,69 @@ function ContentEditor({
               />
             </label>
           </div>
+          <fieldset className="space-y-3 rounded-xl border border-line p-4">
+            <legend className="px-1 text-sm font-semibold">
+              Kaynak bilgisi (video-to-video)
+              {v2v ? ' · zorunlu' : ''}
+            </legend>
+            {v2v && !values.source_type && (
+              <p className="text-xs text-text" role="status">
+                Video-to-video üretimi bağlı: planlamak ve yayınlamak için
+                kaynak türünü kaydedin.
+              </p>
+            )}
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className={labelClass}>
+                Kaynak türü
+                <select
+                  aria-label="Kaynak türü"
+                  className={fieldClass}
+                  value={values.source_type ?? ''}
+                  onChange={(e) =>
+                    set(
+                      'source_type',
+                      (e.target.value || null) as SourceType | null,
+                    )
+                  }
+                >
+                  <option value="">Seçilmedi (v2v değil)</option>
+                  {sourceTypes.map((t) => (
+                    <option key={t} value={t}>
+                      {sourceTypeLabels[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={labelClass}>
+                Kaynak sahibi
+                <input
+                  className={fieldClass}
+                  maxLength={200}
+                  placeholder="Herkese açık hesap/kanal adı veya stok sağlayıcı"
+                  value={values.source_owner}
+                  onChange={(e) => set('source_owner', e.target.value)}
+                />
+              </label>
+              <label className={labelClass}>
+                Lisans / izin referansı
+                <input
+                  className={fieldClass}
+                  maxLength={500}
+                  placeholder="Lisans adı/no veya kısıtlı depodaki izin referansı"
+                  value={values.source_license}
+                  onChange={(e) => set('source_license', e.target.value)}
+                />
+              </label>
+            </div>
+            <p className="text-xs text-muted">
+              Kendi referansımız dışındaki türlerde sahip ve lisans/izin
+              zorunludur. Kişisel veri (izin verenin adı, e-posta) yazmayın;
+              izin belgesi kısıtlı depoda kalır. Alınan unsur, yeniden üretilen
+              kısım ve ses notlara yazılır (docs/compliance.md).
+              {item?.source_checked_at &&
+                ` Son kayıt: ${new Date(item.source_checked_at).toLocaleString('tr-TR')}${item.source_checked_by ? ` · ${memberLabel(item.source_checked_by)}` : ''}.`}
+            </p>
+          </fieldset>
           <label className={labelClass}>
             Neden viral?
             <textarea
@@ -745,7 +864,7 @@ function ContentEditor({
                       />
                       {'kind' in m
                         ? `${m.kind} · ${m.version_tag ?? ''}`
-                        : `${m.type} · ${m.status}`}{' '}
+                        : `${m.mode === 'video_to_video' ? 'video-to-video' : m.type} · ${m.status}`}{' '}
                       · {m.id.slice(0, 8)}
                     </label>
                   ))}
@@ -901,10 +1020,21 @@ function ContentEditor({
               <option value="ready">Yayına hazır</option>
             </select>
           </label>
+          {item?.checklist_scored_by && (
+            <p
+              className="text-xs text-muted"
+              role={scorerIsProducer(item) ? 'status' : undefined}
+            >
+              Puanlayan: {memberLabel(item.checklist_scored_by)}
+              {scorerIsProducer(item) ? ` · ${SCORER_IS_PRODUCER_MESSAGE}` : ''}
+            </p>
+          )}
           <p className="text-xs text-muted">
             İki puandan biri 3’ün altındaysa içerik Edit’e döner. Planlamak için
             tüm maddeler, en az 3 puan, hedef hesap ve yayın zamanı gerekir.
-            Yayında aşamasına geçmek için post eşleştirin.
+            Puanları ve yayın kararını üretenden (sorumlu; atanmamışsa kartı
+            açan) farklı bir ekip üyesi kaydeder. Video-to-video içerikte kaynak
+            türü de gerekir. Yayında aşamasına geçmek için post eşleştirin.
           </p>
           {!readonly && (
             <button className="button button-primary" type="submit">

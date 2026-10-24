@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
-import { hasLocalSupabase, VIEWER_STATE } from './global-setup';
+import { hasLocalSupabase, VIEWER_EMAIL, VIEWER_STATE } from './global-setup';
 import { checklistKeys } from '../src/lib/content/checklist-schema';
 
 test.skip(!hasLocalSupabase(), 'Yalnız yerel Supabase ile çalışır.');
@@ -17,6 +17,14 @@ function adminClient() {
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 }
+/** Puanlayan (editor) üretenden farklı olsun diye üretim viewer'a atanır (#22). */
+async function viewerUserId(admin: ReturnType<typeof adminClient>) {
+  const { data, error } = await admin.auth.admin.listUsers();
+  if (error) throw error;
+  const viewer = data.users.find((u) => u.email === VIEWER_EMAIL);
+  if (!viewer) throw new Error('e2e viewer kullanıcısı yok');
+  return viewer.id;
+}
 
 test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca ilerler', async ({
   page,
@@ -31,6 +39,7 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
     .single();
   if (inf.error) throw inf.error;
   const influencerId = inf.data.id;
+  const viewerId = await viewerUserId(admin);
   let accountId = '';
   try {
     const account = await admin
@@ -154,6 +163,15 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
     await editor.getByLabel('2. Yorum/paylaşım nedeni puanı (1–5)').fill('4');
     await editor.getByLabel('Yayın kararı').selectOption('ready');
     await editor.getByLabel('Aşama', { exact: true }).selectOption('scheduled');
+    // Kartı açan editor hem üreten hem puanlayan: sunucu planlamayı reddeder (#22).
+    await editor.getByRole('button', { name: 'İçeriği kaydet' }).click();
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: 'Puanlayan kişi üreten kişiden farklı olmalı' }),
+    ).toBeVisible();
+    await expect(stage).toHaveValue('edit');
+    await editor.getByLabel('Sorumlu', { exact: true }).selectOption(viewerId);
     await editor.getByRole('button', { name: 'İçeriği kaydet' }).click();
     await expect(stage).toHaveValue('scheduled');
     await expect(card).toContainText('en az 5 saat');
@@ -165,6 +183,7 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
         target_account_id: accountId,
         scheduled_at: '2026-11-10T16:00:00Z',
         checklist: ready,
+        assignee_id: viewerId,
       },
     });
     expect(near.status()).toBe(201);
@@ -302,6 +321,133 @@ test('100 karttan sonra sayfalama influencer filtresini korur', async ({
       .from('influencers')
       .delete()
       .eq('id', inf.data.id);
+    if (removed.error) throw removed.error;
+  }
+});
+
+test('v2v içerik kaynak bilgisi olmadan planlanamaz; form alanları ve eksik kaynak filtresi çalışır (#145)', async ({
+  page,
+}) => {
+  const admin = adminClient(),
+    slug = `content-v2v-${crypto.randomUUID()}`;
+  const inf = await admin
+    .from('influencers')
+    .insert({ name: 'V2V test karakteri', slug })
+    .select('id')
+    .single();
+  if (inf.error) throw inf.error;
+  const influencerId = inf.data.id;
+  try {
+    const account = await admin
+      .from('social_accounts')
+      .insert({
+        influencer_id: influencerId,
+        platform: 'instagram',
+        handle: '@v2v.fixture',
+      })
+      .select('id')
+      .single();
+    if (account.error) throw account.error;
+    const generation = await admin
+      .from('generations')
+      .insert({
+        influencer_id: influencerId,
+        tool: 'mock',
+        type: 'video',
+        mode: 'video_to_video',
+        status: 'succeeded',
+      })
+      .select('id')
+      .single();
+    if (generation.error) throw generation.error;
+    // Service role ile oluşturulan kartta puanlayan bilinmez; yalnız kaynak kuralı engeller.
+    const item = await admin
+      .from('content_items')
+      .insert({
+        influencer_id: influencerId,
+        title: 'V2V dans',
+        stage: 'edit',
+        checklist: ready,
+        target_account_id: account.data.id,
+        scheduled_at: '2026-11-12T15:00:00Z',
+      })
+      .select('id')
+      .single();
+    if (item.error) throw item.error;
+    const link = await admin.from('content_item_assets').insert({
+      content_item_id: item.data.id,
+      generation_id: generation.data.id,
+    });
+    if (link.error) throw link.error;
+
+    await page.goto(`/content?inf=${slug}`);
+    const card = page.getByTestId(`content-card-${item.data.id}`);
+    await expect(card).toContainText('Kaynak bilgisi eksik (v2v)');
+    const stage = card.getByLabel('V2V dans aşaması');
+    await stage.selectOption('scheduled');
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: 'kaydedilmeden planlama veya yayın yapılamaz' }),
+    ).toBeVisible();
+    await expect(stage).toHaveValue('edit');
+
+    await page.getByRole('link', { name: 'Kaynak bilgisi eksik v2v' }).click();
+    await expect(page).toHaveURL(/source=missing/);
+    await expect(card).toBeVisible();
+
+    await card.getByRole('button', { name: 'V2V dans', exact: true }).click();
+    const editor = page.getByRole('region', { name: 'İçerik düzenleme' });
+    await expect(
+      editor.getByRole('group', {
+        name: /Kaynak bilgisi \(video-to-video\) · zorunlu/,
+      }),
+    ).toBeVisible();
+    await editor
+      .getByLabel('Kaynak türü', { exact: true })
+      .selectOption('third_party');
+    await editor.getByLabel('Kaynak sahibi').fill('@public.dance');
+    await editor.getByRole('button', { name: 'İçeriği kaydet' }).click();
+    await expect(editor.getByRole('alert')).toContainText(
+      'sahip ve lisans/izin referansı zorunlu',
+    );
+    await editor
+      .getByLabel('Lisans / izin referansı')
+      .fill('yazılı izin – kısıtlı depoda: izin/2026-11');
+    await editor.getByLabel('Aşama', { exact: true }).selectOption('scheduled');
+    const saved = page.waitForResponse(
+      (r) =>
+        r.url().endsWith(`/api/content-items/${item.data.id}`) &&
+        r.request().method() === 'PATCH',
+    );
+    await editor.getByRole('button', { name: 'İçeriği kaydet' }).click();
+    expect((await saved).status()).toBe(200);
+    const row = await admin
+      .from('content_items')
+      .select(
+        'stage,source_type,source_owner,source_checked_at,source_checked_by',
+      )
+      .eq('id', item.data.id)
+      .single();
+    if (row.error) throw row.error;
+    expect(row.data).toMatchObject({
+      stage: 'scheduled',
+      source_type: 'third_party',
+      source_owner: '@public.dance',
+    });
+    expect(row.data.source_checked_at).not.toBeNull();
+    expect(row.data.source_checked_by).not.toBeNull();
+    await page.goto(`/content?inf=${slug}&source=missing`);
+    await expect(
+      page.getByRole('heading', {
+        name: 'Kaynak bilgisi eksik v2v içerik yok',
+      }),
+    ).toBeVisible();
+  } finally {
+    const removed = await admin
+      .from('influencers')
+      .delete()
+      .eq('id', influencerId);
     if (removed.error) throw removed.error;
   }
 });

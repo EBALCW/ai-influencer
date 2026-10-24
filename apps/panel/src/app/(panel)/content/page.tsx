@@ -7,7 +7,7 @@ import { ContentBoard } from './workspace';
 export default async function ContentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ inf?: string; page?: string }>;
+  searchParams: Promise<{ inf?: string; page?: string; source?: string }>;
 }) {
   const [member, params] = await Promise.all([
     requireTeamMember(),
@@ -19,6 +19,7 @@ export default async function ContentPage({
     slug: parsed.data.inf,
     page: parsed.data.page,
     role: member.role,
+    sourceMissing: parsed.data.source === 'missing',
   });
   return <ContentBoard workspace={workspace} />;
 }

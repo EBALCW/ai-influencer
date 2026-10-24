@@ -13,6 +13,8 @@ export type ContentWorkspace = {
   page: number;
   role: TeamRole;
   slug: string;
+  /** Liste "kaynak bilgisi eksik v2v" filtresiyle mi açıldı. */
+  sourceMissing: boolean;
   influencers: Array<
     Pick<Row<'influencers'>, 'id' | 'name' | 'slug' | 'niche' | 'language'>
   >;
@@ -26,7 +28,7 @@ export type ContentWorkspace = {
   generations: Array<
     Pick<
       Row<'generations'>,
-      'id' | 'influencer_id' | 'type' | 'tool' | 'status'
+      'id' | 'influencer_id' | 'type' | 'tool' | 'status' | 'mode'
     >
   >;
   posts: Array<
@@ -48,6 +50,8 @@ export async function getContentWorkspace(options: {
   role: TeamRole;
   from?: string;
   to?: string;
+  /** Yalnız kaynak bilgisi eksik v2v içerikler (#145). */
+  sourceMissing?: boolean;
 }): Promise<ContentWorkspace> {
   const supabase = await createSupabaseServerClient();
   const influencers = await supabase
@@ -78,7 +82,7 @@ export async function getContentWorkspace(options: {
     .limit(200);
   let generationQuery = supabase
     .from('generations')
-    .select('id,influencer_id,type,tool,status')
+    .select('id,influencer_id,type,tool,status,mode')
     .order('created_at', { ascending: false })
     .limit(200);
   if (selected) {
@@ -86,6 +90,17 @@ export async function getContentWorkspace(options: {
     accountQuery = accountQuery.eq('influencer_id', selected);
     assetQuery = assetQuery.eq('influencer_id', selected);
     generationQuery = generationQuery.eq('influencer_id', selected);
+  }
+  if (options.sourceMissing) {
+    const missing = await supabase.rpc('content_source_missing_ids', {
+      ...(selected ? { p_influencer_id: selected } : {}),
+    });
+    check(missing.error);
+    const ids = missing.data ?? [];
+    itemQuery = itemQuery.in(
+      'id',
+      ids.length ? ids : ['00000000-0000-0000-0000-000000000000'],
+    );
   }
   if (options.from) itemQuery = itemQuery.gte('scheduled_at', options.from);
   if (options.to) itemQuery = itemQuery.lt('scheduled_at', options.to);
@@ -143,12 +158,15 @@ export async function getContentWorkspace(options: {
         asset_ids: [],
         generation_ids: [],
         posts: [],
+        v2v: false,
+        source_missing: false,
       },
     })),
     count: items.count ?? 0,
     page,
     role: options.role,
     slug: options.slug ?? '',
+    sourceMissing: options.sourceMissing ?? false,
     influencers: influencers.data ?? [],
     accounts: accounts.data ?? [],
     members: members.data ?? [],

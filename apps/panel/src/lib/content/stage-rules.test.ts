@@ -25,7 +25,8 @@ describe('yayın aşama kuralları', () => {
       'utf8',
     );
     expect(checklistGroups).toHaveLength(5);
-    expect(checklistKeys).toHaveLength(24);
+    expect(checklistKeys).toHaveLength(25);
+    expect(new Set(checklistKeys).size).toBe(25);
     for (const group of checklistGroups)
       for (const [, text] of group.items) expect(template).toContain(text);
   });
@@ -45,6 +46,29 @@ describe('yayın aşama kuralları', () => {
     expect(
       stageRule('scheduled', { ...readyChecklist(), engagementScore: 2 }).ok,
     ).toBe(false);
+  });
+  it('3–5 hashtag / caption maddesi (#22) zorunlu ve SQL/worker listeleriyle aynı', () => {
+    const c = readyChecklist();
+    c.items.engagement_hashtags = false;
+    expect(checklistReady(c)).toBe(false);
+    const migration = readFileSync(
+      new URL(
+        '../../../../../supabase/migrations/20261024100000_content_source_fields.sql',
+        import.meta.url,
+      ),
+      'utf8',
+    );
+    const worker = readFileSync(
+      new URL(
+        '../../../../../supabase/functions/_shared/publishers/checklist.ts',
+        import.meta.url,
+      ),
+      'utf8',
+    );
+    for (const key of checklistKeys) {
+      expect(migration).toContain(`'${key}'`);
+      expect(worker).toContain(`'${key}'`);
+    }
   });
   it('düşük puan kartı edit’e gönderir, henüz puanlanmamış fikir normal kalır', () => {
     expect(stageRule('qc', { ...readyChecklist(), hookScore: 2 })).toEqual({

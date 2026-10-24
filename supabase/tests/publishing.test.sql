@@ -26,7 +26,7 @@ INSERT INTO public.assets (id, influencer_id, kind, storage_path, mime_type) VAL
 SELECT set_config('test.ready', jsonb_build_object('items',
   (SELECT jsonb_object_agg(key, true) FROM unnest(ARRAY[
   'hook_opening','hook_character','hook_pacing','hook_payoff','hook_loop',
-  'engagement_reason','engagement_caption','engagement_honesty',
+  'engagement_reason','engagement_caption','engagement_hashtags','engagement_honesty',
   'quality_format','quality_anatomy','quality_text','quality_silent','quality_audio','quality_cover',
   'ai_disclosure','ai_identity','ai_consent','ai_claims','ai_brands',
   'commercial_disclosure','commercial_tool','commercial_rights','commercial_engagement','commercial_minor'

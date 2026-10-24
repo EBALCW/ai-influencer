@@ -82,9 +82,22 @@ Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bul
 - `content_item_assets`: bir içerik ile aynı influencer’a ait asset veya üretimi bağlar (her satırda tam biri). RLS, audit trigger’ları ve tekil bağlantı kısıtları vardır.
 - `posting_slots`: hesap, haftanın günü (Pazar=0), PostgreSQL `time` ve IANA saat dilimi. Viewer yalnız okur. DST’de mevcut olmayan slot saati takvimde uyarı olarak gösterilir.
 - `save_content_item`: içerik ve medya bağlantılarını tek transaction’da kaydeder. `link_content_post`: `posts.content_item_id` üzerinden yayını eşleştirir; hesabı doğrular ve kartı Yayında’ya taşır. Fonksiyonlar `SECURITY INVOKER` kullanır.
-- `checklist` biçimi: `{ items: { <madde>: boolean }, hookScore: 1..5 | null, engagementScore: 1..5 | null, decision: 'ready' | 'rework' | 'review' }`. Maddeler `templates/pre-publish-checklist.md` ile eşleşir. Eksik checklist, düşük puan, eksik hesap/zaman veya post eşleştirmesi planlama/yayın aşamasına geçişi veritabanında da engeller (API 422).
+- `checklist` biçimi: `{ items: { <madde>: boolean }, hookScore: 1..5 | null, engagementScore: 1..5 | null, decision: 'ready' | 'rework' | 'review' }`. Maddeler `templates/pre-publish-checklist.md` ile eşleşir. Eksik checklist, düşük puan, eksik hesap/zaman, post eşleştirmesi, puanlayan = üreten veya v2v'de eksik kaynak bilgisi planlama/yayın aşamasına geçişi veritabanında da engeller (API 422; ayrıntı aşağıda).
 - 5 saat ve günlük 4 paylaşım kuralları uyarıdır. Planlanmış içerik ve gerçek postlar hesap bazında tek kez sayılır; günlük sınır kartın hedef saat diliminde hesaplanır. `content_item_details` yalnız seçili kartlar için son post snapshot’ını getirir; snapshot’lar toplanmaz.
 - Kanban ve takvim 100 kartlık sayfalar kullanır; medya ve post seçimleri son 200 kayıtla sınırlıdır. Daha eski bağlı medyanın kimliği korunur.
+
+### Kaynak alanları ve puanlayan (#145, #22)
+
+Migration `20261024100000_content_source_fields.sql`.
+
+- **v2v içerik:** İçeriğe `generations.mode = 'video_to_video'` olan bir üretim ya da böyle bir üretimin çıktı asset'i (`output_asset_id`) bağlıysa (`content_is_v2v(id)`). `format` serbest metindir, ölçüt değildir.
+- **Kaynak kolonları:** `source_type` (`content_source_type` enum: `own` · `stock` · `open_license` · `third_party`; NULL = v2v değil veya girilmedi), `source_owner` (≤ 200; herkese açık hesap/kanal adı veya stok sağlayıcı, kişisel veri yazılmaz), `source_license` (≤ 500; lisans adı/no veya kısıtlı depodaki izin belgesinin referansı). `own` dışındaki türlerde sahip ve lisans zorunludur (`content_items_source_details_required`, 23514). Kaynak videonun bağlantısı `source_url`'de kalır.
+- **`source_checked_at` / `source_checked_by`:** Kaynak alanları değiştiğinde trigger oturumdaki kullanıcıyı ve zamanı yazar; istemcinin gönderdiği değer yok sayılır. Alanlar boşaltılınca NULL olur. Oturumsuz (service role) yazımda zaman yine doldurulur.
+- **Engeller (23514, HINT):** v2v içerikte `source_type` boşsa kart `scheduled`/`published` olamaz, `publish_jobs` satırı açılamaz ve planlı karta v2v üretimi/çıktısı bağlanamaz (`source_missing`).
+- **`checklist_scored_by`:** `hookScore`, `engagementScore` veya `decision` değiştiğinde oturumdaki kullanıcıya sabitlenir (istemci yazamaz; service role yazımında verilen değer korunur). Üreten = `assignee_id`, atanmamışsa `created_by`. Puanlayan üretenle aynıysa kart planlanamaz ve yayın işi açılamaz (`scorer_is_producer`). Puanlayan bilinmiyorsa (NULL: oturumsuz veya bu migration öncesi puanlama) kural uygulanmaz.
+- **Check-list:** `engagement_hashtags` ("Caption şablonu hazır; 3–5 alakalı hashtag…") eklendi; `content_checklist_ready()` 25 madde ister. Worker (`supabase/functions/_shared/publishers/checklist.ts`) aynı listeyi kullanır.
+- **Geçiş:** Zaten `scheduled`/`published` olan kartta check-list, sorumlu ve kaynak alanları değişmeden yapılan güncellemeler (post eşleştirme, `complete_publish_job`, saat değişikliği) yeni kurallarla yeniden denetlenmez. Notlardaki geçerli `[Kaynak]` blokları (tür + `own` dışında sahip ve lisans) migration'da kolonlara taşındı; notlar silinmedi.
+- **Aylık kontrol:** `content_source_missing_ids(p_influencer_id?)` kaynak bilgisi eksik v2v içeriklerin kimliklerini döner (RLS geçerli). Panel `/content?source=missing` filtresi ve karttaki "Kaynak bilgisi eksik (v2v)" etiketi bunu kullanır; `content_item_details` `v2v` ve `source_missing` alanlarını da döner.
 
 ## Prompt kütüphanesi (#46)
 
