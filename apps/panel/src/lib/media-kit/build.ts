@@ -16,7 +16,7 @@ export const MEDIA_KIT_WINDOW_DAYS = 30;
 export const MEDIA_KIT_TOP_POSTS = 3;
 
 export const AI_DISCLOSURE =
-  'Bu karakter yapay zekâ ile oluşturulmuş kurgusal bir karakterdir. İçerikler AI araçlarıyla üretilir ve her paylaşımda platformun AI içerik açıklaması ile reklam/iş birliği ibaresi kullanılır.';
+  'Bu karakter yapay zekâ ile oluşturulmuş kurgusal bir karakterdir. İçerikler AI araçlarıyla üretilir ve her paylaşımda platformun AI içerik açıklaması kullanılır; sponsorlu paylaşımlarda ise içerik başında, kaydırmadan görünen “Reklam” ibaresi yer alır.';
 
 export type MediaKitInput = {
   asOf: string;
