@@ -38,10 +38,10 @@ test('editor trend ekler, CSV içe aktarır ve backlog’a aktarır', async ({
     // 1) Formdan ekleme: platform linkten bulunur.
     await page.getByRole('button', { name: 'Yeni trend' }).click();
     const form = page.getByRole('form', { name: 'Trend ekle' });
-    await form.getByLabel('Link').fill('javascript:alert(1)');
+    await form.getByLabel('Link', { exact: true }).fill('javascript:alert(1)');
     await form.getByRole('button', { name: 'Trendi kaydet' }).click();
     await expect(form.getByRole('alert')).toBeVisible();
-    await form.getByLabel('Link').fill(formUrl);
+    await form.getByLabel('Link', { exact: true }).fill(formUrl);
     await expect(
       form.getByLabel('Platform').locator('option').first(),
     ).toHaveText('Linkten bul (Instagram)');
