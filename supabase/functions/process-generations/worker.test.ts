@@ -19,6 +19,7 @@ type Row = QueueJob & {
   progress: number;
   error: string | null;
   credits: number | null;
+  cost_usd: number | null;
   finished_at: string | null;
   output_path: string | null;
 };
@@ -27,6 +28,7 @@ type Row = QueueJob & {
 class MemoryStore implements QueueStore {
   rows = new Map<string, Row>();
   uploads = new Map<string, { bytes: Uint8Array; contentType: string }>();
+  inputReads = 0;
   heartbeats: Array<{
     providers: string[];
     claimed: number;
@@ -52,6 +54,8 @@ class MemoryStore implements QueueStore {
       progress: 0,
       error: null,
       credits: null,
+      cost_usd: null,
+      estimated_cost_usd: null,
       finished_at: null,
       output_path: null,
       ...extra,
@@ -82,9 +86,13 @@ class MemoryStore implements QueueStore {
     return Promise.resolve();
   }
   inputMedia(job: QueueJob) {
+    this.inputReads++;
     return Promise.resolve({
-      imageUrls: job.input_asset_ids.map((a) => `https://signed.example/${a}`),
-      videoUrl: null,
+      images: job.input_asset_ids.map((a) => ({
+        url: `https://signed.example/${a}`,
+        mimeType: 'image/png',
+      })),
+      video: null,
     });
   }
   upload(path: string, bytes: Uint8Array, contentType: string) {
@@ -97,6 +105,7 @@ class MemoryStore implements QueueStore {
     _mime: string,
     _size: number,
     credits: number | null,
+    costUsd: number | null,
   ) {
     const r = this.get(id);
     if (['queued', 'running'].includes(r.status)) {
@@ -106,6 +115,7 @@ class MemoryStore implements QueueStore {
         progress: 100,
       });
       if (credits !== null) r.credits = credits;
+      if (costUsd !== null) r.cost_usd = costUsd;
     }
     return Promise.resolve();
   }
@@ -244,7 +254,7 @@ Deno.test(
   async () => {
     const { store, provider, run, advance } = setup();
     store.add('g1');
-    provider.submitErrors = ['unavailable', 'rejected', 'unavailable'];
+    provider.submitErrors = ['unavailable', 'timeout', 'unavailable'];
 
     assertEquals((await run()).outcomes.g1, 'retry');
     let row = store.get('g1');
@@ -290,7 +300,10 @@ Deno.test('kalıcı gönderim hatası tekrar denenmez', async () => {
   provider.submitErrors = ['insufficient_credits'];
   assertEquals((await run()).outcomes.g1, 'failed');
   assertEquals(store.get('g1').attempts, 1);
-  assertEquals(store.get('g1').error, 'Sağlayıcı hesabında yeterli kredi yok.');
+  assertEquals(
+    store.get('g1').error,
+    'Sağlayıcı hesabında yeterli bakiye yok. (destek kimliği: corr-1)',
+  );
 });
 
 Deno.test('running iş zaman aşımına uğrar', async () => {
@@ -382,6 +395,33 @@ Deno.test('toSubmitJob: test modu kapalıysa çözünürlük ve süre korunur', 
     cancel_requested_at: null,
   };
   const media = { imageUrls: ['https://i'], videoUrl: null };
+  const image = toSubmitJob(
+    {
+      ...base,
+      mode: 'text_to_image',
+      params: {
+        prompt: 'x',
+        test_mode: false,
+        image_resolution: '4K',
+        aspect_ratio: '9:16',
+      },
+    },
+    media,
+  );
+  assertEquals([image.imageResolution, image.aspectRatio], ['4K', '9:16']);
+  const imageTest = toSubmitJob(
+    {
+      ...base,
+      mode: 'text_to_image',
+      params: { prompt: 'x', image_resolution: '4K', aspect_ratio: '7:7' },
+    },
+    media,
+  );
+  assertEquals(
+    [imageTest.imageResolution, imageTest.aspectRatio],
+    ['2K', null],
+    'test modu 2K zorlar, şemada olmayan oran gönderilmez',
+  );
   const off = toSubmitJob(
     {
       ...base,
@@ -458,10 +498,7 @@ Deno.test(
       maxFileBytes: 4096,
     });
     assertEquals(result.outcomes.g1, 'failed');
-    assertEquals(
-      store.get('g1').error,
-      'Sonuç dosyası desteklenmeyen türde veya çok büyük.',
-    );
+    assertEquals(store.get('g1').error, 'Sonuç dosyası çok büyük.');
     assert(stream.state.cancelled, 'akış iptal edilir');
     assert(stream.state.pulled < 10, 'dosyanın tamamı okunmaz');
     assertEquals(store.uploads.size, 0);
@@ -478,4 +515,276 @@ Deno.test('readLimited sınır içindeki parçaları birleştirir', async () => 
     Error,
     'unsupported',
   );
+});
+
+Deno.test(
+  '429 kuyruk dolu: Retry-After kadar beklenir, deneme hakkı harcanmaz',
+  async () => {
+    const { store, provider, run, advance } = setup();
+    store.add('g1');
+    provider.submitErrors = ['rate_limited', 'rate_limited'];
+    provider.retryAfterSeconds = 45;
+
+    assertEquals((await run()).outcomes.g1, 'rate_limited');
+    let row = store.get('g1');
+    assertEquals(row.status, 'queued');
+    assertEquals(row.attempts, 0);
+    assertEquals(
+      row.next_run_at,
+      new Date(T0.getTime() + 45_000).toISOString(),
+    );
+    assert(row.error?.includes('destek kimliği: corr-1'));
+
+    advance(44);
+    assertEquals((await run()).claimed, 0, 'Retry-After dolmadan alınmaz');
+    advance(1);
+    assertEquals((await run()).outcomes.g1, 'rate_limited');
+    advance(45);
+    assertEquals((await run()).outcomes.g1, 'submitted');
+    row = store.get('g1');
+    assertEquals([row.status, row.attempts], ['running', 1]);
+    assertEquals(
+      new Set(provider.submitted.map((j) => j.id)).size,
+      1,
+      'aynı Idempotency-Key',
+    );
+  },
+);
+
+Deno.test(
+  '429 Retry-After yoksa üstel geri çekilme, 503 Retry-After daha uzunsa o',
+  async () => {
+    const { store, provider, run } = setup();
+    store.add('g1');
+    provider.submitErrors = ['rate_limited'];
+    assertEquals((await run()).outcomes.g1, 'rate_limited');
+    assertEquals(
+      store.get('g1').next_run_at,
+      new Date(T0.getTime() + 30_000).toISOString(),
+    );
+
+    store.add('g2');
+    provider.submitErrors = ['unavailable'];
+    provider.retryAfterSeconds = 120;
+    assertEquals((await run()).outcomes.g2, 'retry');
+    assertEquals(store.get('g2').attempts, 1);
+    assertEquals(
+      store.get('g2').next_run_at,
+      new Date(T0.getTime() + 120_000).toISOString(),
+    );
+  },
+);
+
+Deno.test('400 geçersiz parametre kalıcıdır, tekrar denenmez', async () => {
+  const { store, provider, run } = setup();
+  store.add('g1');
+  provider.submitErrors = ['invalid_request'];
+  assertEquals((await run()).outcomes.g1, 'failed');
+  assertEquals(store.get('g1').status, 'failed');
+  assertEquals(provider.submitted.length, 1);
+});
+
+Deno.test(
+  'estimate: tahmin gönderimde yazılır, başarıda gerçek tutar (USD) olur',
+  async () => {
+    const { store, provider, run, advance } = setup();
+    provider.estimateUsd = 0.094;
+    store.add('g1', { params: { prompt: 'p', aspect_ratio: '9:16' } });
+    assertEquals((await run()).outcomes.g1, 'submitted');
+    assertEquals(store.get('g1').estimated_cost_usd, 0.094);
+    assertEquals(provider.estimated[0], provider.submitted[0], 'aynı gövde');
+
+    provider.polls.set('job-g1', [
+      { status: 'succeeded', resultUrl: 'https://cdn.example/o.png' },
+    ]);
+    advance(15);
+    assertEquals((await run()).outcomes.g1, 'succeeded');
+    assertEquals(store.get('g1').cost_usd, 0.094);
+  },
+);
+
+Deno.test(
+  'estimate: başarısız üretime tutar yazılmaz; estimate 400 → failed, gönderim yok',
+  async () => {
+    const { store, provider, run, advance } = setup();
+    provider.estimateUsd = 0.5;
+    store.add('g1');
+    await run();
+    provider.polls.set('job-g1', [{ status: 'failed', error: 'x' }]);
+    advance(15);
+    assertEquals((await run()).outcomes.g1, 'failed');
+    assertEquals(store.get('g1').cost_usd, null);
+
+    provider.estimateUsd = 'invalid_request';
+    store.add('g2');
+    advance(1);
+    assertEquals((await run()).outcomes.g2, 'failed');
+    assertEquals(provider.submitted.length, 1);
+  },
+);
+
+Deno.test('expires_at geçmişse indirilmeden açık hatayla failed', async () => {
+  const { store, provider, run, fetched } = setup();
+  store.add('g1', {
+    status: 'running',
+    provider_job_id: 'job-g1',
+    started_at: T0.toISOString(),
+  });
+  provider.polls.set('job-g1', [
+    {
+      status: 'succeeded',
+      resultUrl: 'https://cdn.example/o.png',
+      expiresAt: new Date(T0.getTime() - 1000).toISOString(),
+    },
+  ]);
+  assertEquals((await run()).outcomes.g1, 'expired');
+  const row = store.get('g1');
+  assertEquals(row.status, 'failed');
+  assert(row.error?.includes('expires_at'));
+  assertEquals(fetched, []);
+});
+
+Deno.test('expires_at gelecekteyse normal indirilir', async () => {
+  const { store, provider, run } = setup();
+  store.add('g1', {
+    status: 'running',
+    provider_job_id: 'job-g1',
+    started_at: T0.toISOString(),
+  });
+  provider.polls.set('job-g1', [
+    {
+      status: 'succeeded',
+      resultUrl: 'https://cdn.example/o.png',
+      expiresAt: new Date(T0.getTime() + 7 * 86_400_000).toISOString(),
+    },
+  ]);
+  assertEquals((await run()).outcomes.g1, 'succeeded');
+});
+
+Deno.test(
+  'içerik türü: genel başlıkta URL ipucu, ses çıktısı açık hatayla reddedilir',
+  async () => {
+    const now = T0;
+    const store = new MemoryStore(() => now);
+    const provider = new FakeProvider();
+    const types: Record<string, string> = {
+      'https://cdn.example/o.webp': 'application/octet-stream',
+      'https://cdn.example/a.mp3': 'audio/mpeg',
+      'https://cdn.example/noext': '',
+    };
+    const fetchImpl: typeof fetch = (input) =>
+      Promise.resolve(
+        new Response(new Uint8Array([1]), {
+          headers: types[String(input)]
+            ? { 'content-type': types[String(input)] }
+            : {},
+        }),
+      );
+    const run = () =>
+      runWorker({
+        store,
+        providers: [provider],
+        fetch: fetchImpl,
+        now: () => now,
+      });
+    const running = {
+      status: 'running' as const,
+      started_at: T0.toISOString(),
+    };
+    store.add('g1', { ...running, provider_job_id: 'job-g1' });
+    store.add('g2', { ...running, provider_job_id: 'job-g2' });
+    store.add('g3', {
+      ...running,
+      provider_job_id: 'job-g3',
+      mode: 'image_to_video',
+    });
+    provider.polls.set('job-g1', [
+      {
+        status: 'succeeded',
+        resultUrl: 'https://cdn.example/o.webp',
+        contentType: 'image/webp',
+      },
+    ]);
+    provider.polls.set('job-g2', [
+      {
+        status: 'succeeded',
+        resultUrl: 'https://cdn.example/a.mp3',
+        contentType: 'audio/mpeg',
+      },
+    ]);
+    provider.polls.set('job-g3', [
+      { status: 'succeeded', resultUrl: 'https://cdn.example/noext' },
+    ]);
+    const out = (await run()).outcomes;
+    assertEquals(out, { g1: 'succeeded', g2: 'failed', g3: 'succeeded' });
+    assertEquals(store.get('g1').output_path, `${INF}/generated-g1.webp`);
+    assert(store.get('g2').error?.includes('ses'));
+    assertEquals(
+      store.get('g3').output_path,
+      `${INF}/generated-g3.mp4`,
+      'tür bilinmiyorsa moddan',
+    );
+  },
+);
+
+Deno.test(
+  'referans dosyalar sağlayıcıya bir kez yüklenir, tekrar denemede aynı URL',
+  async () => {
+    const { store, provider, run, advance } = setup();
+    provider.uploads = true;
+    provider.submitErrors = ['unavailable'];
+    store.add('g1', { input_asset_ids: ['a1'], mode: 'image_to_video' });
+
+    assertEquals((await run()).outcomes.g1, 'retry');
+    assertEquals(provider.prepared.length, 1);
+    assertEquals(provider.prepared[0].images[0].mimeType, 'image/png');
+    assertEquals(
+      (store.get('g1').params.provider_inputs as { image_urls: string[] })
+        .image_urls,
+      ['uploaded:https://signed.example/a1'],
+    );
+    advance(30);
+    assertEquals((await run()).outcomes.g1, 'submitted');
+    assertEquals(provider.prepared.length, 1, 'ikinci yükleme yok');
+    assertEquals(store.inputReads, 1);
+    assertEquals(
+      provider.submitted.map((j) => j.imageUrls[0]),
+      [
+        'uploaded:https://signed.example/a1',
+        'uploaded:https://signed.example/a1',
+      ],
+    );
+  },
+);
+
+Deno.test(
+  'başka üretimden kopyalanan provider_inputs kullanılmaz',
+  async () => {
+    const { store, provider, run } = setup();
+    provider.uploads = true;
+    store.add('g2', {
+      input_asset_ids: ['a1'],
+      params: {
+        prompt: 'p',
+        provider_inputs: { generation_id: 'g1', image_urls: ['https://old'] },
+      },
+    });
+    assertEquals((await run()).outcomes.g2, 'submitted');
+    assertEquals(provider.prepared.length, 1);
+    assertEquals(provider.submitted[0].imageUrls, [
+      'uploaded:https://signed.example/a1',
+    ]);
+  },
+);
+
+Deno.test('yoklamada 429 geçicidir, iş düşmez', async () => {
+  const { store, provider, run } = setup();
+  store.add('g1', {
+    status: 'running',
+    provider_job_id: 'job-g1',
+    started_at: T0.toISOString(),
+  });
+  provider.polls.set('job-g1', ['rate_limited']);
+  assertEquals((await run()).outcomes.g1, 'poll_retry');
+  assertEquals(store.get('g1').status, 'running');
 });
