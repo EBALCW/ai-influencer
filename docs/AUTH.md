@@ -48,3 +48,24 @@ Kurallar:
 
 - `e2e/guest.spec.ts`: Oturumsuz senaryolar. Her ortamda çalışır.
 - `e2e/app.spec.ts`: Oturumlu senaryolar. Sadece **yerel** Supabase'e karşı çalışır (`pnpm supabase:start`, ardından `supabase status` değerlerini env olarak ver). Global setup ortak dev projesine asla test kullanıcısı yazmaz. CI bu testleri yerel Supabase ile her PR'da çalıştırır.
+
+## Sosyal hesap OAuth geliştirmesi (#49)
+
+`src/lib/oauth/state.ts`, sosyal hesap OAuth akışları için sunucuya özel state ve
+RFC 7636 S256 PKCE çekirdeğidir. Panelin Supabase girişinden ayrıdır.
+State 32 rastgele bayttır, depoya SHA-256 hash'i yazılır. PKCE verifier istemciye
+verilmez; başlangıç sonucu sadece state ve challenge içerir. State 10 dakika,
+oturum kullanıcısı, influencer ve platform ile sınırlıdır.
+
+`OAuthStateStore.consume` üretimde **atomik koşullu silme/RETURNING** uygulamalıdır:
+hash + kullanıcı + influencer + platform + süre koşulları sağlanmıyorsa kayıt
+silinmez, sağlanıyorsa yalnız bir istek verifier alır. Çok worker çalışmada
+process belleği veya yalnız cookie ile replay koruması sağlanmış sayılmaz.
+Kısa ömürlü verifier'ın depoya erişimi sunucuyla sınırlanmalı, süresi dolan
+kayıtlar temizlenmelidir. Testteki bellek deposu üretim adaptörü değildir.
+
+Bu çekirdek henüz route'lara bağlı değildir. Kalıcı atomik state deposu,
+start/callback, sağlayıcı token değişimleri, Vault yazımı, revoke, yenileme job'u
+ve hesaplar arayüzü tamamlanmadan sosyal hesap bağlama kullanılabilir sayılmaz.
+Canlı kabul için sağlayıcı uygulamaları ve en az iki platform test hesabıyla
+bağlantı doğrulaması gerekir; bu bilgiler public repoya veya sohbete yazılmaz.
