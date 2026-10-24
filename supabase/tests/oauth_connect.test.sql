@@ -1,0 +1,17 @@
+BEGIN;
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SELECT extensions.plan(6);
+INSERT INTO auth.users(id,aud,role,email) VALUES ('97000000-0000-4000-8000-000000000001','authenticated','authenticated','oauth-connect@example.invalid');
+INSERT INTO public.team_members(user_id,role) VALUES ('97000000-0000-4000-8000-000000000001','editor');
+INSERT INTO public.influencers(id,name,slug) VALUES ('e2000000-0000-4000-8000-000000000001','Connect fixture','connect-fixture');
+INSERT INTO public.social_accounts(id,influencer_id,platform,external_id,handle) VALUES ('e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','youtube','UCfixture','fixture');
+SELECT extensions.ok(NOT has_function_privilege('authenticated','public.oauth_connect_token(uuid,uuid,uuid,public.social_platform,text,jsonb,timestamptz)','EXECUTE'),'client cannot write token');
+SET LOCAL ROLE service_role;
+SELECT extensions.throws_ok($$SELECT public.oauth_connect_token('97000000-0000-4000-8000-000000000001','e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','tiktok','UCfixture','{"access_token":"fixture"}',now()+interval '1 hour')$$,'42501',NULL,'wrong platform');
+SELECT extensions.throws_ok($$SELECT public.oauth_connect_token('97000000-0000-4000-8000-000000000001','e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000002','youtube','UCfixture','{"access_token":"fixture"}',now()+interval '1 hour')$$,'42501',NULL,'wrong influencer');
+SELECT extensions.throws_ok($$SELECT public.oauth_connect_token('97000000-0000-4000-8000-000000000002','e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','youtube','UCfixture','{"access_token":"fixture"}',now()+interval '1 hour')$$,'42501',NULL,'non-member');
+SELECT extensions.lives_ok($$SELECT public.oauth_connect_token('97000000-0000-4000-8000-000000000001','e3000000-0000-4000-8000-000000000001','e2000000-0000-4000-8000-000000000001','youtube','UCfixture','{"access_token":"fixture"}',now()+interval '1 hour')$$,'matching callback stores token');
+SELECT extensions.is((SELECT status::text FROM public.social_accounts WHERE id='e3000000-0000-4000-8000-000000000001'),'active','account active');
+RESET ROLE;
+SELECT * FROM extensions.finish();
+ROLLBACK;

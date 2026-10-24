@@ -402,3 +402,31 @@ aynı dashboard’u kullanır. Yeni bağımlılık veya ortam anahtarı eklenmed
   30 günden hesaplanır (`lib/media-kit/build.ts`); tarih aralığı ve AI açıklaması PDF'te yazar. Veri yoksa
   "veri yok" yazılır; kitle demografisi şemada olmadığından (#50/#51) her zaman "veri yok"dur.
   PDF saf JS ile üretilir (`pdf-lib` + `@pdf-lib/fontkit`, Geist fontu `geist` paketinden); native bağımlılık yok.
+
+### OAuth geçici state deposu (#49)
+
+`private.oauth_states`: SHA-256 `state_hash`, `user_id`, `influencer_id`,
+`platform`, kısa ömürlü PKCE `verifier`, `expires_at`. Tablo RLS açık, istemci ve
+service role için doğrudan erişim kapalıdır. Public invoker RPC'leri yalnız
+service role çağırır; private definer işlevler boş `search_path` ile çalışır.
+`oauth_state_save` güncel owner/editor üyeliğini, en fazla 10 dakika TTL ve
+kullanıcı başına 20 aktif başlangıç sınırını kontrol eder. `oauth_state_consume`
+bağlam ve DB saatiyle koşullu atomik `DELETE RETURNING` yapar. Tüketim sonrası
+tekrar kullanım boş yanıt döndürür. Süresi dolan kayıtlar her 10 dakikada ve yeni
+başlangıçlarda temizlenir. Verifier erişimi sunucuyla sınırlıdır; bu tablo access
+ve refresh token tutmaz (onlar Vault'tadır).
+
+`oauth_connect_token` yalnız service role callback yazımı içindir. Private işlev
+hesap satırını kilitler, güncel owner/editor üyeliğini ve influencer/platform/
+external_id eşleşmesini tekrar kontrol eder; ardından mevcut Vault yazımını aynı
+transaction'da çağırır. Böylece uygulama kontrolü ile token yazımı arasında hesap
+kimliği değiştirilemez. Public işlev invoker'dır. Test: `oauth_connect.test.sql`.
+
+`private.oauth_refresh_leases` kısa süreli yenileme sahipliğini, Vault referansı,
+önceki son kullanma tarihi ve access token hash'i ile tutar (token metni burada
+tutulmaz). Claim/finish RPC'leri service role içindir; row lock ve nonce ile
+aynı hesabın iki worker tarafından yenilenmesi ve eski cevabın yeni bağlantıyı
+ezmesi engellenir. `private.oauth_revoke_leases` sağlayıcı izni kaldırılırken
+aynı hesabın paralel işlenmesini sınırlar. Kaldırma onaylanana kadar sır
+Vault'ta kalır; finish doğru nonce ve eski referansla eşleşmelidir. Üç tablo da
+private, RLS açık ve doğrudan service-role/istemci tablo erişimine kapalıdır.

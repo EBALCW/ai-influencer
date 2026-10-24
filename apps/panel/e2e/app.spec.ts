@@ -400,6 +400,25 @@ test('owner bütçe tanımlar; %80 eşiği aşılınca uyarı görünür', async
   ).toHaveAttribute('aria-valuetext', /Uyarı eşiği aşıldı/);
 });
 
+test('owner sosyal hesap bağlantı formlarını görür; bilinmeyen OAuth platformu 404', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/influencers/demo-creator?tab=accounts&inf=demo-creator');
+  await expect(
+    page.getByRole('button', { name: 'YouTube hesabı bağla' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'TikTok hesabı bağla' }),
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      'form[action="/api/oauth/youtube/start"] input[name="influencerId"]',
+    ),
+  ).toHaveValue('10000000-0000-4000-8000-000000000001');
+  expect((await request.post('/api/oauth/foo/start')).status()).toBe(404);
+});
+
 test('profilde gerçek kullanıcı ve çıkış var', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByTitle(OWNER_EMAIL).first()).toBeVisible();

@@ -1161,6 +1161,27 @@ isOneToOne: false
 "mark_alerts_read":
 { Args: { "p_alert_ids"?: (string)[] }; Returns: number
                            },
+"oauth_connect_token":
+{ Args: { "p_account_id": string,"p_expires_at": string,"p_external_id": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_token": Json,"p_user_id": string }; Returns: undefined
+                           },
+"oauth_refresh_claim":
+{ Args: { "p_platforms": (Database["public"]['Enums']["social_platform"])[] }; Returns: Json
+                           },
+"oauth_refresh_finish":
+{ Args: { "p_account_id": string,"p_expires_at": string,"p_lease_id": string,"p_result": string,"p_token": Json }; Returns: boolean
+                           },
+"oauth_revoke_begin":
+{ Args: { "p_account_id": string,"p_influencer_id": string,"p_user_id": string }; Returns: Json
+                           },
+"oauth_revoke_finish":
+{ Args: { "p_account_id": string,"p_nonce": string }; Returns: boolean
+                           },
+"oauth_state_consume":
+{ Args: { "p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string }; Returns: Json
+                           },
+"oauth_state_save":
+{ Args: { "p_expires_at": string,"p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string,"p_verifier": string }; Returns: undefined
+                           },
 "post_analytics":
 { Args: { "p_baseline_posts"?: number,"p_post_id": string }; Returns: Json
                            },
