@@ -735,6 +735,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"trends": {
+                  Row: {
+                    "account_handle": string,"adaptation_idea": string,"adaptation_score": number | null,"captured_on": string,"comments": number | null,"content_item_id": string | null,"cost_estimate": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"format": string,"hook": string,"id": string,"influencer_id": string | null,"likes": number | null,"notes": string,"platform": string,"sound": string,"source": string,"status": string,"updated_at": string,"url": string,"views": number | null,"why_viral": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url": string,"views"?: number | null,"why_viral"?: string
+                  }
+                  Update: {
+                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url"?: string,"views"?: number | null,"why_viral"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "trends_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "trends_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -1142,6 +1168,9 @@ isOneToOne: false
                            },
 "post_segments":
 { Args: { "p_influencer_slug"?: string,"p_target_hours"?: number }; Returns: Json
+                           },
+"push_trend_to_backlog":
+{ Args: { "p_influencer_id"?: string,"p_title"?: string,"p_trend_id": string }; Returns: string
                            },
 "raise_budget_alerts":
 { Args: { "p_month": string }; Returns: number

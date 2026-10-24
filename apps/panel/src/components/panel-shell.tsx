@@ -19,6 +19,7 @@ import {
   Sparkles,
   Sun,
   ScrollText,
+  TrendingUp,
   UsersRound,
   X,
 } from 'lucide-react';
@@ -59,6 +60,12 @@ const navigation: Array<{
     group: 'STÜDYO',
   },
   { label: "Prompt'lar", href: '/prompts', icon: ScrollText, group: 'STÜDYO' },
+  {
+    label: 'Araştırma',
+    href: '/research',
+    icon: TrendingUp,
+    group: 'YAYIN',
+  },
   { label: 'İçerik', href: '/content', icon: Clapperboard, group: 'YAYIN' },
   { label: 'Takvim', href: '/calendar', icon: CalendarDays, group: 'YAYIN' },
   { label: 'Gelen kutusu', href: '/inbox', icon: Inbox, group: 'YAYIN' },
