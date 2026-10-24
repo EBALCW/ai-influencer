@@ -126,3 +126,10 @@ Post ve metrik kayıtları silinmez. Sağlayıcı hatasında sır retry için Va
 kalır, yeni bağlantı yazımı durdurulur; üç dakika sonra tekrar denenebilir.
 Google revoke aynı projeye verilen diğer OAuth izinlerini de kaldırabilir;
 bu etki Hesaplar ekranında kullanıcıya gösterilir.
+
+Yeni OAuth değerleri mevcut şifreli geliştirme aktarım paketine eklenmemiştir.
+Yetkili owner bu değerleri yalnız ilgili panel sunucusunun özel ortamında ve
+ayrıca Edge Function secret yönetiminde tanımlar. Kullanıcıya çözülebilir
+artifact üzerinden yeni OAuth client secret dağıtımı yapılmaz. Değerler repoya,
+sohbete veya loga yazılmaz. Kayıtlı callback origin'i gerçek panel adresiyle
+eşleşmelidir.
