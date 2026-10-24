@@ -51,6 +51,8 @@ export type QueueItem = Pick<
   | 'attempts'
   | 'max_attempts'
   | 'credits'
+  | 'cost_usd'
+  | 'estimated_cost_usd'
   | 'created_at'
   | 'finished_at'
   | 'output_asset_id'
@@ -70,7 +72,7 @@ export async function listQueue(
   let query = supabase
     .from('generations')
     .select(
-      'id, influencer_id, prompt_id, mode, status, progress, error, attempts, max_attempts, credits, created_at, finished_at, output_asset_id, retry_of, cancel_requested_at',
+      'id, influencer_id, prompt_id, mode, status, progress, error, attempts, max_attempts, credits, cost_usd, estimated_cost_usd, created_at, finished_at, output_asset_id, retry_of, cancel_requested_at',
     )
     .order('created_at', { ascending: false })
     .limit(limit);

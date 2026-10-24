@@ -43,22 +43,66 @@ export const statusLabels: Record<GenerationStatus, string> = {
   cancelled: 'İptal edildi',
 };
 
+/** Video-to-video (motion transfer) çözünürlükleri. */
 export const resolutions = ['480p', '720p', '1080p'] as const;
+/** Görsel (Higgsfield Soul) çözünürlükleri ve en-boy oranları (OpenAPI, 2026-10-24). */
+export const imageResolutions = ['2K', '4K'] as const;
+export const aspectRatios = [
+  '9:16',
+  '4:5',
+  '3:4',
+  '2:3',
+  '1:1',
+  '5:4',
+  '4:3',
+  '3:2',
+  '16:9',
+  '21:9',
+] as const;
+/**
+ * Görselden video süreleri. Kling 5|10 kabul eder; Hailuo 6|10 olduğundan worker 5'i 6'ya
+ * yuvarlar. Image-to-video modellerinde çözünürlük alanı yok.
+ */
+export const videoDurations = [5, 10] as const;
+
+/** Mod başına formda gösterilen alanlar (sağlayıcının desteklemediği alan sunulmaz). */
+export const modeFields: Record<
+  GenerationMode,
+  { resolution: boolean; image: boolean; duration: boolean }
+> = {
+  text_to_image: { resolution: false, image: true, duration: false },
+  image_to_video: { resolution: false, image: false, duration: true },
+  video_to_video: { resolution: true, image: false, duration: false },
+};
+
+/** Test modunda zorlanan değerler (form etiketi de bunu gösterir). */
+export const testModeLabel: Record<GenerationMode, string> = {
+  text_to_image: '2K',
+  image_to_video: '5 sn',
+  video_to_video: '480p',
+};
 
 export const isActiveStatus = (status: GenerationStatus) =>
   status === 'queued' || status === 'running';
 
-const optionalInt = (min: number, max: number) =>
-  z.preprocess(
-    (value) => (value === '' || value === null ? undefined : value),
-    z.coerce.number().int().min(min).max(max).optional(),
-  );
+const emptyToUndefined = (value: unknown) =>
+  value === '' || value === null ? undefined : value;
 
-/** Üretim formundaki parametreler. Test modu varsayılan olarak açıktır (480p, en çok 5 sn). */
+/**
+ * Üretim formundaki parametreler. Test modu varsayılan olarak açıktır (görsel 2K, video 5 sn,
+ * video-to-video 480p). Seed yok: Higgsfield Soul ve image-to-video şemalarında seed alanı yok.
+ */
 export const generationOptionsSchema = z.object({
   resolution: z.enum(resolutions).default('720p'),
-  durationSeconds: optionalInt(1, 60),
-  seed: optionalInt(0, 2_147_483_647),
+  imageResolution: z.enum(imageResolutions).default('2K'),
+  aspectRatio: z.enum(aspectRatios).default('9:16'),
+  durationSeconds: z.preprocess(
+    emptyToUndefined,
+    z.coerce
+      .number()
+      .refine((value) => (videoDurations as readonly number[]).includes(value))
+      .optional(),
+  ),
   testMode: z.boolean(),
   inputAssetIds: z.array(z.uuid()).max(8),
   overrideBudget: z.boolean(),
@@ -79,27 +123,59 @@ export function inputRequirementError(
   return null;
 }
 
-/** generations.params: worker bu alanları okur (prompt, negative, test_mode, resolution …). */
+/**
+ * generations.params: worker bu alanları okur. Sadece modun desteklediği alanlar yazılır:
+ * görsel → image_resolution + aspect_ratio, görselden video → duration_seconds,
+ * video-to-video → resolution. Negatif prompt saklanır; worker yalnız destekleyen modele
+ * (ör. Kling image-to-video) gönderir.
+ */
 export function buildGenerationParams(input: {
+  mode: GenerationMode;
   prompt: string;
   negative: string;
   variables: Record<string, string>;
   promptVersion: number;
   options: GenerationOptions;
 }) {
-  const { options } = input;
+  const { options, mode } = input;
+  const test = options.testMode;
   return {
     prompt: input.prompt,
     negative: input.negative,
     variables: input.variables,
     prompt_version: input.promptVersion,
-    test_mode: options.testMode,
-    resolution: options.testMode ? '480p' : options.resolution,
-    ...(options.durationSeconds !== undefined && {
-      duration_seconds: options.durationSeconds,
+    test_mode: test,
+    ...(mode === 'text_to_image' && {
+      image_resolution: test ? '2K' : options.imageResolution,
+      aspect_ratio: options.aspectRatio,
     }),
-    ...(options.seed !== undefined && { seed: options.seed }),
+    ...(mode === 'image_to_video' && {
+      duration_seconds: test ? 5 : (options.durationSeconds ?? 5),
+    }),
+    ...(mode === 'video_to_video' && {
+      resolution: test ? '480p' : options.resolution,
+    }),
   };
+}
+
+/**
+ * Üretim maliyeti etiketi (USD). Gerçek tutar varsa o, yoksa gönderimdeki tahmin. Sağlayıcı
+ * başarısız/iptal edilen işi ücretlendirmez; bu durumda tahmin gösterilmez.
+ */
+export function costLabel(item: {
+  status: GenerationStatus;
+  cost_usd: number | string | null;
+  estimated_cost_usd: number | string | null;
+}): string | null {
+  const usd = (value: number | string | null) => {
+    const n = value === null ? NaN : Number(value);
+    return Number.isFinite(n) ? `$${n.toFixed(n < 1 ? 3 : 2)}` : null;
+  };
+  const actual = usd(item.cost_usd);
+  if (actual) return actual;
+  if (item.status === 'failed' || item.status === 'cancelled') return null;
+  const estimate = usd(item.estimated_cost_usd);
+  return estimate ? `≈ ${estimate} (tahmini)` : null;
 }
 
 type DbError = { code?: string; message: string; hint?: string | null };

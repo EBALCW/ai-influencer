@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { EmptyState } from '@/components/ui';
 import type { QueueItem } from '@/lib/generation-queries';
 import {
+  costLabel,
   isActiveStatus,
   modeLabels,
   statusLabels,
@@ -150,6 +151,7 @@ export function QueueList({
                     </time>
                     {item.retry_of && ' · yeniden deneme'}
                     {item.credits !== null && ` · ${item.credits} kredi`}
+                    {costLabel(item) && ` · ${costLabel(item)}`}
                   </p>
                   <p className="text-sm text-text">
                     <span className="font-medium" data-status={item.status}>
