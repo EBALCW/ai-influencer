@@ -6,9 +6,25 @@ import { apiError, jsonError } from '@/lib/auth-api';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { contentSchema, type ContentInput } from './schemas';
 import { stageRule } from './stage-rules';
+import {
+  SCORER_IS_PRODUCER_MESSAGE,
+  SOURCE_MISSING_MESSAGE,
+  sourceDetailsError,
+} from './source-rules';
 
 export const contentIdSchema = z.string().uuid();
-export function contentDbError(error: { code?: string; message: string }) {
+/** Migration HINT'i → kullanıcı mesajı (#145, #22). */
+const reviewBlockers: Record<string, string> = {
+  source_missing: SOURCE_MISSING_MESSAGE,
+  scorer_is_producer: SCORER_IS_PRODUCER_MESSAGE,
+};
+export function contentDbError(error: {
+  code?: string;
+  message: string;
+  hint?: string | null;
+}) {
+  if (error.code === '23514' && error.hint && reviewBlockers[error.hint])
+    return jsonError(reviewBlockers[error.hint]!, 422);
   if (error.code === '42501') return jsonError('Editor yetkisi gerekli.', 403);
   if (error.code === 'P0002') return jsonError('Kayıt bulunamadı.', 404);
   if (error.code === '40001')
@@ -36,6 +52,8 @@ export async function saveContent(
 ) {
   const rule = stageRule(input.stage, input.checklist);
   if (!rule.ok) return jsonError(rule.error, 422);
+  const sourceError = sourceDetailsError(input);
+  if (sourceError) return jsonError(sourceError, 422);
   if (
     ['scheduled', 'published'].includes(rule.stage) &&
     (!input.target_account_id || !input.scheduled_at)

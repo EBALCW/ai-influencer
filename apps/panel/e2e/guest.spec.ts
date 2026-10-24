@@ -61,3 +61,13 @@ test('misafir sosyal OAuth başlatamaz ve callback işleyemez', async ({
     expect([401, 503]).toContain(response.status());
   }
 });
+
+test('misafir sosyal hesap bağlantısını kaldıramaz', async ({ request }) => {
+  expect([401, 503]).toContain(
+    (
+      await request.post(
+        '/api/social-accounts/33333333-3333-4333-8333-333333333333/disconnect',
+      )
+    ).status(),
+  );
+});

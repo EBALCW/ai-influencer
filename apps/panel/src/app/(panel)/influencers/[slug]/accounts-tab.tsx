@@ -59,6 +59,24 @@ export function AccountsTab({
             >
               {account.platform} · {account.handle}{' '}
               <span className="text-muted">· {account.status}</span>
+              {canEdit && ['youtube', 'tiktok'].includes(account.platform) && (
+                <form
+                  method="post"
+                  action={`/api/social-accounts/${account.id}/disconnect`}
+                >
+                  <button
+                    type="submit"
+                    className="mt-2 rounded-lg border border-line px-3 py-1 text-sm text-primary"
+                  >
+                    Bağlantıyı kaldır
+                  </button>
+                  <p className="text-sm text-muted">
+                    Sağlayıcı izni kaldırılır; geçmiş paylaşımlar korunur.
+                    Google izni kaldırılırsa aynı projeye verilen diğer izinler
+                    de kaldırılabilir.
+                  </p>
+                </form>
+              )}
             </li>
           ))}
         </ul>

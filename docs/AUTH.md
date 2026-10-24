@@ -64,17 +64,15 @@ process belleği veya yalnız cookie ile replay koruması sağlanmış sayılmaz
 Kısa ömürlü verifier'ın depoya erişimi sunucuyla sınırlanmalı, süresi dolan
 kayıtlar temizlenmelidir. Testteki bellek deposu üretim adaptörü değildir.
 
-Bu çekirdek henüz route'lara bağlı değildir. Kalıcı atomik state deposu,
-start/callback, sağlayıcı token değişimleri, Vault yazımı, revoke, yenileme job'u
-ve hesaplar arayüzü tamamlanmadan sosyal hesap bağlama kullanılabilir sayılmaz.
+State çekirdeği YouTube ve TikTok start/callback akışlarına bağlıdır.
 Canlı kabul için sağlayıcı uygulamaları ve en az iki platform test hesabıyla
 bağlantı doğrulaması gerekir; bu bilgiler public repoya veya sohbete yazılmaz.
 
 Kalıcı adaptör: `src/lib/oauth/store.ts`. `createOAuthStateStore()` yalnız servis
 anahtarıyla public state RPC'lerini çağırır; zaman kontrolünü DB yapar. Verifier
 ve sağlayıcı ayrıntıları hata mesajlarına dahil edilmez. Şema:
-`20261024100000_oauth_state_store.sql`; yetki/TTL/replay testleri:
-`supabase/tests/oauth_state.test.sql`. Route entegrasyonu henüz tamamlanmadı.
+`20261024101000_oauth_state_store.sql`; yetki/TTL/replay testleri:
+`supabase/tests/oauth_state.test.sql`. YouTube/TikTok route entegrasyonu aşağıda açıklanır.
 
 ### Sosyal bağlantı akışları
 
@@ -94,10 +92,37 @@ client_key `TIKTOK_CLIENT_ID`, secret `TIKTOK_CLIENT_SECRET` olarak sunucuya
 verilir. YouTube localhost HTTP kabul eder; TikTok Web HTTPS callback gerektirir.
 YouTube S256 PKCE + offline/consent kullanır. TikTok Web dokümanı PKCE belirtmez;
 Desktop Kit'in hex SHA256 kuralı Web akışına uygulanmaz. Üretimde HTTPS zorunludur.
-Instagram adaptörü henüz etkin değildir, istek 503 ile kapanır. Yenileme ve
-bağlantı kaldırma henüz tamamlanmadı; bu yüzden #49 açık/draft kalır.
+Instagram adaptörü henüz etkin değildir, istek 503 ile kapanır. Canlı hesap
+kabul testi yapılmadığı ve Instagram akışı eksik olduğu için #49 açık/draft kalır.
 
 Resmi referanslar (24 Ekim 2026):
 https://developers.google.com/identity/protocols/oauth2/web-server
 https://developers.tiktok.com/docs/en/login-kit-web
 https://developers.tiktok.com/docs/en/oauth-user-access-token-management
+
+### Token yenileme ve bağlantıyı kaldırma
+
+`refresh-tokens` Edge Function her 5 dakikada pg_cron üzerinden `x-cron-secret`
+ile çağrılır. Yalnız ayarı bulunan YouTube/TikTok platformları alınır; aynı
+çağrı en çok 5 hesabı işler. Süre sonuna 15 dakika kalan token'lar için
+`oauth_refresh_claim` üç dakikalık tek-worker rezervasyonu verir. Callback yeni
+bir token yazmışsa veya hesap revoked olmuşsa eski worker sonucu
+`oauth_refresh_finish` tarafından reddedilir. TikTok'un döndürdüğü yeni refresh
+token saklanır; Google yeni refresh token döndürmezse eskisi korunur. Geçici
+hata sonraki cron'a kalır; invalid_grant hesabı error yapar, yeniden bağlantı
+istenir. Token ve sağlayıcı hata gövdesi loglanmaz.
+
+Panel env'si ile Edge Function secret'ları farklıdır: her ortamın function
+secret'larında da `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TIKTOK_CLIENT_ID`,
+`TIKTOK_CLIENT_SECRET` gerekir. `CRON_SECRET`, Vault `cron_secret` ve `project_url`
+mevcut zamanlayıcı sözleşmesidir. Secret değerleri migration veya PR'a yazılmaz;
+fonksiyon yalnız pipeline ile deploy edilir.
+
+`POST /api/social-accounts/[id]/disconnect` editor yetkisi ve aynı origin ister.
+`oauth_revoke_begin` yenileme/ikinci kaldırma ile çakışmayı engeller ve hesabı
+revoked yaparak yerel işleri durdurur. Önce sağlayıcı revoke çağrısı yapılır;
+onaylandıktan sonra `oauth_revoke_finish` nonce kontrolüyle Vault sırrını siler.
+Post ve metrik kayıtları silinmez. Sağlayıcı hatasında sır retry için Vault'ta
+kalır, yeni bağlantı yazımı durdurulur; üç dakika sonra tekrar denenebilir.
+Google revoke aynı projeye verilen diğer OAuth izinlerini de kaldırabilir;
+bu etki Hesaplar ekranında kullanıcıya gösterilir.

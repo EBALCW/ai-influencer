@@ -201,3 +201,50 @@ export async function accountIdentity(
     throw new OAuthProviderError('Sosyal hesap kimliği doğrulanamadı.');
   return parsed.data;
 }
+
+export async function revokeToken(
+  cfg: ProviderConfig,
+  token: { access_token: string; refresh_token?: string },
+  fetcher = fetch,
+) {
+  const fields: Record<string, string> =
+    cfg.platform === 'youtube'
+      ? { token: token.refresh_token ?? token.access_token }
+      : {
+          client_key: cfg.clientId,
+          client_secret: cfg.secret,
+          token: token.access_token,
+        };
+  let response: Response;
+  try {
+    response = await fetcher(
+      cfg.platform === 'youtube'
+        ? 'https://oauth2.googleapis.com/revoke'
+        : 'https://open.tiktokapis.com/v2/oauth/revoke/',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(fields).toString(),
+        redirect: 'error',
+        signal: AbortSignal.timeout(15000),
+      },
+    );
+  } catch {
+    throw new OAuthProviderError(
+      'Sağlayıcı bağlantısı kaldırılamadı; üç dakika sonra tekrar deneyin.',
+    );
+  }
+  if (!response.ok)
+    throw new OAuthProviderError('Sağlayıcı bağlantısı kaldırmayı reddetti.');
+  const raw = await response.text();
+  if (raw) {
+    let body: unknown;
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      throw new OAuthProviderError('Sağlayıcı kaldırma yanıtı doğrulanamadı.');
+    }
+    if (obj(body).error)
+      throw new OAuthProviderError('Sağlayıcı bağlantısı kaldırmayı reddetti.');
+  }
+}

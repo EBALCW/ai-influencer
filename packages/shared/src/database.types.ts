@@ -309,14 +309,14 @@ isOneToOne: false
                   ]
                 },"content_items": {
                   Row: {
-                    "adaptation_score": number | null,"assignee_id": string | null,"checklist": NonNullable<Json>,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"notes": string,"scheduled_at": string | null,"sort_order": number,"source_url": string,"source_views": number | null,"stage": Database["public"]['Enums']["content_stage"],"target_account_id": string | null,"timezone": string,"title": string,"updated_at": string,"viral_reason": string
+                    "adaptation_score": number | null,"assignee_id": string | null,"checklist": NonNullable<Json>,"checklist_scored_by": string | null,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"notes": string,"scheduled_at": string | null,"sort_order": number,"source_checked_at": string | null,"source_checked_by": string | null,"source_license": string,"source_owner": string,"source_type": Database["public"]['Enums']["content_source_type"] | null,"source_url": string,"source_views": number | null,"stage": Database["public"]['Enums']["content_stage"],"target_account_id": string | null,"timezone": string,"title": string,"updated_at": string,"viral_reason": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"viral_reason"?: string
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"viral_reason"?: string
                   }
                   Update: {
-                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"viral_reason"?: string
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"viral_reason"?: string
                   }
                   Relationships: [
                     {
@@ -933,11 +933,17 @@ isOneToOne: false
 "content_checklist_ready":
 { Args: { "p_checklist": Json }; Returns: boolean
                            },
+"content_is_v2v":
+{ Args: { "p_id": string }; Returns: boolean
+                           },
 "content_item_details":
 { Args: { "p_ids": (string)[] }; Returns: Json
                            },
 "content_schedule_warnings":
 { Args: { "p_id": string }; Returns: (string)[]
+                           },
+"content_source_missing_ids":
+{ Args: { "p_influencer_id"?: string }; Returns: (string)[]
                            },
 "cost_by_category":
 { Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
@@ -1088,6 +1094,7 @@ isOneToOne: false
               "adaptation_score": number | null,
 "assignee_id": string | null,
 "checklist": NonNullable<Json>,
+"checklist_scored_by": string | null,
 "created_at": string,
 "created_by": string | null,
 "format": string,
@@ -1097,6 +1104,11 @@ isOneToOne: false
 "notes": string,
 "scheduled_at": string | null,
 "sort_order": number,
+"source_checked_at": string | null,
+"source_checked_by": string | null,
+"source_license": string,
+"source_owner": string,
+"source_type": Database["public"]['Enums']["content_source_type"] | null,
 "source_url": string,
 "source_views": number | null,
 "stage": Database["public"]['Enums']["content_stage"],
@@ -1117,6 +1129,18 @@ isOneToOne: false
                            },
 "oauth_connect_token":
 { Args: { "p_account_id": string,"p_expires_at": string,"p_external_id": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_token": Json,"p_user_id": string }; Returns: undefined
+                           },
+"oauth_refresh_claim":
+{ Args: { "p_platforms": (Database["public"]['Enums']["social_platform"])[] }; Returns: Json
+                           },
+"oauth_refresh_finish":
+{ Args: { "p_account_id": string,"p_expires_at": string,"p_lease_id": string,"p_result": string,"p_token": Json }; Returns: boolean
+                           },
+"oauth_revoke_begin":
+{ Args: { "p_account_id": string,"p_influencer_id": string,"p_user_id": string }; Returns: Json
+                           },
+"oauth_revoke_finish":
+{ Args: { "p_account_id": string,"p_nonce": string }; Returns: boolean
                            },
 "oauth_state_consume":
 { Args: { "p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string }; Returns: Json
@@ -1219,6 +1243,7 @@ isOneToOne: false
               "adaptation_score": number | null,
 "assignee_id": string | null,
 "checklist": NonNullable<Json>,
+"checklist_scored_by": string | null,
 "created_at": string,
 "created_by": string | null,
 "format": string,
@@ -1228,6 +1253,11 @@ isOneToOne: false
 "notes": string,
 "scheduled_at": string | null,
 "sort_order": number,
+"source_checked_at": string | null,
+"source_checked_by": string | null,
+"source_license": string,
+"source_owner": string,
+"source_type": Database["public"]['Enums']["content_source_type"] | null,
 "source_url": string,
 "source_views": number | null,
 "stage": Database["public"]['Enums']["content_stage"],
@@ -1254,7 +1284,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
+            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_source_type": "own"|"stock"|"open_license"|"third_party","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1374,7 +1404,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"publish_job_status": ["queued", "processing", "published", "failed", "manual_required", "cancelled"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
+            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_source_type": ["own", "stock", "open_license", "third_party"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"publish_job_status": ["queued", "processing", "published", "failed", "manual_required", "cancelled"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
           }
         }
 } as const

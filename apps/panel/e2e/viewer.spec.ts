@@ -147,3 +147,13 @@ test('viewer sosyal hesap bağlama yetkisine sahip değil', async ({
     ).status(),
   ).toBe(403);
 });
+
+test('viewer sosyal hesap bağlantısını kaldıramaz', async ({ request }) => {
+  expect(
+    (
+      await request.post(
+        '/api/social-accounts/33333333-3333-4333-8333-333333333333/disconnect',
+      )
+    ).status(),
+  ).toBe(403);
+});
