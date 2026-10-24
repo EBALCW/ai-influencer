@@ -392,3 +392,9 @@ bağlam ve DB saatiyle koşullu atomik `DELETE RETURNING` yapar. Tüketim sonras
 tekrar kullanım boş yanıt döndürür. Süresi dolan kayıtlar her 10 dakikada ve yeni
 başlangıçlarda temizlenir. Verifier erişimi sunucuyla sınırlıdır; bu tablo access
 ve refresh token tutmaz (onlar Vault'tadır).
+
+`oauth_connect_token` yalnız service role callback yazımı içindir. Private işlev
+hesap satırını kilitler, güncel owner/editor üyeliğini ve influencer/platform/
+external_id eşleşmesini tekrar kontrol eder; ardından mevcut Vault yazımını aynı
+transaction'da çağırır. Böylece uygulama kontrolü ile token yazımı arasında hesap
+kimliği değiştirilemez. Public işlev invoker'dır. Test: `oauth_connect.test.sql`.

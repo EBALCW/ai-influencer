@@ -50,3 +50,14 @@ test('auth callback dış adrese yönlendirmez', async ({ page }) => {
     /^http:\/\/(127\.0\.0\.1|localhost):3000\/login/,
   );
 });
+
+test('misafir sosyal OAuth başlatamaz ve callback işleyemez', async ({
+  request,
+}) => {
+  for (const response of [
+    await request.post('/api/oauth/youtube/start'),
+    await request.get('/api/oauth/youtube/callback?state=bad&code=bad'),
+  ]) {
+    expect([401, 503]).toContain(response.status());
+  }
+});

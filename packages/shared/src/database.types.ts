@@ -1115,6 +1115,9 @@ isOneToOne: false
 "mark_alerts_read":
 { Args: { "p_alert_ids"?: (string)[] }; Returns: number
                            },
+"oauth_connect_token":
+{ Args: { "p_account_id": string,"p_expires_at": string,"p_external_id": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_token": Json,"p_user_id": string }; Returns: undefined
+                           },
 "oauth_state_consume":
 { Args: { "p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string }; Returns: Json
                            },

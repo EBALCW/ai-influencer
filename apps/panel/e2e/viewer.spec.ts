@@ -131,3 +131,19 @@ test('viewer influencer sihirbazını açamaz ve taslak oluşturamaz', async ({
   );
   expect(prompt.status()).toBe(403);
 });
+
+test('viewer sosyal hesap bağlama yetkisine sahip değil', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/influencers/demo-creator?tab=accounts');
+  await expect(
+    page.getByRole('button', { name: 'YouTube hesabı bağla' }),
+  ).toHaveCount(0);
+  expect((await request.post('/api/oauth/youtube/start')).status()).toBe(403);
+  expect(
+    (
+      await request.get('/api/oauth/youtube/callback?state=bad&code=bad')
+    ).status(),
+  ).toBe(403);
+});

@@ -75,3 +75,29 @@ anahtarıyla public state RPC'lerini çağırır; zaman kontrolünü DB yapar. V
 ve sağlayıcı ayrıntıları hata mesajlarına dahil edilmez. Şema:
 `20261024100000_oauth_state_store.sql`; yetki/TTL/replay testleri:
 `supabase/tests/oauth_state.test.sql`. Route entegrasyonu henüz tamamlanmadı.
+
+### Sosyal bağlantı akışları
+
+YouTube ve TikTok Web Login Kit için `POST /api/oauth/[platform]/start`,
+`GET /api/oauth/[platform]/callback` vardır. İki uçta editor yetkisi gerekir.
+Başlangıç aynı origin POST formudur; state callback yoluna sınırlı httpOnly,
+SameSite=Lax cookie ile tarayıcıya da bağlanır. Callback state'i atomik tüketir,
+kodu sunucudan değişir, kimliği sağlayıcıdan okur; token'ı
+`oauth_connect_token` RPC'siyle Vault'a yazar. RPC hesap satırını kilitleyip
+influencer/platform/external id eşleşmesini ve ekip rolünü tekrar doğrular.
+Başka influencer'a bağlı hesap taşınmaz. Başarısız yeni kayıt pending kalabilir;
+aynı hesapla yeniden bağlantı tamamlanabilir. Token/API hata gövdesi loglanmaz.
+
+`OAUTH_REDIRECT_BASE` yalnız origin'dir. Callback adresleri sağlayıcı konsoluna
+tam olarak kaydedilir. Google `GOOGLE_CLIENT_ID/SECRET`; TikTok portalındaki
+client_key `TIKTOK_CLIENT_ID`, secret `TIKTOK_CLIENT_SECRET` olarak sunucuya
+verilir. YouTube localhost HTTP kabul eder; TikTok Web HTTPS callback gerektirir.
+YouTube S256 PKCE + offline/consent kullanır. TikTok Web dokümanı PKCE belirtmez;
+Desktop Kit'in hex SHA256 kuralı Web akışına uygulanmaz. Üretimde HTTPS zorunludur.
+Instagram adaptörü henüz etkin değildir, istek 503 ile kapanır. Yenileme ve
+bağlantı kaldırma henüz tamamlanmadı; bu yüzden #49 açık/draft kalır.
+
+Resmi referanslar (24 Ekim 2026):
+https://developers.google.com/identity/protocols/oauth2/web-server
+https://developers.tiktok.com/docs/en/login-kit-web
+https://developers.tiktok.com/docs/en/oauth-user-access-token-management
