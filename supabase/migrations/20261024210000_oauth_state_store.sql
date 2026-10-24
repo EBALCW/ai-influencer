@@ -16,7 +16,7 @@ CREATE FUNCTION private.oauth_state_save(p_hash text, p_user_id uuid, p_influenc
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 BEGIN
   IF p_expires_at IS NULL OR NOT isfinite(p_expires_at) OR p_expires_at <= clock_timestamp()
-    OR p_expires_at > clock_timestamp() + interval '10 minutes' THEN
+    OR p_expires_at > clock_timestamp() + interval '11 minutes' THEN
     RAISE EXCEPTION 'OAuth süresi geçersiz.' USING ERRCODE = '22023';
   END IF;
   IF NOT EXISTS (SELECT 1 FROM public.team_members WHERE user_id=p_user_id AND role IN ('owner','editor')) THEN
@@ -28,7 +28,7 @@ BEGIN
   IF (SELECT count(*) FROM private.oauth_states WHERE user_id=p_user_id) >= 20 THEN
     RAISE EXCEPTION 'OAuth deneme sınırı.' USING ERRCODE = '54000';
   END IF;
-  INSERT INTO private.oauth_states VALUES(p_hash,p_user_id,p_influencer_id,p_platform,p_verifier,p_expires_at);
+  INSERT INTO private.oauth_states VALUES(p_hash,p_user_id,p_influencer_id,p_platform,p_verifier,least(p_expires_at,clock_timestamp()+interval '10 minutes'));
 END;
 $$;
 

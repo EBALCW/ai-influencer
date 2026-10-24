@@ -1,6 +1,6 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(13);
+SELECT extensions.plan(15);
 INSERT INTO auth.users(id,aud,role,email) VALUES
  ('96000000-0000-4000-8000-000000000001','authenticated','authenticated','oauth-editor@example.invalid'),
  ('96000000-0000-4000-8000-000000000002','authenticated','authenticated','oauth-viewer@example.invalid');
@@ -23,6 +23,8 @@ RESET ROLE;
 SELECT extensions.lives_ok($$INSERT INTO private.oauth_states VALUES(repeat('b',43),'96000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','youtube',repeat('v',43),now()-interval '1 minute')$$,'expired fixture');
 SET LOCAL ROLE service_role;
 SELECT extensions.ok(public.oauth_state_consume(repeat('b',43),'96000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','youtube') IS NULL,'expired state rejected');
+SELECT extensions.lives_ok($$SELECT public.oauth_state_save(repeat('c',43),'96000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','youtube',repeat('v',43),clock_timestamp()+interval '10 minutes 30 seconds')$$,'small app clock skew accepted');
+SELECT extensions.ok((public.oauth_state_consume(repeat('c',43),'96000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000001','youtube')->>'expiresAt')::numeric <= extract(epoch FROM clock_timestamp()+interval '10 minutes')*1000,'DB caps lifetime to ten minutes');
 RESET ROLE;
 SELECT * FROM extensions.finish();
 ROLLBACK;
