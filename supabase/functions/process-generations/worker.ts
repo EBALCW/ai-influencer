@@ -383,9 +383,39 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
     ) {
       throw new Error('unsupported');
     }
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.byteLength === 0 || bytes.byteLength > maxFileBytes)
-      throw new Error('unsupported');
+    const bytes = await readLimited(res, maxFileBytes);
+    if (bytes.byteLength === 0) throw new Error('unsupported');
     return { bytes, mime };
   }
+}
+
+/**
+ * Yanıt gövdesini en çok `maxBytes` bayta kadar okur. content-length yoksa veya yanlışsa da
+ * sınır aşıldığı anda akış iptal edilir ('unsupported'); tüm dosya belleğe alınmaz.
+ */
+export async function readLimited(
+  res: Response,
+  maxBytes: number,
+): Promise<Uint8Array> {
+  if (!res.body) return new Uint8Array(0);
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new Error('unsupported');
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
 }

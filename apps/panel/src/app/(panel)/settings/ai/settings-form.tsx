@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { DEFAULT_AI_DAILY_LIMIT } from '@/lib/ai/daily-cap';
 import { aiSettingsSchema, type AiSettings } from '@/lib/ai/settings-schema';
 const fields = [
   ['inputPerMTok', 'Giriş'],
@@ -135,6 +136,26 @@ export function AiSettingsForm() {
               </label>
             ))}
           </div>
+          <label className="block text-sm text-muted">
+            Kullanıcı başına günlük AI isteği (UTC günü; boşsa{' '}
+            {DEFAULT_AI_DAILY_LIMIT})
+            <input
+              className="mt-2 w-full rounded-xl border border-line bg-surface p-3 text-text sm:w-48"
+              type="number"
+              min={1}
+              max={10000}
+              step={1}
+              inputMode="numeric"
+              value={settings.dailyLimitPerUser ?? ''}
+              onChange={(e) =>
+                setSettings((v) => ({
+                  ...v,
+                  dailyLimitPerUser:
+                    e.target.value === '' ? undefined : Number(e.target.value),
+                }))
+              }
+            />
+          </label>
           {canEdit && (
             <button className="button button-primary" type="submit">
               AI ayarlarını kaydet
