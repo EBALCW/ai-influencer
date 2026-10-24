@@ -1172,9 +1172,6 @@ isOneToOne: false
 "push_trend_to_backlog":
 { Args: { "p_influencer_id"?: string,"p_title"?: string,"p_trend_id": string }; Returns: string
                            },
-"raise_budget_alerts":
-{ Args: { "p_month": string }; Returns: number
-                           },
 "read_social_token":
 { Args: { "p_account_id": string }; Returns: Json
                            },
