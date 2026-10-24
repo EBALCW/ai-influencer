@@ -20,6 +20,8 @@ Model çıktısı yayınlama, araç çağırma veya üretim başlatma yetkisine 
    | haftalık | `research`   | `ai-weekly`  | "AI Weekly"    |
    | yanıt    | `caption`    | `ai-reply`   | "AI Reply"     |
 
+   Caption görevi için yapıştırılacak hazır kütüphane metni ve test kaydı `docs/caption-prompt.md` içindedir (#23).
+
    Influencer'a özel soy globalden önce gelir; soyun en yüksek versiyonu okunur. Kütüphane metni koddaki ortak güvenlik/çıktı kurallarına **eklenir**, onları değiştirmez. Eşleşen prompt yoksa koddaki yerleşik talimat kullanılır (`promptId`: `builtin:<görev>@1`). Aynı kategorideki görsel/video üretim şablonları AI asistanına gitmez.
 
 Model ve fiyat için sabit varsayılan yoktur; eski `ANTHROPIC_MODEL` env'i kullanılmaz.
