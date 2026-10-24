@@ -12,7 +12,10 @@
 -- 3) project_url: https zorunlu; yalnız yerel adresler (localhost, 127.0.0.1,
 --    host.docker.internal, kong) için http kabul edilir. Dört private çağrı fonksiyonu aynı
 --    gövdeyle, yalnız bu denetim değişerek yeniden kuruldu.
--- 4) pg_net kuyruğu (istek başlıklarında cron sırrı taşır) API rollerine kapatıldı.
+-- 4) pg_net kuyruğu (istek başlıklarında cron sırrı taşır): API rollerinden izin geri alınmaya
+--    çalışılır. Yerel Supabase'te tabloların sahibi supabase_admin ve PUBLIC iznini o verdiği için
+--    migration rolü bunu geri alamaz (komut uyarıyla geçer). Asıl sınır: net şeması PostgREST'e
+--    açık değil ve hiçbir public fonksiyon/görünüm onu kullanmıyor (pgTAP denetler).
 -- 5) public şemadaki SECURITY DEFINER RPC'ler (cancel_generation, request_sync) SECURITY INVOKER
 --    sarmalayıcıya çevrildi; yetkili gövde PostgREST'e açık olmayan `internal` şemasında.
 --    `private` şeması API rollerine tamamen kapalı kalır (authenticated orada fonksiyon

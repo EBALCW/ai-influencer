@@ -55,11 +55,25 @@ SELECT extensions.ok(
   'budget alert producer is no longer a public (invoker) function'
 );
 
--- ── pg_net kuyruğu (sır taşıyan başlıklar) API rollerine kapalı ─────────────
+-- ── pg_net ──────────────────────────────────────────────────────────────────
+-- net.* tablolarının sahibi platform rolü (supabase_admin) ve PUBLIC'e verdiği izni migration
+-- rolü geri alamaz (migration denemesi platform izin verirse etkili olur). Savunma: net şeması
+-- PostgREST'e açık değil ve hiçbir public fonksiyon/görünüm onu okumuyor; sır okuyan ve istek
+-- kuyruğa alan yardımcılar API rollerine kapalı.
 SELECT extensions.ok(
-  NOT has_table_privilege('authenticated', 'net.http_request_queue', 'SELECT')
-  AND NOT has_table_privilege('anon', 'net.http_request_queue', 'SELECT'),
-  'API roles cannot read the pg_net request queue'
+  NOT EXISTS (
+    SELECT 1 FROM pg_depend d
+    JOIN pg_rewrite rw ON rw.oid = d.objid AND d.classid = 'pg_rewrite'::regclass
+    JOIN pg_class v ON v.oid = rw.ev_class
+    JOIN pg_class t ON t.oid = d.refobjid AND d.refclassid = 'pg_class'::regclass
+    WHERE v.relnamespace = 'public'::regnamespace AND t.relnamespace = 'net'::regnamespace
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM pg_proc p
+    WHERE p.pronamespace IN ('public'::regnamespace, 'internal'::regnamespace)
+      AND p.prosrc ~* '\mnet\.'
+  ),
+  'no public view or API function reads or calls the pg_net schema'
 );
 
 -- ── project_url: https, yerel adresler hariç ────────────────────────────────
@@ -165,8 +179,8 @@ SELECT extensions.results_eq(
   'editor cost entry still raises budget alerts (written server side)'
 );
 SELECT extensions.throws_ok(
-  $$SELECT count(*) FROM net.http_request_queue$$,
-  '42501', NULL, 'signed-in user cannot read the pg_net queue'
+  $$SELECT private.http_post('https://example.invalid', '{}'::jsonb, '{}'::jsonb)$$,
+  '42501', NULL, 'signed-in user cannot queue HTTP requests through the private helper'
 );
 RESET ROLE;
 
