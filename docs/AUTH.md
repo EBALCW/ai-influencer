@@ -71,7 +71,7 @@ bağlantı doğrulaması gerekir; bu bilgiler public repoya veya sohbete yazılm
 Kalıcı adaptör: `src/lib/oauth/store.ts`. `createOAuthStateStore()` yalnız servis
 anahtarıyla public state RPC'lerini çağırır; zaman kontrolünü DB yapar. Verifier
 ve sağlayıcı ayrıntıları hata mesajlarına dahil edilmez. Şema:
-`20261024101000_oauth_state_store.sql`; yetki/TTL/replay testleri:
+`20261024210000_oauth_state_store.sql`; yetki/TTL/replay testleri:
 `supabase/tests/oauth_state.test.sql`. YouTube/TikTok route entegrasyonu aşağıda açıklanır.
 
 ### Sosyal bağlantı akışları
