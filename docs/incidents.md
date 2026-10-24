@@ -44,6 +44,45 @@ Sadece doğrulanmış belirtiyi ve etkilenen içeriklerin kimliklerini yazın. P
 - Son kontrol eden: `<ekip rolü>`
 ```
 
+## Telif / içerik şikâyeti kaydı
+
+Telif ihtarı (strike), Content ID talebi, kişilik hakkı, marka veya “gerçek kişi taklidi” şikâyeti için kullanılır (#33). Prosedür: [`docs/compliance.md`](compliance.md) → “İhtar ve şikâyet prosedürü”. Şikâyet edenin kişisel bilgilerini (ad, e-posta, telefon) yazmayın; platformun bildirim kimliği ve hak sahibinin herkese açık hesap/kurum adı yeterlidir.
+
+```markdown
+## CPY-YYYY-NNN — <kısa başlık>
+
+- Durum: Açık / İtiraz edildi / Kapalı
+- Bildirim tarihi (UTC): YYYY-MM-DD HH:MM
+- Platform: Instagram / TikTok / YouTube / Diğer
+- Hesap slug’ı: `<slug>`
+- Bildirim türü: Telif ihtarı / Content ID talebi / Kişilik hakkı / Marka / Diğer
+- Platform bildirim kimliği: `<varsa>`
+- Şikâyet eden: `<herkese açık hesap veya kurum adı>`
+- Gerekçe (platformun bildirdiği): `<kısa özet>`
+- İlgili içerik kartı: `<panel içerik başlığı veya kimliği>`
+- Kaynak türü (içerik kartındaki [Kaynak] bloğu): kendi / stok / acik-lisans / ucuncu-kisi
+- Olay sorumlusu: `<ekip rolü>`
+
+### Alınan aksiyonlar
+
+- [ ] İçerik tüm platformlardan kaldırıldı veya gizlendi (tarih: YYYY-MM-DD)
+- [ ] Aynı kaynaktan üretilmiş diğer içerikler kontrol edildi
+- [ ] Bildirim ekran görüntüsü + metni kısıtlı depoda saklandı
+- [ ] Kaynak dosyası ve lisans/izin belgesi kısıtlı depoda bulundu / bulunamadı
+- [ ] Hesap durumu (Account Status / YouTube Studio telif ihtarları / TikTok ihlaller) kontrol edildi
+- [ ] İtiraz kararı: Yapılmadı / Yapıldı (yalnız kaynak bize aitse veya lisans belgesi varsa)
+
+### Kanıt konumu
+
+`<erişimi kısıtlı depodaki göreli klasör veya güvenli kayıt kimliği>`
+
+### Sonuç ve takip
+
+- Sonuç: `<geri çekildi / ihtar kaldı / içerik geri yüklendi / hesap etkisi yok>`
+- Kök neden: `<kaynak uygunluğu adımında neden yakalanmadı>`
+- Tekrarı önleyici iş: `<check-list veya compliance.md güncellemesi, issue>`
+```
+
 ## Yedekleme doğrulama kaydı
 
 Her tam yedek ve geri yükleme testinde bir kayıt oluşturun. Bulut sağlayıcısını/proje alanını yazabilirsiniz; gizli bağlantı veya erişim anahtarı yazmayın.

@@ -25,7 +25,7 @@ Brief için teşekkürler. Önerimiz:
 - Revizyon: [tur sayısı] tur
 - Kullanım hakları: [süre ve kapsam]
 
-Paylaşımlar "reklam" / "iş birliği" ibaresi, platformun ücretli ortaklık etiketi ve AI içerik açıklamasıyla yayınlanır.
+Paylaşımlar "Reklam" ibaresi, platformun ücretli ortaklık etiketi ve AI içerik açıklamasıyla yayınlanır.
 
 Sevgiler,
 [imza]
