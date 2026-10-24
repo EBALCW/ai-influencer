@@ -2,13 +2,21 @@
 
 İçerik: ____________________ Platform: ____________________ Tarih: __________
 
+Üreten (rol): ____________ Puanlayan (rol, üretenden farklı kişi): ____________
+
+> Bu listedeki 24 madde paneldeki içerik kartı kontrol listesiyle birebir aynıdır (`apps/panel/src/lib/content/checklist-schema.ts`, `content_checklist_ready()`). Madde metni değişirse iki yer birlikte güncellenir; yeni madde eklemek migration gerektirir. Panel, bütün maddeler işaretlenmeden, iki puan en az 3 olmadan ve karar "Yayına hazır" seçilmeden içeriği "Planlandı" aşamasına geçirmez; yayın işi (#58) de bu kontrolü ve AI etiketi maddesini (`ai_disclosure`) yeniden denetler.
+>
+> **Zorunlu / önerilen:** Kutulu 24 madde zorunludur (kırmızı). "Koşullu" maddeler (ör. loop, reklam ibaresi) içerikte o durum yoksa kontrol edilip işaretlenir. Her bölümün altındaki _Puanlama soruları_ önerilendir; maddeyi engellemez, puanı belirler.
+
 ## 1. İzlenme kancası
 
 - [ ] İlk 1–3 saniyede belirgin bir görsel veya metinsel kanca var.
 - [ ] İlk karede karakter net; boş veya karanlık açılış yok.
 - [ ] Ortada 3 saniyeden uzun durağan bölüm yok.
 - [ ] Sonda merak ödülü, twist veya payoff var.
-- [ ] Loop varsa son kare ilk kareye doğal bağlanıyor.
+- [ ] Loop varsa son kare ilk kareye doğal bağlanıyor. _(koşullu)_
+
+_Puanlama soruları — "İnsanlar bu videoyu neden sonuna kadar izlesin?"_ Kanca beklenmedik hareket, soru metni, absürt durum veya "sonunu bekle" vaadi mi? İlk 3 saniyede neden kaydırılmasın? Sondaki ödül kancanın vaadini karşılıyor mu?
 
 **Puan (1–5):** _____
 
@@ -18,17 +26,29 @@
 - [ ] Caption persona tonunda; gerekiyorsa açık bir soru/CTA içeriyor.
 - [ ] Yapay tartışma veya yanıltıcı iddia yaratmıyor.
 
+_Puanlama soruları — "İnsanlar bu videoya neden yorum yapsın veya paylaşsın?"_ Görüş ayrılığı veya "sen olsan ne yapardın?" sorusu var mı? Biri bunu bir arkadaşına göndermek ister mi (etiketlenebilir mi)? Meme/tepki malzemesi var mı? Caption'da soru/CTA ve 3–5 alakalı hashtag var mı (`docs/caption-guide.md`)?
+
 **Puan (1–5):** _____
 
-> 1. veya 2. bölüm 3'ün altındaysa edit aşamasına geri gönder.
+### Puan ölçeği (iki bölüm için aynı)
+
+| Puan | Anlamı                                                                               |
+| ---: | ------------------------------------------------------------------------------------ |
+|    1 | Neden yok. Kanca/etkileşim nedeni bulunamıyor.                                       |
+|    2 | Zayıf. Neden var ama ilk saniyelerde görünmüyor veya jenerik.                        |
+|    3 | **Geçer.** Net bir neden var; puanlama sorularının en az biri açıkça "evet".         |
+|    4 | Güçlü. Birden fazla neden var, tempo boyunca sürüyor.                                |
+|    5 | Çok güçlü. Puanlayan kişi kendiliğinden tekrar izlemek veya birine göndermek istedi. |
+
+> **Geçme eşiği:** Her iki puan da **en az 3** olmalı. 1. veya 2. bölüm 3'ün altındaysa **video edit aşamasına geri döner** (panel bunu otomatik yapar: puanlardan biri 1 veya 2 ise kart "Edit" aşamasına alınır). Edit sonrası liste baştan doldurulur. Geri dönüş kaydı `templates/checklist-score-log.md` dosyasına yazılır.
 
 ## 3. Teknik kalite
 
 - [ ] 9:16 ve platformun güncel çözünürlük şartlarına uygun.
 - [ ] Yüz, uzuv, metin ve hareket artefaktları QC'den geçti.
-- [ ] Ekran yazısı güvenli alanda; altyazı okunaklı.
+- [ ] Ekran yazısı güvenli alanda; altyazı okunaklı. _(alt %20 ve sağ kenardaki arayüz butonlarının altında kalmıyor)_
 - [ ] Sessizde izleyici mesajı anlayabiliyor.
-- [ ] Ses seviyesi dengeli; ses/müzik bu platform ve kullanım türü için lisanslı.
+- [ ] Ses seviyesi dengeli; ses/müzik bu platform ve kullanım türü için lisanslı. _(trend ses doğru yerde; sponsorlu içerikte ticari kütüphane, `docs/caption-guide.md` → Ses kuralları)_
 - [ ] Kapak karesi seçildi.
 
 ## 4. AI ve doğruluk açıklaması
@@ -54,3 +74,11 @@
 - [ ] Hukuk/marka/platform kontrolü bekliyor
 
 Kontrol eden: ____________________ Not: __________________________________________
+
+## Panel dışında kalan öneriler
+
+Aşağıdakiler henüz panel maddesi değildir; puanlamada ve caption hazırlığında elle kontrol edilir. Panele eklenmesi migration gerektirir (bkz. #22 takip notu).
+
+- [ ] Caption ilk satırı kısa ve kesilmeden okunuyor; caption şablonu ve hashtag seti (A/B/C) içerik kartının notlarına yazıldı.
+- [ ] 3–5 hashtag; hashtag sayfası normal açılıyor (yasaklı/kısıtlı değil).
+- [ ] Puanlayan kişi üreten kişiden farklı.
