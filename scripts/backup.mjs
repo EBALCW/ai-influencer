@@ -7,7 +7,7 @@
 // Gereksinim: PostgreSQL istemci araçları (pg_dump, psql), sunucuyla aynı ana sürüm (17).
 // Bağlantı: .env.local → SUPABASE_DB_URL (Supabase → Project Settings → Database →
 // Connection string). Şifre komut satırına yazılmaz, PGPASSWORD env'i ile verilir.
-// Storage dosyaları henüz yedeklenmiyor (bucket'lar #45 ile gelecek).
+// Storage dosyaları ayrı alınır: pnpm backup:storage.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';

@@ -181,7 +181,7 @@ Commit'lenmemiş değişikliğin varsa `--update` durur ve seni uyarır. `.nvmrc
 
 ## Yedekleme ve geri yükleme
 
-**Neyi yedekliyoruz:** Supabase veritabanı. Şema (`schema.sql`), uygulama verisi (`data-public.sql`) ve ekip kullanıcıları (`data-auth.sql`) ayrı dosyalara yazılır. Storage'daki görsel/video dosyaları henüz yedeklenmiyor, bucket'lar #45 ile gelecek.
+**Neyi yedekliyoruz:** Supabase veritabanı. Şema (`schema.sql`), uygulama verisi (`data-public.sql`) ve ekip kullanıcıları (`data-auth.sql`) ayrı dosyalara yazılır. Storage’daki görsel/video ve sözleşme dosyaları ayrı `pnpm backup:storage` komutuyla alınır; DB dump dosya içeriklerini kapsamaz.
 
 **Supabase'in kendi yedeği:** Otomatik günlük yedekler Supabase'in ücretli planlarında var. Ücretsiz planda olup olmadığını ve saklama süresini proje açılırken [supabase.com/pricing](https://supabase.com/pricing) sayfasından doğrula. Kendi yedeğimizi her durumda **haftada bir** alıyoruz.
 
@@ -199,6 +199,27 @@ pnpm backup
 Başarılı yedekte `manifest.json`, üç SQL dosyasının boyutunu ve SHA-256 özetini tutar. Büyük dosyalar akışla okunur. Kopyalama sonrası `pnpm backup:verify <yedek-klasörü>` ile veritabanına bağlanmadan bütünlüğü kontrol edebilirsin. Geri yükleme bu kontrolü **yerel veriyi silmeden önce** zorunlu çalıştırır; eksik, boş veya değişmiş dosyada durur. Manifesti olmayan eski yedek için güncel script ile yeni yedek al. Bu kontrol yanlışlıkla bozulmayı yakalar; şifreleme veya kaynağın doğruluğuna dair imza sağlamaz. Yedekleri erişimi kısıtlı, şifreli alanda tut. macOS/Linux üzerinde yeni klasör/dosyalar yalnız kullanıcıya açık izinlerle oluşturulur; Windows’ta klasörün kullanıcı erişim izinlerini kontrol et.
 
 Yedek `~/ai-influencer-backups/<tarih>/` klasörüne yazılır. Script repo içine yazmayı reddeder, çünkü repo public ve yedek hassas veri içerir. Bu klasörü ekibin erişimi kısıtlı bulut alanına kopyala.
+
+### Storage dosya yedeği
+
+`.env.local` içinde mevcut `NEXT_PUBLIC_SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` gereklidir. Anahtarı komut argümanına yazma. Komut yalnızca Storage okur; uzak dosyaları yüklemez veya silmez.
+
+```bash
+pnpm backup:storage
+pnpm backup:storage --out <repo-dışı-klasör>
+pnpm backup:storage:verify <yedek-klasörü>
+```
+
+- Varsayılan çıktı `~/ai-influencer-backups/<tarih>-storage/`. Repo içi ve repoya işaret eden sembolik bağlantılı çıktı reddedilir. Yeni klasör önceki yedeği ezmez.
+- Tüm erişilebilir dosya bucket’ları (`assets`, `contracts` dahil), iç içe klasörler ve sayfalar taranır. Büyük dosyalar akışla indirilir. Liste/indirme başarısızsa veya önce/sonra envanter değişirse işlem başarısızdır; tamamlandı manifesti yazılmaz. Kısmi klasörü tam yedek sayma; yeni klasöre yeniden çalıştır.
+- `storage-manifest.json`, bucket ayarlarını, özgün bucket/dosya yolunu, sürüm bilgisini, boyutu ve SHA-256 özetini tutar. Yerel içerikler `objects/00000000.bin` gibi güvenli adlara yazılır; özgün yol Windows dosya adı olarak kullanılmaz. Manifest yalnızca bütün dosyalar tamamlanınca yazılır. `verify` anahtar veya ağ bağlantısı gerektirmez.
+- Örnek dosya geri alma: manifestten özgün `bucket`/`key` için `file` değerini bul; verify başarılı olduktan sonra o `.bin` dosyasını ayrı çalışma klasörüne kopyala ve özgün uzantısıyla aç. Bu komut otomatik uzak geri yükleme yapmaz. DB restore ile Storage restore ayrı işlemlerdir.
+- Tutarlı yedek için yüklemeleri/düzenlemeleri durdurup DB ve Storage yedeğini aynı bakım aralığında al. API listeleri bir veritabanı transaction’ı değildir; önce/sonra karşılaştırması atomik snapshot garantisi vermez. Tüm bucket’lar listelendiğinden sözleşmeler de hassas yedek kapsamındadır.
+- Manifest bütünlük kontrolüdür; şifreleme veya dijital imza değildir. Klasörü erişimi kısıtlı, şifreli bulut yedek alanına taşı. Gerçek tam yedek ve dosya açma denemesi ayrıca doğrulanmalı. Vault sırları bu export’un kapsamında değildir; yeniden bağlantı/secret kurtarma planını ayrı tut.
+
+Listeleme klasör/sayfa başına, toplam dosya ve bucket sayısı için 100.000 güvenlik sınırı uygular; sınıra ulaşıldığında sessizce eksiltmez, hata verir. Liste istekleri 30 saniye, indirmeler 5 dakika ile sınırlıdır. Büyük arşivler için limitleri kontrollü artırmadan önce yeniden değerlendirin.
+
+Resmi sözleşme: [Storage list](https://supabase.com/docs/reference/javascript/storage-from-list), [download](https://supabase.com/docs/reference/javascript/storage-from-download), [listBuckets](https://supabase.com/docs/reference/javascript/storage-listbuckets). Akışlı indirme, repoda sabitlenen `@supabase/supabase-js` sürümünün `download(...).asStream()` arayüzüyle ve ağsız SDK testiyle doğrulanır.
 
 **Geri yükleme testi** (ayda bir, sadece yerel Supabase'e, Docker gerekir):
 
