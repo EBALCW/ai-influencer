@@ -90,6 +90,11 @@ aynı hesapla yeniden bağlantı tamamlanabilir. Token/API hata gövdesi loglanm
 tam olarak kaydedilir. Google `GOOGLE_CLIENT_ID/SECRET`; TikTok portalındaki
 client_key `TIKTOK_CLIENT_ID`, secret `TIKTOK_CLIENT_SECRET` olarak sunucuya
 verilir. YouTube localhost HTTP kabul eder; TikTok Web HTTPS callback gerektirir.
+`.env.example` içindeki OAuth alanları birer kez doldurulur; `TIKTOK_CLIENT_KEY`
+okunmaz. Eski `.env.local` kopyalarında tekrarlanan `GOOGLE_CLIENT_ID`,
+`GOOGLE_CLIENT_SECRET` ve `TIKTOK_CLIENT_SECRET` satırlarını tekilleştirin;
+sonraki boş satır önceki dolu değeri ezebilir. `pnpm env:pull` OAuth client
+secret'larını dağıtmaz; bunlar sunucuda ayrıca yapılandırılır.
 YouTube S256 PKCE + offline/consent kullanır. TikTok Web dokümanı PKCE belirtmez;
 Desktop Kit'in hex SHA256 kuralı Web akışına uygulanmaz. Üretimde HTTPS zorunludur.
 Instagram adaptörü henüz etkin değildir, istek 503 ile kapanır. Canlı hesap
