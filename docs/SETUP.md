@@ -196,6 +196,8 @@ Commit'lenmemiş değişikliğin varsa `--update` durur ve seni uyarır. `.nvmrc
 pnpm backup
 ```
 
+Başarılı yedekte `manifest.json`, üç SQL dosyasının boyutunu ve SHA-256 özetini tutar. Büyük dosyalar akışla okunur. Kopyalama sonrası `pnpm backup:verify <yedek-klasörü>` ile veritabanına bağlanmadan bütünlüğü kontrol edebilirsin. Geri yükleme bu kontrolü **yerel veriyi silmeden önce** zorunlu çalıştırır; eksik, boş veya değişmiş dosyada durur. Manifesti olmayan eski yedek için güncel script ile yeni yedek al. Bu kontrol yanlışlıkla bozulmayı yakalar; şifreleme veya kaynağın doğruluğuna dair imza sağlamaz. Yedekleri erişimi kısıtlı, şifreli alanda tut. macOS/Linux üzerinde yeni klasör/dosyalar yalnız kullanıcıya açık izinlerle oluşturulur; Windows’ta klasörün kullanıcı erişim izinlerini kontrol et.
+
 Yedek `~/ai-influencer-backups/<tarih>/` klasörüne yazılır. Script repo içine yazmayı reddeder, çünkü repo public ve yedek hassas veri içerir. Bu klasörü ekibin erişimi kısıtlı bulut alanına kopyala.
 
 **Geri yükleme testi** (ayda bir, sadece yerel Supabase'e, Docker gerekir):

@@ -9,13 +9,7 @@
 // Connection string). Şifre komut satırına yazılmaz, PGPASSWORD env'i ile verilir.
 // Storage dosyaları henüz yedeklenmiyor (bucket'lar #45 ile gelecek).
 import { spawnSync } from 'node:child_process';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  statSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,6 +21,11 @@ import {
   parseEnvFile,
   pgConnection,
 } from './lib/panel-lib.mjs';
+
+import {
+  writeBackupManifest,
+  verifyBackupManifest,
+} from './lib/backup-integrity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const LOCAL_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
@@ -57,7 +56,7 @@ function loadEnv() {
   return { ...fromFile, ...process.env };
 }
 
-function backup(argv) {
+async function backup(argv) {
   const outIdx = argv.indexOf('--out');
   const base =
     outIdx >= 0
@@ -80,7 +79,9 @@ function backup(argv) {
   console.log(requireTool('pg_dump'));
 
   const dir = join(base, backupDirName(new Date()));
-  mkdirSync(dir, { recursive: true });
+  mkdirSync(base, { recursive: true, mode: 0o700 });
+  // Aynı saniyede ikinci çalıştırma önceki yedeği ezmesin.
+  mkdirSync(dir, { mode: 0o700 });
   console.log(`Yedek klasörü: ${dir}`);
 
   for (const part of backupPlan()) {
@@ -97,20 +98,21 @@ function backup(argv) {
       fail(`${part.file} alınamadı (pg_dump çıkış kodu ${r.status}).`);
     ok(`${part.file} (${Math.round(statSync(file).size / 1024)} KB)`);
   }
+  await writeBackupManifest(dir);
+  await verifyBackupManifest(dir);
+  ok('SHA-256 bütünlük kontrolü');
   console.log(
     `\nYedek tamam. Geri yükleme testi için: pnpm backup:restore "${dir}"\n` +
       "Bu klasör hassas veri içerir: repoya, issue'ya veya sohbete koyma.",
   );
 }
 
-function restore(argv) {
+async function restore(argv) {
   const dir = argv[0] ? resolve(argv[0]) : null;
   if (!dir || !existsSync(dir))
     fail('Kullanım: pnpm backup:restore <yedek-klasörü>');
-  const files = readdirSync(dir);
-  for (const f of ['data-auth.sql', 'data-public.sql']) {
-    if (!files.includes(f)) fail(`${f} bu klasörde yok: ${dir}`);
-  }
+  await verifyBackupManifest(dir);
+  ok('SHA-256 bütünlük kontrolü');
 
   // Sadece yerel Supabase'e geri yüklenir: ortak/production projeyi yanlışlıkla ezmemek için
   const conn = pgConnection(process.env.RESTORE_DB_URL ?? LOCAL_DB_URL);
@@ -157,6 +159,17 @@ function restore(argv) {
   );
 }
 
+process.umask(0o077);
 const [mode, ...rest] = process.argv.slice(2);
-if (mode === 'restore') restore(rest);
-else backup(process.argv.slice(2));
+try {
+  if (mode === 'restore') await restore(rest);
+  else if (mode === 'verify') {
+    if (!rest[0]) fail('Kullanım: pnpm backup:verify <yedek-klasörü>');
+    await verifyBackupManifest(resolve(rest[0]));
+    ok('SHA-256 bütünlük kontrolü');
+  } else await backup(process.argv.slice(2));
+} catch {
+  fail(
+    'Yedek işlemi tamamlanamadı. Dosyaları ve manifesti kontrol edin; güncel pnpm backup ile yeni yedek alın.',
+  );
+}
