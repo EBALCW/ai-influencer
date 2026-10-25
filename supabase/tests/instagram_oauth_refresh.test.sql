@@ -1,13 +1,15 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(7);
+SELECT extensions.plan(8);
+SELECT extensions.ok(NOT has_function_privilege('service_role','private.oauth_refresh_clock()','EXECUTE'),'clock is not a public time override');
 INSERT INTO public.influencers(id,name,slug) VALUES ('e6000000-0000-4000-8000-000000000001','IG refresh fixture','ig-refresh-fixture');
 INSERT INTO public.social_accounts(id,influencer_id,platform,external_id,handle) VALUES ('e7000000-0000-4000-8000-000000000001','e6000000-0000-4000-8000-000000000001','instagram','123456789','ig-fixture');
 SELECT public.store_social_token('e7000000-0000-4000-8000-000000000001','{"access_token":"ig-old","scope":"instagram_business_basic"}',now()+interval '6 days');
 SET LOCAL ROLE service_role;
 SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])),0,'token younger than 24h not refreshed');
 RESET ROLE;
-UPDATE vault.secrets SET updated_at=now()-interval '25 hours' WHERE name='social-token:e7000000-0000-4000-8000-000000000001';
+CREATE OR REPLACE FUNCTION private.oauth_refresh_clock() RETURNS timestamptz
+LANGUAGE sql VOLATILE SECURITY INVOKER SET search_path='' AS $$ SELECT clock_timestamp()+interval '25 hours' $$;
 SET LOCAL ROLE service_role;
 SELECT set_config('test.ig_claim',public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])::text,true);
 SELECT extensions.is(jsonb_array_length(current_setting('test.ig_claim')::jsonb),1,'Instagram refreshed seven days before expiry');
@@ -17,7 +19,6 @@ SELECT extensions.is(public.read_social_token('e7000000-0000-4000-8000-000000000
 SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])),0,'long-lived token not immediately refreshed again');
 RESET ROLE;
 UPDATE public.social_accounts SET token_expires_at=now()-interval '1 minute' WHERE id='e7000000-0000-4000-8000-000000000001';
-UPDATE vault.secrets SET updated_at=now()-interval '25 hours' WHERE name='social-token:e7000000-0000-4000-8000-000000000001';
 SET LOCAL ROLE service_role;
 SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])),0,'expired Instagram token requires reconnect');
 RESET ROLE;
