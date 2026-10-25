@@ -16,5 +16,7 @@ export const aiSettingsSchema = z.object({
     cacheWritePerMTok: price,
     cacheWrite1hPerMTok: price,
   }),
+  /** Kullanıcı başına günlük AI isteği (UTC günü). Yoksa DEFAULT_AI_DAILY_LIMIT (daily-cap.ts). */
+  dailyLimitPerUser: z.number().int().min(1).max(10_000).optional(),
 });
 export type AiSettings = z.infer<typeof aiSettingsSchema>;

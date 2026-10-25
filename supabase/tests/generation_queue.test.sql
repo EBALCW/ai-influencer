@@ -89,15 +89,17 @@ SELECT extensions.lives_ok(
   'video_to_video enqueue works'
 );
 
--- İstemci worker kolonlarını yazamaz
-INSERT INTO public.generations (id, influencer_id, tool, type, provider_job_id, attempts, progress, next_run_at)
-VALUES ('a8200000-0000-4000-8000-000000000001', 'a8000000-0000-4000-8000-000000000001', 'fake', 'image', 'forged', 9, 99, now() + interval '1 year');
-SELECT extensions.results_eq(
-  $$SELECT provider_job_id, attempts::integer, progress::integer, next_run_at <= now()
-    FROM public.generations WHERE id = 'a8200000-0000-4000-8000-000000000001'$$,
-  $$VALUES (NULL::text, 0, 0, true)$$,
-  'client INSERT resets worker columns'
+-- İstemci kuyruğu atlayıp satır açamaz (bütçe koruması yalnız enqueue_generation'da)
+SELECT extensions.throws_ok(
+  $$INSERT INTO public.generations (id, influencer_id, tool, type, provider_job_id, attempts, progress, next_run_at)
+    VALUES ('a8200000-0000-4000-8000-000000000001', 'a8000000-0000-4000-8000-000000000001', 'fake', 'image', 'forged', 9, 99, now() + interval '1 year')$$,
+  '42501', NULL, 'client cannot INSERT a generation directly (bypassing the queue)'
 );
+-- Fixture satırı sunucu yazar (oturum editor: created_by editor olur)
+RESET ROLE;
+INSERT INTO public.generations (id, influencer_id, tool, type)
+VALUES ('a8200000-0000-4000-8000-000000000001', 'a8000000-0000-4000-8000-000000000001', 'fake', 'image');
+SET LOCAL ROLE authenticated;
 SELECT extensions.throws_ok(
   $$UPDATE public.generations SET provider_job_id = 'x' WHERE id = 'a8200000-0000-4000-8000-000000000001'$$,
   '42501', NULL, 'client cannot update worker columns'

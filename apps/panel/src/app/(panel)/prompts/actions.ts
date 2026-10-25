@@ -165,8 +165,9 @@ export async function enqueueGeneration(
   });
   const options = generationOptionsSchema.safeParse({
     resolution: text(formData, 'resolution') || undefined,
+    imageResolution: text(formData, 'imageResolution') || undefined,
+    aspectRatio: text(formData, 'aspectRatio') || undefined,
     durationSeconds: text(formData, 'durationSeconds'),
-    seed: text(formData, 'seed'),
     testMode: formData.get('testMode') === 'on',
     inputAssetIds: formData
       .getAll('inputAssetIds')
@@ -176,7 +177,9 @@ export async function enqueueGeneration(
   });
   if (!parsed.success) return fail('Üretim isteği geçersiz.');
   if (!options.success)
-    return fail('Üretim parametreleri geçersiz (çözünürlük, süre veya seed).');
+    return fail(
+      'Üretim parametreleri geçersiz (çözünürlük, en-boy oranı veya süre).',
+    );
 
   const supabase = await createSupabaseServerClient();
   const { data: prompt, error: promptError } = await supabase
@@ -226,6 +229,7 @@ export async function enqueueGeneration(
     p_input_asset_ids: inputIds,
     p_override_budget: options.data.overrideBudget,
     p_params: buildGenerationParams({
+      mode,
       prompt: rendered.text,
       negative: prompt.negative,
       variables: usedValues,

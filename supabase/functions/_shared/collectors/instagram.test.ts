@@ -40,6 +40,8 @@ function setup(respond: (url: URL) => Response | Promise<Response>) {
       const url = new URL(String(input));
       assertEquals(url.origin, 'https://graph.instagram.com');
       assertEquals(url.searchParams.has('access_token'), false);
+      assertEquals(init?.redirect, 'error');
+      assert(init?.signal instanceof AbortSignal);
       assertEquals(
         new Headers(init?.headers).get('authorization'),
         'Bearer fixture-secret',
@@ -184,6 +186,56 @@ Deno.test(
     );
     assert(warnings.length > 0);
     assert(!JSON.stringify(result).includes('fixture-secret'));
+  },
+);
+Deno.test(
+  'Instagram ham breakdown ve zaman serisi korunur; paging token URL saklanmaz',
+  async () => {
+    const data = [
+      {
+        name: 'future_breakdown',
+        period: 'lifetime',
+        total_value: {
+          breakdowns: [
+            {
+              dimension_keys: ['source'],
+              results: [
+                { dimension_values: ['feed'], value: 8 },
+                { dimension_values: ['reels'], value: 0 },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        name: 'views',
+        period: 'day',
+        values: [
+          { value: 4, end_time: '2026-10-23T00:00:00Z' },
+          { value: 9, end_time: '2026-10-24T00:00:00Z' },
+        ],
+      },
+    ];
+    const { ctx } = setup((u) =>
+      json(
+        u.pathname.endsWith('/insights')
+          ? {
+              data,
+              paging: {
+                next: 'https://graph.instagram.com?access_token=fixture-secret',
+              },
+            }
+          : media,
+      ),
+    );
+    const result = await instagramCollector.fetchPostMetrics(ctx, post);
+    assertEquals(result?.views, 9);
+    assertEquals(result?.raw.insights, data);
+    assertEquals(
+      (result?.raw.metrics as Record<string, unknown>).future_breakdown,
+      null,
+    );
+    assert(!JSON.stringify(result?.raw).includes('fixture-secret'));
   },
 );
 Deno.test(

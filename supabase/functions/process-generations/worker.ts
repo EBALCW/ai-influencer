@@ -4,6 +4,8 @@
 import {
   type GenerationMode,
   type GenerationProvider,
+  type InputMedia,
+  type PreparedInputs,
   ProviderError,
   type SubmitJob,
 } from '../_shared/generation/provider.ts';
@@ -21,6 +23,8 @@ export type QueueJob = {
   max_attempts: number;
   started_at: string | null;
   cancel_requested_at: string | null;
+  /** Gönderimden önce alınan tahmin (USD). PostgREST numeric'i sayı veya metin döndürebilir. */
+  estimated_cost_usd?: number | string | null;
 };
 
 export type JobPatch = Partial<{
@@ -34,6 +38,8 @@ export type JobPatch = Partial<{
   cancel_requested_at: string | null;
   error: string | null;
   credits: number | null;
+  params: Record<string, unknown>;
+  estimated_cost_usd: number | null;
 }>;
 
 export interface QueueStore {
@@ -44,10 +50,8 @@ export interface QueueStore {
   ): Promise<QueueJob[]>;
   /** Sadece hâlâ queued/running olan satırı günceller. */
   update(id: string, patch: JobPatch): Promise<void>;
-  /** Referans asset'lerin kısa ömürlü imzalı URL'leri (influencer filtresiyle). */
-  inputMedia(
-    job: QueueJob,
-  ): Promise<{ imageUrls: string[]; videoUrl: string | null }>;
+  /** Referans asset'lerin kısa ömürlü imzalı URL'leri ve MIME türleri (influencer filtresiyle). */
+  inputMedia(job: QueueJob): Promise<InputMedia>;
   upload(path: string, bytes: Uint8Array, contentType: string): Promise<void>;
   complete(
     id: string,
@@ -55,6 +59,8 @@ export interface QueueStore {
     mimeType: string,
     size: number,
     credits: number | null,
+    /** Gerçekleşen tutar (USD); doluysa costs kaydı bundan yazılır. */
+    costUsd: number | null,
   ): Promise<void>;
   heartbeat(state: {
     providers: string[];
@@ -96,6 +102,31 @@ const mimeExtension: Record<string, string> = {
 };
 
 const resolutions = new Set(['480p', '720p', '1080p']);
+const imageResolutions = new Set(['2K', '4K']);
+const aspectRatios = new Set([
+  '1:1',
+  '4:3',
+  '3:4',
+  '3:2',
+  '2:3',
+  '5:4',
+  '4:5',
+  '16:9',
+  '9:16',
+  '21:9',
+]);
+
+/** Kuyruk dolu (429) / Retry-After için en uzun bekleme. */
+const MAX_RETRY_AFTER_SECONDS = 3600;
+
+/** İçerik türünü belirlemeyen başlıklar (URL uzantısı / mod ile tamamlanır). */
+const genericTypes = new Set([
+  '',
+  'application/octet-stream',
+  'binary/octet-stream',
+]);
+
+class UnsupportedOutput extends Error {}
 
 /** Denemeye göre üstel geri çekilme (saniye). attempt 1 → base. */
 export function backoffSeconds(attempt: number, base = 30, max = 900): number {
@@ -103,10 +134,7 @@ export function backoffSeconds(attempt: number, base = 30, max = 900): number {
 }
 
 /** generations.params → sağlayıcı isteği. Test modu düşük çözünürlük ve kısa süre zorlar. */
-export function toSubmitJob(
-  job: QueueJob,
-  media: { imageUrls: string[]; videoUrl: string | null },
-): SubmitJob {
+export function toSubmitJob(job: QueueJob, media: PreparedInputs): SubmitJob {
   const p = job.params ?? {};
   const str = (v: unknown) =>
     typeof v === 'string' && v.trim() ? v.trim() : null;
@@ -118,6 +146,13 @@ export function toSubmitJob(
     : resolutions.has(String(p.resolution))
       ? String(p.resolution)
       : '720p';
+  const imageResolution =
+    !testMode && imageResolutions.has(String(p.image_resolution))
+      ? String(p.image_resolution)
+      : '2K';
+  const aspectRatio = aspectRatios.has(String(p.aspect_ratio))
+    ? String(p.aspect_ratio)
+    : null;
   const duration = int(p.duration_seconds);
   const modelParams: SubmitJob['modelParams'] = {};
   if (p.model_params && typeof p.model_params === 'object') {
@@ -136,12 +171,34 @@ export function toSubmitJob(
     negative: str(p.negative),
     seed: int(p.seed),
     resolution,
+    imageResolution,
+    aspectRatio,
     durationSeconds:
       duration === null ? null : testMode ? Math.min(duration, 5) : duration,
     imageUrls: media.imageUrls,
     videoUrl: media.videoUrl,
     modelParams,
   };
+}
+
+/** Bu üretim için daha önce sağlayıcıya yüklenmiş referanslar (aynı Idempotency-Key = aynı gövde). */
+function cachedInputs(job: QueueJob): PreparedInputs | null {
+  const cached = job.params?.provider_inputs as
+    | { generation_id?: unknown; image_urls?: unknown; video_url?: unknown }
+    | undefined;
+  if (!cached || cached.generation_id !== job.id) return null;
+  if (!Array.isArray(cached.image_urls)) return null;
+  const imageUrls = cached.image_urls.filter(
+    (u): u is string => typeof u === 'string',
+  );
+  const videoUrl =
+    typeof cached.video_url === 'string' ? cached.video_url : null;
+  return { imageUrls, videoUrl };
+}
+
+function toUsd(value: unknown): number | null {
+  const n = typeof value === 'string' ? Number(value) : value;
+  return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
@@ -244,10 +301,13 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       }
       const attempts = job.attempts + 1;
       try {
-        const media = await store.inputMedia(job);
-        const { providerJobId } = await provider.submit(
-          toSubmitJob(job, media),
-        );
+        const media = await providerInputs(job, provider);
+        const submitJob = toSubmitJob(job, media);
+        // Maliyet tahmini (USD) gönderimden önce; gerçek tutar başarıda bundan yazılır.
+        const estimated = provider.estimate
+          ? await provider.estimate(submitJob)
+          : null;
+        const { providerJobId } = await provider.submit(submitJob);
         await store.update(job.id, {
           status: 'running',
           provider_job_id: providerJobId,
@@ -256,16 +316,39 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
           started_at: iso(),
           error: null,
           next_run_at: at(pollIntervalSeconds),
+          ...(estimated !== null ? { estimated_cost_usd: estimated } : {}),
         });
         return 'submitted';
       } catch (error) {
         if (!(error instanceof ProviderError)) throw error;
+        const backoff = backoffSeconds(
+          attempts,
+          backoffBaseSeconds,
+          backoffMaxSeconds,
+        );
+        if (error.code === 'rate_limited') {
+          // Kuyruk dolu: hiçbir şey oluşturulmadı/ücretlendirilmedi. Deneme hakkı harcanmaz;
+          // Retry-After kadar beklenip aynı Idempotency-Key ile tekrar gönderilir.
+          await store.update(job.id, {
+            error: error.message,
+            next_run_at: at(
+              Math.min(
+                MAX_RETRY_AFTER_SECONDS,
+                error.retryAfterSeconds ?? backoff,
+              ),
+            ),
+          });
+          return 'rate_limited';
+        }
         if (error.retryable && attempts < job.max_attempts) {
           await store.update(job.id, {
             attempts,
             error: error.message,
             next_run_at: at(
-              backoffSeconds(attempts, backoffBaseSeconds, backoffMaxSeconds),
+              Math.min(
+                MAX_RETRY_AFTER_SECONDS,
+                Math.max(backoff, error.retryAfterSeconds ?? 0),
+              ),
             ),
           });
           return 'retry';
@@ -302,7 +385,14 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
         await fail(job, error.message);
         return 'failed';
       }
-      await store.update(job.id, { next_run_at: at(pollIntervalSeconds * 2) });
+      await store.update(job.id, {
+        next_run_at: at(
+          Math.min(
+            MAX_RETRY_AFTER_SECONDS,
+            Math.max(pollIntervalSeconds * 2, error.retryAfterSeconds ?? 0),
+          ),
+        ),
+      });
       return 'poll_retry';
     }
 
@@ -332,60 +422,150 @@ export async function runWorker(options: WorkerOptions): Promise<WorkerResult> {
       await fail(job, 'Sağlayıcı sonuç dosyası döndürmedi.', result.credits);
       return 'failed';
     }
+    // Çıktı URL'leri expires_at'ten sonra çalışmaz (Billing and retention). Süre geçtiyse
+    // indirmeyi denemeden açık hatayla bitir.
+    if (result.expiresAt && now().getTime() >= Date.parse(result.expiresAt)) {
+      await fail(
+        job,
+        `Sağlayıcı çıktısının saklama süresi doldu (expires_at ${result.expiresAt}); dosya indirilemedi.`,
+        result.credits,
+      );
+      return 'expired';
+    }
     let file: { bytes: Uint8Array; mime: string };
     try {
       file = await download(result.resultUrl, result.contentType, job.mode);
     } catch (error) {
-      if (error instanceof Error && error.message === 'unsupported') {
-        await fail(
-          job,
-          'Sonuç dosyası desteklenmeyen türde veya çok büyük.',
-          result.credits,
-        );
+      if (error instanceof UnsupportedOutput) {
+        await fail(job, error.message, result.credits);
         return 'failed';
       }
-      // Geçici indirme hatası: sağlayıcı çıktıyı en az 7 gün tutar, sonra tekrar denenir.
+      // Geçici indirme hatası: expires_at'e kadar tekrar denenir (bir sonraki yoklamada
+      // süre geçmişse yukarıdaki kontrol işi bitirir).
       await store.update(job.id, { next_run_at: at(pollIntervalSeconds * 2) });
       return 'download_retry';
     }
     const path = `${job.influencer_id}/generated-${job.id}.${mimeExtension[file.mime]}`;
     await store.upload(path, file.bytes, file.mime);
+    // Higgsfield yalnız başarılı isteği ücretlendirir; status'ta tutar yok, tahmin gerçek tutar.
     await store.complete(
       job.id,
       path,
       file.mime,
       file.bytes.byteLength,
       result.credits,
+      toUsd(job.estimated_cost_usd),
     );
     return 'succeeded';
   }
 
+  /** Referans dosyalar: önceden yüklenmişse onlar, değilse Storage → (gerekirse) sağlayıcı. */
+  async function providerInputs(
+    job: QueueJob,
+    provider: GenerationProvider,
+  ): Promise<PreparedInputs> {
+    const cached = cachedInputs(job);
+    if (cached) return cached;
+    const media = await store.inputMedia(job);
+    if (!provider.prepareInputs) {
+      return {
+        imageUrls: media.images.map((f) => f.url),
+        videoUrl: media.video?.url ?? null,
+      };
+    }
+    if (media.images.length === 0 && !media.video)
+      return { imageUrls: [], videoUrl: null };
+    const prepared = await provider.prepareInputs(media);
+    // Tekrar denemede aynı gövde gitsin (aynı Idempotency-Key farklı gövdeyle 422 döner).
+    await store.update(job.id, {
+      params: {
+        ...job.params,
+        provider_inputs: {
+          generation_id: job.id,
+          image_urls: prepared.imageUrls,
+          video_url: prepared.videoUrl,
+        },
+      },
+    });
+    return prepared;
+  }
+
+  /**
+   * Sonucu indirir. Tür önceliği: yanıtın Content-Type'ı → URL uzantısı (adaptör) → mod.
+   * MediaOutput'ta content_type olmadığı için başlık/uzantı belirleyicidir.
+   */
   async function download(
     url: string,
     hinted: string | null,
     mode: GenerationMode,
   ): Promise<{ bytes: Uint8Array; mime: string }> {
     const res = await fetchImpl(url, { signal: AbortSignal.timeout(60_000) });
-    if (!res.ok) throw new Error(`download ${res.status}`);
+    if (!res.ok) {
+      await res.body?.cancel();
+      throw new Error(`download ${res.status}`);
+    }
     const header =
       res.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ?? '';
-    const mime = [
-      header,
-      hinted?.toLowerCase() ?? '',
-      mode === 'text_to_image' ? 'image/png' : 'video/mp4',
-    ].find((m) => m in mimeExtension)!;
-    const declared = Number(res.headers.get('content-length') ?? '0');
-    if (declared > maxFileBytes) throw new Error('unsupported');
-    if (
-      header &&
-      !(header in mimeExtension) &&
-      header !== 'application/octet-stream'
-    ) {
-      throw new Error('unsupported');
+    const hint = hinted?.toLowerCase() ?? '';
+    const mime = !genericTypes.has(header)
+      ? header
+      : hint || (mode === 'text_to_image' ? 'image/png' : 'video/mp4');
+    if (!(mime in mimeExtension)) {
+      await res.body?.cancel();
+      throw new UnsupportedOutput(
+        mime.startsWith('audio/')
+          ? `Sağlayıcı yalnız ses çıktısı döndürdü (${mime}); ses dosyaları desteklenmiyor.`
+          : `Sonuç dosyası desteklenmeyen türde (${mime}).`,
+      );
     }
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.byteLength === 0 || bytes.byteLength > maxFileBytes)
-      throw new Error('unsupported');
+    const declared = Number(res.headers.get('content-length') ?? '0');
+    if (declared > maxFileBytes) {
+      await res.body?.cancel();
+      throw new UnsupportedOutput('Sonuç dosyası çok büyük.');
+    }
+    let bytes: Uint8Array;
+    try {
+      bytes = await readLimited(res, maxFileBytes);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'unsupported') {
+        throw new UnsupportedOutput('Sonuç dosyası çok büyük.');
+      }
+      throw err;
+    }
+    if (bytes.byteLength === 0) {
+      throw new UnsupportedOutput('Sonuç dosyası boş.');
+    }
     return { bytes, mime };
   }
+}
+
+/**
+ * Yanıt gövdesini en çok `maxBytes` bayta kadar okur. content-length yoksa veya yanlışsa da
+ * sınır aşıldığı anda akış iptal edilir ('unsupported'); tüm dosya belleğe alınmaz.
+ */
+export async function readLimited(
+  res: Response,
+  maxBytes: number,
+): Promise<Uint8Array> {
+  if (!res.body) return new Uint8Array(0);
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new Error('unsupported');
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
 }

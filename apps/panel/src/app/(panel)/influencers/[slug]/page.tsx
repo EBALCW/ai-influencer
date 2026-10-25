@@ -8,6 +8,7 @@ import { StatusControls } from '../status-controls';
 import { getTeamMemberEmails } from '@/lib/team-emails';
 import { DetailStats } from './detail-stats';
 import { PersonaTab } from './persona-tab';
+import { AccountsTab } from './accounts-tab';
 
 const tabs = [
   ['general', 'Genel'],
@@ -183,11 +184,10 @@ export default async function InfluencerDetailPage({
     );
   } else if (tab === 'accounts') {
     content = (
-      <RecordList
-        rows={data.accounts.map((account) => ({
-          title: `${account.platform} · ${account.handle}`,
-          detail: account.status,
-        }))}
+      <AccountsTab
+        influencerId={influencer.id}
+        canEdit={member.role !== 'viewer'}
+        accounts={data.accounts}
       />
     );
   } else if (tab === 'content') {

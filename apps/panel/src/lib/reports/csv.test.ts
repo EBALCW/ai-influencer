@@ -1,5 +1,58 @@
 import { describe, expect, it } from 'vitest';
-import { CSV_BOM, csvCell, csvFileName, toCsv } from './csv';
+import {
+  CSV_BOM,
+  csvCell,
+  csvFileName,
+  detectCsvSeparator,
+  parseCsv,
+  toCsv,
+} from './csv';
+
+describe('parseCsv', () => {
+  it('BOM, tırnaklı ayraç, ikilenmiş tırnak ve çok satırlı alanı okur', () => {
+    const text = `${CSV_BOM}a,b,c\r\n"x,y","dedi ""selam""","satır 1\nsatır 2"\r\n3,,\r\n`;
+    expect(parseCsv(text)).toEqual([
+      { line: 1, cells: ['a', 'b', 'c'] },
+      { line: 2, cells: ['x,y', 'dedi "selam"', 'satır 1\nsatır 2'] },
+      { line: 4, cells: ['3', '', ''] },
+    ]);
+  });
+
+  it('Türkçe Excel noktalı virgülünü ve sekmeyi başlıktan seçer', () => {
+    expect(detectCsvSeparator('id;tarih;link\n1;2;3')).toBe(';');
+    expect(detectCsvSeparator('id\ttarih')).toBe('\t');
+    expect(detectCsvSeparator('id,tarih')).toBe(',');
+    expect(parseCsv('a;b\n"1;2";3').map((r) => r.cells)).toEqual([
+      ['a', 'b'],
+      ['1;2', '3'],
+    ]);
+  });
+
+  it('boş satırları atlar, LF ve CR satır sonlarını kabul eder', () => {
+    expect(parseCsv('a,b\n\n1,2\r3,4\n,\n').map((r) => r.line)).toEqual([
+      1, 3, 4,
+    ]);
+  });
+
+  it('toCsv çıktısını geri okur; formül koruması kaldırılır', () => {
+    type R = { t: string; n: number };
+    const csv = toCsv<R>(
+      [
+        { header: 'metin', value: (r) => r.t },
+        { header: 'sayı', value: (r) => r.n },
+      ],
+      [
+        { t: '=HYPERLINK("x")', n: -5 },
+        { t: 'a, "b"\nc', n: 1 },
+      ],
+    );
+    expect(parseCsv(csv).map((r) => r.cells)).toEqual([
+      ['metin', 'sayı'],
+      ['=HYPERLINK("x")', '-5'],
+      ['a, "b"\nc', '1'],
+    ]);
+  });
+});
 
 describe('csvCell', () => {
   it('virgül, tırnak ve yeni satır içeren alanı tırnaklar', () => {

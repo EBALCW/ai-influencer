@@ -40,7 +40,7 @@ Roller: panelde `owner` / `editor` / `viewer` vardır. Aşağıdaki "sorumlu" i�
 
 ## Kredi hesabı
 
-Higgsfield'de kredi fiyatı ve işlem başına kredi hesaba/modele göre değişiyor; status yanıtında kredi alanı belgelenmemiş ve estimate endpoint'i doğrulanamadı (ADR 0002 → Açık sorular). Bu yüzden aşağıda **formül + örnek birimler** var. Gerçek değerler #13 ölçümünden ve Higgsfield konsolundan gelince bu tablo güncellenir; panelde gerçek harcama `/costs` (`budget_status`, video başına maliyet) üzerinden izlenir.
+Higgsfield Cloud API kredi değil USD bakiyeden düşüyor ve fiyat hesaba/modele göre değişiyor; status yanıtında tutar alanı yok. Worker her gönderimden önce `POST /estimate/<model>` ile USD tahminini alıp üretime yazıyor (#150, ADR 0002 → Doğrulama notları 2). Planlama için aşağıda **formül + örnek birimler** var. Gerçek değerler #13 ölçümünden ve Higgsfield konsolundan gelince bu tablo güncellenir; panelde gerçek harcama `/costs` (`budget_status`, video başına maliyet) üzerinden izlenir.
 
 ### Formül
 

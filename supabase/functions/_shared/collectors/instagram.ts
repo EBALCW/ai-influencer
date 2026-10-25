@@ -31,7 +31,7 @@ const REEL_METRICS = [
   'ig_reels_video_view_total_time',
 ];
 
-/** Yalnız sayısal metrik verisi saklanır; sağlayıcı açıklamaları/URL/token saklanmaz. */
+/** Panel kolonlarına yazılacak sayısal özet; ayrıntılar raw.insights içinde korunur. */
 export function instagramMetrics(
   body: Json,
   expected: string[],
@@ -93,6 +93,8 @@ export function createInstagramCollector(
     let response: Response;
     try {
       response = await ctx.fetch(url.toString(), {
+        redirect: 'error',
+        signal: AbortSignal.timeout(15000),
         headers: {
           authorization: `Bearer ${ctx.token.accessToken}`,
           accept: 'application/json',
@@ -255,6 +257,17 @@ export function createInstagramCollector(
         completionRate: null,
         raw: {
           metrics: m,
+          // Sayısal özete sığmayan breakdown, zaman serisi ve gelecekteki
+          // metrik biçimleri korunur. Paging URL'leri token içerebildiğinden
+          // tüm yanıt yerine yalnız metrik veri alanları saklanır.
+          insights: (body.data as unknown[]).map((item) => {
+            const row = obj(item);
+            return Object.fromEntries(
+              ['name', 'period', 'values', 'total_value']
+                .filter((key) => Object.hasOwn(row, key))
+                .map((key) => [key, row[key]]),
+            );
+          }),
           mediaType: str(media.media_type),
           mediaProductType: str(media.media_product_type),
         },

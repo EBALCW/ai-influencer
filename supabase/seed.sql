@@ -113,3 +113,32 @@ ON CONFLICT (id) DO UPDATE SET
   published_at = EXCLUDED.published_at,
   like_count = EXCLUDED.like_count,
   is_brand_inquiry = EXCLUDED.is_brand_inquiry;
+
+-- Demo trend arşivi (#10): /research örnekleri. Linkler example.invalid, metinler "Demo:" ile başlar.
+INSERT INTO public.trends (id, influencer_id, captured_on, platform, url, account_handle, views, likes, comments, duration_s, format, hook, sound, why_viral, adaptation_idea, adaptation_score, cost_estimate, status, source)
+VALUES
+  ('70000000-0000-4000-8000-000000000001', NULL, '2026-10-20', 'instagram', 'https://example.invalid/trend/01', '@demo.trend', 1200000, 84000, 1300, 18, 'pov',
+   'Demo: ilk saniyede soru soran yazı', 'Demo: trend ses 01', 'Demo: izleyiciyi sahnenin içine koyan POV kancası', 'Demo: karakterin sabah rutini POV', 5, 'low', 'shortlisted', 'manual'),
+  ('70000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '2026-10-21', 'tiktok', 'https://example.invalid/trend/02', '@demo.dans', 450000, 21000, 640, 15, 'dance',
+   'Demo: tempolu geçişle açılış', 'Demo: trend ses 02', 'Demo: kolay tekrarlanan koreografi', 'Demo: aynı koreografi stüdyo ışığında', 3, 'medium', 'new', 'claude'),
+  ('70000000-0000-4000-8000-000000000003', NULL, '2026-10-22', 'youtube', 'https://example.invalid/trend/03', '@demo.meme', 90000, 3100, 120, 30, 'meme',
+   'Demo: tanınmış sahne şablonu', '', 'Demo: telifli sahneye dayanıyor', '', 1, 'high', 'rejected', 'manual')
+ON CONFLICT (id) DO UPDATE SET
+  influencer_id = EXCLUDED.influencer_id,
+  captured_on = EXCLUDED.captured_on,
+  platform = EXCLUDED.platform,
+  url = EXCLUDED.url,
+  account_handle = EXCLUDED.account_handle,
+  views = EXCLUDED.views,
+  likes = EXCLUDED.likes,
+  comments = EXCLUDED.comments,
+  duration_s = EXCLUDED.duration_s,
+  format = EXCLUDED.format,
+  hook = EXCLUDED.hook,
+  sound = EXCLUDED.sound,
+  why_viral = EXCLUDED.why_viral,
+  adaptation_idea = EXCLUDED.adaptation_idea,
+  adaptation_score = EXCLUDED.adaptation_score,
+  cost_estimate = EXCLUDED.cost_estimate,
+  status = EXCLUDED.status,
+  source = EXCLUDED.source;

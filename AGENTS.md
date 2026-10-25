@@ -174,7 +174,7 @@ Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `doc
 - Supabase toplu `insert`'te tüm satırlar **aynı anahtarlara** sahip olsun; eksik anahtar null gider, NOT NULL kırılır.
 - Para toplamı SQL'de (`numeric`), JS `number` ile değil. Kur yoksa toplamı gösterme, "eksik kur" de.
 - Uyarı tipi eklerken `alerts_type_known` CHECK'i migration'da yeniden kur, `packages/shared` → `ALERT_TYPES` ve `formatAlert`'i güncelle (test bunu denetler).
-- View yazarken `WITH (security_invoker = true)`; fonksiyonlar varsayılan `SECURITY INVOKER`. `SECURITY DEFINER` sadece API rollerine kapalı `private` şemasında ve boş `search_path` ile.
+- View yazarken `WITH (security_invoker = true)`; fonksiyonlar varsayılan `SECURITY INVOKER`. `SECURITY DEFINER` sadece API rollerine kapalı `private` şemasında ve boş `search_path` ile. Panelin çağırdığı ve yetki yükseltmesi gereken RPC: `public`'te INVOKER sarmalayıcı + `internal` şemasında DEFINER çekirdek (tek tek `GRANT EXECUTE`; ör. `cancel_generation`, `request_sync`).
 - Sırlar (token, webhook URL) migration'a yazılmaz; Vault'tan okunur. Sır yoksa iş sessizce atlanır, hata yağdırmaz.
 - Playwright'ta ekran okuyucu metni (ör. "Yeni: ") yüzünden tam eşleşen locator kırılır; `getByRole(..., { name: /…/ })` kullan.
 - Edge Function'lar ESLint/tsc ile değil `deno lint/check/test` ile denetlenir; editör "Cannot find name 'Deno'" derse yok say, CI belirleyicidir.

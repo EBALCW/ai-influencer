@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import type { Row } from '@ai-influencer/shared';
+import {
+  SCORER_IS_PRODUCER_MESSAGE,
+  SOURCE_MISSING_MESSAGE,
+} from './source-rules';
 
 /** Panelde okunan yayın işi alanları. `provider_upload_url` API rollerine kapalıdır, seçilmez. */
 export const PUBLISH_JOB_COLUMNS =
@@ -96,6 +100,8 @@ const blockers: Record<string, string> = {
   account_not_connected: 'Hedef hesap bağlı değil; önce hesabı bağlayın.',
   unsupported_platform: 'Bu platform için otomatik yayın yok.',
   no_target_account: 'Önce hedef hesap seçin.',
+  source_missing: SOURCE_MISSING_MESSAGE,
+  scorer_is_producer: SCORER_IS_PRODUCER_MESSAGE,
 };
 export function publishBlocker(error: {
   code?: string;

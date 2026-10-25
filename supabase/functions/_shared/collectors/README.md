@@ -185,6 +185,8 @@ DB yazımı, idempotent upsert, kota kaydı ve backoff ortak orkestratörden gel
   `ig_reels_avg_watch_time,ig_reels_video_view_total_time` eklenir. Ortalama
   izleme ms → saniye çevrilir. Tamamlama oranı tahmin edilmez (NULL).
 - `raw_payload.metrics` sayısal metrikleri (bilinmeyen adlar dahil),
+  `raw_payload.insights` ise `name`, `period`, `values`, `total_value` alanlarını
+  iç içe breakdown ve bütün zaman serisi noktalarıyla korur.
   `mediaType`/`mediaProductType` medya türünü tutar. Toplam etkileşim ve toplam
   izleme süresi burada kalır; yeni kolon/migration yoktur. Thumbnail URL'i
   saklanmaz. Sağlayıcı açıklamaları, sayfalama URL'leri ve hata gövdeleri

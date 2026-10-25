@@ -4,8 +4,13 @@ import { useActionState, useMemo, useState } from 'react';
 import { Toast } from '@/components/ui';
 import { renderTemplate, extractVariables } from '@/lib/prompt-template';
 import {
+  aspectRatios,
+  imageResolutions,
+  modeFields,
   modeLabels,
   resolutions,
+  testModeLabel,
+  videoDurations,
   type GenerationMode,
 } from '@/lib/generation-queue';
 import { enqueueGeneration } from '../actions';
@@ -57,7 +62,7 @@ export function PreviewPanel({
   );
   const [testMode, setTestMode] = useState(true);
   const choices = assets.filter((asset) => asset.influencerId === influencerId);
-  const isVideo = mode !== null && mode !== 'text_to_image';
+  const fields = mode ? modeFields[mode] : null;
 
   return (
     <form action={action} className="space-y-4" aria-label="Önizleme ve üretim">
@@ -118,41 +123,83 @@ export function PreviewPanel({
               onChange={(event) => setTestMode(event.target.checked)}
               type="checkbox"
             />
-            Test modu (480p{isVideo ? ', en çok 5 sn' : ''}, düşük kredi)
+            Test modu ({mode ? testModeLabel[mode] : '480p'}, düşük maliyet)
           </label>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className={labelClass}>
-              Çözünürlük
-              <select
-                className={fieldClass}
-                defaultValue="720p"
-                disabled={testMode}
-                name="resolution"
-              >
-                {resolutions.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {isVideo && (
+            {fields?.image && (
+              <>
+                <label className={labelClass}>
+                  Görsel çözünürlüğü
+                  <select
+                    className={fieldClass}
+                    defaultValue="2K"
+                    disabled={testMode}
+                    name="imageResolution"
+                  >
+                    {imageResolutions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={labelClass}>
+                  En-boy oranı
+                  <select
+                    className={fieldClass}
+                    defaultValue="9:16"
+                    name="aspectRatio"
+                  >
+                    {aspectRatios.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+            {fields?.resolution && (
               <label className={labelClass}>
-                Süre (sn)
-                <input
+                Çözünürlük
+                <select
                   className={fieldClass}
-                  max={60}
-                  min={1}
-                  name="durationSeconds"
-                  type="number"
-                />
+                  defaultValue="720p"
+                  disabled={testMode}
+                  name="resolution"
+                >
+                  {resolutions.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
               </label>
             )}
-            <label className={labelClass}>
-              Seed (isteğe bağlı)
-              <input className={fieldClass} min={0} name="seed" type="number" />
-            </label>
+            {fields?.duration && (
+              <label className={labelClass}>
+                Süre (sn)
+                <select
+                  className={fieldClass}
+                  defaultValue="5"
+                  disabled={testMode}
+                  name="durationSeconds"
+                >
+                  {videoDurations.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
+          {mode === 'text_to_image' && negative && (
+            <p className="text-xs text-muted">
+              Görsel modeli negatif prompt ve seed desteklemiyor; negatif metin
+              gönderilmez.
+            </p>
+          )}
           <div>
             <p className="text-xs font-medium text-muted">Referans dosyalar</p>
             {choices.length === 0 ? (

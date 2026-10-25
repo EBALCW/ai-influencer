@@ -4,9 +4,11 @@
 
 Üreten (rol): ____________ Puanlayan (rol, üretenden farklı kişi): ____________
 
-> Bu listedeki 24 madde paneldeki içerik kartı kontrol listesiyle birebir aynıdır (`apps/panel/src/lib/content/checklist-schema.ts`, `content_checklist_ready()`). Madde metni değişirse iki yer birlikte güncellenir; yeni madde eklemek migration gerektirir. Panel, bütün maddeler işaretlenmeden, iki puan en az 3 olmadan ve karar "Yayına hazır" seçilmeden içeriği "Planlandı" aşamasına geçirmez; yayın işi (#58) de bu kontrolü ve AI etiketi maddesini (`ai_disclosure`) yeniden denetler.
+> Bu listedeki 25 madde paneldeki içerik kartı kontrol listesiyle birebir aynıdır (`apps/panel/src/lib/content/checklist-schema.ts`, `content_checklist_ready()`). Madde metni değişirse iki yer birlikte güncellenir; yeni madde eklemek migration gerektirir. Panel, bütün maddeler işaretlenmeden, iki puan en az 3 olmadan ve karar "Yayına hazır" seçilmeden içeriği "Planlandı" aşamasına geçirmez; yayın işi (#58) de bu kontrolü ve AI etiketi maddesini (`ai_disclosure`) yeniden denetler.
 >
-> **Zorunlu / önerilen:** Kutulu 24 madde zorunludur (kırmızı). "Koşullu" maddeler (ör. loop, reklam ibaresi) içerikte o durum yoksa kontrol edilip işaretlenir. Her bölümün altındaki _Puanlama soruları_ önerilendir; maddeyi engellemez, puanı belirler.
+> **Puanlayan ≠ üreten:** Panel puanları veya yayın kararını son kaydeden kişiyi kendisi yazar (`checklist_scored_by`). Bu kişi üretenle (kartın sorumlusu; sorumlu atanmamışsa kartı açan) aynıysa kart planlanmaz ve yayın işi açılmaz. Üreten puanları girdiyse ikinci kişi puanlardan birini veya kararı değiştirip kaydeder. Video-to-video içerikte kaynak türü de kayıtlı olmalıdır (`docs/compliance.md` → Kaynak içerik).
+>
+> **Zorunlu / önerilen:** Kutulu 25 madde zorunludur (kırmızı). "Koşullu" maddeler (ör. loop, reklam ibaresi) içerikte o durum yoksa kontrol edilip işaretlenir. Her bölümün altındaki _Puanlama soruları_ önerilendir; maddeyi engellemez, puanı belirler.
 
 ## 1. İzlenme kancası
 
@@ -24,6 +26,7 @@ _Puanlama soruları — "İnsanlar bu videoyu neden sonuna kadar izlesin?"_ Kanc
 
 - [ ] İçerik izleyiciye yorum veya paylaşım için doğal bir neden veriyor.
 - [ ] Caption persona tonunda; gerekiyorsa açık bir soru/CTA içeriyor.
+- [ ] Caption şablonu hazır; 3–5 alakalı hashtag seçildi ve hashtag sayfaları kısıtlı değil. _(şablon ve hashtag seti A/B/C: `docs/caption-guide.md`)_
 - [ ] Yapay tartışma veya yanıltıcı iddia yaratmıyor.
 
 _Puanlama soruları — "İnsanlar bu videoya neden yorum yapsın veya paylaşsın?"_ Görüş ayrılığı veya "sen olsan ne yapardın?" sorusu var mı? Biri bunu bir arkadaşına göndermek ister mi (etiketlenebilir mi)? Meme/tepki malzemesi var mı? Caption'da soru/CTA ve 3–5 alakalı hashtag var mı (`docs/caption-guide.md`)?
@@ -77,8 +80,6 @@ Kontrol eden: ____________________ Not: ________________________________________
 
 ## Panel dışında kalan öneriler
 
-Aşağıdakiler henüz panel maddesi değildir; puanlamada ve caption hazırlığında elle kontrol edilir. Panele eklenmesi migration gerektirir (bkz. #22 takip notu).
+Aşağıdakiler panel maddesi değildir; puanlamada ve caption hazırlığında elle kontrol edilir. "3–5 hashtag / caption" 2. bölüme madde olarak, "puanlayan ≠ üreten" panelde sunucu kuralı olarak eklendi (#22, migration `20261024100000_content_source_fields.sql`).
 
-- [ ] Caption ilk satırı kısa ve kesilmeden okunuyor; caption şablonu ve hashtag seti (A/B/C) içerik kartının notlarına yazıldı.
-- [ ] 3–5 hashtag; hashtag sayfası normal açılıyor (yasaklı/kısıtlı değil).
-- [ ] Puanlayan kişi üreten kişiden farklı.
+- [ ] Caption ilk satırı kısa ve kesilmeden okunuyor; seçilen caption şablonu ve hashtag seti (A/B/C) içerik kartının notlarına yazıldı.

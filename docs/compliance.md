@@ -110,23 +110,28 @@ Bu adım tamamlanınca check-list'teki `commercial_rights` (“Kaynak ve kullan�
 
 ### Her v2v içerikte kaydedilecek kaynak bilgisi
 
-Yayınlanan video-to-video içeriklerin **%100'ünde** kaynak bilgisi içerik kartında (#57) bulunur:
+Yayınlanan video-to-video içeriklerin **%100'ünde** kaynak bilgisi içerik kartında (#57) bulunur. Panel bunu zorunlu tutar ([#145](https://github.com/EBALCW/ai-influencer/issues/145), migration `20261024100000_content_source_fields.sql`): içeriğe video-to-video üretimi bağlıysa kaynak türü kaydedilmeden kart planlanamaz ve yayın işi açılamaz. İçerik listesindeki **"Kaynak bilgisi eksik v2v"** filtresi (`/content?source=missing`) aylık kontrolde kullanılır.
 
-- **`content_items.source_url`:** Kaynak videonun bağlantısı. Kendi referansımızsa asset kütüphanesindeki (#45) referans dosyasının panel bağlantısı veya kayıt adı.
-- **`content_items.notes`:** Aşağıdaki blok kopyalanıp doldurulur:
+Kartın "Kaynak bilgisi (video-to-video)" bölümündeki yapılandırılmış alanlar:
+
+| Alan                           | Ne yazılır                                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `source_type` (Kaynak türü)    | `own` (kendi) · `stock` (stok) · `open_license` (acik-lisans) · `third_party` (ucuncu-kisi). Tercih sırası yukarıdaki tablodadır.  |
+| `source_owner` (Kaynak sahibi) | Herkese açık hesap/kanal adı, stok sağlayıcı veya "ekip". `own` dışında zorunlu.                                                   |
+| `source_license` (Lisans/izin) | Lisans adı ve no, ya da "yazılı izin – kısıtlı depoda: <referans>". `own` dışında zorunlu.                                         |
+| `source_checked_at` / `_by`    | Kaynak alanlarını son kaydeden ve zaman. Panel kendisi yazar (elle girilmez).                                                      |
+| `source_url`                   | Kaynak videonun bağlantısı. Kendi referansımızsa asset kütüphanesindeki (#45) referans dosyasının panel bağlantısı veya kayıt adı. |
+
+Yapılandırılmış alanlarda olmayan ayrıntılar (alınan unsur, yeniden üretilen kısım, ses) **`content_items.notes`** içine aşağıdaki blokla yazılır. Tür, sahip, lisans ve kontrol eden/tarih artık yukarıdaki alanlarda tutulur; migration sırasında notlarda geçerli bir blok bulunan kartlarda bu üç satır alanlara taşındı.
 
 ```text
 [Kaynak]
-Tür: kendi | stok | acik-lisans | ucuncu-kisi
-Sahip: <hesap/kanal adı, stok sağlayıcı veya "ekip">
-Lisans / izin: <lisans adı ve no, ya da "yazılı izin – kısıtlı depoda: <referans>">
 Alınan unsur: <konsept / koreografi / kamera hareketi / format>
 Yeniden üretilen: <sahne, arka plan, ses, metin>
 Ses: <platform kütüphanesi (elle ekleniyor) | kendi/AI üretimi | lisanslı: <kaynak>>
-Kontrol eden / tarih: <ekip rolü> / YYYY-MM-DD
 ```
 
-Lisans belgeleri, izin yazışmaları ve kişisel bilgiler (izin verenin adı, e-posta) panele veya repoya yazılmaz. Bunlar ekibin erişimi kısıtlı deposunda tutulur; nota yalnızca kısa bir referans yazılır. Kaynak türü, sahibi ve lisansı için ayrı şema alanları (filtrelenebilir ve zorunlu tutulabilir) takip işi olarak önerildi ([#145](https://github.com/EBALCW/ai-influencer/issues/145)). Bu alanlar gelene kadar `notes` bloğu esastır.
+Lisans belgeleri, izin yazışmaları ve kişisel bilgiler (izin verenin adı, e-posta) panele veya repoya yazılmaz. Bunlar ekibin erişimi kısıtlı deposunda tutulur; `source_license` alanına ve nota yalnızca kısa bir referans yazılır.
 
 ### Hareket referansları
 
