@@ -6,6 +6,7 @@ import { pipeline } from 'node:stream/promises';
 
 const LIMIT = 100;
 const MAX = 100000;
+const MAX_MANIFEST_BYTES = 32 * 1024 * 1024;
 const fail = () => {
   throw new Error('Storage yedeği doğrulanamadı; işlem durduruldu.');
 };
@@ -136,8 +137,7 @@ export async function exportStorage(storage, dir) {
   // Listings are not a transaction: refuse observable changes during export.
   if (JSON.stringify(before) !== JSON.stringify(await inventory(storage)))
     fail();
-  await writeFile(
-    join(dir, 'storage-manifest.json'),
+  const content =
     JSON.stringify(
       {
         version: 1,
@@ -146,16 +146,19 @@ export async function exportStorage(storage, dir) {
       },
       null,
       2,
-    ) + '\n',
-    { flag: 'wx', mode: 0o600 },
-  );
+    ) + '\n';
+  if (Buffer.byteLength(content) > MAX_MANIFEST_BYTES) fail();
+  await writeFile(join(dir, 'storage-manifest.json'), content, {
+    flag: 'wx',
+    mode: 0o600,
+  });
   return verifyStorageBackup(dir);
 }
 
 export async function verifyStorageBackup(dir) {
   const manifestPath = join(dir, 'storage-manifest.json');
   const info = await lstat(manifestPath);
-  if (!info.isFile() || info.size > 32 * 1024 * 1024) fail();
+  if (!info.isFile() || info.size > MAX_MANIFEST_BYTES) fail();
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
   if (
     manifest?.version !== 1 ||

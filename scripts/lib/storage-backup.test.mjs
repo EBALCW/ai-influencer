@@ -122,6 +122,20 @@ test('indirme hatası ve eşzamanlı değişiklik tamamlandı manifesti üretmez
   }
 });
 
+test('yetki/listeme hatası sır sızdırmaz ve manifest üretmez', async (t) => {
+  const dir = await fixture(t);
+  const storage = source();
+  storage.listBuckets = async () => ({
+    data: null,
+    error: { message: 'fixture-secret' },
+  });
+  await assert.rejects(exportStorage(storage, dir), (error) => {
+    assert(!error.message.includes('fixture-secret'));
+    return true;
+  });
+  await assert.rejects(access(join(dir, 'storage-manifest.json')));
+});
+
 test('traversal ve tekrarlayan sayfa reddedilir; mevcut yedek ezilmez', async (t) => {
   for (const badName of ['..', '../escape', 'a\\b', '/absolute']) {
     const dir = await fixture(t);
