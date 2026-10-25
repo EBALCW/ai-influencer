@@ -412,6 +412,9 @@ test('owner sosyal hesap bağlantı formlarını görür; bilinmeyen OAuth platf
     page.getByRole('button', { name: 'TikTok hesabı bağla' }),
   ).toBeVisible();
   await expect(
+    page.getByRole('button', { name: 'Instagram hesabı bağla' }),
+  ).toBeVisible();
+  await expect(
     page.locator(
       'form[action="/api/oauth/youtube/start"] input[name="influencerId"]',
     ),

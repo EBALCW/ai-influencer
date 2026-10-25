@@ -1,4 +1,4 @@
-export type Platform = 'youtube' | 'tiktok';
+export type Platform = 'youtube' | 'tiktok' | 'instagram';
 export type Token = {
   access_token: string;
   refresh_token?: string;
@@ -35,7 +35,7 @@ export async function refreshTokens(
   fetcher: typeof fetch = fetch,
   now: () => number = Date.now,
 ) {
-  const platforms = (['youtube', 'tiktok'] as const).filter(
+  const platforms = (['youtube', 'tiktok', 'instagram'] as const).filter(
     (p) => credentials[p],
   );
   if (!platforms.length)
@@ -50,7 +50,7 @@ export async function refreshTokens(
   };
   for (const job of jobs) {
     const cfg = credentials[job.platform];
-    if (!cfg || !job.token.refresh_token) {
+    if (!cfg || (job.platform !== 'instagram' && !job.token.refresh_token)) {
       await store.finish(job, 'error', null, null);
       result.failed++;
       continue;
@@ -61,18 +61,28 @@ export async function refreshTokens(
     try {
       const body = new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: job.token.refresh_token,
+        refresh_token: job.token.refresh_token ?? '',
         client_secret: cfg.secret,
         [job.platform === 'youtube' ? 'client_id' : 'client_key']: cfg.id,
       });
+      const instagramUrl = new URL(
+        'https://graph.instagram.com/refresh_access_token',
+      );
+      instagramUrl.search = new URLSearchParams({
+        grant_type: 'ig_refresh_token',
+        access_token: job.token.access_token,
+      }).toString();
       const response = await fetcher(
-        job.platform === 'youtube'
-          ? 'https://oauth2.googleapis.com/token'
-          : 'https://open.tiktokapis.com/v2/oauth/token/',
+        job.platform === 'instagram'
+          ? instagramUrl.toString()
+          : job.platform === 'youtube'
+            ? 'https://oauth2.googleapis.com/token'
+            : 'https://open.tiktokapis.com/v2/oauth/token/',
         {
-          method: 'POST',
+          method: job.platform === 'instagram' ? 'GET' : 'POST',
           headers: { 'content-type': 'application/x-www-form-urlencoded' },
-          body: body.toString(),
+          body: job.platform === 'instagram' ? undefined : body.toString(),
+          cache: 'no-store',
           redirect: 'error',
           signal: AbortSignal.timeout(15000),
         },
@@ -86,7 +96,7 @@ export async function refreshTokens(
         const seconds = data.expires_in;
         if (
           !access ||
-          !refresh ||
+          (job.platform !== 'instagram' && !refresh) ||
           typeof seconds !== 'number' ||
           !Number.isInteger(seconds) ||
           seconds <= 0 ||
@@ -97,7 +107,7 @@ export async function refreshTokens(
         else {
           token = {
             access_token: access,
-            refresh_token: refresh,
+            ...(refresh ? { refresh_token: refresh } : {}),
             ...((text(data.scope) ?? job.token.scope)
               ? { scope: text(data.scope) ?? job.token.scope }
               : {}),
@@ -110,6 +120,7 @@ export async function refreshTokens(
         }
       } else if (
         response.status === 401 ||
+        (job.platform === 'instagram' && record(data.error).code === 190) ||
         ['invalid_grant', 'invalid_token', 'access_denied'].includes(
           String(data.error),
         )

@@ -191,7 +191,9 @@ export async function callbackOAuth(request: NextRequest, rawPlatform: string) {
         p_external_id: identity.id,
         p_token: {
           access_token: token.access_token,
-          refresh_token: token.refresh_token!,
+          ...(token.refresh_token
+            ? { refresh_token: token.refresh_token }
+            : {}),
           scope: token.scope,
           ...(token.token_type ? { token_type: token.token_type } : {}),
         },
