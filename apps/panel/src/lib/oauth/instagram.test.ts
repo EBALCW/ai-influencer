@@ -71,6 +71,27 @@ describe('Instagram Login', () => {
       expect(options.signal).toBeDefined();
     }
   });
+  it('tek kayıtlı wrapper ve virgüllü izin yanıtını doğrular; belirsiz subject reddedilir', async () => {
+    const fetcher = fake(
+      { data: [{ ...short, permissions: SCOPES.instagram.join(',') }] },
+      long,
+      identity,
+    );
+    expect((await exchangeCode(cfg, 'code', 'verifier', fetcher)).scope).toBe(
+      SCOPES.instagram.join(','),
+    );
+    for (const body of [
+      { data: [short, short] },
+      { ...short, data: [short] },
+      { data: [] },
+    ]) {
+      const bad = fake(body);
+      await expect(
+        exchangeCode(cfg, 'code', 'verifier', bad),
+      ).rejects.toThrow();
+      expect(bad).toHaveBeenCalledTimes(1);
+    }
+  });
   it('eksik izin veya bozuk token ile uzun token isteği yapılmaz', async () => {
     for (const body of [
       { ...short, permissions: [] },

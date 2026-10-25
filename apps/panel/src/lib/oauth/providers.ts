@@ -318,6 +318,18 @@ async function exchangeInstagram(
     },
     fetcher,
   );
+  // Accept exactly one subject. Never guess between a top-level token and
+  // a wrapped response (or between multiple authorized identities).
+  let payload: unknown = short;
+  if ('data' in short) {
+    if (
+      short.access_token ||
+      !Array.isArray(short.data) ||
+      short.data.length !== 1
+    )
+      throw new OAuthProviderError('Instagram token yanıtı belirsiz.');
+    payload = short.data[0];
+  }
   const parsed = z
     .object({
       access_token: z.string().min(1),
@@ -325,9 +337,17 @@ async function exchangeInstagram(
         z.string().regex(/^[0-9]+$/),
         z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
       ]),
-      permissions: z.array(z.string()),
+      permissions: z.union([
+        z.array(z.string()),
+        z.string().transform((value) =>
+          value
+            .split(',')
+            .map((p) => p.trim())
+            .filter(Boolean),
+        ),
+      ]),
     })
-    .safeParse(short);
+    .safeParse(payload);
   if (
     !parsed.success ||
     SCOPES.instagram.some((p) => !parsed.data.permissions.includes(p))
