@@ -189,6 +189,51 @@ describe('OAuth routes', () => {
     expect(result.headers.get('set-cookie')).toContain('Max-Age=0');
     expect(await result.text()).not.toContain('private-access');
   });
+  it('Instagram callback refresh token olmadan Vault paketini yazar', async () => {
+    vi.stubEnv('OAUTH_REDIRECT_BASE', 'https://panel.invalid');
+    vi.stubEnv('INSTAGRAM_CLIENT_ID', 'id');
+    vi.stubEnv('INSTAGRAM_CLIENT_SECRET', 'secret');
+    mocks.exchange.mockResolvedValue({
+      access_token: 'private-instagram',
+      scope: 'instagram_business_basic',
+      expires_in: 5184000,
+    });
+    mocks.identity.mockResolvedValue({ id: '123456789', handle: 'fixture' });
+    mocks.db.mockResolvedValue(
+      db([
+        { id: inf, slug: 'fixture' },
+        { id: 'account', influencer_id: inf },
+      ]),
+    );
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    mocks.admin.mockReturnValue({ rpc });
+    const req = new NextRequest(
+      `https://panel.invalid/api/oauth/instagram/callback?state=${state}&code=fixture`,
+      {
+        headers: {
+          cookie: `social_oauth_instagram=${encodeURIComponent(JSON.stringify({ state, influencerId: inf }))}`,
+        },
+      },
+    );
+    const result = await callbackOAuth(req, 'instagram');
+    expect(result.status).toBe(303);
+    expect(rpc).toHaveBeenCalledWith(
+      'oauth_connect_token',
+      expect.objectContaining({
+        p_platform: 'instagram',
+        p_external_id: '123456789',
+        p_token: {
+          access_token: 'private-instagram',
+          scope: 'instagram_business_basic',
+        },
+      }),
+    );
+    expect(result.headers.get('location')).toBe(
+      'https://panel.invalid/influencers/fixture?tab=accounts&inf=fixture',
+    );
+    expect(result.headers.get('set-cookie')).toContain('Max-Age=0');
+    expect(result.headers.get('set-cookie')).toContain('Secure');
+  });
   it('beklenmeyen hatanın içeriği, kod ve token istemciye veya loga çıkmaz', async () => {
     mocks.exchange.mockRejectedValue(new Error('private-access code secret'));
     const log = vi.spyOn(console, 'error');

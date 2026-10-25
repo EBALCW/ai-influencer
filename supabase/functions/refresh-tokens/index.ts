@@ -15,6 +15,7 @@ export async function handler(req: Request) {
   for (const [platform, prefix] of [
     ['youtube', 'GOOGLE'],
     ['tiktok', 'TIKTOK'],
+    ['instagram', 'INSTAGRAM'],
   ] as const) {
     const id = Deno.env.get(`${prefix}_CLIENT_ID`),
       secret = Deno.env.get(`${prefix}_CLIENT_SECRET`);

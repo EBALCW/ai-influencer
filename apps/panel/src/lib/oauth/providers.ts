@@ -4,6 +4,12 @@ import type { OAuthPlatform } from './state';
 
 export class OAuthProviderError extends Error {}
 export const SCOPES = {
+  instagram: [
+    'instagram_business_basic',
+    'instagram_business_manage_insights',
+    'instagram_business_content_publish',
+    'instagram_business_manage_comments',
+  ],
   youtube: [
     'https://www.googleapis.com/auth/youtube.readonly',
     'https://www.googleapis.com/auth/yt-analytics.readonly',
@@ -34,9 +40,12 @@ export function providerConfig(
   platform: OAuthPlatform,
   env: Record<string, string | undefined> = process.env,
 ) {
-  if (platform === 'instagram')
-    throw new OAuthProviderError('Instagram OAuth adaptörü henüz etkin değil.');
-  const prefix = platform === 'youtube' ? 'GOOGLE' : 'TIKTOK';
+  const prefix =
+    platform === 'youtube'
+      ? 'GOOGLE'
+      : platform === 'instagram'
+        ? 'INSTAGRAM'
+        : 'TIKTOK';
   const clientId = env[`${prefix}_CLIENT_ID`];
   const secret = env[`${prefix}_CLIENT_SECRET`];
   const origin = env.OAUTH_REDIRECT_BASE;
@@ -64,6 +73,9 @@ export function providerConfig(
     throw new OAuthProviderError('OAuth dönüş adresi güvenli değil.');
   return {
     platform,
+    graphVersion: /^v[0-9]+\.[0-9]+$/.test(env.INSTAGRAM_GRAPH_VERSION ?? '')
+      ? env.INSTAGRAM_GRAPH_VERSION!
+      : 'v23.0',
     clientId,
     secret,
     origin: base.origin,
@@ -79,10 +91,12 @@ export function authorizationUrl(
   const url = new URL(
     cfg.platform === 'youtube'
       ? 'https://accounts.google.com/o/oauth2/v2/auth'
-      : 'https://www.tiktok.com/v2/auth/authorize/',
+      : cfg.platform === 'instagram'
+        ? 'https://www.instagram.com/oauth/authorize'
+        : 'https://www.tiktok.com/v2/auth/authorize/',
   );
   url.searchParams.set(
-    cfg.platform === 'youtube' ? 'client_id' : 'client_key',
+    cfg.platform === 'tiktok' ? 'client_key' : 'client_id',
     cfg.clientId,
   );
   url.searchParams.set('response_type', 'code');
@@ -97,6 +111,9 @@ export function authorizationUrl(
     url.searchParams.set('code_challenge_method', 'S256');
     url.searchParams.set('access_type', 'offline');
     url.searchParams.set('prompt', 'consent');
+  }
+  if (cfg.platform === 'instagram') {
+    url.searchParams.set('enable_fb_login', '0');
   }
   // TikTok Web Login Kit PKCE belirtmez; Desktop Kit hex SHA256 kullanır. Web'e desktop PKCE uygulanmaz.
   return url.toString();
@@ -134,6 +151,8 @@ export async function exchangeCode(
   verifier: string,
   fetcher = fetch,
 ): Promise<OAuthToken> {
+  if (cfg.platform === 'instagram')
+    return exchangeInstagram(cfg, code, fetcher);
   const fields: Record<string, string> = {
     client_secret: cfg.secret,
     code,
@@ -171,6 +190,22 @@ export async function accountIdentity(
   token: OAuthToken,
   fetcher = fetch,
 ) {
+  if (cfg.platform === 'instagram') {
+    const body = await request(
+      `https://graph.instagram.com/${cfg.graphVersion}/me?fields=user_id,username`,
+      { headers: { authorization: `Bearer ${token.access_token}` } },
+      fetcher,
+    );
+    const identity = z
+      .object({
+        user_id: z.string().regex(/^[0-9]+$/),
+        username: z.string().min(1).max(255),
+      })
+      .safeParse(body);
+    if (!identity.success)
+      throw new OAuthProviderError('Instagram hesap kimliği doğrulanamadı.');
+    return { id: identity.data.user_id, handle: identity.data.username };
+  }
   const body = await request(
     cfg.platform === 'youtube'
       ? 'https://www.googleapis.com/youtube/v3/channels?part=id,snippet&mine=true'
@@ -207,6 +242,19 @@ export async function revokeToken(
   token: { access_token: string; refresh_token?: string },
   fetcher = fetch,
 ) {
+  if (cfg.platform === 'instagram') {
+    const body = await request(
+      `https://graph.instagram.com/${cfg.graphVersion}/me/permissions`,
+      {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${token.access_token}` },
+      },
+      fetcher,
+    );
+    if (body.success !== true)
+      throw new OAuthProviderError('Instagram izni kaldırma doğrulanamadı.');
+    return;
+  }
   const fields: Record<string, string> =
     cfg.platform === 'youtube'
       ? { token: token.refresh_token ?? token.access_token }
@@ -247,4 +295,84 @@ export async function revokeToken(
     if (obj(body).error)
       throw new OAuthProviderError('Sağlayıcı bağlantısı kaldırmayı reddetti.');
   }
+}
+
+// Instagram Login does not document PKCE. The existing single-use, user-bound
+// state remains mandatory; no unsupported code_challenge is sent.
+async function exchangeInstagram(
+  cfg: ProviderConfig,
+  code: string,
+  fetcher: typeof fetch,
+): Promise<OAuthToken> {
+  const short = await request(
+    'https://api.instagram.com/oauth/access_token',
+    {
+      method: 'POST',
+      body: new URLSearchParams({
+        client_id: cfg.clientId,
+        client_secret: cfg.secret,
+        grant_type: 'authorization_code',
+        redirect_uri: cfg.redirectUri,
+        code,
+      }),
+    },
+    fetcher,
+  );
+  // Accept exactly one subject. Never guess between a top-level token and
+  // a wrapped response (or between multiple authorized identities).
+  let payload: unknown = short;
+  if ('data' in short) {
+    if (
+      short.access_token ||
+      !Array.isArray(short.data) ||
+      short.data.length !== 1
+    )
+      throw new OAuthProviderError('Instagram token yanıtı belirsiz.');
+    payload = short.data[0];
+  }
+  const parsed = z
+    .object({
+      access_token: z.string().min(1),
+      user_id: z.union([
+        z.string().regex(/^[0-9]+$/),
+        z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+      ]),
+      permissions: z.union([
+        z.array(z.string()),
+        z.string().transform((value) =>
+          value
+            .split(',')
+            .map((p) => p.trim())
+            .filter(Boolean),
+        ),
+      ]),
+    })
+    .safeParse(payload);
+  if (
+    !parsed.success ||
+    SCOPES.instagram.some((p) => !parsed.data.permissions.includes(p))
+  )
+    throw new OAuthProviderError(
+      'Instagram token veya izin yanıtı doğrulanamadı.',
+    );
+  const url = new URL('https://graph.instagram.com/access_token');
+  url.search = new URLSearchParams({
+    grant_type: 'ig_exchange_token',
+    client_secret: cfg.secret,
+    access_token: parsed.data.access_token,
+  }).toString();
+  // Meta requires these parameters on the server-side GET endpoint. request()
+  // always discards provider/network error details and disables redirects/cache.
+  const long = await request(url.toString(), { method: 'GET' }, fetcher);
+  const result = tokenSchema.safeParse({
+    ...long,
+    scope: parsed.data.permissions.join(','),
+  });
+  if (!result.success)
+    throw new OAuthProviderError('Instagram uzun ömürlü token doğrulanamadı.');
+  // Verify that the long-lived credential belongs to the code-exchange subject.
+  const identity = await accountIdentity(cfg, result.data, fetcher);
+  if (identity.id !== String(parsed.data.user_id))
+    throw new OAuthProviderError('Instagram hesap kimliği eşleşmedi.');
+  return result.data;
 }

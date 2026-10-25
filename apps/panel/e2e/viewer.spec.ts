@@ -141,6 +141,10 @@ test('viewer sosyal hesap bağlama yetkisine sahip değil', async ({
     page.getByRole('button', { name: 'YouTube hesabı bağla' }),
   ).toHaveCount(0);
   expect((await request.post('/api/oauth/youtube/start')).status()).toBe(403);
+  expect((await request.post('/api/oauth/instagram/start')).status()).toBe(403);
+  await expect(
+    page.getByRole('button', { name: 'Instagram hesabı bağla' }),
+  ).toHaveCount(0);
   expect(
     (
       await request.get('/api/oauth/youtube/callback?state=bad&code=bad')

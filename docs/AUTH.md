@@ -64,7 +64,7 @@ process belleği veya yalnız cookie ile replay koruması sağlanmış sayılmaz
 Kısa ömürlü verifier'ın depoya erişimi sunucuyla sınırlanmalı, süresi dolan
 kayıtlar temizlenmelidir. Testteki bellek deposu üretim adaptörü değildir.
 
-State çekirdeği YouTube ve TikTok start/callback akışlarına bağlıdır.
+State çekirdeği Instagram, YouTube ve TikTok start/callback akışlarına bağlıdır.
 Canlı kabul için sağlayıcı uygulamaları ve en az iki platform test hesabıyla
 bağlantı doğrulaması gerekir; bu bilgiler public repoya veya sohbete yazılmaz.
 
@@ -76,7 +76,7 @@ ve sağlayıcı ayrıntıları hata mesajlarına dahil edilmez. Şema:
 
 ### Sosyal bağlantı akışları
 
-YouTube ve TikTok Web Login Kit için `POST /api/oauth/[platform]/start`,
+Instagram Login, YouTube ve TikTok Web Login Kit için `POST /api/oauth/[platform]/start`,
 `GET /api/oauth/[platform]/callback` vardır. İki uçta editor yetkisi gerekir.
 Başlangıç aynı origin POST formudur; state callback yoluna sınırlı httpOnly,
 SameSite=Lax cookie ile tarayıcıya da bağlanır. Callback state'i atomik tüketir,
@@ -97,8 +97,18 @@ sonraki boş satır önceki dolu değeri ezebilir. `pnpm env:pull` OAuth client
 secret'larını dağıtmaz; bunlar sunucuda ayrıca yapılandırılır.
 YouTube S256 PKCE + offline/consent kullanır. TikTok Web dokümanı PKCE belirtmez;
 Desktop Kit'in hex SHA256 kuralı Web akışına uygulanmaz. Üretimde HTTPS zorunludur.
-Instagram adaptörü henüz etkin değildir, istek 503 ile kapanır. Canlı hesap
-kabul testi yapılmadığı ve Instagram akışı eksik olduğu için #49 açık/draft kalır.
+Instagram Login için `INSTAGRAM_CLIENT_ID/SECRET` gerekir (Meta uygulamasının
+genel kimliği yerine Instagram ürünündeki kimlik). HTTPS callback kullanılır.
+State tek kullanımlıdır; sağlayıcıda belgelenmeyen PKCE parametresi gönderilmez.
+Kod kısa ömürlü tokena, ardından sunucuda uzun ömürlü tokena çevrilir. İzinlerin
+tamamı ve token kimliği doğrulanır. Instagram refresh token vermez; Vault paketine
+uydurma refresh token yazılmaz. Graph sürümü `INSTAGRAM_GRAPH_VERSION` ile seçilir.
+
+**Canlı kabul bekliyor:** Meta'nın Business Login/access_token/refresh_access_token
+sayfaları 25 Ekim 2026 araştırmasında 429 döndürdü. Resmi Meta Postman çalışma
+alanı erişilebilir, ancak token yanıt şekli, revoke ve insights izninin canlı
+uygulamadaki davranışı henüz doğrulanmadı. #49 en az iki gerçek platform hesabı
+ve yenileme kabulü yapılana kadar açık tutulur; bu değişiklik draft PR'dır.
 
 Resmi referanslar (24 Ekim 2026):
 https://developers.google.com/identity/protocols/oauth2/web-server
@@ -108,18 +118,21 @@ https://developers.tiktok.com/docs/en/oauth-user-access-token-management
 ### Token yenileme ve bağlantıyı kaldırma
 
 `refresh-tokens` Edge Function her 5 dakikada pg_cron üzerinden `x-cron-secret`
-ile çağrılır. Yalnız ayarı bulunan YouTube/TikTok platformları alınır; aynı
+ile çağrılır. Yalnız ayarı bulunan Instagram/YouTube/TikTok platformları alınır; aynı
 çağrı en çok 5 hesabı işler. Süre sonuna 15 dakika kalan token'lar için
 `oauth_refresh_claim` üç dakikalık tek-worker rezervasyonu verir. Callback yeni
 bir token yazmışsa veya hesap revoked olmuşsa eski worker sonucu
 `oauth_refresh_finish` tarafından reddedilir. TikTok'un döndürdüğü yeni refresh
 token saklanır; Google yeni refresh token döndürmezse eskisi korunur. Geçici
 hata sonraki cron'a kalır; invalid_grant hesabı error yapar, yeniden bağlantı
-istenir. Token ve sağlayıcı hata gövdesi loglanmaz.
+istenir. Instagram tokenı süresinin bitmesine 7 gün kala yenilenir; Vault sırrı
+24 saatten yeni ise alınmaz, süresi geçmiş token yenilenmez. Böylece yeniden
+bağlanan hesap erken yenilenmez. Meta code 190 yeniden bağlantı gerektirir.
+Token ve sağlayıcı hata gövdesi loglanmaz.
 
 Panel env'si ile Edge Function secret'ları farklıdır: her ortamın function
 secret'larında da `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TIKTOK_CLIENT_ID`,
-`TIKTOK_CLIENT_SECRET` gerekir. `CRON_SECRET`, Vault `cron_secret` ve `project_url`
+`TIKTOK_CLIENT_SECRET`, `INSTAGRAM_CLIENT_ID`, `INSTAGRAM_CLIENT_SECRET` gerekir. `CRON_SECRET`, Vault `cron_secret` ve `project_url`
 mevcut zamanlayıcı sözleşmesidir. Secret değerleri migration veya PR'a yazılmaz;
 fonksiyon yalnız pipeline ile deploy edilir.
 
@@ -129,6 +142,7 @@ revoked yaparak yerel işleri durdurur. Önce sağlayıcı revoke çağrısı ya
 onaylandıktan sonra `oauth_revoke_finish` nonce kontrolüyle Vault sırrını siler.
 Post ve metrik kayıtları silinmez. Sağlayıcı hatasında sır retry için Vault'ta
 kalır, yeni bağlantı yazımı durdurulur; üç dakika sonra tekrar denenebilir.
+Instagram revoke `DELETE /me/permissions` yanıtında `success=true` ister.
 Google revoke aynı projeye verilen diğer OAuth izinlerini de kaldırabilir;
 bu etki Hesaplar ekranında kullanıcıya gösterilir.
 
@@ -138,3 +152,9 @@ ayrıca Edge Function secret yönetiminde tanımlar. Kullanıcıya çözülebili
 artifact üzerinden yeni OAuth client secret dağıtımı yapılmaz. Değerler repoya,
 sohbete veya loga yazılmaz. Kayıtlı callback origin'i gerçek panel adresiyle
 eşleşmelidir.
+
+Instagram resmi kaynakları (erişim durumu yukarıda):
+https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login
+https://developers.facebook.com/docs/instagram-platform/reference/access_token
+https://developers.facebook.com/docs/instagram-platform/reference/refresh_access_token
+https://www.postman.com/meta/instagram/overview

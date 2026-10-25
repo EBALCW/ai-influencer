@@ -123,3 +123,57 @@ Deno.test('sağlayıcı ayarı yoksa hesap alınmaz', async () => {
   assertEquals(result.configured, false);
   assertEquals(claimed, false);
 });
+
+Deno.test(
+  'Instagram access token ile GET yenileme; refresh token uydurulmaz',
+  async () => {
+    const { store, calls } = setup([
+      {
+        ...job,
+        platform: 'instagram',
+        token: { access_token: 'ig-old', scope: 'instagram_business_basic' },
+      },
+    ]);
+    const result = await refreshTokens(
+      store,
+      { instagram: { id: 'id', secret: 'secret' } },
+      ((input, init) => {
+        const url = new URL(String(input));
+        assertEquals(url.origin, 'https://graph.instagram.com');
+        assertEquals(url.pathname, '/refresh_access_token');
+        assertEquals(url.searchParams.get('grant_type'), 'ig_refresh_token');
+        assertEquals(url.searchParams.get('access_token'), 'ig-old');
+        assertEquals(url.searchParams.has('client_secret'), false);
+        assertEquals(init?.method, 'GET');
+        assertEquals(init?.body, undefined);
+        assertEquals(init?.redirect, 'error');
+        return json({ access_token: 'ig-new', expires_in: 5184000 });
+      }) as typeof fetch,
+      () => 0,
+    );
+    assertEquals(result.updated, 1);
+    assertEquals((calls[0][2] as Token).refresh_token, undefined);
+    assertEquals((calls[0][2] as Token).scope, 'instagram_business_basic');
+    assertEquals(calls[0][3], '1970-03-02T00:00:00.000Z');
+  },
+);
+Deno.test(
+  'Instagram code 190 kalıcı hata; 429 ve 5xx tekrar denenir',
+  async () => {
+    for (const [status, body, expected] of [
+      [400, { error: { code: 190 } }, 'error'],
+      [429, { error: { code: 4 } }, 'retry'],
+      [500, {}, 'retry'],
+    ] as const) {
+      const { store, calls } = setup([
+        { ...job, platform: 'instagram', token: { access_token: 'ig-old' } },
+      ]);
+      await refreshTokens(
+        store,
+        { instagram: { id: 'id', secret: 'secret' } },
+        (() => json(body, status)) as typeof fetch,
+      );
+      assertEquals(calls[0][1], expected);
+    }
+  },
+);
