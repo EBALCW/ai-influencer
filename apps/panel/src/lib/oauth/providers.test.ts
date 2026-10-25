@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
+import { resolve } from 'node:path';
 vi.mock('server-only', () => ({}));
 import {
   providerConfig,
@@ -22,6 +25,37 @@ const token = {
 const fake = (body: unknown, status = 200) =>
   vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status }));
 describe('OAuth providers', () => {
+  it('örnek env bir kez doldurulunca her iki OAuth sağlayıcısı yapılandırılır', () => {
+    let template = readFileSync(
+      resolve(process.cwd(), '../../.env.example'),
+      'utf8',
+    );
+    const values = {
+      OAUTH_REDIRECT_BASE: 'https://panel.invalid',
+      GOOGLE_CLIENT_ID: 'google-fixture-id',
+      GOOGLE_CLIENT_SECRET: 'google-fixture-secret',
+      TIKTOK_CLIENT_ID: 'tiktok-fixture-key',
+      TIKTOK_CLIENT_SECRET: 'tiktok-fixture-secret',
+    };
+    // Kullanıcı şablondaki ilk alanı doldurur. Sonraki boş tekrar bu değeri ezmemeli.
+    for (const [key, value] of Object.entries(values)) {
+      expect(template).toContain(`${key}=`);
+      template = template.replace(`${key}=`, `${key}=${value}`);
+    }
+    const parsed = parseEnv(template);
+    expect(providerConfig('youtube', parsed).clientId).toBe(
+      values.GOOGLE_CLIENT_ID,
+    );
+    expect(providerConfig('tiktok', parsed).clientId).toBe(
+      values.TIKTOK_CLIENT_ID,
+    );
+    expect(providerConfig('youtube', parsed).secret).toBe(
+      values.GOOGLE_CLIENT_SECRET,
+    );
+    expect(providerConfig('tiktok', parsed).secret).toBe(
+      values.TIKTOK_CLIENT_SECRET,
+    );
+  });
   it('config eksikse kapalı; query, credential, dış HTTP reddedilir', () => {
     expect(() => providerConfig('youtube', {})).toThrow();
     for (const origin of [
