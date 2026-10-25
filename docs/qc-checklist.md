@@ -10,30 +10,30 @@ Her madde için geçti / kaldı / uygulanamaz seçilir; uygulanamaz gerekçesi y
 
 ## Kontrol listesi
 
-| No | Kontrol | Hata sınıfı |
-| --- | --- | --- |
-| 1 | Görünen el ve parmakların sayısı anatomik olarak doğru | Kritik |
-| 2 | Parmak uzunlukları ve eklemler doğal, birleşmiş parmak yok | Kritik |
-| 3 | El, bilek ve kol bağlantısı kesintisiz | Kritik |
-| 4 | Boyun, omuz ve gövde oranları doğal | Kritik |
-| 5 | Kol ve bacak uzunlukları, eklem yönleri anatomik | Kritik |
-| 6 | Yüz referans kimliğiyle aynı | Kritik |
-| 7 | Gözler, göz bebekleri ve bakış yönü uyumlu | Kritik |
-| 8 | Diş, ağız ve kulaklarda birleşme veya çoğalma yok | Kritik |
-| 9 | Saç rengi ve ana stil referansla tutarlı | Kritik |
-| 10 | Saç kenarında küçük halo veya kesilme yok | Minör |
-| 11 | Cilt dokusu doğal, belirgin plastik yüz yok | Kritik |
-| 12 | Kıyafet ve aksesuarlar erimiyor, vücuda birleşmiyor | Kritik |
-| 13 | Yazı veya logo kullanılıyorsa biçimi ve okunurluğu doğru | Kritik |
-| 14 | Arka plan nesnelerinde belirgin perspektif/anatomi hatası yok | Kritik |
-| 15 | Önemsiz arka plan dokusunda hafif düzensizlik yok | Minör |
-| 16 | Işık, gölge ve yansımalar sahneyle tutarlı | Kritik |
-| 17 | Videoda yüz ve kimlik kareler boyunca sabit | Kritik |
-| 18 | Hareket sırasında eller ve uzuvlar bozulmuyor | Kritik |
-| 19 | Nesneler sebepsiz kaybolmuyor veya çoğalmıyor | Kritik |
-| 20 | Konuşmada dudaklar sesle eşleşiyor | Kritik |
-| 21 | Geçişte kıyafet, saç ve aksesuar sürekliliği korunuyor | Kritik |
-| 22 | Küçük arka plan titreşimi izlemeyi etkilemiyor | Minör |
+| No  | Kontrol                                                       | Hata sınıfı |
+| --- | ------------------------------------------------------------- | ----------- |
+| 1   | Görünen el ve parmakların sayısı anatomik olarak doğru        | Kritik      |
+| 2   | Parmak uzunlukları ve eklemler doğal, birleşmiş parmak yok    | Kritik      |
+| 3   | El, bilek ve kol bağlantısı kesintisiz                        | Kritik      |
+| 4   | Boyun, omuz ve gövde oranları doğal                           | Kritik      |
+| 5   | Kol ve bacak uzunlukları, eklem yönleri anatomik              | Kritik      |
+| 6   | Yüz referans kimliğiyle aynı                                  | Kritik      |
+| 7   | Gözler, göz bebekleri ve bakış yönü uyumlu                    | Kritik      |
+| 8   | Diş, ağız ve kulaklarda birleşme veya çoğalma yok             | Kritik      |
+| 9   | Saç rengi ve ana stil referansla tutarlı                      | Kritik      |
+| 10  | Saç kenarında küçük halo veya kesilme yok                     | Minör       |
+| 11  | Cilt dokusu doğal, belirgin plastik yüz yok                   | Kritik      |
+| 12  | Kıyafet ve aksesuarlar erimiyor, vücuda birleşmiyor           | Kritik      |
+| 13  | Yazı veya logo kullanılıyorsa biçimi ve okunurluğu doğru      | Kritik      |
+| 14  | Arka plan nesnelerinde belirgin perspektif/anatomi hatası yok | Kritik      |
+| 15  | Önemsiz arka plan dokusunda hafif düzensizlik yok             | Minör       |
+| 16  | Işık, gölge ve yansımalar sahneyle tutarlı                    | Kritik      |
+| 17  | Videoda yüz ve kimlik kareler boyunca sabit                   | Kritik      |
+| 18  | Hareket sırasında eller ve uzuvlar bozulmuyor                 | Kritik      |
+| 19  | Nesneler sebepsiz kaybolmuyor veya çoğalmıyor                 | Kritik      |
+| 20  | Konuşmada dudaklar sesle eşleşiyor                            | Kritik      |
+| 21  | Geçişte kıyafet, saç ve aksesuar sürekliliği korunuyor        | Kritik      |
+| 22  | Küçük arka plan titreşimi izlemeyi etkilemiyor                | Minör       |
 
 ## Düzeltme ve tekrar sınırı
 
