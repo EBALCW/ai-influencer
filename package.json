@@ -29,6 +29,8 @@
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "panel": "node scripts/panel.mjs",
     "backup": "node scripts/backup.mjs",
+    "backup:storage": "node scripts/backup-storage.mjs",
+    "backup:storage:verify": "node scripts/backup-storage.mjs verify",
     "backup:verify": "node scripts/backup.mjs verify",
     "backup:restore": "node scripts/backup.mjs restore",
     "env:pull": "node scripts/env-pull.mjs",

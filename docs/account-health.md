@@ -46,6 +46,7 @@ influencer/<slug>/
 └── docs/          # Persona, prompt ve lisans/kaynak notları
 ```
 
+- Panel dosyaları için `pnpm backup:storage` ve ardından `pnpm backup:storage:verify <klasör>` kullanın (`docs/SETUP.md`). Bu yerel export, bulut kopyasının ve gerçek dosya açma testinin yerine geçmez. DB ve Storage yedeğini aynı bakım aralığında alın.
 - Haftalık kontrol: yeni final dosyaları, düzenlenebilir proje dosyaları, prompt ve persona güncellemeleri yedeğe gitti mi?
 - Aylık kontrol: Instagram/Meta bilgi dışa aktarımı talep edildi mi; arşivin erişimi kısıtlandı mı?
 - İlk tam yedek ve geri yükleme testi için tarih, klasör ve sonucu `docs/incidents.md` içindeki **Yedekleme doğrulama kaydı** şablonuyla ekibin erişimi kısıtlı alanına yazın (repo public; kayıt repoya girmez). Buraya dış bulut bağlantısı, hesap adı veya gizli dosya paylaşım linki eklemeyin.
