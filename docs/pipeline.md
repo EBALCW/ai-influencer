@@ -1,5 +1,7 @@
 # İçerik üretim akışı (pipeline) ve backlog
 
+Üretimde bütçe, oturum limiti, yeniden deneme ve mutabakat için [maliyet kuralları](cost-rules.md) uygulanır; haftalık sonuçlar [maliyet kontrol şablonuyla](../templates/cost-review.md) kaydedilir.
+
 > Durum: ilk sürüm, 24 Ekim 2026 (#19). Günde 2–4 paylaşımı sürdürmek için fikirden yayına akışı, aşama kriterlerini, ilk backlog'u ve haftalık kredi ihtiyacını tanımlar. **Kredi birim fiyatları örnektir, doğrulanmadı** (bkz. [Kredi hesabı](#kredi-hesabı)). İlk haftanın gerçek verisiyle (2. hafta) güncellenecek.
 
 İlgili belgeler: persona [`persona.md`](persona.md) · uyum [`compliance.md`](compliance.md) · hesap sağlığı [`account-health.md`](account-health.md) · üretim sağlayıcısı [ADR 0002](adr/0002-generation-provider.md) · panel AI asistanı [`AI.md`](AI.md) · veri modeli [`data-model.md`](data-model.md) · senaryo şablonu [`templates/short-film-script.md`](../templates/short-film-script.md) · yayın öncesi kontrol [`templates/pre-publish-checklist.md`](../templates/pre-publish-checklist.md).
