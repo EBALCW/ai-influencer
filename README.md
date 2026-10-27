@@ -107,6 +107,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | İçerik kanbanı ve yayın takvimi                                                                    | ✅          | #57             |
 | Maliyet ve bütçe takibi (üretim maliyeti otomatik)                                                 | ✅          | #59             |
 | Haftalık rapor, CSV dışa aktarma, PDF                                                              | ✅          | #62             |
+| Performans takibi, ilk test dalgası grupları (`/analytics/performance`)                            | ✅          | #24 #25         |
 | AI üretim kuyruğu (Higgsfield worker, `/production`)                                               | ✅          | #47             |
 | Zamanlanmış senkronizasyon + 1s/5s/24s/72s/7g snapshot'ları                                        | ✅          | #53             |
 | Marka CRM'i ve PDF medya kiti                                                                      | ✅          | #60             |

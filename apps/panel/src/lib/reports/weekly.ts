@@ -257,3 +257,13 @@ export function formatSigned(value: number | null | undefined): string {
 export function formatRate(value: number | null | undefined): string {
   return value == null ? '—' : `%${(value * 100).toFixed(1)}`;
 }
+
+// ---------- Gelecek hafta aksiyonları (#24, reports.actions) ----------
+
+export const MAX_REPORT_ACTIONS = 3;
+
+/** 0–3 aksiyon, her biri 1–300 karakter; boş satırlar atılır. Veritabanı aynı kuralı denetler. */
+export const reportActionsSchema = z
+  .array(z.string())
+  .transform((items) => items.map((item) => item.trim()).filter(Boolean))
+  .pipe(z.array(z.string().max(300)).max(MAX_REPORT_ACTIONS));

@@ -168,6 +168,23 @@ test('haftalık rapor tek tıkla oluşur; CSV ve yazdırma görünümü çalış
     expect(saved.data).toHaveLength(1);
     expect(saved.data[0]!.period_start).toBe(WEEK.from);
 
+    // Gelecek hafta için 1–3 aksiyon (#24)
+    const actionsForm = page.getByRole('form', { name: 'Aksiyonları düzenle' });
+    await actionsForm
+      .getByLabel('Aksiyon 1', { exact: true })
+      .fill('Soru kancasını 3 varyasyonla dene');
+    const savedActions = page.waitForResponse(
+      (r) =>
+        r.url().includes('/api/reports/') && r.request().method() === 'PATCH',
+    );
+    await actionsForm
+      .getByRole('button', { name: 'Aksiyonları kaydet' })
+      .click();
+    expect((await savedActions).status()).toBe(200);
+    await expect(
+      page.getByRole('list', { name: 'Aksiyon listesi' }),
+    ).toContainText('Soru kancasını 3 varyasyonla dene');
+
     // PDF: yazdırma görünümünde panel kabuğu gizlenir
     await page.emulateMedia({ media: 'print' });
     await expect(

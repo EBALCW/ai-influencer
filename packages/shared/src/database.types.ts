@@ -579,14 +579,14 @@ isOneToOne: false
                   ]
                 },"posts": {
                   Row: {
-                    "account_id": string,"caption": string,"content_item_id": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"external_id": string | null,"id": string,"is_short": boolean,"published_at": string | null,"updated_at": string,"url": string | null
+                    "account_id": string,"caption": string,"content_item_id": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"external_id": string | null,"id": string,"is_short": boolean,"published_at": string | null,"sound_type": string | null,"updated_at": string,"url": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "account_id": string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null
                   }
                   Update: {
-                    "account_id"?: string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "account_id"?: string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null
                   }
                   Relationships: [
                     {
@@ -663,14 +663,14 @@ isOneToOne: false
                   ]
                 },"reports": {
                   Row: {
-                    "ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string
+                    "actions": (string)[],"ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at"?: string
+                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at"?: string
                   }
                   Update: {
-                    "ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end"?: string,"period_start"?: string,"summary"?: NonNullable<Json>,"updated_at"?: string
+                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end"?: string,"period_start"?: string,"summary"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -1195,6 +1195,9 @@ isOneToOne: false
               "allocation": string,"currency": string,"entry_count": number,"generation_count": number,"missing_rate_count": number,"post_id": string,"total": number
             }[]
                            },
+"post_performance":
+{ Args: { "p_baseline_posts"?: number,"p_influencer_slug"?: string,"p_limit"?: number }; Returns: Json
+                           },
 "post_segments":
 { Args: { "p_influencer_slug"?: string,"p_target_hours"?: number }; Returns: Json
                            },
@@ -1314,6 +1317,12 @@ isOneToOne: false
                            },
 "unread_alert_count":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"valid_analytics_settings":
+{ Args: { "p_value": Json }; Returns: boolean
+                           },
+"valid_report_actions":
+{ Args: { "p_actions": (string)[] }; Returns: boolean
                            },
 "valid_sample_captions":
 { Args: { "p_values": (string)[] }; Returns: boolean
