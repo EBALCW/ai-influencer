@@ -6,6 +6,7 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "video:export": "node scripts/edit/export.mjs",
     "doctor": "node scripts/doctor.mjs",
     "setup:mac": "bash scripts/setup-mac.sh",
     "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1",

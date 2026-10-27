@@ -1,5 +1,7 @@
 # İçerik üretim akışı (pipeline) ve backlog
 
+Edit aşamasında [kurgu ve export rehberi](edit-guide.md) uygulanır; final dosya [edit kabul kaydıyla](../templates/edit-review.md) kontrol edilir.
+
 Üretimde bütçe, oturum limiti, yeniden deneme ve mutabakat için [maliyet kuralları](cost-rules.md) uygulanır; haftalık sonuçlar [maliyet kontrol şablonuyla](../templates/cost-review.md) kaydedilir.
 
 > Durum: ilk sürüm, 24 Ekim 2026 (#19). Günde 2–4 paylaşımı sürdürmek için fikirden yayına akışı, aşama kriterlerini, ilk backlog'u ve haftalık kredi ihtiyacını tanımlar. **Kredi birim fiyatları örnektir, doğrulanmadı** (bkz. [Kredi hesabı](#kredi-hesabı)). İlk haftanın gerçek verisiyle (2. hafta) güncellenecek.
