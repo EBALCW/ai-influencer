@@ -12,6 +12,7 @@ import {
   formatCount,
   formatDate,
   formatPercent,
+  formatPriceRange,
   formatSeconds,
   formatSigned,
   platformLabel,
@@ -220,6 +221,25 @@ export async function renderMediaKitPdf(
       : '',
     { color: muted },
   );
+
+  w.heading('Hizmetler ve fiyat aralıkları');
+  w.text(
+    kit.pricing.tier
+      ? `Kademe: ${kit.pricing.tier} (güncel toplam takipçiye göre)`
+      : `Kademe: ${NO_DATA} (takipçi ölçümü yok; fiyat teklif üzerine)`,
+    { color: muted, gap: 2 },
+  );
+  for (const service of kit.pricing.services) {
+    w.pair(
+      service.label,
+      formatPriceRange(service.range, kit.pricing.currency),
+    );
+    w.text(service.description, { color: muted, size: 9 });
+  }
+  w.text(kit.pricing.note, { color: muted, size: 9, gap: 2 });
+
+  w.heading('İletişim');
+  w.pair('İş birliği e-postası', kit.contact.email ?? NO_DATA);
 
   w.footer(
     `Oluşturma: ${formatDate(generatedAt.toISOString())} · Kaynak: platform ölçümleri (account_snapshots, metric_snapshots)`,

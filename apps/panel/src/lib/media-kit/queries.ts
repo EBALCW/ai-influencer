@@ -128,6 +128,8 @@ export async function loadMediaKitInput(
 
   return {
     asOf: end,
+    // Ekip iş birliği adresi; DB'de değil sunucu ortamında (public repoya yazılmaz).
+    contactEmail: process.env.MEDIA_KIT_CONTACT_EMAIL ?? null,
     influencer: {
       name: influencer.name,
       slug: influencer.slug,
