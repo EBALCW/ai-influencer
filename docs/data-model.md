@@ -270,6 +270,19 @@ Panel: `/inbox` (menü → YAYIN → Gelen kutusu). Yorum toplama ve yanıt gön
 - **AI özeti:** Rapor sayfasındaki düğme `POST /api/reports/{id}/ai-summary` ile #48 asistanının `weekly` görevini çalıştırır. Claude'a yalnız `reports.summary` verilir, yeni sayı üretmez. Token maliyeti `costs`'a (`ai_api`) yazılır. Otomatik rapor AI çağırmaz (API anahtarı panel sunucusunda).
 - **CSV:** `GET /api/exports/{posts|metrics|costs}?from=YYYY-MM-DD&to=YYYY-MM-DD&inf=<slug>` (viewer yeterli, en fazla 366 gün). Kullanıcı oturumuyla (RLS) sorgulanır, service role kullanılmaz. Dosya UTF-8 **BOM** ile başlar (Excel Türkçe karakterleri doğru açar), **ayraç virgül**, satır sonu CRLF (RFC 4180). `=`, `+`, `-`, `@`, sekme ile başlayan metin hücrelerinin başına `'` eklenir (formül enjeksiyonu); sayılar olduğu gibi yazılır. Zamanlar UTC ISO-8601. PostgREST 1000 satır sınırı sayfalanarak aşılır; 50.000 satırdan fazlası 413 döner.
 - **PDF:** Rapor sayfası (`/analytics/reports/{id}`) yazdırmaya göre biçimlenir (`globals.css` → `@media print`): panel kabuğu gizlenir, A4 ve açık renkler. "Yazdır / PDF olarak kaydet" tarayıcının PDF çıktısını kullanır; sunucuda PDF kütüphanesi yok. Dışa aktarılan dosyalar repoya eklenmez.
+- **Gelecek hafta aksiyonları (#24):** `reports.actions text[]` (0–3 madde, her biri 1–300 karakter; `valid_report_actions()` CHECK). Rapor sayfasından `PATCH /api/reports/{id}` (editor) ile yazılır; `generate_weekly_report()` raporu güncellese de aksiyonlara dokunmaz.
+
+## Performans takibi ve ilk test dalgası (#24, #25)
+
+Google Sheets takip tablosunun yerine `/analytics/performance` sayfası kullanılır.
+
+- **`post_performance(p_influencer_slug?, p_baseline_posts = 10, p_limit = 200)`** (SECURITY INVOKER): son N post için 1/5/24 sa kontrol noktası izlenmesi (`post_checkpoint_views`), son snapshot, segment alanları (format, kanca türü, süre, yayın saati içeriğin saat diliminde, ses türü, check-list puanı = `hookScore + engagementScore`) ve **aynı hesabın o posttan önceki son k postunun 24 sa medyanı** (`baselineMedian24`, `baselineMeasured`). k 3–50 arasına, N 1–500 arasına sıkıştırılır.
+- **Hesaplanan alanlar** panelde (`apps/panel/src/lib/analytics/performance.ts`, Vitest): etkileşim oranı = (beğeni + yorum + paylaşım + kayıt) / izlenme, paylaşım oranı, paylaşım + kayıt oranı, 24 sa / 1 sa büyüme, tamamlanma (platform oranı, yoksa ort. izlenme süresi / video süresi), medyana göre üstünde/altında.
+- **Gruplar:** _patladı_ = 24 sa izlenme ≥ medyan × çarpan (en az 3 ölçülmüş kıyas postu); _takıldı_ = ilk dalga (pencere 5 sa ise 5 sa, yoksa 1 sa) izlenmesi eşiğin altında; _normal_ = ölçülmüş ama ikisi de değil; _ölçüm bekliyor_ = 1/5/24 sa ölçümü yok. Patlama takılmaya üstün gelir.
+- **Eşikler:** `app_settings` `key = 'analytics'` (owner yazar, ekip okur): `stuckViews` (varsayılan 300), `stuckWithinHours` (1 | 5, varsayılan 5), `viralMultiplier` (varsayılan 3), `baselinePosts` (varsayılan 10). Şekil `valid_analytics_settings()` CHECK'i ve Zod ile denetlenir. Kayıt yoksa varsayılanlar kullanılır. API: `PUT /api/analytics/settings`.
+- **`posts.sound_type`:** `trend` | `original` | NULL. Platform API'leri vermez; post detayından `PATCH /api/posts/{id}` (editor) ile girilir, toplayıcılar yazmaz.
+- **Segment tablosu:** format, kanca türü, süre aralığı (< 10 / 10–30 / 30–60 / 60+ sn), yayın slotu, ses türü, check-list puanı; her satırda grup dağılımı, medyan 24 sa izlenme, ortalama etkileşim ve paylaşım + kayıt oranı.
+- **Öğrenimler:** panelde `learnings`; repodaki genelleştirilmiş özet formatı `docs/learnings.md`.
 
 ## Trend arşivi (#10)
 

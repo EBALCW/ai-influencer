@@ -6,6 +6,7 @@ import { requireTeamMember } from '@/lib/auth';
 import { getReport } from '@/lib/reports/queries';
 import { formatPeriod } from '@/lib/reports/weekly';
 import { AiSummaryButton, ExportLinks, PrintButton } from '../report-actions';
+import { NextActions } from '../next-actions';
 import { ReportSummaryView } from '../report-summary';
 
 const updatedFormat = new Intl.DateTimeFormat('tr-TR', {
@@ -70,6 +71,12 @@ export default async function ReportPage({
           />
         </section>
       )}
+
+      <NextActions
+        actions={report.actions}
+        canWrite={canWrite}
+        reportId={report.id}
+      />
 
       <section aria-labelledby="ai-summary-title" className="section-card">
         <h2

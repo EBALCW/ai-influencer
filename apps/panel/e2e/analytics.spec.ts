@@ -426,3 +426,79 @@ test('elle metrik girilir, tabloda görünür; API noktası ezilmez, geçersiz s
   );
   expect(invalid.status()).toBe(400);
 });
+
+test('performans takibi: medyana göre konum, takıldı/patladı grubu ve ses türü segmenti', async ({
+  page,
+}) => {
+  // Ses türü post detayından girilir (editor)
+  await page.goto(`/analytics/posts/${posts.target}?inf=${slug}`);
+  const sound = page.getByRole('form', { name: 'Ses türü' });
+  await sound.getByLabel('Ses türü seç').selectOption({ label: 'Trend ses' });
+  const saved = page.waitForResponse(
+    (r) =>
+      r.url().endsWith(`/api/posts/${posts.target}`) &&
+      r.request().method() === 'PATCH',
+  );
+  await sound.getByRole('button', { name: 'Ses türünü kaydet' }).click();
+  expect((await saved).status()).toBe(200);
+
+  await page.goto(`/analytics?inf=${slug}`);
+  await page
+    .getByRole('link', { name: 'Performans takibi ve ilk test dalgası' })
+    .click();
+  await expect(page).toHaveURL(
+    new RegExp(`/analytics/performance\\?inf=${slug}`),
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Performans takibi', level: 1 }),
+  ).toBeVisible();
+  // Varsayılan eşikler: ilk 5 sa < 300 takıldı, 24 sa ≥ 3× medyan patladı
+  await expect(page.getByRole('region', { name: 'Eşikler' })).toContainText(
+    'Varsayılan eşikler',
+  );
+  // Editor eşik formunu görmez (yalnız owner)
+  await expect(
+    page.getByRole('form', { name: 'Eşikleri düzenle' }),
+  ).toHaveCount(0);
+
+  const table = page.getByRole('table', { name: 'Post performans tablosu' });
+  // Zayıf açılış: 1 sa 5 < 300 → takıldı; 24 sa 50 / medyan 250 = 0,2×
+  const target = table.getByRole('row', { name: /Zayıf açılış/ });
+  await expect(target).toContainText('Takıldı');
+  await expect(target).toContainText('Altında (0,2×)');
+  await expect(target).toContainText('250');
+  // Kıyas dört: 24 sa 1000 ≥ 3 × 200 → patladı
+  await expect(table.getByRole('row', { name: /Kıyas dört/ })).toContainText(
+    'Patladı',
+  );
+
+  const soundTable = page.getByRole('table', {
+    name: 'Ses türü performans segmentleri',
+  });
+  await expect(
+    soundTable.getByRole('row', { name: /Trend ses/ }),
+  ).toBeVisible();
+  for (const name of [
+    'Format performans segmentleri',
+    'Kanca türü performans segmentleri',
+    'Süre aralığı performans segmentleri',
+    'Yayın slotu performans segmentleri',
+    'Check-list puanı performans segmentleri',
+  ])
+    await expect(page.getByRole('table', { name })).toBeVisible();
+
+  // Owner olmayan eşik değiştiremez; geçersiz ses türü 400
+  const put = await page.request.put('/api/analytics/settings', {
+    data: {
+      stuckViews: 1,
+      stuckWithinHours: 1,
+      viralMultiplier: 2,
+      baselinePosts: 3,
+    },
+  });
+  expect(put.status()).toBe(403);
+  const bad = await page.request.patch(`/api/posts/${posts.target}`, {
+    data: { soundType: 'viral' },
+  });
+  expect(bad.status()).toBe(400);
+});
