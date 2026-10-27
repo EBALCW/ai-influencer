@@ -401,6 +401,9 @@ aynı dashboard’u kullanır. Yeni bağımlılık veya ortam anahtarı eklenmed
   ekip; oturumsuz 401, ekip dışı 403). Sayılar yalnız `account_snapshots` ve `metric_snapshots`'tan, son
   30 günden hesaplanır (`lib/media-kit/build.ts`); tarih aralığı ve AI açıklaması PDF'te yazar. Veri yoksa
   "veri yok" yazılır; kitle demografisi şemada olmadığından (#50/#51) her zaman "veri yok"dur.
+  Hizmetler ve takipçi kademesine göre tahmini fiyat aralıkları koddaki sabitlerden gelir
+  (`MEDIA_KIT_SERVICES`, `MEDIA_KIT_PRICE_TIERS`; gerekçe `docs/monetization.md`), DB'de tutulmaz.
+  İletişim e-postası sunucu ortamındaki `MEDIA_KIT_CONTACT_EMAIL`'den okunur (#28).
   PDF saf JS ile üretilir (`pdf-lib` + `@pdf-lib/fontkit`, Geist fontu `geist` paketinden); native bağımlılık yok.
 
 ### OAuth geçici state deposu (#49)

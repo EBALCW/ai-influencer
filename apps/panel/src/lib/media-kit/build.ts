@@ -10,6 +10,9 @@
  *   ölçümü. Ölçümü olmayan post ortalamaya girmez, sayısı ayrıca döner.
  * - Etkileşim oranı: (beğeni + yorum + paylaşım + kaydetme) / izlenme × 100, izlenmeye göre ağırlıklı.
  * - Kitle demografisi şemada yok (#50/#51 gelene kadar) → her zaman null.
+ * - Hizmetler ve fiyat aralıkları (#28) sabittir; aralık toplam takipçiye göre seçilir. Rakamlar
+ *   piyasa araştırmasına dayalı başlangıç tahminleridir (docs/monetization.md), kesin fiyat değildir.
+ * - İletişim e-postası veritabanında değil, sunucu ortam değişkeninde (MEDIA_KIT_CONTACT_EMAIL) durur.
  */
 
 export const MEDIA_KIT_WINDOW_DAYS = 30;
@@ -18,8 +21,115 @@ export const MEDIA_KIT_TOP_POSTS = 3;
 export const AI_DISCLOSURE =
   'Bu karakter yapay zekâ ile oluşturulmuş kurgusal bir karakterdir. İçerikler AI araçlarıyla üretilir ve her paylaşımda platformun AI içerik açıklaması kullanılır; sponsorlu paylaşımlarda ise içerik başında, kaydırmadan görünen “Reklam” ibaresi yer alır.';
 
+/**
+ * Medya kitindeki hizmetler. `factor`: sponsorlu Reels aralığına göre alt/üst çarpan
+ * (gerekçe: docs/monetization.md → Fiyat aralıkları).
+ */
+export const MEDIA_KIT_SERVICES = [
+  {
+    key: 'sponsored_reel',
+    label: 'Sponsorlu Reels / kısa video',
+    description:
+      'Markaya özel 20–45 sn dikey video; Instagram Reels, TikTok ve YouTube Shorts.',
+    factor: [1, 1],
+  },
+  {
+    key: 'product_placement',
+    label: 'Ürün yerleştirme',
+    description:
+      'Karakterin hikâyesine doğal biçimde yerleşen ürün; videonun ana konusu ürün değildir.',
+    factor: [0.6, 0.8],
+  },
+  {
+    key: 'series',
+    label: 'Seri içerik (3 video)',
+    description:
+      'Aynı kampanya için 3 bölümlük mini hikâye; tek tek fiyata göre paket indirimi.',
+    factor: [2.4, 2.7],
+  },
+  {
+    key: 'story',
+    label: 'Hikâye paylaşımı',
+    description: 'Instagram hikâyesi (3 kare) ve bağlantı çıkartması.',
+    factor: [0.3, 0.4],
+  },
+] as const;
+
+/** Toplam takipçi kademesine göre sponsorlu Reels başlangıç aralığı (USD, tahmin). */
+export const MEDIA_KIT_PRICE_TIERS: ReadonlyArray<{
+  label: string;
+  minFollowers: number;
+  reel: readonly [number, number] | null;
+}> = [
+  { label: '0–10 B takipçi', minFollowers: 0, reel: [50, 150] },
+  { label: '10–50 B takipçi', minFollowers: 10_000, reel: [150, 500] },
+  { label: '50–100 B takipçi', minFollowers: 50_000, reel: [500, 1000] },
+  { label: '100–500 B takipçi', minFollowers: 100_000, reel: [1000, 3000] },
+  { label: '500 B+ takipçi', minFollowers: 500_000, reel: null },
+];
+
+export const MEDIA_KIT_PRICE_CURRENCY = 'USD';
+
+export const MEDIA_KIT_PRICE_NOTE =
+  'Aralıklar başlangıç tahminidir, kesin fiyat değildir. Nihai teklif brief, kullanım hakkı, münhasırlık ve revizyon sayısına göre verilir; TL teklifte günün kuru kullanılır.';
+
+export type MediaKitPricing = {
+  /** Takipçi kademesi; takipçi verisi yoksa null */
+  tier: string | null;
+  currency: string;
+  note: string;
+  services: Array<{
+    key: string;
+    label: string;
+    description: string;
+    /** null: takipçi verisi yok veya kademe "teklif üzerine" */
+    range: [number, number] | null;
+  }>;
+};
+
+const roundPrice = (value: number) =>
+  value < 100 ? Math.round(value / 5) * 5 : Math.round(value / 10) * 10;
+
+/** Toplam takipçiye göre hizmet fiyat aralıkları. Takipçi bilinmiyorsa aralık verilmez. */
+export function buildPricing(followers: number | null): MediaKitPricing {
+  const tier =
+    followers === null
+      ? null
+      : ([...MEDIA_KIT_PRICE_TIERS]
+          .reverse()
+          .find((item) => followers >= item.minFollowers) ?? null);
+  return {
+    tier: tier?.label ?? null,
+    currency: MEDIA_KIT_PRICE_CURRENCY,
+    note: MEDIA_KIT_PRICE_NOTE,
+    services: MEDIA_KIT_SERVICES.map((service) => ({
+      key: service.key,
+      label: service.label,
+      description: service.description,
+      range: tier?.reel
+        ? [
+            roundPrice(tier.reel[0] * service.factor[0]),
+            roundPrice(tier.reel[1] * service.factor[1]),
+          ]
+        : null,
+    })),
+  };
+}
+
+const EMAIL = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
+
+/** Ortam değişkenindeki iletişim adresini doğrular; boş veya geçersizse null. */
+export function parseContactEmail(
+  raw: string | undefined | null,
+): string | null {
+  const value = raw?.trim() ?? '';
+  return value.length <= 254 && EMAIL.test(value) ? value : null;
+}
+
 export type MediaKitInput = {
   asOf: string;
+  /** İletişim e-postası (MEDIA_KIT_CONTACT_EMAIL); yoksa kitte "veri yok" yazar. */
+  contactEmail?: string | null;
   windowDays?: number;
   influencer: {
     name: string;
@@ -83,6 +193,8 @@ export type MediaKit = {
     engagementRate: number | null;
   }>;
   audience: null;
+  pricing: MediaKitPricing;
+  contact: { email: string | null };
 };
 
 const ms = (iso: string) => new Date(iso).getTime();
@@ -232,6 +344,8 @@ export function buildMediaKit(input: MediaKitInput): MediaKit {
     },
     topPosts,
     audience: null,
+    pricing: buildPricing(total),
+    contact: { email: parseContactEmail(input.contactEmail) },
   };
 }
 
@@ -267,6 +381,16 @@ export function formatSeconds(value: number | null): string {
   return value === null
     ? NO_DATA
     : `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(value)} sn`;
+}
+
+/** Fiyat aralığı: "150–500 USD"; aralık yoksa "teklif üzerine". */
+export function formatPriceRange(
+  range: readonly [number, number] | null,
+  currency: string,
+): string {
+  if (!range) return 'teklif üzerine';
+  const format = new Intl.NumberFormat('tr-TR').format;
+  return `${format(range[0])}–${format(range[1])} ${currency}`;
 }
 
 /** ISO zaman damgasını Türkiye saatiyle gg.aa.yyyy olarak yazar. */
