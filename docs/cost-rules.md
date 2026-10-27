@@ -25,6 +25,8 @@ Kalemler arasında aktarım owner onayıyla yapılır; toplam tavan artmaz. Abon
 
 ## Üretim kuralı
 
+Manuel/MCP yöntem seçimi için [otomasyon ölçüm protokolü](automation-cost.md) ve `pnpm automation:report` kullanılır. Üç senaryo × iki yöntem gerçek verilerle ölçülmeden maliyet avantajı varsayılmaz; oturum sınırı ve en fazla üç ücretli deneme kuralı her iki yöntemde de uygulanır.
+
 1. Önce tek görsel veya **en fazla 5 saniye ve düşük çözünürlükte** test üretin. Kompozisyon, kimlik ve hareket geçmeden final çözünürlüğe çıkmayın.
 2. Uzun video yerine 3–5 saniyelik klipler üretip editte birleştirin. Durağan sahnede yeni video yerine pan/zoom değerlendirin.
 3. Çalışan prompt'u panel prompt kütüphanesinde sürümleyin; her denemede sıfırdan yazmayın. Prompt metni public repoya konmaz.
