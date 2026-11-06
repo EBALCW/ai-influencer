@@ -22,6 +22,7 @@ import {
   pgConnection,
 } from './lib/panel-lib.mjs';
 
+import { restorePsqlArgs } from './lib/restore-args.mjs';
 import {
   writeBackupManifest,
   verifyBackupManifest,
@@ -133,21 +134,10 @@ async function restore(argv) {
   // Tek psql oturumu ve tek transaction: SQL dosyalarından biri başarısızsa
   // TRUNCATE ve önceki importlar da rollback olur. -X yerel psqlrc'yi devre dışı bırakır.
   const files = ['data-auth.sql', 'data-public.sql'];
-  const result = spawnSync(
-    'psql',
-    [
-      ...conn.args,
-      '-X',
-      '--single-transaction',
-      '-v',
-      'ON_ERROR_STOP=1',
-      '--quiet',
-      '-c',
-      "do $$ declare r record; begin for r in select tablename from pg_tables where schemaname = 'public' loop execute format('truncate table public.%I cascade', r.tablename); end loop; end $$; delete from auth.identities; delete from auth.users;",
-      ...files.flatMap((file) => ['-f', join(dir, file)]),
-    ],
-    { stdio: 'inherit', env },
-  );
+  const result = spawnSync('psql', restorePsqlArgs(conn.args, dir), {
+    stdio: 'inherit',
+    env,
+  });
   if (result.error || result.status !== 0)
     fail('Geri yükleme başarısız; transaction geri alındı. Yerel Supabase ve SQL dosyalarını kontrol et.');
   for (const file of files) ok(file);
