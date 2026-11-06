@@ -130,30 +130,27 @@ async function restore(argv) {
     ...conn.env,
     PGOPTIONS: '-c session_replication_role=replica',
   };
-  const psql = (args) =>
-    spawnSync(
-      'psql',
-      [...conn.args, '-v', 'ON_ERROR_STOP=1', '--quiet', ...args],
-      {
-        stdio: 'inherit',
-        env,
-      },
-    );
-
-  const truncate = psql([
-    '-c',
-    "do $$ declare r record; begin for r in select tablename from pg_tables where schemaname = 'public' loop execute format('truncate table public.%I cascade', r.tablename); end loop; end $$; delete from auth.identities; delete from auth.users;",
-  ]);
-  if (truncate.status !== 0)
-    fail(
-      'Yerel veritabanı temizlenemedi. Yerel Supabase çalışıyor mu? (pnpm supabase:status)',
-    );
-
-  for (const f of ['data-auth.sql', 'data-public.sql']) {
-    const r = psql(['-f', join(dir, f)]);
-    if (r.status !== 0) fail(`${f} yüklenemedi.`);
-    ok(f);
-  }
+  // Tek psql oturumu ve tek transaction: SQL dosyalarından biri başarısızsa
+  // TRUNCATE ve önceki importlar da rollback olur. -X yerel psqlrc'yi devre dışı bırakır.
+  const files = ['data-auth.sql', 'data-public.sql'];
+  const result = spawnSync(
+    'psql',
+    [
+      ...conn.args,
+      '-X',
+      '--single-transaction',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '--quiet',
+      '-c',
+      "do $$ declare r record; begin for r in select tablename from pg_tables where schemaname = 'public' loop execute format('truncate table public.%I cascade', r.tablename); end loop; end $$; delete from auth.identities; delete from auth.users;",
+      ...files.flatMap((file) => ['-f', join(dir, file)]),
+    ],
+    { stdio: 'inherit', env },
+  );
+  if (result.error || result.status !== 0)
+    fail('Geri yükleme başarısız; transaction geri alındı. Yerel Supabase ve SQL dosyalarını kontrol et.');
+  for (const file of files) ok(file);
   console.log(
     '\nGeri yükleme tamam. Paneli yerel Supabase değerleriyle açıp veriyi kontrol et.',
   );
