@@ -39,3 +39,28 @@ Bir issue yalnızca kendi kabul kriterleri doğrulandığında kapanır. Lokal v
 ## Güvenlik ve test
 
 `AGENTS.md` ve `docs/DEVELOPMENT.md` kuralları geçerlidir. `pnpm check` çalıştırılamayan bir ortamda PR draft kalır; test geçmiş gibi işaretlenmez. Supabase production veritabanına doğrudan yazılmaz.
+
+## Açık issue denetimi — 6 Kasım 2026
+
+GitHub açık issue aramasında **39 açık kayıt** bulundu (epic'ler dahil). Bu belge yalnız onaylı 19 işin takip sözleşmesidir; 39 kaydın tamamının tamamlandığı iddia edilmez.
+
+- **Mevcut kodu olan fakat harici kabul bekleyenler:** #49 OAuth (gerçek platform hesapları), #50 Instagram collector (canlı Business/Creator hesabı), #41 kurulum/yedek (ikinci cihaz ve gerçek restore), #34 hesap güvenliği (gerçek hesap/Storage yedeği), #18 edit (gerçek videolar), #13 maliyet karşılaştırması (gerçek üretim kredileri), #3 QC (gerçek referans ve bağımsız inceleme).
+- **Harici ortam/erişim bekleyen:** #93 production release ve ekip ortamları.
+- **Üretim veya operasyon kabulü açık:** #2, #10, #11, #12, #15, #17, #19, #21, #30, #32, #33. Bu işler için yalnız doküman ya da sentetik test yeterli kabul kanıtı değildir.
+- **Onaylı 19 iş dışındaki açık issue'lar:** #4, #6, #7, #8, #22, #23, #24, #25, #27, #28, #29 ve epic kayıtları #5, #9, #14, #20, #26, #31, #35, #63, #65. Ayrı issue kabul koşulları izlenmelidir.
+
+### Aktif değişiklikler ve test durumu
+
+- PR #170: bu takip matrisi; uygulama tamamlandı sayılmaz.
+- PR #171: #41 kapsamında tek psql transaction restore, test edilebilir `scripts/lib/restore-args.mjs` ve `scripts/lib/restore-args.test.mjs` eklendi. **Gerçek yerel Supabase restore ve PR CI kabulü doğrulanmadan merge/kapanış yapılmaz.**
+- Secret'lar issue, PR veya dokümana yazılmaz; uzak veritabanına elle SQL uygulanmaz.
+
+### Kullanıcı kararı gerektiren somut kabul girdileri
+
+1. **T01:** Meta/Google/TikTok test uygulamaları ve yetkili hesaplar (#49, #50).
+2. **T02:** İkinci Windows/macOS ekip cihazı ve gerçek yerel Supabase yedeği (#41, #93, #34).
+3. **T03:** Onaylı karakter referans seti, lisanslı kaynak medya ve gerçek üretim sağlayıcı erişimi (#2, #3, #15, #17, #18).
+4. **T04:** Trend araştırma hesapları ve gerçek sağlayıcı kredi/ölçüm erişimi (#10–#13).
+5. **T05:** Gerçek yayın, AI açıklama, lisans ve sponsor kabul materyalleri (#19, #21, #30, #32, #33).
+
+**Not:** Bu girdilerin eksikliği bağımsız yazılım işlerinin otomatik olarak engellendiği anlamına gelmez; her issue ayrı doğrulanmalıdır.
