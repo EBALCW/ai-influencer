@@ -133,6 +133,10 @@ Ses: <platform kütüphanesi (elle ekleniyor) | kendi/AI üretimi | lisanslı: <
 
 Lisans belgeleri, izin yazışmaları ve kişisel bilgiler (izin verenin adı, e-posta) panele veya repoya yazılmaz. Bunlar ekibin erişimi kısıtlı deposunda tutulur; `source_license` alanına ve nota yalnızca kısa bir referans yazılır.
 
+### Yayıncı klipleri
+
+Yayıncıların YouTube videolarından kesilen klipler de bu bölümün kurallarına tabidir: kaynak türü çoğunlukla `third_party` olur ve yazılı izin şarttır. Kesim komutu (`pnpm clip:cut`) izin referansı, açık lisans adı ya da `--own` verilmeden çalışmaz; panel de izni "verildi" olmayan kaynaktan içerik kartı oluşturmaz. Yayıncının izni, yayında arkada çalan müziği kapsamaz. Akış: `docs/clip-guide.md`.
+
 ### Hareket referansları
 
 - Ekip içinden biri basit dans/hareket referanslarını telefonla dikey (9:16), tek kişi, sabit kamera ve sade arka planla çeker. Kendi içeriğimiz olduğu için telif riski yoktur.
