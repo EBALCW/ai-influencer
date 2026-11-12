@@ -223,6 +223,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"clip_sources": {
+                  Row: {
+                    "channel_name": string,"channel_url": string | null,"created_at": string,"created_by": string | null,"duration_seconds": number | null,"id": string,"notes": string,"permission_checked_at": string | null,"permission_checked_by": string | null,"permission_ref": string,"permission_status": Database["public"]['Enums']["clip_permission_status"],"platform": string,"title": string,"updated_at": string,"video_id": string,"video_url": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "channel_name": string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title": string,"updated_at"?: string,"video_id": string,"video_url": string
+                  }
+                  Update: {
+                    "channel_name"?: string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title"?: string,"updated_at"?: string,"video_id"?: string,"video_url"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "clip_sources_permission_checked_by_fkey"
+      columns: ["permission_checked_by"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["user_id"]
+    }
+                  ]
+                },"clips": {
+                  Row: {
+                    "content_item_id": string | null,"created_at": string,"created_by": string | null,"end_seconds": number,"hook": string | null,"id": string,"influencer_id": string | null,"notes": string,"source_id": string,"start_seconds": number,"status": Database["public"]['Enums']["clip_status"],"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds": number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id": string,"start_seconds": number,"status"?: Database["public"]['Enums']["clip_status"],"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds"?: number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id"?: string,"start_seconds"?: number,"status"?: Database["public"]['Enums']["clip_status"],"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "clips_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clips_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clips_source_id_fkey"
+      columns: ["source_id"]
+isOneToOne: false
+      referencedRelation: "clip_sources"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"comment_replies": {
                   Row: {
                     "attempts": number,"body": string,"comment_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"id": string,"next_attempt_at": string,"sent_at": string | null,"status": string,"updated_at": string
@@ -1201,6 +1253,9 @@ isOneToOne: false
 "post_segments":
 { Args: { "p_influencer_slug"?: string,"p_target_hours"?: number }; Returns: Json
                            },
+"push_clip_to_backlog":
+{ Args: { "p_clip_id": string,"p_influencer_id"?: string }; Returns: string
+                           },
 "push_trend_to_backlog":
 { Args: { "p_influencer_id"?: string,"p_title"?: string,"p_trend_id": string }; Returns: string
                            },
@@ -1329,7 +1384,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_source_type": "own"|"stock"|"open_license"|"third_party","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
+            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","clip_permission_status": "pending"|"granted"|"denied","clip_status": "candidate"|"approved"|"rendered"|"rejected","content_source_type": "own"|"stock"|"open_license"|"third_party","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1449,7 +1504,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_source_type": ["own", "stock", "open_license", "third_party"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"publish_job_status": ["queued", "processing", "published", "failed", "manual_required", "cancelled"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
+            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"clip_permission_status": ["pending", "granted", "denied"],"clip_status": ["candidate", "approved", "rendered", "rejected"],"content_source_type": ["own", "stock", "open_license", "third_party"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"publish_job_status": ["queued", "processing", "published", "failed", "manual_required", "cancelled"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
           }
         }
 } as const

@@ -28,6 +28,7 @@ test('navigation opens real modules and unfinished sections show empty states', 
 }) => {
   for (const [label, href] of [
     ['Araştırma', '/research'],
+    ['Klipler', '/clips'],
     ['İçerik akışı', '/content'],
     ['Yayın takvimi', '/calendar'],
     ['Üretim', '/production'],

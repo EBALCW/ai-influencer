@@ -116,6 +116,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | Instagram toplayıcısı                                                                              | 🚧 Emre     | #50             |
 | Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅          | #58             |
 | Birleşik yorum gelen kutusu                                                                        | ✅          | #61             |
+| Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | 🚧 (PR)     | #173            |
 | Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel) | #41             |
 
 **Ortamlar:** `test` dalı → AiInfTest Supabase projesi, `main` → AiInfMain (production). Veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0). Son production release: `v2026.10.21-0c1131d`. `test`'teki yenilikler `pnpm release` ile `main`'e geçer.
