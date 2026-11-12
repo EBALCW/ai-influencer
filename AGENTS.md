@@ -162,6 +162,8 @@ scripts/                              Node script'leri (cross-platform)
 
 Yayıncı videosundan klip istenirse `.claude/skills/yayinci-klip/SKILL.md` akışını uygula (Claude Code bunu skill olarak kendiliğinden görür; Codex dosyayı okuyup aynı adımları izler). İzin adımı atlanamaz.
 
+Olay/bilgi anlatan seslendirmeli video istenirse `.claude/skills/anlatim-videosu/SKILL.md` akışını uygula (motor: `.claude/skills/cinematic-film/`, rehber: `docs/explainer-guide.md`). Doğruluk ve onay adımları atlanamaz.
+
 Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `docs/AUTH.md`, mimari kararlar `docs/adr/`.
 
 ## Paralel çalışma (birden çok agent/geliştirici)

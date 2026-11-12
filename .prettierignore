@@ -5,3 +5,6 @@ pnpm-lock.yaml
 **/next-env.d.ts
 packages/shared/src/database.types.ts
 supabase/functions/deno.lock
+
+# Dışarıdan alınan skill (değiştirilmeden tutulur; bkz. .claude/skills/cinematic-film/KAYNAK.md)
+.claude/skills/cinematic-film/
