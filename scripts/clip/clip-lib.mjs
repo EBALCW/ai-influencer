@@ -170,7 +170,7 @@ export function clipSrt(cues, start, end) {
 export function fetchArgs(
   url,
   dir,
-  { languages = ['tr', 'en'], video = true } = {},
+  { languages = ['tr', 'en'], video = true, chat = false } = {},
 ) {
   for (const language of languages)
     if (!/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(language))
@@ -179,6 +179,11 @@ export function fetchArgs(
     '--no-playlist',
     '--no-progress',
     '--restrict-filenames',
+    // Altyazı ya da sohbet indirilemezse (ör. HTTP 429) video ve bilgiler yine de alınsın;
+    // neyin eksik kaldığını clip.mjs dosyalara bakarak raporlar
+    '--ignore-errors',
+    '--sleep-subtitles',
+    '1',
     '--paths',
     dir,
     '--output',
@@ -187,7 +192,8 @@ export function fetchArgs(
     '--write-subs',
     '--write-auto-subs',
     '--sub-langs',
-    languages.join(','),
+    // live_chat: canlı yayının sohbet tekrarı (<id>.live_chat.json), clip:moments kullanır
+    [...languages, ...(chat ? ['live_chat'] : [])].join(','),
     '--sub-format',
     'vtt',
     ...(video
