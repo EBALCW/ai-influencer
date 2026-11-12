@@ -4,13 +4,13 @@
 
 ## Bağımlılık sırası
 
-| Dalga | İşler | Kabul kanıtı |
-| --- | --- | --- |
-| 0 — Mevcut durumu doğrula | A01 #49, A02 #50, A03 #93, A04 #41 | Mevcut kodu ve açık kabul koşullarını karşılaştır; `pnpm check`, `pnpm build`, ilgili CI ve kurulum testleri |
-| 1 — Güvenli içerik temeli | E01 #32, E02 #33, E03 #34, B01 #2, B02 #3 | Politika/lisans kuralları, karakter referans kimliği, otomatik QC testleri |
-| 2 — Üretim | B03 #15, B04 #17, B05 #18, D01 #19 | Kaynak lisans doğrulaması → referans → sahne → render → export; deterministik testler ve örnek artefakt |
-| 3 — Araştırma ve maliyet | C01 #10, C02 #11, C03 #12, C04 #13 | Kaynaklı trend kayıtları, API capability detection, read-only agent sınırları, maliyet karşılaştırması |
-| 4 — Yayın ve ticari operasyon | D02 #21, F01 #30 | Yayın kontrolleri, metriklerin kaynağı, sponsorlu içerik iş akışı |
+| Dalga                         | İşler                                     | Kabul kanıtı                                                                                                 |
+| ----------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 0 — Mevcut durumu doğrula     | A01 #49, A02 #50, A03 #93, A04 #41        | Mevcut kodu ve açık kabul koşullarını karşılaştır; `pnpm check`, `pnpm build`, ilgili CI ve kurulum testleri |
+| 1 — Güvenli içerik temeli     | E01 #32, E02 #33, E03 #34, B01 #2, B02 #3 | Politika/lisans kuralları, karakter referans kimliği, otomatik QC testleri                                   |
+| 2 — Üretim                    | B03 #15, B04 #17, B05 #18, D01 #19        | Kaynak lisans doğrulaması → referans → sahne → render → export; deterministik testler ve örnek artefakt      |
+| 3 — Araştırma ve maliyet      | C01 #10, C02 #11, C03 #12, C04 #13        | Kaynaklı trend kayıtları, API capability detection, read-only agent sınırları, maliyet karşılaştırması       |
+| 4 — Yayın ve ticari operasyon | D02 #21, F01 #30                          | Yayın kontrolleri, metriklerin kaynağı, sponsorlu içerik iş akışı                                            |
 
 ## İş bazında izlenecek doğrulamalar
 
