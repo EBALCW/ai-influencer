@@ -116,21 +116,21 @@ node scripts/doctor.mjs
 
 ## Komutlar
 
-| Komut                                                              | Ne yapar                                                          |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `pnpm doctor`                                                      | Ortam sağlık kontrolü                                             |
-| `pnpm setup:mac` / `pnpm setup:win`                                | Kurulum script'leri                                               |
-| `pnpm install`                                                     | Bağımlılıklar                                                     |
-| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`)        | Paneli build edip başlatır, tarayıcıyı açar                       |
-| `pnpm backup` / `pnpm backup:restore <klasör>`                     | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`) |
-| `pnpm dev` / `pnpm build`                                          | Geliştirme sunucusu / production build                            |
-| `pnpm check`                                                       | Format + lint + typecheck + unit test (PR öncesi zorunlu)         |
-| `pnpm test:e2e`                                                    | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)             |
-| `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`) | Güncel kod haritası (aşağıya bak)                                 |
-| `pnpm clip:fetch <youtube-adresi>` / `pnpm clip:cut …`             | Yayıncı videosundan dikey klip (`docs/clip-guide.md`)             |
-| `pnpm env:pull`                                                    | Test Supabase anahtarlarını `.env.local`'e çeker                  |
-| `pnpm release`                                                     | `test` → `main` release PR'ı                                      |
-| `cd supabase/functions && deno test --allow-env`                   | Edge Function testleri (`deno lint`, `deno check` de CI'da)       |
+| Komut                                                              | Ne yapar                                                                    |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `pnpm doctor`                                                      | Ortam sağlık kontrolü                                                       |
+| `pnpm setup:mac` / `pnpm setup:win`                                | Kurulum script'leri                                                         |
+| `pnpm install`                                                     | Bağımlılıklar                                                               |
+| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`)        | Paneli build edip başlatır, tarayıcıyı açar                                 |
+| `pnpm backup` / `pnpm backup:restore <klasör>`                     | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`)           |
+| `pnpm dev` / `pnpm build`                                          | Geliştirme sunucusu / production build                                      |
+| `pnpm check`                                                       | Format + lint + typecheck + unit test (PR öncesi zorunlu)                   |
+| `pnpm test:e2e`                                                    | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)                       |
+| `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`) | Güncel kod haritası (aşağıya bak)                                           |
+| `pnpm clip:fetch <adres>` / `clip:moments <klasör>` / `clip:cut …` | Yayından en çok izlenecek anları bul, dikey klip kes (`docs/clip-guide.md`) |
+| `pnpm env:pull`                                                    | Test Supabase anahtarlarını `.env.local`'e çeker                            |
+| `pnpm release`                                                     | `test` → `main` release PR'ı                                                |
+| `cd supabase/functions && deno test --allow-env`                   | Edge Function testleri (`deno lint`, `deno check` de CI'da)                 |
 
 Ortam değişkeni ipucu: agent ortamında kurulum/komut takılırsa başına `CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0` ekle.
 
@@ -161,6 +161,8 @@ scripts/                              Node script'leri (cross-platform)
 ```
 
 Yayıncı videosundan klip istenirse `.claude/skills/yayinci-klip/SKILL.md` akışını uygula (Claude Code bunu skill olarak kendiliğinden görür; Codex dosyayı okuyup aynı adımları izler). İzin adımı atlanamaz.
+
+Olay/bilgi anlatan seslendirmeli video istenirse `.claude/skills/anlatim-videosu/SKILL.md` akışını uygula (motor: `.claude/skills/cinematic-film/`, rehber: `docs/explainer-guide.md`). Doğruluk ve onay adımları atlanamaz.
 
 Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `docs/AUTH.md`, mimari kararlar `docs/adr/`.
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Yayıncı videolarından kısa dikey klip (Reels / Shorts / TikTok).
-//   pnpm clip:fetch <youtube-adresi> [--out <klasör>] [--lang tr,en] [--no-video]
+//   pnpm clip:fetch <youtube-adresi> [--out <klasör>] [--lang tr,en] [--no-video] [--chat]
 //       Videoyu, altyazıyı ve zaman damgalı transkripti ~/ai-influencer-clips/<id>/ altına indirir.
+//   pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--no-audio]
+//       En çok tekrar izlenen yerler + sohbet patlamaları + ses zirvelerinden en güçlü anları sıralar.
 //   pnpm clip:cut <video> --start 12:30 --end 13:05 --out <klip.mp4> --permission "<izin referansı>"
 //       [--layout blur|crop] [--x-offset -1..1] [--subs <altyazı.vtt|srt>]
 //       Aralığı 1080×1920 H.264 olarak keser. --permission yerine: açık lisanslı kaynakta
@@ -11,9 +13,10 @@
 // yazılı izniyle kullanılır. İzin referansı olmadan kesim yapılmaz.
 // Gereksinim: yt-dlp, ffmpeg, ffprobe (PATH'te). Altyazı gömmek için libass'lı ffmpeg gerekir;
 // farklı bir ffmpeg kullanmak için FFMPEG_PATH ayarla. Ayrıntı: docs/clip-guide.md.
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
   copyFileSync,
+  createReadStream,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -25,8 +28,17 @@ import {
 } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, extname, join, resolve, sep } from 'node:path';
+import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { isInside } from '../lib/panel-lib.mjs';
+import {
+  combine,
+  createChatCounter,
+  createLoudnessMeter,
+  pickMoments,
+  replaySeries,
+  transcriptFor,
+} from './moments-lib.mjs';
 import {
   clipSrt,
   cutArgs,
@@ -69,11 +81,11 @@ function outsideRepo(path, what) {
 function fetchSource(argv) {
   const { positional, options } = parseCli(argv, {
     values: ['out', 'lang'],
-    flags: ['no-video'],
+    flags: ['no-video', 'chat'],
   });
   if (positional.length !== 1)
     throw new Error(
-      'Kullanım: pnpm clip:fetch <youtube-adresi> [--out <klasör>] [--lang tr,en] [--no-video]',
+      'Kullanım: pnpm clip:fetch <youtube-adresi> [--out <klasör>] [--lang tr,en] [--no-video] [--chat]',
     );
   const { videoId, url } = parseYoutubeUrl(positional[0]);
   const dir = resolve(
@@ -86,12 +98,27 @@ function fetchSource(argv) {
   const languages = (options.lang ?? 'tr,en').split(',').filter(Boolean);
   const r = spawnSync(
     'yt-dlp',
-    fetchArgs(url, dir, { languages, video: !options['no-video'] }),
+    fetchArgs(url, dir, {
+      languages,
+      video: !options['no-video'],
+      chat: Boolean(options.chat),
+    }),
     { stdio: 'inherit' },
   );
-  if (r.status !== 0)
+  // yt-dlp tek bir altyazı hatasında da sıfırdan farklı kodla çıkar; başarıyı dosyalar belirler
+  const infoFile = join(dir, `${videoId}.info.json`);
+  const videoFile = join(dir, `${videoId}.mp4`);
+  if (
+    r.error ||
+    !existsSync(infoFile) ||
+    (!options['no-video'] && !existsSync(videoFile))
+  )
     throw new Error(
       'İndirme başarısız. Adresi, internet bağlantısını ve videonun herkese açık olduğunu kontrol et; yt-dlp eskiyse güncelle.',
+    );
+  if (r.status !== 0)
+    console.log(
+      '  [UYARI] Bazı parçalar (altyazı ya da sohbet) indirilemedi; YouTube isteği sınırlamış olabilir. Birkaç dakika sonra aynı komutu yeniden çalıştırabilirsin.',
     );
 
   const info = JSON.parse(
@@ -111,8 +138,11 @@ function fetchSource(argv) {
     join(dir, 'source.json'),
     JSON.stringify(source, null, 2) + '\n',
   );
+  // "Most replayed" ısı haritası (her videoda yoktur): clip:moments'ın en güçlü sinyali
+  if (Array.isArray(info.heatmap) && info.heatmap.length > 0)
+    writeFileSync(join(dir, 'heatmap.json'), JSON.stringify(info.heatmap));
   // info.json çok büyük ve gereksiz ayrıntı içerir; gerekenler source.json'da
-  rmSync(join(dir, `${videoId}.info.json`), { force: true });
+  rmSync(infoFile, { force: true });
 
   const subtitles = readdirSync(dir)
     .filter((name) => name.startsWith(`${videoId}.`) && name.endsWith('.vtt'))
@@ -130,13 +160,24 @@ function fetchSource(argv) {
     writeFileSync(join(dir, out), toTranscript(cues) + '\n');
     ok(`Transkript: ${out} (${cues.length} satır)`);
   }
+  ok(
+    existsSync(join(dir, 'heatmap.json'))
+      ? 'En çok tekrar izlenen yerler (ısı haritası) alındı'
+      : 'Isı haritası yok (yeni ya da az izlenmiş video); anlar sohbet ve sesten bulunur',
+  );
+  if (options.chat)
+    ok(
+      existsSync(join(dir, `${videoId}.live_chat.json`))
+        ? 'Sohbet tekrarı alındı'
+        : 'Sohbet tekrarı yok (canlı yayın kaydı değil ya da sohbet kapalı)',
+    );
   if (subtitles.length === 0)
     console.log(
       '  [UYARI] Bu videoda istenen dillerde altyazı yok; klip anlarını videoyu izleyerek seç ya da --lang ile başka dil dene.',
     );
   console.log(
     `\nKlasör: ${dir}\n` +
-      'Sonraki adım: transkriptten klip anlarını seç, sonra pnpm clip:cut.\n' +
+      `Sonraki adım: pnpm clip:moments "${dir}" ile en güçlü anları bul, sonra pnpm clip:cut.\n` +
       'Hatırlatma: videonun sahibi biz değilsek kesmeden önce yazılı izin şart (docs/compliance.md).',
   );
 }
@@ -306,13 +347,147 @@ function cut(argv) {
   );
 }
 
+/** Videonun sesini 4 kHz mono ham veriye çevirip saniyelik ses düzeyini ölçer. */
+function measureLoudness(video) {
+  const rate = 4000;
+  const meter = createLoudnessMeter(rate);
+  return new Promise((fulfill) => {
+    const child = spawn(
+      'ffmpeg',
+      [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-nostdin',
+        '-i',
+        video,
+        '-vn',
+        '-ac',
+        '1',
+        '-ar',
+        String(rate),
+        '-f',
+        's16le',
+        '-',
+      ],
+      { stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+    child.stdout.on('data', (chunk) => meter.push(chunk));
+    child.on('error', () => fulfill(null));
+    child.on('close', (code) => fulfill(code === 0 ? meter.series() : null));
+  });
+}
+
+async function moments(argv) {
+  const { positional, options } = parseCli(argv, {
+    values: ['top', 'length', 'skip-start'],
+    flags: ['no-audio'],
+  });
+  if (positional.length !== 1)
+    throw new Error(
+      'Kullanım: pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--no-audio]',
+    );
+  const dir = resolve(positional[0]);
+  const sourceFile = join(dir, 'source.json');
+  if (!existsSync(sourceFile))
+    throw new Error(
+      'Bu klasörde source.json yok. Önce pnpm clip:fetch ile videoyu indir.',
+    );
+  const source = JSON.parse(readFileSync(sourceFile, 'utf8'));
+  const number = (name, fallback, min, max) => {
+    const value =
+      options[name] === undefined ? fallback : Number(options[name]);
+    if (!(value >= min && value <= max))
+      throw new Error(`--${name} ${min}-${max} arasında bir sayı olmalı.`);
+    return value;
+  };
+  const top = number('top', 10, 1, 50);
+  const length = number('length', 40, 10, 180);
+  const skipStart = number('skip-start', 60, 0, 3600);
+
+  const video = join(dir, `${source.videoId}.mp4`);
+  const hasVideo = existsSync(video);
+  const duration =
+    source.durationSeconds ?? (hasVideo ? probeDuration(video) : null);
+  if (!duration)
+    throw new Error('Video süresi bilinmiyor; videoyu indirip yeniden dene.');
+
+  const heatmapFile = join(dir, 'heatmap.json');
+  const replay = existsSync(heatmapFile)
+    ? replaySeries(JSON.parse(readFileSync(heatmapFile, 'utf8')), duration)
+    : null;
+
+  let chat = null;
+  const chatFile = join(dir, `${source.videoId}.live_chat.json`);
+  if (existsSync(chatFile)) {
+    const counter = createChatCounter(duration);
+    for await (const line of createInterface({
+      input: createReadStream(chatFile, 'utf8'),
+      crlfDelay: Infinity,
+    }))
+      counter.push(line);
+    chat = counter.series();
+    ok(`Sohbet: ${counter.messages()} mesaj`);
+  }
+
+  let audio = null;
+  if (!options['no-audio'] && hasVideo) {
+    requireTool('ffmpeg', '-version');
+    console.log(
+      '  Ses düzeyi ölçülüyor (uzun yayında birkaç dakika sürebilir)…',
+    );
+    audio = await measureLoudness(video);
+  }
+
+  const combined = combine({ replay, chat, audio });
+  const names = { replay: 'tekrar izlenme', chat: 'sohbet', audio: 'ses' };
+  ok(`Sinyaller: ${combined.used.map((name) => names[name]).join(', ')}`);
+  if (!replay && !chat)
+    console.log(
+      '  [UYARI] Yalnız ses var: zirveler müzik ya da oyun sesi de olabilir. Sohbet için pnpm clip:fetch … --chat ile yeniden indir.',
+    );
+
+  const subtitle = readdirSync(dir).find(
+    (name) => name.startsWith(`${source.videoId}.`) && name.endsWith('.vtt'),
+  );
+  const cues = subtitle
+    ? parseSubtitles(readFileSync(join(dir, subtitle), 'utf8'))
+    : [];
+  const list = pickMoments(combined, { top, length, duration, skipStart }).map(
+    (moment, i) => ({
+      rank: i + 1,
+      start: formatTime(moment.start),
+      end: formatTime(moment.end),
+      peak: formatTime(moment.peak),
+      score: moment.score,
+      why: names[moment.why],
+      signals: moment.signals,
+      transcript: transcriptFor(cues, moment.start, moment.end),
+    }),
+  );
+  writeFileSync(
+    join(dir, 'moments.json'),
+    JSON.stringify({ source, signals: combined.used, moments: list }, null, 2) +
+      '\n',
+  );
+  console.log('\n  #  Aralık              Puan  Neden            Transkript');
+  for (const m of list)
+    console.log(
+      `  ${String(m.rank).padStart(2)} ${`${m.start}-${m.end}`.padEnd(19)} ${String(m.score).padEnd(5)} ${m.why.padEnd(16)} ${m.transcript.slice(0, 70)}`,
+    );
+  console.log(
+    `\n${list.length} an moments.json dosyasına yazıldı. Puan sıralama içindir; son kararı transkripti okuyup klibi izleyerek ver.`,
+  );
+}
+
 const [mode, ...rest] = process.argv.slice(2);
 try {
   if (mode === 'fetch') fetchSource(rest);
   else if (mode === 'cut') cut(rest);
+  else if (mode === 'moments') await moments(rest);
   else
     throw new Error(
-      'Kullanım: pnpm clip:fetch <youtube-adresi>  |  pnpm clip:cut <video> --start … --end … --out … --permission …',
+      'Kullanım: pnpm clip:fetch <youtube-adresi>  |  pnpm clip:moments <klasör>  |  pnpm clip:cut <video> --start … --end … --out … --permission …',
     );
 } catch (error) {
   console.error(`\x1b[31m[HATA]\x1b[0m ${error.message}`);

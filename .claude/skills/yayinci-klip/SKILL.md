@@ -1,11 +1,12 @@
 ---
 name: yayinci-klip
-description: Bir yayıncının (streamer) YouTube videosundan Reels / Shorts / TikTok için kısa dikey klip çıkarır - indir, transkripti oku, öne çıkan anları öner, kes, altyazı göm, panele kaydet. "Şu yayından klip çıkar", "bu videodan shorts yap", "yayıncı klibi", "clip al", bir YouTube adresi ile birlikte "kes / klip / kısa video" dendiğinde kullan.
+description: Bir yayıncının (streamer) YouTube videosundan Reels / Shorts / TikTok için kısa dikey klip çıkarır - indir, en çok izlenecek anları veriyle bul (tekrar izlenme, sohbet patlaması, ses), kes, altyazı göm, panele kaydet. "Şu yayından klip çıkar", "bu videodan shorts yap", "yayıncı klibi", "clip al", bir YouTube adresi ile birlikte "kes / klip / kısa video" dendiğinde kullan.
 ---
 
 # Yayıncı klibi
 
-Uzun bir YouTube videosundan 15-60 saniyelik dikey klipler üretir. Komutlar repoda hazır
+Uzun bir YouTube yayınından en komik, en çok izlenecek anları bulup 15-60 saniyelik dikey
+kliplere çevirir. Komutlar repoda hazır
 (`scripts/clip/`); senin işin doğru anları seçmek ve kuralları uygulatmak. İnsanlar için
 rehber: `docs/clip-guide.md`.
 
@@ -20,6 +21,10 @@ izniyle** kullanılır. Kesmeden önce kullanıcıya sor ve üç durumdan birini
 | Video açık lisanslı (ör. CC BY)           | `--open-license "<lisans adı>"`                   |
 | Video bizim (kendi kanalımız / çekimimiz) | `--own`                                           |
 
+- Büyük yayıncıların çoğunun **klip programı ya da yayımlanmış klip kuralları** vardır (resmî
+  duyuru, Discord, klip kampanyası sayfası). Bu geçerli bir izindir: kuralları oku (kaynak
+  belirtme, süre, gelir paylaşımı, yasak içerik), ekran görüntüsünü kısıtlı depoya koy ve
+  referansı oradan ver. Kural bulamadıysan izin yok say.
 - İzin yoksa **kesme**. İndirip transkript üzerinden klip adaylarını önermek serbest; kesim
   izin gelince yapılır. Kullanıcıya izin isteği için kısa bir mesaj taslağı önerebilirsin.
 - "Adil kullanım", "nasılsa herkes yapıyor", "kaynak belirtirim" izin değildir.
@@ -31,38 +36,67 @@ izniyle** kullanılır. Kesmeden önce kullanıcıya sor ve üç durumdan birini
 ## 1. İndir
 
 ```
-pnpm clip:fetch "<youtube-adresi>"            # video + altyazı + transkript
-pnpm clip:fetch "<youtube-adresi>" --no-video # sadece transkript (hızlı ön inceleme)
+pnpm clip:fetch "<youtube-adresi>" --chat     # video + altyazı + transkript + ısı haritası + sohbet tekrarı
+pnpm clip:fetch "<youtube-adresi>" --no-video --chat   # hızlı ön inceleme (ses sinyali olmaz)
 ```
 
 Çıktı `~/ai-influencer-clips/<video-id>/` altına yazılır (repo dışı; repoya video girmez):
-`<id>.mp4`, `<id>.<dil>.vtt`, `<id>.<dil>.transcript.txt`, `source.json`.
-Varsayılan diller `tr,en`; başka dil için `--lang de,en`. Araç eksikse komut nasıl kurulacağını söyler.
+`<id>.mp4`, `<id>.<dil>.vtt`, `<id>.<dil>.transcript.txt`, `source.json`, varsa `heatmap.json`
+ve `<id>.live_chat.json`. İngilizce yayın için `--lang en`. Araç eksikse komut nasıl
+kurulacağını söyler. "Bazı parçalar indirilemedi" uyarısı çıkarsa birkaç dakika sonra yeniden çalıştır.
 
-## 2. Klip anlarını seç
+## 2. En çok izlenecek anları bul (asıl iş)
 
-`*.transcript.txt` dosyasının **tamamını** oku (satır başları `[dk:sn]`). 3-8 aday çıkar.
+Hedef komik, şaşırtıcı, paylaşılacak anlar. Saatlerce süren yayını baştan sona okumak yerine
+önce izleyicinin gerçekten tepki verdiği yerleri veriyle bul:
 
-İyi klip:
+```
+pnpm clip:moments ~/ai-influencer-clips/<video-id> --top 15 --length 40
+```
 
-- **İlk 2 saniyede kanca:** soru, iddia, şaşırma, kahkaha, "dur bir dakika" anı. Girişi
-  olmayan cümlenin ortasından başlama.
-- **Kendi başına anlaşılır:** öncesini izlemeyen biri de anlar. "Az önce dediğim gibi"
-  ile başlayan yerleri alma.
-- **Tek fikir, net son:** espri vuruşu, cevap ya da tepki ile biter; cümle yarım kalmaz.
-- **15-60 saniye** (araç sınırı 5-180). Şüphedeysen kısa tut.
-- Başlangıcı konuşmanın başladığı satırdan 0,5 sn önce, bitişi son kelimeden 0,5 sn sonra al.
+Üç sinyali birleştirip sıralar ve `moments.json` yazar:
 
-Alma: üçüncü kişilerin özel bilgileri, hakaret/nefret, reşit olmayanlar, arkada telifli
-müzik çalan bölümler (Content ID), yayıncıyı bağlamından koparıp kötü gösteren kesitler.
+| Sinyal ("Neden") | Ne anlama gelir                                                       | Güven                                            |
+| ---------------- | --------------------------------------------------------------------- | ------------------------------------------------ |
+| `tekrar izlenme` | YouTube'un "most replayed" verisi: insanlar burayı geri sarıp izlemiş | En güçlü kanıt. Yeni videoda henüz olmayabilir   |
+| `sohbet`         | Sohbette mesaj patlaması; LOL / LMAO / 💀 / "clip it" 3 kat sayılır   | Canlı tepki. Bağış ve anket anları da sıçratır   |
+| `ses`            | Bağırma, kahkaha, ani ses artışı                                      | Tek başına zayıf: müzik ve oyun sesi de sıçratır |
+
+Liste aday listesidir, karar değildir. Her aday için:
+
+1. `moments.json` içindeki transkripti ve `*.transcript.txt` dosyasında o anın **30 sn öncesini**
+   oku: olay nerede başlıyor, kurulum ne?
+2. Emin değilsen kare çıkarıp bak:
+   `ffmpeg -v error -ss <sn> -i <video> -frames:v 1 kare.png`.
+3. Başlangıç ve bitişi cümle sınırına çek. Komut aralığı zirvenin önüne ağırlıklı verir, ama
+   kurulumun tamamı ve tepkinin sonu sende.
+4. İki sinyalin birden yüksek olduğu anlar önceliklidir (ör. sohbet + tekrar izlenme).
+
+Sonra ele ve sırala. İzlenme getiren klip:
+
+- **İlk 2 saniyede kanca.** Olayın kendisi ya da hemen öncesi. "Selam chat" ile başlayan klip kaydırılır.
+  Gerekirse en vurucu 1-2 saniyeyi başa "önizleme" olarak koymayı öner.
+- **Kendi başına anlaşılır.** Yayını izlemeyen biri 5 saniyede ne olduğunu anlar. Anlaşılmıyorsa
+  üstüne tek satırlık bağlam yazısı öner (ör. "GTA 6'da ilk polis kovalamacası").
+- **Tek olay, net vuruş.** Kurulum → olay → tepki. Tepkiden sonra 1-2 saniye bırak, uzatma.
+- **Yüksek duygu.** Kahkaha, panik, öfke, şok, inanılmaz şans/şanssızlık, beklenmedik oyun hatası,
+  rekor, yayıncılar arası atışma. Sakin sohbet klip olmaz.
+- **Paylaşma sebebi.** "Bunu arkadaşıma atarım" dedirtir mi? Oyun çıkışı gibi gündem anlarında
+  "ilk kez" olan her şey değerlidir (ilk görev, ilk ölüm, ilk bug, ilk tepki).
+- **15-45 saniye** çoğu an için doğru; hikâyesi olan anlar 60 sn'ye kadar. Şüphedeysen kısa tut.
+- **Hız.** Aynı anı onlarca hesap kesecek; yayından sonraki ilk saatlerde çıkan klip kazanır.
+
+Alma: üçüncü kişilerin özel bilgileri, hakaret/nefret, reşit olmayanlar, arkada telifli müzik
+çalan bölümler (Content ID), yayıncıyı bağlamından koparıp kötü gösteren kesitler.
 
 Adayları tabloyla sun ve kullanıcıya seçtir:
 
-| #   | Aralık | Süre | Kanca (ilk cümle) | Neden tutar |
-| --- | ------ | ---- | ----------------- | ----------- |
+| #   | Aralık | Süre | Sinyal | Kanca (ilk 2 sn) | Neden tutar | Başlık önerisi |
+| --- | ------ | ---- | ------ | ---------------- | ----------- | -------------- |
 
-Altyazı yoksa transkript de yoktur: kullanıcıdan zaman aralıklarını iste ya da videodan
-kareler çıkarıp (`ffmpeg -ss <sn> -i <video> -frames:v 1 kare.png`) bölümleri tanı.
+Altyazı yoksa transkript de yoktur: sinyallere ve karelere dayan, kullanıcıya bunu söyle.
+Hiç sinyal yoksa (ısı haritası, sohbet, video yok) transkriptin **tamamını** okuyup adayları
+oradan çıkar.
 
 ## 3. Kes
 

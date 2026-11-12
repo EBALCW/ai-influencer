@@ -1,0 +1,7 @@
+# Python packages the skill's scripts use:
+#   pip install -r requirements.txt
+# ffmpeg and ffprobe must be on PATH as well.
+skia-python>=87.6     # the film engine (tested with 144.1)
+numpy>=1.24
+pillow>=10
+scipy>=1.10           # optional: faster sound-effects render

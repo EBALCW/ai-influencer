@@ -9,6 +9,7 @@
     "automation:report": "node scripts/automation-cost.mjs",
     "video:export": "node scripts/edit/export.mjs",
     "clip:fetch": "node scripts/clip/clip.mjs fetch",
+    "clip:moments": "node scripts/clip/clip.mjs moments",
     "clip:cut": "node scripts/clip/clip.mjs cut",
     "doctor": "node scripts/doctor.mjs",
     "setup:mac": "bash scripts/setup-mac.sh",
