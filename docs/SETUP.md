@@ -231,6 +231,10 @@ pnpm backup:restore ~/ai-influencer-backups/<tarih>
 
 Script ortak dev veya production projesine geri yüklemeyi reddeder, sadece `127.0.0.1` kabul eder. Test sonucunu `docs/incidents.md` şablonuyla ekibin kısıtlı alanına kaydet.
 
+Restore, miras alınan `PGHOSTADDR`, `PGSERVICE`, `PGSERVICEFILE` dahil tüm `PG*` ortam değişkenlerini psql sürecinden temizler. Bağlantı parametreleri doğrulanan yerel URL'den, parola ve varsa SSL modu da bu URL'den gelir. Özel yerel hedef için `RESTORE_DB_URL` kullanılır; kabuktaki libpq service/host ayarları hedefi değiştiremez. `PATH`, proxy ve diğer araç ayarları korunur.
+
+CI'da PostgreSQL 17 istemcisiyle gerçek `pg_dump` alınır, yerel demo verisi değiştirilir ve geri yükleme sonrası influencer/post/auth satır özetleri karşılaştırılır. Ayrı test, ikinci SQL dosyası hata verdiğinde temizleme ve ilk importun geri alındığını doğrular. Bu testler geçici yerel veritabanına yöneliktir; ikinci ekip cihazı ve gerçek ekip yedeği kabulü ayrıca kaydedilmelidir.
+
 ---
 
 ## Sık Sorunlar
