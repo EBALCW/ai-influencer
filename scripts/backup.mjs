@@ -22,7 +22,11 @@ import {
   pgConnection,
 } from './lib/panel-lib.mjs';
 
-import { RESTORE_FILES, restorePsqlArgs } from './lib/restore-args.mjs';
+import {
+  RESTORE_FILES,
+  restoreEnvironment,
+  restorePsqlArgs,
+} from './lib/restore-args.mjs';
 import {
   writeBackupManifest,
   verifyBackupManifest,
@@ -130,11 +134,7 @@ async function restore(argv) {
       'Seed verisi silinip yedekteki veri yüklenecek.',
   );
   // Trigger'lar (created_by, updated_at) yedekteki değerleri ezmesin diye replica modu
-  const env = {
-    ...process.env,
-    ...conn.env,
-    PGOPTIONS: '-c session_replication_role=replica',
-  };
+  const env = restoreEnvironment(process.env, conn.env);
   // Tek psql oturumu ve tek transaction: SQL dosyalarından biri başarısızsa
   // TRUNCATE ve önceki importlar da rollback olur. -X yerel psqlrc'yi devre dışı bırakır.
   const result = spawnSync('psql', restorePsqlArgs(conn.args, dir), {

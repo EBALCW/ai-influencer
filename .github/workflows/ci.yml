@@ -57,6 +57,11 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      - name: PostgreSQL 17 yedekleme istemcisi
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
       - run: pnpm test
         env:
           # Gerçek yerel Supabase'e karşı geri yükleme/rollback testi (scripts/backup-restore.integration.test.mjs)

@@ -64,3 +64,11 @@ GitHub açık issue aramasında **39 açık kayıt** bulundu (epic'ler dahil). B
 5. **T05:** Gerçek yayın, AI açıklama, lisans ve sponsor kabul materyalleri (#19, #21, #30, #32, #33).
 
 **Not:** Bu girdilerin eksikliği bağımsız yazılım işlerinin otomatik olarak engellendiği anlamına gelmez; her issue ayrı doğrulanmalıdır.
+
+## A04 ilerleme kaydı — 12 Kasım 2026
+
+- **Uygulandı:** Restore psql sürecinin miras aldığı libpq (`PG*`) ortamı temizlenir; yalnız doğrulanan yerel bağlantı değerleri ve gerekli replica modu aktarılır. Windows karma harfli ortam adları da kapsanır.
+- **Yerel test:** `node --test scripts/lib/restore-args.test.mjs scripts/backup-restore.integration.test.mjs` → 3 birim testi geçti, 3 veritabanı testi atlandı.
+- **BLOCKED (yerel veritabanı):** Docker erişilebilir, ancak Supabase Postgres imajı açılırken `no space left on device` hatası verdi. Bu ortamda gerçek restore başarılı sayılmadı; başarısız imaj indirme denemesi durduruldu.
+- **CI doğrulaması:** `RESTORE_INTEGRATION=1` ile gerçek dump → veri değişikliği → restore satır özeti karşılaştırması; bağlantı ortamı zehirlenmişken ikinci SQL dosyası hatasının rollback edilmesi; geçerli importun kalıcı olması. Son komut/build/CI sonuçlarının kanıt kaydı [#41](https://github.com/EBALCW/ai-influencer/issues/41) üzerindedir.
+- **Açık kabul:** İkinci gerçek ekip cihazında ortak verinin görülmesi ve gerçek ekip yedeğinin geri yükleme kaydı. Yerel demo ve CI kontrolleri bu manuel kabulü tamamlanmış saymaz.
