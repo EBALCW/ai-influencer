@@ -22,13 +22,18 @@ import {
   pgConnection,
 } from './lib/panel-lib.mjs';
 
+import { RESTORE_FILES, restorePsqlArgs } from './lib/restore-args.mjs';
 import {
   writeBackupManifest,
   verifyBackupManifest,
 } from './lib/backup-integrity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const LOCAL_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+// Yerel Supabase'te `postgres` rolü superuser değildir: session_replication_role ayarlayamaz
+// ("permission denied to set parameter") ve auth şemasını temizleyemez. Yerel yığının
+// superuser'ı supabase_admin'dir (yerel şifre sabit; uzak projede bu rol bize açık değildir).
+const LOCAL_DB_URL =
+  'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres';
 
 const ok = (m) => console.log(`  \x1b[32m[OK]\x1b[0m ${m}`);
 const fail = (m) => {
@@ -130,30 +135,17 @@ async function restore(argv) {
     ...conn.env,
     PGOPTIONS: '-c session_replication_role=replica',
   };
-  const psql = (args) =>
-    spawnSync(
-      'psql',
-      [...conn.args, '-v', 'ON_ERROR_STOP=1', '--quiet', ...args],
-      {
-        stdio: 'inherit',
-        env,
-      },
-    );
-
-  const truncate = psql([
-    '-c',
-    "do $$ declare r record; begin for r in select tablename from pg_tables where schemaname = 'public' loop execute format('truncate table public.%I cascade', r.tablename); end loop; end $$; delete from auth.identities; delete from auth.users;",
-  ]);
-  if (truncate.status !== 0)
+  // Tek psql oturumu ve tek transaction: SQL dosyalarından biri başarısızsa
+  // TRUNCATE ve önceki importlar da rollback olur. -X yerel psqlrc'yi devre dışı bırakır.
+  const result = spawnSync('psql', restorePsqlArgs(conn.args, dir), {
+    stdio: 'inherit',
+    env,
+  });
+  if (result.error || result.status !== 0)
     fail(
-      'Yerel veritabanı temizlenemedi. Yerel Supabase çalışıyor mu? (pnpm supabase:status)',
+      'Geri yükleme başarısız; yerel veri değiştirilmedi (transaction geri alındı). Yerel Supabase çalışıyor mu? (pnpm supabase:status)',
     );
-
-  for (const f of ['data-auth.sql', 'data-public.sql']) {
-    const r = psql(['-f', join(dir, f)]);
-    if (r.status !== 0) fail(`${f} yüklenemedi.`);
-    ok(f);
-  }
+  for (const file of RESTORE_FILES) ok(file);
   console.log(
     '\nGeri yükleme tamam. Paneli yerel Supabase değerleriyle açıp veriyi kontrol et.',
   );
