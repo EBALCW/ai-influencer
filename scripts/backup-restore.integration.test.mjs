@@ -66,6 +66,9 @@ test(
     try {
       const r = restore(dir);
       assert.notEqual(r.status, 0, 'hatalı yedek başarısız dönmeli');
+      // Bağlantı hatası da başarısız döner ve veriyi "korur"; hatanın gerçekten
+      // temizlikten SONRA, ikinci dosyada oluştuğunu doğrula
+      assert.match(r.stderr, /division by zero/);
       assert.equal(rowCounts(), before, 'yerel veri aynen korunmalı');
     } finally {
       rmSync(dir, { recursive: true, force: true });

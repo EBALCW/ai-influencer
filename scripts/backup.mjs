@@ -29,7 +29,11 @@ import {
 } from './lib/backup-integrity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const LOCAL_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+// Yerel Supabase'te `postgres` rolü superuser değildir: session_replication_role ayarlayamaz
+// ("permission denied to set parameter") ve auth şemasını temizleyemez. Yerel yığının
+// superuser'ı supabase_admin'dir (yerel şifre sabit; uzak projede bu rol bize açık değildir).
+const LOCAL_DB_URL =
+  'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres';
 
 const ok = (m) => console.log(`  \x1b[32m[OK]\x1b[0m ${m}`);
 const fail = (m) => {
