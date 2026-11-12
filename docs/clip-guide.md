@@ -14,6 +14,8 @@ Panel yalnızca AI influencer içeriği için değil: yayıncıların (streamer)
 
 İzin yazışması, e-posta ve kişi adı repoya ya da panele yazılmaz. Bunlar ekibin erişimi kısıtlı deposunda durur; komuta ve panele yalnızca kısa referans (ör. `IZIN-2026-014`) girilir. Komut, bu üç seçenekten biri verilmeden kesim yapmaz.
 
+Büyük yayıncıların çoğunun klip programı ya da yayımlanmış klip kuralları vardır (resmî duyuru, Discord, klip kampanyası sayfası). Bu geçerli bir izindir: kuralları oku, ekran görüntüsünü kısıtlı depoya koy, referansı oradan ver. Yayımlanmış bir kural yoksa doğrudan izin iste.
+
 İzin isterken netleştirilecekler: hangi videolar/kanal, hangi platformlarda yayın, gelir paylaşımı ya da sponsorlu kullanım var mı, kaynak nasıl belirtilecek, izin ne zamana kadar geçerli ve nasıl geri alınır.
 
 ## Gereksinimler
@@ -34,11 +36,27 @@ Komutlar bu araçları kendisi kurmaz; eksikse ne kurulacağını söyler. macOS
 pnpm clip:fetch "https://www.youtube.com/watch?v=<id>"
 ```
 
-`~/ai-influencer-clips/<id>/` klasörüne şunlar yazılır: video (`<id>.mp4`, en çok 1080p), altyazılar (`<id>.<dil>.vtt`), zaman damgalı transkript (`<id>.<dil>.transcript.txt`) ve `source.json` (başlık, kanal, süre, lisans). Seçenekler: `--lang tr,en` (altyazı dilleri), `--no-video` (yalnız transkript), `--out <klasör>` (repo dışında olmalı).
+`~/ai-influencer-clips/<id>/` klasörüne şunlar yazılır: video (`<id>.mp4`, en çok 1080p), altyazılar (`<id>.<dil>.vtt`), zaman damgalı transkript (`<id>.<dil>.transcript.txt`) ve `source.json` (başlık, kanal, süre, lisans). Varsa "en çok tekrar izlenen yerler" verisi de `heatmap.json` olarak kaydedilir. Seçenekler: `--chat` (canlı yayının sohbet tekrarını da indirir), `--lang tr,en` (altyazı dilleri), `--no-video` (yalnız transkript), `--out <klasör>` (repo dışında olmalı).
 
-### 2. Klip anlarını seç
+### 2. En çok izlenecek anları bul
 
-Transkripti okuyup 15-60 saniyelik anları işaretle. İyi klip ilk 2 saniyede kanca verir, kendi başına anlaşılır, tek fikir taşır ve net biter. Kanca ölçütleri için `docs/publishing-rules.md`. Arkada telifli müzik çalan bölümleri alma: yayıncı izin verse bile müziğin hakkı ona ait değildir.
+```
+pnpm clip:moments ~/ai-influencer-clips/<id> --top 15 --length 40
+```
+
+Komut üç sinyali birleştirip yayının en güçlü anlarını sıralar ve `moments.json` yazar:
+
+| Sinyal         | Kaynak                                                              | Not                                                                       |
+| -------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Tekrar izlenme | YouTube "most replayed" ısı haritası                                | En güçlü kanıt. Yeni ya da az izlenmiş videoda bulunmaz.                  |
+| Sohbet         | Sohbet tekrarında mesaj hızı; gülme/şaşırma tepkileri 3 kat sayılır | `clip:fetch … --chat` ile indirilir. Yalnız canlı yayın kayıtlarında var. |
+| Ses            | Saniyelik ses düzeyi (bağırma, kahkaha)                             | Tek başına zayıf: müzik ve oyun sesi de sıçratır.                         |
+
+Eksik sinyal olursa komut kalanlarla devam eder. Seçenekler: `--top` (kaç an), `--length` (önerilen klip süresi, sn), `--skip-start` (yayın girişinde atlanacak süre, varsayılan 60 sn), `--no-audio`.
+
+Liste aday listesidir. Son kararı transkripti okuyup anı izleyerek ver. İzlenme getiren klip: ilk 2 saniyede kanca verir, yayını izlemeyen biri için de anlaşılırdır, tek olay ve net bir vuruş taşır, yüksek duygu içerir (kahkaha, panik, şok, beklenmedik hata) ve 15-45 saniyedir. Gündem anlarında (ör. büyük bir oyunun çıkış günü) hız belirleyicidir: aynı anı birçok hesap keser, ilk çıkan kazanır. Kanca ölçütleri için `docs/publishing-rules.md`. Arkada telifli müzik çalan bölümleri alma: yayıncı izin verse bile müziğin hakkı ona ait değildir.
+
+Şimdilik yalnız YouTube destekleniyor. Twitch ve Kick kayıtları için yayıncının YouTube'a yüklediği kaydı kullan.
 
 ### 3. Kes
 
