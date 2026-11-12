@@ -14,7 +14,9 @@ test('restore temizleme ve iki importu tek atomik psql oturumunda yapar', () => 
   assert.ok(cleanup >= 0 && cleanup < first);
   assert.match(args[cleanup + 1], /truncate table/);
   assert.deepEqual(args.slice(first), [
-    '-f', join('tmp', 'backup', 'data-auth.sql'),
-    '-f', join('tmp', 'backup', 'data-public.sql'),
+    '-f',
+    join('tmp', 'backup', 'data-auth.sql'),
+    '-f',
+    join('tmp', 'backup', 'data-public.sql'),
   ]);
 });

@@ -22,7 +22,7 @@ import {
   pgConnection,
 } from './lib/panel-lib.mjs';
 
-import { restorePsqlArgs } from './lib/restore-args.mjs';
+import { RESTORE_FILES, restorePsqlArgs } from './lib/restore-args.mjs';
 import {
   writeBackupManifest,
   verifyBackupManifest,
@@ -133,14 +133,15 @@ async function restore(argv) {
   };
   // Tek psql oturumu ve tek transaction: SQL dosyalarından biri başarısızsa
   // TRUNCATE ve önceki importlar da rollback olur. -X yerel psqlrc'yi devre dışı bırakır.
-  const files = ['data-auth.sql', 'data-public.sql'];
   const result = spawnSync('psql', restorePsqlArgs(conn.args, dir), {
     stdio: 'inherit',
     env,
   });
   if (result.error || result.status !== 0)
-    fail('Geri yükleme başarısız; transaction geri alındı. Yerel Supabase ve SQL dosyalarını kontrol et.');
-  for (const file of files) ok(file);
+    fail(
+      'Geri yükleme başarısız; yerel veri değiştirilmedi (transaction geri alındı). Yerel Supabase çalışıyor mu? (pnpm supabase:status)',
+    );
+  for (const file of RESTORE_FILES) ok(file);
   console.log(
     '\nGeri yükleme tamam. Paneli yerel Supabase değerleriyle açıp veriyi kontrol et.',
   );
