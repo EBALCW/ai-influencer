@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   AI_DISCLOSURE,
+  MEDIA_KIT_PRICE_TIERS,
+  MEDIA_KIT_SERVICES,
   NO_DATA,
   buildMediaKit,
+  buildPricing,
   formatCount,
   formatPercent,
+  formatPriceRange,
+  parseContactEmail,
   formatSeconds,
   formatSigned,
   type MediaKitInput,
@@ -286,5 +291,84 @@ describe('biçimlendirme', () => {
     expect(formatPercent(8.35)).toBe('%8,35');
     expect(formatSeconds(14.4)).toBe('14,4 sn');
     expect(formatPercent(null)).toBe(NO_DATA);
+  });
+});
+
+describe('hizmetler, fiyat aralıkları ve iletişim (#28)', () => {
+  it('kit dört hizmeti içerir; takipçi yoksa kademe ve aralık verilmez', () => {
+    const kit = buildMediaKit(seedInput());
+    expect(kit.pricing.services.map((s) => s.key)).toEqual(
+      MEDIA_KIT_SERVICES.map((s) => s.key),
+    );
+    expect(kit.pricing.services.map((s) => s.label)).toEqual([
+      'Sponsorlu Reels / kısa video',
+      'Ürün yerleştirme',
+      'Seri içerik (3 video)',
+      'Hikâye paylaşımı',
+    ]);
+    expect(kit.pricing.tier).toBeNull();
+    expect(kit.pricing.services.every((s) => s.range === null)).toBe(true);
+    expect(kit.pricing.note).toMatch(/tahmin/);
+    expect(formatPriceRange(null, 'USD')).toBe('teklif üzerine');
+  });
+
+  it('kademe toplam takipçiye göre seçilir ve hizmet çarpanları uygulanır', () => {
+    const kit = buildMediaKit(
+      seedInput({
+        accountSnapshots: [
+          {
+            account_id: IG,
+            captured_at: '2026-10-19T00:00:00Z',
+            followers: 9000,
+          },
+          {
+            account_id: YT,
+            captured_at: '2026-10-19T00:00:00Z',
+            followers: 3000,
+          },
+        ],
+      }),
+    );
+    expect(kit.pricing.tier).toBe('10–50 B takipçi');
+    expect(
+      Object.fromEntries(kit.pricing.services.map((s) => [s.key, s.range])),
+    ).toEqual({
+      sponsored_reel: [150, 500],
+      product_placement: [90, 400],
+      series: [360, 1350],
+      story: [45, 200],
+    });
+    expect(formatPriceRange([1000, 3000], 'USD')).toBe('1.000–3.000 USD');
+  });
+
+  it('kademe sınırları ve "teklif üzerine" kademesi', () => {
+    expect(buildPricing(0).tier).toBe('0–10 B takipçi');
+    expect(buildPricing(9_999).services[0]!.range).toEqual([50, 150]);
+    expect(buildPricing(10_000).tier).toBe('10–50 B takipçi');
+    expect(buildPricing(100_000).services[0]!.range).toEqual([1000, 3000]);
+    const top = buildPricing(750_000);
+    expect(top.tier).toBe('500 B+ takipçi');
+    expect(top.services.every((s) => s.range === null)).toBe(true);
+    // Kademeler artan sırada; bir kademenin alt sınırı öncekinin üst sınırından küçük değil
+    const reels = MEDIA_KIT_PRICE_TIERS.flatMap((t) =>
+      t.reel ? [t.reel] : [],
+    );
+    reels.forEach((range, i) => {
+      expect(range[0]).toBeLessThan(range[1]);
+      if (i > 0) expect(range[0]).toBeGreaterThanOrEqual(reels[i - 1]![1]);
+    });
+  });
+
+  it('iletişim e-postası doğrulanır; yoksa veya geçersizse null', () => {
+    expect(buildMediaKit(seedInput()).contact.email).toBeNull();
+    expect(
+      buildMediaKit(seedInput({ contactEmail: ' collab@example.com ' })).contact
+        .email,
+    ).toBe('collab@example.com');
+    expect(parseContactEmail('')).toBeNull();
+    expect(parseContactEmail('yok')).toBeNull();
+    expect(parseContactEmail('a b@example.com')).toBeNull();
+    expect(parseContactEmail('<x@example.com>')).toBeNull();
+    expect(parseContactEmail(undefined)).toBeNull();
   });
 });

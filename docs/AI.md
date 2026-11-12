@@ -20,6 +20,8 @@ Model çıktısı yayınlama, araç çağırma veya üretim başlatma yetkisine 
    | haftalık | `research`   | `ai-weekly`  | "AI Weekly"    |
    | yanıt    | `caption`    | `ai-reply`   | "AI Reply"     |
 
+   Caption görevi için yapıştırılacak hazır kütüphane metni ve test kaydı `docs/caption-prompt.md` içindedir (#23).
+
    Influencer'a özel soy globalden önce gelir; soyun en yüksek versiyonu okunur. Kütüphane metni koddaki ortak güvenlik/çıktı kurallarına **eklenir**, onları değiştirmez. Eşleşen prompt yoksa koddaki yerleşik talimat kullanılır (`promptId`: `builtin:<görev>@1`). Aynı kategorideki görsel/video üretim şablonları AI asistanına gitmez.
 
 Model ve fiyat için sabit varsayılan yoktur; eski `ANTHROPIC_MODEL` env'i kullanılmaz.
@@ -92,8 +94,11 @@ Diğer görevler `persona`, `script` (`topic`, `durationSeconds`, `language`), `
 404 (influencer), 422 (red), 429 (hız sınırı), 502/504 (sağlayıcı/çıktı), 503
 (yapılandırma veya maliyet kaydı) dönebilir.
 
-Kullanıcı başına 10 istek/dakika bellek sınırı tek süreçli yerel panel içindir. Birden fazla
-sunucuya dağıtımda ortak DB/KV tabanlı sınıra geçilmelidir.
+İki sınır birlikte uygulanır: kullanıcı başına 10 istek/dakika bellek sınırı (süreç yeniden
+başlayınca sıfırlanır) ve kalıcı günlük sınır. Günlük sınır o UTC günündeki kullanıcının
+`costs` (`ai_api`) kayıtlarını sayar; varsayılan 200, owner `/settings/ai` → "Kullanıcı başına
+günlük AI isteği" ile değiştirir (`app_settings.ai.dailyLimitPerUser`). Sınır dolunca 429 ve
+`Retry-After` (UTC gün sonuna kadar); sayım okunamazsa istek reddedilir.
 
 - Vitest: SDK çağrısı → Zod doğrulama → maliyet satırı; hatalı çıktıda da faturalama, yetki, hız sınırı, fiyat ve log gizliliği.
 - pgTAP: ayarların owner yazımı/team okuması, outsider izolasyonu, snapshot farkı ve 1000'den fazla postta agregasyon.

@@ -26,11 +26,13 @@ import {
   getPostCostForDetail,
 } from '@/lib/analytics/queries';
 import { getManualSnapshots } from '@/lib/analytics/manual-queries';
+import { getPostSoundType } from '@/lib/analytics/performance-queries';
 import { supportedCurrencies } from '@/lib/costs/schemas';
 import { AnalyticsStat } from '../../stat';
 import { LearningPanel } from '../../learning-panel';
 import { ManualMetricsPanel } from '../../manual-metrics-panel';
 import { ViewsChart } from '../../views-chart';
+import { SoundTypeForm } from './sound-type-form';
 
 const stageLabels: Record<string, string> = {
   idea: 'Fikir',
@@ -60,12 +62,14 @@ export default async function PostDetailPage({
   )
     ? (query.cur as string)
     : 'USD';
-  const [data, learnings, postCost, manualEntries] = await Promise.all([
-    getPostAnalytics(postId),
-    getLearnings({ postId }),
-    getPostCostForDetail(postId, currency),
-    getManualSnapshots(postId),
-  ]);
+  const [data, learnings, postCost, manualEntries, soundType] =
+    await Promise.all([
+      getPostAnalytics(postId),
+      getLearnings({ postId }),
+      getPostCostForDetail(postId, currency),
+      getManualSnapshots(postId),
+      getPostSoundType(postId),
+    ]);
   const cost = postCostDisplay(postCost);
   // Layout varlığı doğruladı; arada silinirse yine 404 (stream başlamışsa 200 olabilir)
   if (!data) notFound();
@@ -190,6 +194,14 @@ export default async function PostDetailPage({
             <dd>{post.durationS === null ? '—' : `${post.durationS} sn`}</dd>
             <dt className="text-muted">Tür</dt>
             <dd>{post.isShort ? 'Kısa video' : 'Uzun video'}</dd>
+            <dt className="text-muted">Ses</dt>
+            <dd>
+              <SoundTypeForm
+                canWrite={member.role !== 'viewer'}
+                postId={post.id}
+                value={soundType}
+              />
+            </dd>
           </dl>
           {post.url && /^https?:\/\//.test(post.url) && (
             <a

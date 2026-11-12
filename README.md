@@ -107,6 +107,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | İçerik kanbanı ve yayın takvimi                                                                    | ✅          | #57             |
 | Maliyet ve bütçe takibi (üretim maliyeti otomatik)                                                 | ✅          | #59             |
 | Haftalık rapor, CSV dışa aktarma, PDF                                                              | ✅          | #62             |
+| Performans takibi, ilk test dalgası grupları (`/analytics/performance`)                            | ✅          | #24 #25         |
 | AI üretim kuyruğu (Higgsfield worker, `/production`)                                               | ✅          | #47             |
 | Zamanlanmış senkronizasyon + 1s/5s/24s/72s/7g snapshot'ları                                        | ✅          | #53             |
 | Marka CRM'i ve PDF medya kiti                                                                      | ✅          | #60             |
@@ -115,6 +116,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | Instagram toplayıcısı                                                                              | 🚧 Emre     | #50             |
 | Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅          | #58             |
 | Birleşik yorum gelen kutusu                                                                        | ✅          | #61             |
+| Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | 🚧 (PR)     | #173            |
 | Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel) | #41             |
 
 **Ortamlar:** `test` dalı → AiInfTest Supabase projesi, `main` → AiInfMain (production). Veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0). Son production release: `v2026.10.21-0c1131d`. `test`'teki yenilikler `pnpm release` ile `main`'e geçer.

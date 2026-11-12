@@ -127,6 +127,7 @@ node scripts/doctor.mjs
 | `pnpm check`                                                       | Format + lint + typecheck + unit test (PR öncesi zorunlu)         |
 | `pnpm test:e2e`                                                    | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)             |
 | `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`) | Güncel kod haritası (aşağıya bak)                                 |
+| `pnpm clip:fetch <youtube-adresi>` / `pnpm clip:cut …`             | Yayıncı videosundan dikey klip (`docs/clip-guide.md`)             |
 | `pnpm env:pull`                                                    | Test Supabase anahtarlarını `.env.local`'e çeker                  |
 | `pnpm release`                                                     | `test` → `main` release PR'ı                                      |
 | `cd supabase/functions && deno test --allow-env`                   | Edge Function testleri (`deno lint`, `deno check` de CI'da)       |
@@ -159,6 +160,8 @@ docs/                                 kurallar (DEVELOPMENT, WORKFLOW, data-mode
 scripts/                              Node script'leri (cross-platform)
 ```
 
+Yayıncı videosundan klip istenirse `.claude/skills/yayinci-klip/SKILL.md` akışını uygula (Claude Code bunu skill olarak kendiliğinden görür; Codex dosyayı okuyup aynı adımları izler). İzin adımı atlanamaz.
+
 Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `docs/AUTH.md`, mimari kararlar `docs/adr/`.
 
 ## Paralel çalışma (birden çok agent/geliştirici)
@@ -174,7 +177,7 @@ Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `doc
 - Supabase toplu `insert`'te tüm satırlar **aynı anahtarlara** sahip olsun; eksik anahtar null gider, NOT NULL kırılır.
 - Para toplamı SQL'de (`numeric`), JS `number` ile değil. Kur yoksa toplamı gösterme, "eksik kur" de.
 - Uyarı tipi eklerken `alerts_type_known` CHECK'i migration'da yeniden kur, `packages/shared` → `ALERT_TYPES` ve `formatAlert`'i güncelle (test bunu denetler).
-- View yazarken `WITH (security_invoker = true)`; fonksiyonlar varsayılan `SECURITY INVOKER`. `SECURITY DEFINER` sadece API rollerine kapalı `private` şemasında ve boş `search_path` ile.
+- View yazarken `WITH (security_invoker = true)`; fonksiyonlar varsayılan `SECURITY INVOKER`. `SECURITY DEFINER` sadece API rollerine kapalı `private` şemasında ve boş `search_path` ile. Panelin çağırdığı ve yetki yükseltmesi gereken RPC: `public`'te INVOKER sarmalayıcı + `internal` şemasında DEFINER çekirdek (tek tek `GRANT EXECUTE`; ör. `cancel_generation`, `request_sync`).
 - Sırlar (token, webhook URL) migration'a yazılmaz; Vault'tan okunur. Sır yoksa iş sessizce atlanır, hata yağdırmaz.
 - Playwright'ta ekran okuyucu metni (ör. "Yeni: ") yüzünden tam eşleşen locator kırılır; `getByRole(..., { name: /…/ })` kullan.
 - Edge Function'lar ESLint/tsc ile değil `deno lint/check/test` ile denetlenir; editör "Cannot find name 'Deno'" derse yok say, CI belirleyicidir.

@@ -31,6 +31,10 @@ export const checklistGroups = [
         'engagement_caption',
         'Caption persona tonunda; gerekiyorsa açık bir soru/CTA içeriyor.',
       ],
+      [
+        'engagement_hashtags',
+        'Caption şablonu hazır; 3–5 alakalı hashtag seçildi ve hashtag sayfaları kısıtlı değil.',
+      ],
       ['engagement_honesty', 'Yapay tartışma veya yanıltıcı iddia yaratmıyor.'],
     ],
   },

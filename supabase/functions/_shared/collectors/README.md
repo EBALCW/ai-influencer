@@ -165,3 +165,47 @@ Kod: `tiktok.ts` (toplayıcı), `_shared/tiktok/client.ts` (HTTP + hata eşleme)
 
 - developers.tiktok.com'da uygulama: **Login Kit** + **Display API** ürünleri, izinler `user.info.basic`, `user.info.stats`, `video.list`. Uygulama incelemeden geçmeden yalnız sandbox'a eklenen test kullanıcıları bağlanabilir.
 - Toplayıcı yalnız `ctx.token.accessToken` kullanır, ek function secret'ı gerektirmez. Access token 24 saat, refresh token 365 gün geçerlidir; yenileme (`TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET`) #49'un bağlantı/yenileme işindedir.
+
+## Instagram (#50)
+
+`instagram.ts`, `instagram.test.ts`, `_shared/instagram/fixtures/`: Instagram Login,
+`graph.instagram.com/v23.0` (mevcut yorum adaptörüyle aynı sürüm). Ayrı bir
+`sync-instagram` function yoktur; `sync-dispatch` kaydı kullanılır. Token Vault'tan,
+DB yazımı, idempotent upsert, kota kaydı ve backoff ortak orkestratörden gelir.
+
+- `fetchAccount`: `id,followers_count,follows_count,media_count`; `id` bağlı
+  hesabın `external_id` değeriyle eşleşmelidir. Günlük erişim son 24 saat için
+  `insights?metric=reach&period=day&metric_type=total_value` ile okunur.
+- `fetchPosts`: `media` cursor sayfaları (50 kayıt, en çok 10 sayfa; ayarlanabilir).
+  Sağlayıcının `paging.next` URL'i takip edilmez. Tekrarlayan/eksik cursor ve sayfa
+  sınırı hatadır: eksik arşiv başarılı senkron gibi raporlanmaz. Daha eski
+  kayıtlar `since - 6 saat` filtresinden geçer, bütün sayfalar taranır.
+- `fetchPostMetrics`: medya kimliği ve `owner.id` hesapla eşleştirilir;
+  `views,reach,likes,comments,shares,saved,total_interactions` istenir. REELS için
+  `ig_reels_avg_watch_time,ig_reels_video_view_total_time` eklenir. Ortalama
+  izleme ms → saniye çevrilir. Tamamlama oranı tahmin edilmez (NULL).
+- `raw_payload.metrics` sayısal metrikleri (bilinmeyen adlar dahil),
+  `raw_payload.insights` ise `name`, `period`, `values`, `total_value` alanlarını
+  iç içe breakdown ve bütün zaman serisi noktalarıyla korur.
+  `mediaType`/`mediaProductType` medya türünü tutar. Toplam etkileşim ve toplam
+  izleme süresi burada kalır; yeni kolon/migration yoktur. Thumbnail URL'i
+  saklanmaz. Sağlayıcı açıklamaları, sayfalama URL'leri ve hata gövdeleri
+  saklanmaz/loglanmaz. Gelmeyen metrik NULL; mevcut orkestratör zorunlu
+  sayaçlardaki eksikliği `_unmeasured` ile işaretler.
+- Kaldırılan `profile_views` sorgulanmaz; `account_snapshots.profile_views` NULL
+  kalır. Canlı API sürümünde desteklenen profil metriği doğrulanmadan yerine
+  başka metrik yazılmaz.
+- İzinler: `instagram_business_basic`, `instagram_business_manage_insights`;
+  Business/Creator hesap, #49 OAuth bağlantısı ve dolu `external_id` gerekir.
+  Token yenileme burada yapılmaz. 190 → token; 4/17/32/613/429 → rate limit;
+  5xx/ağ → geçici hata. Ortak orkestratör tekrar dener ve hesap durumunu yazar.
+
+Resmi referanslar:
+https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/insights/
+https://developers.facebook.com/docs/instagram-platform/reference/instagram-media/insights/
+
+**Canlı kabul testi bekliyor:** Meta referans sayfaları geliştirme ortamında
+429/erişim hatası verdi; canlı hesap/API uygunluğu fixture testlerinin kanıtı
+sayılmaz. #49 tamamlanıp test hesabında alanlar, izinler, owner kimliği, metrik
+birimleri ve panel/Instagram eşitliği doğrulanmadan #50 kapatılmaz. Üretim
+kaydına geçiş PR'ı bu doğrulama tamamlanana kadar draft tutulur.

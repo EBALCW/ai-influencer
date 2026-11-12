@@ -2,6 +2,8 @@
 
 Panelde deal detayındaki "Yanıt şablonları" bölümü bu dosyayı okur (#29, #60). Her `##` başlığı bir şablondur; başlıktan sonraki metin kopyalanır. Köşeli parantezli alanları göndermeden önce doldur. Gerçek marka, kişi veya fiyat bilgisi bu dosyaya yazılmaz (repo public).
 
+Göndermeden önce [marka iletişim rutini](../docs/brand-communication.md) ve [teklif doğrulama adımları](../docs/scam-signals.md) uygulanır. Medya kiti henüz hazır değilse ekte paylaşıldığını söyleyen cümleyi düzenle; onaylanmamış fiyat veya teslim sözü verme.
+
 ## İlk temas
 
 Merhaba [kişi adı],
@@ -25,7 +27,7 @@ Brief için teşekkürler. Önerimiz:
 - Revizyon: [tur sayısı] tur
 - Kullanım hakları: [süre ve kapsam]
 
-Paylaşımlar "reklam" / "iş birliği" ibaresi, platformun ücretli ortaklık etiketi ve AI içerik açıklamasıyla yayınlanır.
+Paylaşımlar "Reklam" ibaresi, platformun ücretli ortaklık etiketi ve AI içerik açıklamasıyla yayınlanır.
 
 Sevgiler,
 [imza]

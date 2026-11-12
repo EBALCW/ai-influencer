@@ -1,0 +1,18 @@
+BEGIN;
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SELECT extensions.plan(7);
+INSERT INTO public.influencers(id,name,slug) VALUES ('e4000000-0000-4000-8000-000000000001','Refresh fixture','refresh-fixture');
+INSERT INTO public.social_accounts(id,influencer_id,platform,external_id,handle) VALUES ('e5000000-0000-4000-8000-000000000001','e4000000-0000-4000-8000-000000000001','youtube','UCfixture','fixture');
+SELECT extensions.ok(NOT has_function_privilege('authenticated','public.oauth_refresh_claim(public.social_platform[])','EXECUTE'),'client cannot claim token');
+SELECT extensions.ok(NOT has_table_privilege('service_role','private.oauth_refresh_leases','SELECT'),'lease table private');
+SET LOCAL ROLE service_role;
+SELECT public.store_social_token('e5000000-0000-4000-8000-000000000001','{"access_token":"old","refresh_token":"refresh"}',now()+interval '5 minutes');
+SELECT set_config('test.claim',public.oauth_refresh_claim(ARRAY['youtube']::public.social_platform[])::text,true);
+SELECT extensions.is(jsonb_array_length(current_setting('test.claim')::jsonb),1,'one due account claimed');
+SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['youtube']::public.social_platform[])),0,'second worker cannot claim same account');
+SELECT extensions.ok(public.oauth_refresh_finish('e5000000-0000-4000-8000-000000000001',(current_setting('test.claim')::jsonb->0->>'leaseId')::uuid,'ok','{"access_token":"new","refresh_token":"rotated"}',now()+interval '1 hour'),'owner lease completes');
+SELECT extensions.is(public.read_social_token('e5000000-0000-4000-8000-000000000001')->>'refresh_token','rotated','rotated refresh token persisted');
+SELECT extensions.ok(NOT public.oauth_refresh_finish('e5000000-0000-4000-8000-000000000001',(current_setting('test.claim')::jsonb->0->>'leaseId')::uuid,'error',NULL,NULL),'stale completion rejected');
+RESET ROLE;
+SELECT * FROM extensions.finish();
+ROLLBACK;

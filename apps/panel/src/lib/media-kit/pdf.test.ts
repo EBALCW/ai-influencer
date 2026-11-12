@@ -8,7 +8,7 @@ vi.mock('server-only', () => ({}));
 const { loadMediaKitFonts } = await import('./fonts');
 
 describe('renderMediaKitPdf', () => {
-  it('Türkçe karakter ve emoji içeren kiti geçerli bir PDF olarak üretir', async () => {
+  it('Türkçe karakter ve emoji içeren kiti (hizmet, fiyat ve iletişimle) geçerli bir PDF olarak üretir', async () => {
     const kit = buildMediaKit({
       asOf: '2026-10-20T00:00:00Z',
       influencer: {
@@ -18,7 +18,14 @@ describe('renderMediaKitPdf', () => {
         bio: 'Işıl ışıl bir gün ✨ '.repeat(30),
       },
       accounts: [{ id: 'a', platform: 'instagram', handle: '@sule' }],
-      accountSnapshots: [],
+      contactEmail: 'collab@example.com',
+      accountSnapshots: [
+        {
+          account_id: 'a',
+          captured_at: '2026-10-19T00:00:00Z',
+          followers: 12000,
+        },
+      ],
       posts: Array.from({ length: 3 }, (_, i) => ({
         id: `p${i}`,
         account_id: 'a',

@@ -1,0 +1,16 @@
+{
+  "data": [
+    {
+      "id": "media-1",
+      "caption": "Fixture video",
+      "timestamp": "2026-10-23T10:00:00+0000",
+      "permalink": "https://www.instagram.com/reel/fixture1/",
+      "media_type": "VIDEO",
+      "media_product_type": "REELS"
+    }
+  ],
+  "paging": {
+    "cursors": { "after": "page-2" },
+    "next": "https://untrusted.invalid/?access_token=DO_NOT_FOLLOW"
+  }
+}

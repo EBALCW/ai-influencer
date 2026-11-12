@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createClaudeClient } from '@/lib/ai/claude';
 import { getAiConfig } from '@/lib/ai/config';
 import { AiError } from '@/lib/ai/errors';
+import { checkAiDailyCap, DEFAULT_AI_DAILY_LIMIT } from '@/lib/ai/daily-cap';
 import { aiRateLimiter } from '@/lib/ai/rate-limit';
 import { libraryPromptSource } from '@/lib/ai/prompt-source';
 import { aiApiRequestSchema } from '@/lib/ai/schemas';
@@ -28,6 +29,20 @@ export async function POST(request: NextRequest) {
         },
       );
     const db = await createSupabaseServerClient();
+    // Kalıcı günlük sınır (dakika sınırı bellek içi; yeniden başlatmada sıfırlanır).
+    const daily = await checkAiDailyCap(
+      db,
+      auth.user.id,
+      config.dailyLimitPerUser ?? DEFAULT_AI_DAILY_LIMIT,
+    );
+    if (!daily.ok)
+      return NextResponse.json(
+        { error: 'Günlük AI isteği sınırına ulaşıldı. Yarın tekrar dene.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(daily.retryAfterSeconds) },
+        },
+      );
     const { influencerId, request: input } = body.data;
     const inf = await db
       .from('influencers')

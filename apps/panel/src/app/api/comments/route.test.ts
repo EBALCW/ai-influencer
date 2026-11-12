@@ -291,9 +291,11 @@ describe('POST /api/comments/[id]/lead', () => {
       table: 'brand_deals',
       values: { brand_id: 'brand-1', influencer_id: INF, stage: 'lead' },
     });
-    expect(String((deal!.values as { notes: string }).notes)).toContain(
-      'Instagram yorumu',
-    );
+    const notes = String((deal!.values as { notes: string }).notes);
+    expect(notes).toContain('Instagram yorumu');
+    // Kişisel veri: yazar adı kalıcı CRM notuna kopyalanmaz; kaynak yorum kimliğiyle bulunur.
+    expect(notes).toContain(ID);
+    expect(notes).not.toContain('uydurma.marka');
     expect(link).toMatchObject({
       table: 'comments',
       values: { brand_deal_id: 'deal-1' },

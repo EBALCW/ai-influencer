@@ -2,6 +2,7 @@
 // üretim id'si ve influencer_id ile açıkça filtrelenir (docs/DEVELOPMENT.md §9).
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { InputFile } from '../_shared/generation/provider.ts';
 import type { JobPatch, QueueJob, QueueStore } from './worker.ts';
 
 const BUCKET = 'assets';
@@ -29,29 +30,32 @@ export function createSupabaseStore(db: SupabaseClient): QueueStore {
     },
 
     async inputMedia(job) {
-      if (!job.input_asset_ids?.length)
-        return { imageUrls: [], videoUrl: null };
+      if (!job.input_asset_ids?.length) return { images: [], video: null };
       const { data, error } = await db
         .from('assets')
         .select('id, storage_path, mime_type')
         .in('id', job.input_asset_ids)
         .eq('influencer_id', job.influencer_id);
       if (error) throw new Error(`assets: ${error.message}`);
-      const imageUrls: string[] = [];
-      let videoUrl: string | null = null;
+      const images: InputFile[] = [];
+      let video: InputFile | null = null;
       for (const asset of data ?? []) {
         const signed = await db.storage
           .from(BUCKET)
           .createSignedUrl(asset.storage_path, SIGNED_URL_SECONDS);
         if (signed.error || !signed.data)
           throw new Error('signed url oluşturulamadı');
+        const file = {
+          url: signed.data.signedUrl,
+          mimeType: asset.mime_type ?? null,
+        };
         if (String(asset.mime_type ?? '').startsWith('video/')) {
-          videoUrl ??= signed.data.signedUrl;
+          video ??= file;
         } else {
-          imageUrls.push(signed.data.signedUrl);
+          images.push(file);
         }
       }
-      return { imageUrls, videoUrl };
+      return { images, video };
     },
 
     async upload(path, bytes, contentType) {
@@ -62,7 +66,18 @@ export function createSupabaseStore(db: SupabaseClient): QueueStore {
       if (error) throw new Error(`storage upload: ${error.message}`);
     },
 
-    async complete(id, path, mimeType, size, credits) {
+    async complete(id, path, mimeType, size, credits, costUsd) {
+      // Gerçek tutar (USD) önce yazılır; costs kaydını complete_generation'ın durum
+      // değişikliği tetikler (generations_record_cost, migration 20261024130000).
+      if (costUsd !== null) {
+        const { error: costError } = await db
+          .from('generations')
+          .update({ cost_usd: costUsd })
+          .eq('id', id)
+          .in('status', ['queued', 'running']);
+        if (costError)
+          throw new Error(`generations cost_usd: ${costError.message}`);
+      }
       const { error } = await db.rpc('complete_generation', {
         p_id: id,
         p_storage_path: path,

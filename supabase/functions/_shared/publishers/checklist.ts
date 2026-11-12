@@ -1,4 +1,4 @@
-// public.content_checklist_ready() (migration 20261022130000) ile aynı kural. Worker yayın
+// public.content_checklist_ready() (migration 20261024100000, ilk hali 20261022130000) ile aynı kural. Worker yayın
 // anında check-list'i tekrar doğrular; panelin "tamam" demesine güvenilmez (#58).
 // Madde listesi templates/pre-publish-checklist.md ve apps/panel/src/lib/content/checklist-schema.ts
 // ile aynıdır; liste değişirse üçü birlikte güncellenir.
@@ -10,6 +10,7 @@ export const CHECKLIST_KEYS = [
   'hook_loop',
   'engagement_reason',
   'engagement_caption',
+  'engagement_hashtags',
   'engagement_honesty',
   'quality_format',
   'quality_anatomy',

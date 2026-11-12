@@ -1,7 +1,7 @@
 /**
  * Kullanıcı başına basit, bellek içi istek sınırı (kayan pencere).
- * Panel tek süreçte yerel çalıştığı için yeterli; sunucu dağıtımında
- * DB veya KV tabanlı sınıra geçilmeli.
+ * Süreç yeniden başlayınca sıfırlanır; kalıcı üst sınır `daily-cap.ts`'teki
+ * veritabanı tabanlı günlük sınırdır (ikisi birlikte uygulanır).
  */
 export function createRateLimiter(options: {
   limit: number;

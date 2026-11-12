@@ -61,3 +61,68 @@ export function csvFileName(parts: string[]): string {
     .filter(Boolean);
   return `${safe.join('_') || 'export'}.csv`;
 }
+
+/**
+ * CSV okuyucu (#10). RFC 4180 tırnak kuralları; satır sonu CRLF, LF veya CR.
+ * - Baştaki UTF-8 BOM atlanır.
+ * - Ayraç verilmezse başlık satırından seçilir: Türkçe Excel `;` ile kaydeder.
+ * - `csvCell`'in formül korumasıyla eklediği `'` (ör. `'=1+1`) geri alınır.
+ * Boş satırlar atlanır. Her kayıt dosyadaki başlangıç satır numarasını taşır.
+ */
+export type CsvRecord = { line: number; cells: string[] };
+
+export function detectCsvSeparator(text: string): ',' | ';' | '\t' {
+  const header = text.replace(/^﻿/, '').split(/\r\n|\n|\r/, 1)[0] ?? '';
+  const count = (sep: string) => header.split(sep).length - 1;
+  const candidates = [',', ';', '\t'] as const;
+  return candidates.reduce((best, sep) =>
+    count(sep) > count(best) ? sep : best,
+  );
+}
+
+export function parseCsv(text: string, separator?: string): CsvRecord[] {
+  const source = text.replace(/^﻿/, '');
+  const sep = separator ?? detectCsvSeparator(source);
+  const records: CsvRecord[] = [];
+  let cells: string[] = [];
+  let cell = '';
+  let quoted = false;
+  let line = 1;
+  let start = 1;
+  const pushCell = () => {
+    cells.push(/^'[=+\-@\t\r]/.test(cell) ? cell.slice(1) : cell);
+    cell = '';
+  };
+  const pushRecord = () => {
+    pushCell();
+    if (cells.some((value) => value.trim() !== ''))
+      records.push({ line: start, cells });
+    cells = [];
+  };
+  for (let i = 0; i < source.length; i += 1) {
+    const char = source[i]!;
+    if (quoted) {
+      if (char === '"') {
+        if (source[i + 1] === '"') {
+          cell += '"';
+          i += 1;
+        } else quoted = false;
+      } else {
+        if (char === '\n' || (char === '\r' && source[i + 1] !== '\n'))
+          line += 1;
+        cell += char;
+      }
+      continue;
+    }
+    if (char === '"' && cell === '') quoted = true;
+    else if (char === sep) pushCell();
+    else if (char === '\r' || char === '\n') {
+      if (char === '\r' && source[i + 1] === '\n') i += 1;
+      pushRecord();
+      line += 1;
+      start = line;
+    } else cell += char;
+  }
+  if (cell !== '' || cells.length) pushRecord();
+  return records;
+}

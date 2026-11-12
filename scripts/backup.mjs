@@ -7,15 +7,9 @@
 // Gereksinim: PostgreSQL istemci araçları (pg_dump, psql), sunucuyla aynı ana sürüm (17).
 // Bağlantı: .env.local → SUPABASE_DB_URL (Supabase → Project Settings → Database →
 // Connection string). Şifre komut satırına yazılmaz, PGPASSWORD env'i ile verilir.
-// Storage dosyaları henüz yedeklenmiyor (bucket'lar #45 ile gelecek).
+// Storage dosyaları ayrı alınır: pnpm backup:storage.
 import { spawnSync } from 'node:child_process';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  statSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,8 +22,18 @@ import {
   pgConnection,
 } from './lib/panel-lib.mjs';
 
+import { RESTORE_FILES, restorePsqlArgs } from './lib/restore-args.mjs';
+import {
+  writeBackupManifest,
+  verifyBackupManifest,
+} from './lib/backup-integrity.mjs';
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const LOCAL_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+// Yerel Supabase'te `postgres` rolü superuser değildir: session_replication_role ayarlayamaz
+// ("permission denied to set parameter") ve auth şemasını temizleyemez. Yerel yığının
+// superuser'ı supabase_admin'dir (yerel şifre sabit; uzak projede bu rol bize açık değildir).
+const LOCAL_DB_URL =
+  'postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres';
 
 const ok = (m) => console.log(`  \x1b[32m[OK]\x1b[0m ${m}`);
 const fail = (m) => {
@@ -57,7 +61,7 @@ function loadEnv() {
   return { ...fromFile, ...process.env };
 }
 
-function backup(argv) {
+async function backup(argv) {
   const outIdx = argv.indexOf('--out');
   const base =
     outIdx >= 0
@@ -80,7 +84,9 @@ function backup(argv) {
   console.log(requireTool('pg_dump'));
 
   const dir = join(base, backupDirName(new Date()));
-  mkdirSync(dir, { recursive: true });
+  mkdirSync(base, { recursive: true, mode: 0o700 });
+  // Aynı saniyede ikinci çalıştırma önceki yedeği ezmesin.
+  mkdirSync(dir, { mode: 0o700 });
   console.log(`Yedek klasörü: ${dir}`);
 
   for (const part of backupPlan()) {
@@ -97,20 +103,21 @@ function backup(argv) {
       fail(`${part.file} alınamadı (pg_dump çıkış kodu ${r.status}).`);
     ok(`${part.file} (${Math.round(statSync(file).size / 1024)} KB)`);
   }
+  await writeBackupManifest(dir);
+  await verifyBackupManifest(dir);
+  ok('SHA-256 bütünlük kontrolü');
   console.log(
     `\nYedek tamam. Geri yükleme testi için: pnpm backup:restore "${dir}"\n` +
       "Bu klasör hassas veri içerir: repoya, issue'ya veya sohbete koyma.",
   );
 }
 
-function restore(argv) {
+async function restore(argv) {
   const dir = argv[0] ? resolve(argv[0]) : null;
   if (!dir || !existsSync(dir))
     fail('Kullanım: pnpm backup:restore <yedek-klasörü>');
-  const files = readdirSync(dir);
-  for (const f of ['data-auth.sql', 'data-public.sql']) {
-    if (!files.includes(f)) fail(`${f} bu klasörde yok: ${dir}`);
-  }
+  await verifyBackupManifest(dir);
+  ok('SHA-256 bütünlük kontrolü');
 
   // Sadece yerel Supabase'e geri yüklenir: ortak/production projeyi yanlışlıkla ezmemek için
   const conn = pgConnection(process.env.RESTORE_DB_URL ?? LOCAL_DB_URL);
@@ -128,35 +135,33 @@ function restore(argv) {
     ...conn.env,
     PGOPTIONS: '-c session_replication_role=replica',
   };
-  const psql = (args) =>
-    spawnSync(
-      'psql',
-      [...conn.args, '-v', 'ON_ERROR_STOP=1', '--quiet', ...args],
-      {
-        stdio: 'inherit',
-        env,
-      },
-    );
-
-  const truncate = psql([
-    '-c',
-    "do $$ declare r record; begin for r in select tablename from pg_tables where schemaname = 'public' loop execute format('truncate table public.%I cascade', r.tablename); end loop; end $$; delete from auth.identities; delete from auth.users;",
-  ]);
-  if (truncate.status !== 0)
+  // Tek psql oturumu ve tek transaction: SQL dosyalarından biri başarısızsa
+  // TRUNCATE ve önceki importlar da rollback olur. -X yerel psqlrc'yi devre dışı bırakır.
+  const result = spawnSync('psql', restorePsqlArgs(conn.args, dir), {
+    stdio: 'inherit',
+    env,
+  });
+  if (result.error || result.status !== 0)
     fail(
-      'Yerel veritabanı temizlenemedi. Yerel Supabase çalışıyor mu? (pnpm supabase:status)',
+      'Geri yükleme başarısız; yerel veri değiştirilmedi (transaction geri alındı). Yerel Supabase çalışıyor mu? (pnpm supabase:status)',
     );
-
-  for (const f of ['data-auth.sql', 'data-public.sql']) {
-    const r = psql(['-f', join(dir, f)]);
-    if (r.status !== 0) fail(`${f} yüklenemedi.`);
-    ok(f);
-  }
+  for (const file of RESTORE_FILES) ok(file);
   console.log(
     '\nGeri yükleme tamam. Paneli yerel Supabase değerleriyle açıp veriyi kontrol et.',
   );
 }
 
+process.umask(0o077);
 const [mode, ...rest] = process.argv.slice(2);
-if (mode === 'restore') restore(rest);
-else backup(process.argv.slice(2));
+try {
+  if (mode === 'restore') await restore(rest);
+  else if (mode === 'verify') {
+    if (!rest[0]) fail('Kullanım: pnpm backup:verify <yedek-klasörü>');
+    await verifyBackupManifest(resolve(rest[0]));
+    ok('SHA-256 bütünlük kontrolü');
+  } else await backup(process.argv.slice(2));
+} catch {
+  fail(
+    'Yedek işlemi tamamlanamadı. Dosyaları ve manifesti kontrol edin; güncel pnpm backup ile yeni yedek alın.',
+  );
+}

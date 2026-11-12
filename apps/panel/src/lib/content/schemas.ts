@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { checklistSchema } from './checklist-schema';
 import { validTimezone } from './schedule-rules';
+import { sourceTypes } from './source-rules';
 
 const id = z.string().uuid();
 export const timezoneSchema = z.string().max(100).refine(validTimezone);
@@ -45,6 +46,10 @@ export const contentSchema = z.object({
   sort_order: z.number().int().min(0).max(2147483647).default(0),
   notes: z.string().trim().max(10000).default(''),
   timezone: timezoneSchema.default('Europe/Istanbul'),
+  // #145: v2v kaynak bilgisi. Kontrol eden/zaman sunucuda yazılır, istemciden alınmaz.
+  source_type: z.enum(sourceTypes).nullable().default(null),
+  source_owner: z.string().trim().max(200).default(''),
+  source_license: z.string().trim().max(500).default(''),
   asset_ids: z
     .array(id)
     .max(50)
@@ -77,6 +82,9 @@ export const contentPatchSchema = z
     sort_order: fields.sort_order.removeDefault().optional(),
     notes: fields.notes.removeDefault().optional(),
     timezone: fields.timezone.removeDefault().optional(),
+    source_type: fields.source_type.removeDefault().optional(),
+    source_owner: fields.source_owner.removeDefault().optional(),
+    source_license: fields.source_license.removeDefault().optional(),
     asset_ids: fields.asset_ids,
     generation_ids: fields.generation_ids,
     expected_updated_at: z.string().datetime({ offset: true }).optional(),
@@ -97,6 +105,10 @@ export const detailSchema = z.object({
   posts: z.array(
     z.object({ id, url: z.string().nullable(), views: z.number().nullable() }),
   ),
+  /** İçeriğe video-to-video üretimi (veya onun çıktısı) bağlı. */
+  v2v: z.boolean().default(false),
+  /** v2v içerikte kaynak türü girilmemiş (#145). */
+  source_missing: z.boolean().default(false),
 });
 export type ContentDetails = z.infer<typeof detailSchema>;
 
@@ -107,6 +119,8 @@ export const workspaceQuerySchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     .optional(),
   page: z.coerce.number().int().min(1).max(100000).default(1),
+  /** `missing`: yalnız kaynak bilgisi eksik v2v içerikler (aylık kontrol). */
+  source: z.enum(['missing']).optional(),
 });
 export const calendarQuerySchema = workspaceQuerySchema.extend({
   date: z

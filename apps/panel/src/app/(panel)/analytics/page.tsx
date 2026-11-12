@@ -48,6 +48,13 @@ export default async function AnalyticsPage({
             >
               Haftalık rapor ve CSV/PDF dışa aktarma
             </Link>
+            {' · '}
+            <Link
+              className="text-accent underline"
+              href={analyticsHref('/analytics/performance', inf)}
+            >
+              Performans takibi ve ilk test dalgası
+            </Link>
           </p>
         </div>
         <nav aria-label="Kontrol noktası" className="flex flex-wrap gap-2">

@@ -220,6 +220,8 @@ describe('enqueueGeneration', () => {
         'value:mekan': 'sahil',
         'value:fazla': 'x',
         testMode: 'on',
+        imageResolution: '4K',
+        aspectRatio: '4:5',
         resolution: '1080p',
         seed: '42',
         overrideBudget: 'on',
@@ -245,8 +247,9 @@ describe('enqueueGeneration', () => {
             variables: { kıyafet: 'trençkot', mekan: 'sahil' },
             prompt_version: 2,
             test_mode: true,
-            resolution: '480p',
-            seed: 42,
+            // test modu 2K zorlar; seed ve video çözünürlüğü görsel modelinde yok
+            image_resolution: '2K',
+            aspect_ratio: '4:5',
           },
         },
       },
@@ -261,7 +264,7 @@ describe('enqueueGeneration', () => {
       form({
         promptId: PROMPT_ID,
         influencerId: INF_A,
-        resolution: '1080p',
+        imageResolution: '4K',
         overrideBudget: 'on',
       }),
     );
@@ -269,8 +272,20 @@ describe('enqueueGeneration', () => {
     expect(args.p_override_budget).toBe(true);
     expect(args.p_params).toMatchObject({
       test_mode: false,
-      resolution: '1080p',
+      image_resolution: '4K',
+      aspect_ratio: '9:16',
     });
+  });
+
+  it('rejects options the provider schema does not support', async () => {
+    respondWith(prompt({ body: 'Sabit' }));
+    const state = await enqueueGeneration(
+      null,
+      form({ promptId: PROMPT_ID, influencerId: INF_A, aspectRatio: '7:3' }),
+    );
+    expect(state?.ok).toBe(false);
+    expect(state?.message).toMatch(/en-boy oranı/);
+    expect(db.rpcCalls).toHaveLength(0);
   });
 
   it('shows a clear message when the budget is exceeded', async () => {

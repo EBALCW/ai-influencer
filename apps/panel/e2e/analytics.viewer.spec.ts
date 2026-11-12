@@ -50,3 +50,22 @@ test('viewer elle metrik formunu görmez, API çağrısında 403 alır', async (
   );
   expect(response.status()).toBe(403);
 });
+
+test('viewer performans takibini görür; ses türü ve eşik değiştiremez', async ({
+  page,
+}) => {
+  const response = await page.goto('/analytics/performance?inf=demo-creator');
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('table', { name: 'Post performans tablosu' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('form', { name: 'Eşikleri düzenle' }),
+  ).toHaveCount(0);
+  await page.goto(`/analytics/posts/${demoPost}?inf=demo-creator`);
+  await expect(page.getByRole('form', { name: 'Ses türü' })).toHaveCount(0);
+  const patch = await page.request.patch(`/api/posts/${demoPost}`, {
+    data: { soundType: 'trend' },
+  });
+  expect(patch.status()).toBe(403);
+});

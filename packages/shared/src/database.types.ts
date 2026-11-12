@@ -223,6 +223,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"clip_sources": {
+                  Row: {
+                    "channel_name": string,"channel_url": string | null,"created_at": string,"created_by": string | null,"duration_seconds": number | null,"id": string,"notes": string,"permission_checked_at": string | null,"permission_checked_by": string | null,"permission_ref": string,"permission_status": Database["public"]['Enums']["clip_permission_status"],"platform": string,"title": string,"updated_at": string,"video_id": string,"video_url": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "channel_name": string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title": string,"updated_at"?: string,"video_id": string,"video_url": string
+                  }
+                  Update: {
+                    "channel_name"?: string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title"?: string,"updated_at"?: string,"video_id"?: string,"video_url"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "clip_sources_permission_checked_by_fkey"
+      columns: ["permission_checked_by"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["user_id"]
+    }
+                  ]
+                },"clips": {
+                  Row: {
+                    "content_item_id": string | null,"created_at": string,"created_by": string | null,"end_seconds": number,"hook": string | null,"id": string,"influencer_id": string | null,"notes": string,"source_id": string,"start_seconds": number,"status": Database["public"]['Enums']["clip_status"],"title": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds": number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id": string,"start_seconds": number,"status"?: Database["public"]['Enums']["clip_status"],"title": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds"?: number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id"?: string,"start_seconds"?: number,"status"?: Database["public"]['Enums']["clip_status"],"title"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "clips_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clips_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clips_source_id_fkey"
+      columns: ["source_id"]
+isOneToOne: false
+      referencedRelation: "clip_sources"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"comment_replies": {
                   Row: {
                     "attempts": number,"body": string,"comment_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"id": string,"next_attempt_at": string,"sent_at": string | null,"status": string,"updated_at": string
@@ -309,14 +361,14 @@ isOneToOne: false
                   ]
                 },"content_items": {
                   Row: {
-                    "adaptation_score": number | null,"assignee_id": string | null,"checklist": NonNullable<Json>,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"notes": string,"scheduled_at": string | null,"sort_order": number,"source_url": string,"source_views": number | null,"stage": Database["public"]['Enums']["content_stage"],"target_account_id": string | null,"timezone": string,"title": string,"updated_at": string,"viral_reason": string
+                    "adaptation_score": number | null,"assignee_id": string | null,"checklist": NonNullable<Json>,"checklist_scored_by": string | null,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"notes": string,"scheduled_at": string | null,"sort_order": number,"source_checked_at": string | null,"source_checked_by": string | null,"source_license": string,"source_owner": string,"source_type": Database["public"]['Enums']["content_source_type"] | null,"source_url": string,"source_views": number | null,"stage": Database["public"]['Enums']["content_stage"],"target_account_id": string | null,"timezone": string,"title": string,"updated_at": string,"viral_reason": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"viral_reason"?: string
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"viral_reason"?: string
                   }
                   Update: {
-                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"viral_reason"?: string
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"viral_reason"?: string
                   }
                   Relationships: [
                     {
@@ -409,14 +461,14 @@ isOneToOne: false
                   ]
                 },"generations": {
                   Row: {
-                    "attempts": number,"cancel_requested_at": string | null,"created_at": string,"created_by": string | null,"credits": number | null,"duration_ms": number | null,"error": string | null,"finished_at": string | null,"id": string,"influencer_id": string,"input_asset_ids": (string)[],"max_attempts": number,"mode": string,"next_run_at": string,"output_asset_id": string | null,"params": NonNullable<Json>,"progress": number,"prompt_id": string | null,"provider_job_id": string | null,"retry_of": string | null,"started_at": string | null,"status": Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at": string
+                    "attempts": number,"cancel_requested_at": string | null,"cost_usd": number | null,"created_at": string,"created_by": string | null,"credits": number | null,"duration_ms": number | null,"error": string | null,"estimated_cost_usd": number | null,"finished_at": string | null,"id": string,"influencer_id": string,"input_asset_ids": (string)[],"max_attempts": number,"mode": string,"next_run_at": string,"output_asset_id": string | null,"params": NonNullable<Json>,"progress": number,"prompt_id": string | null,"provider_job_id": string | null,"retry_of": string | null,"started_at": string | null,"status": Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempts"?: number,"cancel_requested_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"influencer_id": string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode": string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"cost_usd"?: number | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"estimated_cost_usd"?: number | null,"finished_at"?: string | null,"id"?: string,"influencer_id": string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode": string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at"?: string
                   }
                   Update: {
-                    "attempts"?: number,"cancel_requested_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"influencer_id"?: string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode"?: string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool"?: string,"type"?: Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"cost_usd"?: number | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"estimated_cost_usd"?: number | null,"finished_at"?: string | null,"id"?: string,"influencer_id"?: string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode"?: string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool"?: string,"type"?: Database["public"]['Enums']["generation_type"],"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -579,14 +631,14 @@ isOneToOne: false
                   ]
                 },"posts": {
                   Row: {
-                    "account_id": string,"caption": string,"content_item_id": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"external_id": string | null,"id": string,"is_short": boolean,"published_at": string | null,"updated_at": string,"url": string | null
+                    "account_id": string,"caption": string,"content_item_id": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"external_id": string | null,"id": string,"is_short": boolean,"published_at": string | null,"sound_type": string | null,"updated_at": string,"url": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "account_id": string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null
                   }
                   Update: {
-                    "account_id"?: string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "account_id"?: string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null
                   }
                   Relationships: [
                     {
@@ -663,14 +715,14 @@ isOneToOne: false
                   ]
                 },"reports": {
                   Row: {
-                    "ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string
+                    "actions": (string)[],"ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at"?: string
+                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at"?: string
                   }
                   Update: {
-                    "ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end"?: string,"period_start"?: string,"summary"?: NonNullable<Json>,"updated_at"?: string
+                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end"?: string,"period_start"?: string,"summary"?: NonNullable<Json>,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -735,6 +787,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"trends": {
+                  Row: {
+                    "account_handle": string,"adaptation_idea": string,"adaptation_score": number | null,"captured_on": string,"comments": number | null,"content_item_id": string | null,"cost_estimate": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"format": string,"hook": string,"id": string,"influencer_id": string | null,"likes": number | null,"notes": string,"platform": string,"sound": string,"source": string,"status": string,"updated_at": string,"url": string,"views": number | null,"why_viral": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url": string,"views"?: number | null,"why_viral"?: string
+                  }
+                  Update: {
+                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url"?: string,"views"?: number | null,"why_viral"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "trends_content_item_id_fkey"
+      columns: ["content_item_id"]
+isOneToOne: false
+      referencedRelation: "content_items"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "trends_influencer_id_fkey"
+      columns: ["influencer_id"]
+isOneToOne: false
+      referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -792,11 +870,13 @@ isOneToOne: false
 { Args: { "p_id": string }; Returns: {
               "attempts": number,
 "cancel_requested_at": string | null,
+"cost_usd": number | null,
 "created_at": string,
 "created_by": string | null,
 "credits": number | null,
 "duration_ms": number | null,
 "error": string | null,
+"estimated_cost_usd": number | null,
 "finished_at": string | null,
 "id": string,
 "influencer_id": string,
@@ -829,11 +909,13 @@ isOneToOne: false
 { Args: { "p_lease_seconds"?: number,"p_limit"?: number,"p_tools": (string)[] }; Returns: {
               "attempts": number,
 "cancel_requested_at": string | null,
+"cost_usd": number | null,
 "created_at": string,
 "created_by": string | null,
 "credits": number | null,
 "duration_ms": number | null,
 "error": string | null,
+"estimated_cost_usd": number | null,
 "finished_at": string | null,
 "id": string,
 "influencer_id": string,
@@ -897,11 +979,13 @@ isOneToOne: false
 { Args: { "p_credits"?: number,"p_file_size_bytes"?: number,"p_id": string,"p_mime_type": string,"p_storage_path": string }; Returns: {
               "attempts": number,
 "cancel_requested_at": string | null,
+"cost_usd": number | null,
 "created_at": string,
 "created_by": string | null,
 "credits": number | null,
 "duration_ms": number | null,
 "error": string | null,
+"estimated_cost_usd": number | null,
 "finished_at": string | null,
 "id": string,
 "influencer_id": string,
@@ -933,11 +1017,17 @@ isOneToOne: false
 "content_checklist_ready":
 { Args: { "p_checklist": Json }; Returns: boolean
                            },
+"content_is_v2v":
+{ Args: { "p_id": string }; Returns: boolean
+                           },
 "content_item_details":
 { Args: { "p_ids": (string)[] }; Returns: Json
                            },
 "content_schedule_warnings":
 { Args: { "p_id": string }; Returns: (string)[]
+                           },
+"content_source_missing_ids":
+{ Args: { "p_influencer_id"?: string }; Returns: (string)[]
                            },
 "cost_by_category":
 { Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
@@ -1030,11 +1120,13 @@ isOneToOne: false
 { Args: { "p_influencer_id": string,"p_input_asset_ids"?: (string)[],"p_mode"?: string,"p_override_budget"?: boolean,"p_params"?: Json,"p_prompt_id"?: string,"p_retry_of"?: string,"p_tool": string,"p_type": Database["public"]['Enums']["generation_type"] }; Returns: {
               "attempts": number,
 "cancel_requested_at": string | null,
+"cost_usd": number | null,
 "created_at": string,
 "created_by": string | null,
 "credits": number | null,
 "duration_ms": number | null,
 "error": string | null,
+"estimated_cost_usd": number | null,
 "finished_at": string | null,
 "id": string,
 "influencer_id": string,
@@ -1088,6 +1180,7 @@ isOneToOne: false
               "adaptation_score": number | null,
 "assignee_id": string | null,
 "checklist": NonNullable<Json>,
+"checklist_scored_by": string | null,
 "created_at": string,
 "created_by": string | null,
 "format": string,
@@ -1097,6 +1190,11 @@ isOneToOne: false
 "notes": string,
 "scheduled_at": string | null,
 "sort_order": number,
+"source_checked_at": string | null,
+"source_checked_by": string | null,
+"source_license": string,
+"source_owner": string,
+"source_type": Database["public"]['Enums']["content_source_type"] | null,
 "source_url": string,
 "source_views": number | null,
 "stage": Database["public"]['Enums']["content_stage"],
@@ -1115,6 +1213,27 @@ isOneToOne: false
 "mark_alerts_read":
 { Args: { "p_alert_ids"?: (string)[] }; Returns: number
                            },
+"oauth_connect_token":
+{ Args: { "p_account_id": string,"p_expires_at": string,"p_external_id": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_token": Json,"p_user_id": string }; Returns: undefined
+                           },
+"oauth_refresh_claim":
+{ Args: { "p_platforms": (Database["public"]['Enums']["social_platform"])[] }; Returns: Json
+                           },
+"oauth_refresh_finish":
+{ Args: { "p_account_id": string,"p_expires_at": string,"p_lease_id": string,"p_result": string,"p_token": Json }; Returns: boolean
+                           },
+"oauth_revoke_begin":
+{ Args: { "p_account_id": string,"p_influencer_id": string,"p_user_id": string }; Returns: Json
+                           },
+"oauth_revoke_finish":
+{ Args: { "p_account_id": string,"p_nonce": string }; Returns: boolean
+                           },
+"oauth_state_consume":
+{ Args: { "p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string }; Returns: Json
+                           },
+"oauth_state_save":
+{ Args: { "p_expires_at": string,"p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string,"p_verifier": string }; Returns: undefined
+                           },
 "post_analytics":
 { Args: { "p_baseline_posts"?: number,"p_post_id": string }; Returns: Json
                            },
@@ -1128,11 +1247,17 @@ isOneToOne: false
               "allocation": string,"currency": string,"entry_count": number,"generation_count": number,"missing_rate_count": number,"post_id": string,"total": number
             }[]
                            },
+"post_performance":
+{ Args: { "p_baseline_posts"?: number,"p_influencer_slug"?: string,"p_limit"?: number }; Returns: Json
+                           },
 "post_segments":
 { Args: { "p_influencer_slug"?: string,"p_target_hours"?: number }; Returns: Json
                            },
-"raise_budget_alerts":
-{ Args: { "p_month": string }; Returns: number
+"push_clip_to_backlog":
+{ Args: { "p_clip_id": string,"p_influencer_id"?: string }; Returns: string
+                           },
+"push_trend_to_backlog":
+{ Args: { "p_influencer_id"?: string,"p_title"?: string,"p_trend_id": string }; Returns: string
                            },
 "read_social_token":
 { Args: { "p_account_id": string }; Returns: Json
@@ -1175,11 +1300,13 @@ isOneToOne: false
 { Args: { "p_id": string,"p_override_budget"?: boolean }; Returns: {
               "attempts": number,
 "cancel_requested_at": string | null,
+"cost_usd": number | null,
 "created_at": string,
 "created_by": string | null,
 "credits": number | null,
 "duration_ms": number | null,
 "error": string | null,
+"estimated_cost_usd": number | null,
 "finished_at": string | null,
 "id": string,
 "influencer_id": string,
@@ -1210,6 +1337,7 @@ isOneToOne: false
               "adaptation_score": number | null,
 "assignee_id": string | null,
 "checklist": NonNullable<Json>,
+"checklist_scored_by": string | null,
 "created_at": string,
 "created_by": string | null,
 "format": string,
@@ -1219,6 +1347,11 @@ isOneToOne: false
 "notes": string,
 "scheduled_at": string | null,
 "sort_order": number,
+"source_checked_at": string | null,
+"source_checked_by": string | null,
+"source_license": string,
+"source_owner": string,
+"source_type": Database["public"]['Enums']["content_source_type"] | null,
 "source_url": string,
 "source_views": number | null,
 "stage": Database["public"]['Enums']["content_stage"],
@@ -1240,12 +1373,18 @@ isOneToOne: false
 "unread_alert_count":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"valid_analytics_settings":
+{ Args: { "p_value": Json }; Returns: boolean
+                           },
+"valid_report_actions":
+{ Args: { "p_actions": (string)[] }; Returns: boolean
+                           },
 "valid_sample_captions":
 { Args: { "p_values": (string)[] }; Returns: boolean
                            }
           }
           Enums: {
-            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
+            "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","clip_permission_status": "pending"|"granted"|"denied","clip_status": "candidate"|"approved"|"rendered"|"rejected","content_source_type": "own"|"stock"|"open_license"|"third_party","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -1365,7 +1504,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"publish_job_status": ["queued", "processing", "published", "failed", "manual_required", "cancelled"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
+            "asset_kind": ["reference", "generated", "final_video", "thumbnail"],"brand_deal_stage": ["lead", "negotiation", "signed", "delivered", "paid", "lost"],"clip_permission_status": ["pending", "granted", "denied"],"clip_status": ["candidate", "approved", "rendered", "rejected"],"content_source_type": ["own", "stock", "open_license", "third_party"],"content_stage": ["idea", "script", "production", "qc", "edit", "scheduled", "published"],"cost_category": ["subscription", "credits", "tool", "other", "ai_api"],"generation_status": ["queued", "running", "succeeded", "failed", "cancelled"],"generation_type": ["image", "video"],"influencer_status": ["draft", "active", "paused", "archived"],"prompt_category": ["character", "video2video", "short_film", "caption", "research"],"publish_job_status": ["queued", "processing", "published", "failed", "manual_required", "cancelled"],"social_account_status": ["pending", "active", "expired", "revoked", "error"],"social_platform": ["instagram", "youtube", "tiktok"],"team_role": ["owner", "editor", "viewer"]
           }
         }
 } as const

@@ -63,3 +63,7 @@ verify_jwt = false
 # #61: yorum toplama/yanıt gönderimi; pg_cron/pg_net çağırır, doğrulama x-cron-secret ile.
 [functions.comments-dispatch]
 verify_jwt = false
+
+# #49: token yenileme, doğrulama CRON_SECRET ile.
+[functions.refresh-tokens]
+verify_jwt = false

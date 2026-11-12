@@ -1,0 +1,26 @@
+BEGIN;
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SELECT extensions.plan(8);
+SELECT extensions.ok(NOT has_function_privilege('service_role','private.oauth_refresh_clock()','EXECUTE'),'clock is not a public time override');
+INSERT INTO public.influencers(id,name,slug) VALUES ('e6000000-0000-4000-8000-000000000001','IG refresh fixture','ig-refresh-fixture');
+INSERT INTO public.social_accounts(id,influencer_id,platform,external_id,handle) VALUES ('e7000000-0000-4000-8000-000000000001','e6000000-0000-4000-8000-000000000001','instagram','123456789','ig-fixture');
+SELECT public.store_social_token('e7000000-0000-4000-8000-000000000001','{"access_token":"ig-old","scope":"instagram_business_basic"}',now()+interval '6 days');
+SET LOCAL ROLE service_role;
+SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])),0,'token younger than 24h not refreshed');
+RESET ROLE;
+CREATE OR REPLACE FUNCTION private.oauth_refresh_clock() RETURNS timestamptz
+LANGUAGE sql VOLATILE SECURITY INVOKER SET search_path='' AS $$ SELECT clock_timestamp()+interval '25 hours' $$;
+SET LOCAL ROLE service_role;
+SELECT set_config('test.ig_claim',public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])::text,true);
+SELECT extensions.is(jsonb_array_length(current_setting('test.ig_claim')::jsonb),1,'Instagram refreshed seven days before expiry');
+SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])),0,'second worker cannot claim same Instagram token');
+SELECT extensions.ok(public.oauth_refresh_finish('e7000000-0000-4000-8000-000000000001',(current_setting('test.ig_claim')::jsonb->0->>'leaseId')::uuid,'ok','{"access_token":"ig-new","scope":"instagram_business_basic"}',now()+interval '60 days'),'lease owner rotates access token without refresh token');
+SELECT extensions.is(public.read_social_token('e7000000-0000-4000-8000-000000000001')->>'access_token','ig-new','rotated access token in Vault');
+SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])),0,'long-lived token not immediately refreshed again');
+RESET ROLE;
+UPDATE public.social_accounts SET token_expires_at=now()-interval '1 minute' WHERE id='e7000000-0000-4000-8000-000000000001';
+SET LOCAL ROLE service_role;
+SELECT extensions.is(jsonb_array_length(public.oauth_refresh_claim(ARRAY['instagram']::public.social_platform[])),0,'expired Instagram token requires reconnect');
+RESET ROLE;
+SELECT * FROM extensions.finish();
+ROLLBACK;

@@ -62,6 +62,10 @@ vi.mock('@/lib/supabase/server', () => ({
         or: () => chain,
         order: () => chain,
         limit: () => chain,
+        gte: () => chain,
+        // Günlük sınır sayımı (costs, head: true)
+        then: (ok: (r: unknown) => unknown) =>
+          Promise.resolve({ data: null, count: 0, error: null }).then(ok),
         maybeSingle: async () => ({ data: data[table] ?? null, error: null }),
         insert: (values: Record<string, unknown>) => {
           state.writes.push(table);

@@ -19,9 +19,30 @@ it('trend alanlarını ve zaman dilimlerini doğrular, audit alanlarını taşı
     { adaptation_score: 6 },
     { timezone: 'Unknown/Zone' },
     { asset_ids: [id, id] },
+    { source_type: 'pirated' },
+    { source_owner: 'x'.repeat(201) },
+    { source_license: 'x'.repeat(501) },
   ])
     expect(contentSchema.safeParse({ ...base, ...patch }).success).toBe(false);
   expect(contentPatchSchema.safeParse({ created_by: id }).success).toBe(false);
+  expect(
+    contentPatchSchema.safeParse({ checklist_scored_by: id }).success,
+  ).toBe(false);
+  expect(contentPatchSchema.safeParse({ source_checked_by: id }).success).toBe(
+    false,
+  );
+  expect(contentSchema.parse(base)).toMatchObject({
+    source_type: null,
+    source_owner: '',
+    source_license: '',
+  });
+  expect(contentPatchSchema.parse({ source_type: 'own' })).toEqual({
+    source_type: 'own',
+  });
+  expect(workspaceQuerySchema.parse({ source: 'missing' }).source).toBe(
+    'missing',
+  );
+  expect(workspaceQuerySchema.safeParse({ source: 'all' }).success).toBe(false);
   expect(contentPatchSchema.parse({ stage: 'script' })).toEqual({
     stage: 'script',
   });

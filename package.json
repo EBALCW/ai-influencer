@@ -6,6 +6,10 @@
     "node": ">=24 <25"
   },
   "scripts": {
+    "automation:report": "node scripts/automation-cost.mjs",
+    "video:export": "node scripts/edit/export.mjs",
+    "clip:fetch": "node scripts/clip/clip.mjs fetch",
+    "clip:cut": "node scripts/clip/clip.mjs cut",
     "doctor": "node scripts/doctor.mjs",
     "setup:mac": "bash scripts/setup-mac.sh",
     "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1",
@@ -29,6 +33,9 @@
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "panel": "node scripts/panel.mjs",
     "backup": "node scripts/backup.mjs",
+    "backup:storage": "node scripts/backup-storage.mjs",
+    "backup:storage:verify": "node scripts/backup-storage.mjs verify",
+    "backup:verify": "node scripts/backup.mjs verify",
     "backup:restore": "node scripts/backup.mjs restore",
     "env:pull": "node scripts/env-pull.mjs",
     "release": "node scripts/release.mjs",

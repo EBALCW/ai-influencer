@@ -80,7 +80,7 @@ SELECT extensions.ok(
 );
 SELECT extensions.ok(
   (SELECT bool_and(prosecdef AND proconfig @> ARRAY['search_path=""']) FROM pg_proc
-   WHERE oid IN ('public.request_sync(uuid)'::regprocedure, 'private.invoke_sync(text, uuid)'::regprocedure,
+   WHERE oid IN ('internal.request_sync(uuid)'::regprocedure, 'private.invoke_sync(text, uuid)'::regprocedure,
                  'private.maintain_sync_runs(timestamptz)'::regprocedure, 'private.sync_runs_failed_alert()'::regprocedure)),
   'sync definer functions use an empty search_path'
 );

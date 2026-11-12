@@ -31,7 +31,22 @@ Deno.test('check-list kuralı SQL content_checklist_ready ile aynı', () => {
       items: { ...ready.items, ai_disclosure: false },
     }),
   );
+  assertFalse(
+    checklistReady({
+      ...ready,
+      items: { ...ready.items, engagement_hashtags: false },
+    }),
+    '3–5 hashtag / caption maddesi (#22) zorunlu',
+  );
 });
+
+Deno.test(
+  'madde listesi 25 benzersiz anahtar (migration 20261024100000)',
+  () => {
+    assert(CHECKLIST_KEYS.length === 25);
+    assert(new Set(CHECKLIST_KEYS).size === 25);
+  },
+);
 
 Deno.test('AI etiketi maddesi (#32) ayrıca denetlenir', () => {
   assert(aiLabelChecked(ready));

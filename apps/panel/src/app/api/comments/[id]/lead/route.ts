@@ -10,8 +10,9 @@ const likeEscape = (value: string) => value.replace(/[\\%_]/g, '\\$&');
 
 /**
  * Yorumdan marka lead'i (#61 → #60): var olan ya da yeni markaya 'lead' aşamasında deal açar
- * ve yorumu deal'e bağlar. Deal notuna yalnız kaynak (platform, görünen ad, tarih, post linki)
- * yazılır; yorum metni CRM'e kopyalanmaz. Yorum zaten bir deal'e bağlıysa 409.
+ * ve yorumu deal'e bağlar. Deal notuna yalnız kaynak (platform, yorum kimliği, tarih, post linki)
+ * yazılır; yorum metni ve yazarın adı CRM'e kopyalanmaz (yorumlar 90 günde silinir, deal notu
+ * kalıcıdır). Yazar gerekiyorsa deal'e bağlı yorumdan bakılır. Yorum zaten bir deal'e bağlıysa 409.
  */
 export async function POST(
   request: Request,
@@ -29,7 +30,7 @@ export async function POST(
     const comment = await db
       .from('comments')
       .select(
-        'id, platform, author_name, published_at, brand_deal_id, posts(url), social_accounts(influencer_id)',
+        'id, platform, published_at, brand_deal_id, posts(url), social_accounts(influencer_id)',
       )
       .eq('id', id.data)
       .maybeSingle();
@@ -75,7 +76,7 @@ export async function POST(
 
     const source = [
       `Kaynak: ${platformLabels[comment.data.platform]} yorumu`,
-      comment.data.author_name ? `(${comment.data.author_name})` : '',
+      `yorum ${comment.data.id}`,
       comment.data.published_at.slice(0, 10),
       comment.data.posts?.url ?? '',
     ]

@@ -14,6 +14,11 @@ const state = vi.hoisted(() => ({
   category: '',
   key: '',
   promptError: false,
+  todayCount: 0,
+  capError: false,
+  capUser: '',
+  capQuery: null as Record<string, string> | null,
+  dailyLimit: undefined as number | undefined,
 }));
 const pricing = {
   currency: 'USD',
@@ -26,7 +31,12 @@ const pricing = {
 vi.mock('@/lib/ai/config', () => ({
   getAiConfig: async () =>
     state.config
-      ? { apiKey: 'fixture-key', model: 'claude-fixture', pricing }
+      ? {
+          apiKey: 'fixture-key',
+          model: 'claude-fixture',
+          pricing,
+          dailyLimitPerUser: state.dailyLimit,
+        }
       : null,
 }));
 vi.mock('@/lib/ai/claude', async (importOriginal) => ({
@@ -44,11 +54,23 @@ vi.mock('@/lib/supabase/server', () => ({
         eq: (key: string, value: string) => {
           if (key === 'category') state.category = value;
           if (key === 'key') state.key = value;
+          if (key === 'created_by') state.capUser = value;
           return chain;
         },
         or: () => chain,
         order: () => chain,
         limit: () => chain,
+        gte: (key: string, value: string) => {
+          state.capQuery = { table, key, value, created_by: state.capUser };
+          return chain;
+        },
+        // Günlük sınır sayımı (costs, head: true): bugünkü ai_api kayıtları
+        then: (ok: (r: unknown) => unknown, fail?: (e: unknown) => unknown) =>
+          Promise.resolve({
+            data: null,
+            count: state.capError ? null : state.todayCount,
+            error: state.capError ? { message: 'private' } : null,
+          }).then(ok, fail),
         maybeSingle: async () => ({
           data:
             table === 'team_members'
@@ -122,6 +144,11 @@ beforeEach(() => {
   state.key = '';
   state.billingError = false;
   state.config = true;
+  state.todayCount = 0;
+  state.capError = false;
+  state.capUser = '';
+  state.capQuery = null;
+  state.dailyLimit = undefined;
   state.rows = [];
   state.create.mockReset();
   state.create.mockResolvedValue({
@@ -237,6 +264,36 @@ describe('AI route, SDK → maliyet entegrasyonu', () => {
     expect(r.status).toBe(429);
     expect(Number(r.headers.get('Retry-After'))).toBeGreaterThan(0);
     expect(state.create).toHaveBeenCalledTimes(10);
+  });
+  it('kalıcı günlük sınır: bugünkü ai_api kayıtları sınıra ulaştıysa 429, sağlayıcı çağrılmaz', async () => {
+    state.todayCount = 199;
+    expect((await call()).status).toBe(200);
+    expect(state.capQuery).toMatchObject({
+      table: 'costs',
+      key: 'created_at',
+      created_by: 'editor',
+    });
+    expect(state.capQuery!.value).toMatch(/T00:00:00\.000Z$/);
+    state.todayCount = 200;
+    const r = await call();
+    expect(r.status).toBe(429);
+    expect((await r.json()).error).toContain('Günlük');
+    expect(Number(r.headers.get('Retry-After'))).toBeGreaterThan(0);
+    expect(state.create).toHaveBeenCalledTimes(1);
+  });
+  it('günlük sınır app_settings üzerinden ayarlanır', async () => {
+    state.dailyLimit = 3;
+    state.todayCount = 3;
+    expect((await call()).status).toBe(429);
+    state.todayCount = 2;
+    expect((await call()).status).toBe(200);
+  });
+  it('günlük sayım okunamazsa istek reddedilir (sınır atlanmaz)', async () => {
+    state.capError = true;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect((await call()).status).toBe(500);
+    expect(state.create).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
   it('beklenmeyen hata metni loga veya cevaba sızmaz', async () => {
     state.create.mockRejectedValue(new Error('sk-ant-private'));

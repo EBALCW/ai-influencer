@@ -136,7 +136,11 @@ test('görsel: panelden kuyruğa → çalışıyor → tamamlandı, sonuç medya
     status: 'queued',
     type: 'image',
     mode: 'text_to_image',
-    params: expect.objectContaining({ test_mode: true, resolution: '480p' }),
+    params: expect.objectContaining({
+      test_mode: true,
+      image_resolution: '2K',
+      aspect_ratio: '9:16',
+    }),
   });
 
   await page.goto(`/production?inf=${SLUG}`);
@@ -218,7 +222,10 @@ test('video: referans görselle kuyruğa → başarısız → yeniden dene → i
   await expect(page.getByText(/en az bir referans görsel/)).toBeVisible();
 
   await form.getByLabel(`Referans · ref-${run}`).check();
-  await form.getByLabel('Süre (sn)').fill('8');
+  // Image-to-video modellerinde çözünürlük ve seed yok; süre test modunda 5 sn'ye sabit.
+  await expect(form.getByLabel('Süre (sn)')).toBeDisabled();
+  await expect(form.getByLabel('Çözünürlük')).toHaveCount(0);
+  await expect(form.getByLabel(/Seed/)).toHaveCount(0);
   await form.getByRole('button', { name: 'Üretime gönder' }).click();
   await expect(page.getByText(/Üretim kuyruğa alındı/)).toBeVisible();
   const [gen] = await generationsOf(videoPromptId);
@@ -226,7 +233,9 @@ test('video: referans görselle kuyruğa → başarısız → yeniden dene → i
     status: 'queued',
     type: 'video',
     mode: 'image_to_video',
+    params: expect.objectContaining({ test_mode: true, duration_seconds: 5 }),
   });
+  expect(gen.params).not.toHaveProperty('resolution');
   expect(gen.input_asset_ids).toHaveLength(1);
 
   // Worker: sağlayıcı hatası

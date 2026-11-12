@@ -93,6 +93,8 @@ export type ReportDetail = {
   updatedAt: string;
   automatic: boolean;
   aiSummary: string | null;
+  /** Gelecek hafta için 1–3 aksiyon (#24) */
+  actions: string[];
   influencer: Influencer | null;
   summary: ReportSummary | null;
 };
@@ -102,7 +104,7 @@ export async function getReport(id: string): Promise<ReportDetail | null> {
   const { data, error } = await db
     .from('reports')
     .select(
-      'id, period_start, period_end, summary, ai_summary, created_at, updated_at, created_by, influencers(id, name, slug)',
+      'id, period_start, period_end, summary, ai_summary, actions, created_at, updated_at, created_by, influencers(id, name, slug)',
     )
     .eq('id', id)
     .maybeSingle();
@@ -120,6 +122,7 @@ export async function getReport(id: string): Promise<ReportDetail | null> {
     // Zamanlanmış iş oturumsuz çalışır; created_by boş kalır
     automatic: data.created_by === null,
     aiSummary: data.ai_summary,
+    actions: data.actions ?? [],
     influencer: influencer ?? null,
     summary: parseReportSummary(data.summary),
   };

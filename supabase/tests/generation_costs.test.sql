@@ -49,8 +49,8 @@ SELECT extensions.ok(
   'anon cannot execute post_cost'
 );
 
--- ── Editor üretimi ilerletir; maliyet trigger ile yazılır ────────
-SET LOCAL ROLE authenticated;
+-- ── Worker (sunucu) üretimi ilerletir; maliyet trigger ile yazılır ──
+-- Üretim satırını istemci değiştiremez (security_hardening); oturum editor olarak kalır.
 SELECT set_config('request.jwt.claim.sub', '97000000-0000-4000-8000-000000000002', true);
 
 INSERT INTO public.generations (id, influencer_id, tool, type, status, credits, created_at)
@@ -121,6 +121,7 @@ SELECT extensions.is_empty(
   'missing credit price -> no (wrong zero) cost row'
 );
 
+SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '97000000-0000-4000-8000-000000000001', true); -- owner
 INSERT INTO public.credit_rates (tool, currency, rate_per_credit, valid_from)
 VALUES ('kling', 'USD', 0.1, '2026-08-01');

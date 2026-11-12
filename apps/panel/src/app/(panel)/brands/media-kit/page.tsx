@@ -8,6 +8,7 @@ import {
   formatCount,
   formatDate,
   formatPercent,
+  formatPriceRange,
   formatSeconds,
   formatSigned,
   platformLabel,
@@ -197,6 +198,54 @@ export default async function MediaKitPage({
           Yaş, cinsiyet ve ülke dağılımı: {NO_DATA} (platform kitle verisi henüz
           toplanmıyor).
         </p>
+      </section>
+
+      <section className="section-card" aria-labelledby="services-title">
+        <h2 id="services-title" className="mb-2 text-base font-semibold">
+          Hizmetler ve fiyat aralıkları
+        </h2>
+        <p className="mb-2 text-sm text-muted">
+          {kit.pricing.tier
+            ? `Kademe: ${kit.pricing.tier} (güncel toplam takipçiye göre)`
+            : `Kademe: ${NO_DATA} (takipçi ölçümü yok; fiyat teklif üzerine)`}
+        </p>
+        <dl className="grid gap-2 text-sm sm:grid-cols-[1fr_auto]">
+          {kit.pricing.services.map((service) => (
+            <div className="contents" key={service.key}>
+              <dt>
+                <span className="font-medium">{service.label}</span>
+                <span className="block text-xs text-muted">
+                  {service.description}
+                </span>
+              </dt>
+              <dd className="m-0 font-semibold">
+                {formatPriceRange(service.range, kit.pricing.currency)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-2 text-xs text-muted">
+          {kit.pricing.note} Gerekçe ve kaynaklar: docs/monetization.md.
+        </p>
+      </section>
+
+      <section className="section-card" aria-labelledby="contact-title">
+        <h2 id="contact-title" className="mb-2 text-base font-semibold">
+          İletişim
+        </h2>
+        {kit.contact.email ? (
+          <p className="text-sm">
+            İş birliği e-postası:{' '}
+            <a className="font-semibold" href={`mailto:${kit.contact.email}`}>
+              {kit.contact.email}
+            </a>
+          </p>
+        ) : (
+          <p className="text-sm text-muted">
+            İş birliği e-postası: {NO_DATA}. Sunucu ortamında
+            MEDIA_KIT_CONTACT_EMAIL tanımlanınca kitte görünür.
+          </p>
+        )}
       </section>
     </div>
   );
