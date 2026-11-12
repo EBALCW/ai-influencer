@@ -127,6 +127,7 @@ node scripts/doctor.mjs
 | `pnpm check`                                                       | Format + lint + typecheck + unit test (PR öncesi zorunlu)         |
 | `pnpm test:e2e`                                                    | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)             |
 | `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`) | Güncel kod haritası (aşağıya bak)                                 |
+| `pnpm clip:fetch <youtube-adresi>` / `pnpm clip:cut …`             | Yayıncı videosundan dikey klip (`docs/clip-guide.md`)             |
 | `pnpm env:pull`                                                    | Test Supabase anahtarlarını `.env.local`'e çeker                  |
 | `pnpm release`                                                     | `test` → `main` release PR'ı                                      |
 | `cd supabase/functions && deno test --allow-env`                   | Edge Function testleri (`deno lint`, `deno check` de CI'da)       |
@@ -158,6 +159,8 @@ supabase/seed.sql                     yerel/CI demo verisi
 docs/                                 kurallar (DEVELOPMENT, WORKFLOW, data-model, AI, AUTH …)
 scripts/                              Node script'leri (cross-platform)
 ```
+
+Yayıncı videosundan klip istenirse `.claude/skills/yayinci-klip/SKILL.md` akışını uygula (Claude Code bunu skill olarak kendiliğinden görür; Codex dosyayı okuyup aynı adımları izler). İzin adımı atlanamaz.
 
 Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `docs/AUTH.md`, mimari kararlar `docs/adr/`.
 
