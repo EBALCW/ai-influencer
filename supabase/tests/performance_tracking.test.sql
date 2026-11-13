@@ -101,7 +101,7 @@ SELECT set_config('request.jwt.claim.sub', '97000000-0000-4000-8000-000000000001
 SELECT extensions.lives_ok(
   $$INSERT INTO public.app_settings (key, value)
     VALUES ('analytics', '{"stuckViews":250,"stuckWithinHours":5,"viralMultiplier":3,"baselinePosts":10}')
-    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value$$,
+    ON CONFLICT (workspace_id, key) DO UPDATE SET value = EXCLUDED.value$$,
   'owner saves analytics thresholds');
 SELECT extensions.throws_ok(
   $$UPDATE public.app_settings SET value = '{"stuckViews":0}' WHERE key = 'analytics'$$,
@@ -160,7 +160,7 @@ SELECT extensions.isnt_empty(
 SELECT extensions.throws_ok(
   $$INSERT INTO public.app_settings (key, value)
     VALUES ('analytics', '{"stuckViews":1,"stuckWithinHours":1,"viralMultiplier":2,"baselinePosts":3}')
-    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value$$,
+    ON CONFLICT (workspace_id, key) DO UPDATE SET value = EXCLUDED.value$$,
   '42501', NULL, 'editor cannot change analytics thresholds');
 SELECT public.generate_weekly_report('2026-09-07', 'd1000000-0000-4000-8000-000000000001');
 SELECT extensions.isnt_empty(

@@ -82,8 +82,8 @@ SELECT extensions.ok(
 );
 SELECT extensions.results_eq(
   $$SELECT policyname::text COLLATE "default" FROM pg_policies WHERE schemaname = 'public' AND tablename = 'reports' ORDER BY 1$$,
-  $$VALUES ('reports_team_read'), ('reports_team_write')$$,
-  'reports has team read and team write policies'
+  $$VALUES ('reports_team_read'), ('reports_team_write'), ('reports_workspace')$$,
+  'reports has team read, team write and restrictive workspace policies'
 );
 SELECT extensions.ok(
   NOT (SELECT bool_or(prosecdef) FROM pg_proc
