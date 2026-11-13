@@ -1434,7 +1434,6 @@ AS $$
   )
   FROM totals t, money m
   WHERE p_from IS NOT NULL AND p_to IS NOT NULL AND p_to >= p_from
-    AND p_workspace_id IS NOT NULL
     AND (p_influencer_id IS NULL OR EXISTS (
       SELECT 1 FROM public.influencers i
       WHERE i.id = p_influencer_id AND i.workspace_id = p_workspace_id

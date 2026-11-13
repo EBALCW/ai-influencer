@@ -467,7 +467,7 @@ BEGIN
     WHERE g.tgrelid = ('public.' || t)::regclass AND g.tgname = 'aa_set_workspace'
       AND arg <> '' AND left(arg, 1) <> '?';
     r.derives := cardinality(v_cols) > 0;
-    SELECT COALESCE('(' || string_agg(format('x.%I IS NOT NULL', c), ' OR ') || ')', 'true')
+    SELECT COALESCE('(' || string_agg(format('x.%I IS NOT NULL', c), ' OR ') || ')', '(x.workspace_id IS NOT NULL)')
       INTO v_order FROM unnest(v_cols) AS c;
     EXECUTE format(
       'SELECT to_jsonb(x) FROM public.%I x WHERE x.workspace_id = $1 ORDER BY %s DESC, to_jsonb(x)::text LIMIT 1',

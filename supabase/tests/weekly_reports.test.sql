@@ -269,6 +269,8 @@ SELECT extensions.is(
   (SELECT count(*)::integer FROM public.alerts WHERE type = 'weekly_report_ready' AND payload ->> 'period_start' = '2026-09-07'),
   (SELECT created FROM cron_first), 'second run sends no duplicate notification'
 );
+-- Oturumsuz (service role) yazım: önceki bloktan kalan kullanıcı kimliği temizlenir (#181).
+SELECT set_config('request.jwt.claim.sub', '', true);
 SELECT extensions.throws_ok(
   $$INSERT INTO public.reports (influencer_id, period_start, period_end, summary) VALUES (NULL, '2026-09-07', '2026-09-13', '{}')$$,
   '23505', NULL, 'only one all-influencer report per week (NULLS NOT DISTINCT)'
