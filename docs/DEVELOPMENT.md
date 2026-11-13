@@ -46,7 +46,7 @@ Bir issue ancak şunların hepsi sağlandığında kapanır:
 **RLS (her yeni tablo için zorunlu)**
 
 - `alter table ... enable row level security;` komutu ve tablo başına açık politikalar yazılır. Anon rolüne grant verilmez.
-- Rol modeli `docs/data-model.md`'deki yetki matrisidir: owner/editor yazar, viewer sadece okur, ekip dışındakiler hiçbir şey göremez.
+- Rol modeli `docs/data-model.md`'deki yetki matrisidir: owner/editor yazar, viewer sadece okur, ekip dışındakiler hiçbir şey göremez. Roller **çalışma alanı içinde** geçerlidir (aşağıda).
 - `security definer` fonksiyonlarda `set search_path = ''` (veya sabit bir şema) kullanılır ve tablolar şema adıyla yazılır.
 - **Test zorunlu:** `supabase/tests/` altına pgTAP testi yazılır. Testler şunları denemeli:
   - ekip dışındaki kullanıcı okuyamıyor
@@ -56,6 +56,25 @@ Bir issue ancak şunların hepsi sağlandığında kapanır:
 - Yetkisiz `UPDATE`/`DELETE` hata vermez, **0 satır** döner. Bu yüzden `is_empty($$ update ... returning 1 $$)` ile test edilir, `throws_ok` ile değil.
 
 > Neden: İlk RLS testleri sadece `influencers` tablosuna bakıyordu. Yeni bir tabloda RLS unutulsaydı fark edilmeyecekti (#80 tüm tabloları kontrol eden test ekledi).
+
+**Çalışma alanı yalıtımı (her yeni tablo için zorunlu, #181)**
+
+Veri kiracı (çalışma alanı) başına yalıtılır; karar ve gerekçe `docs/adr/0003-workspaces.md`. Kullanıcı verisi tutan yeni bir tablo eklerken:
+
+1. Kolon: `workspace_id uuid NOT NULL DEFAULT public.current_workspace_id() REFERENCES public.workspaces (id) ON DELETE CASCADE` ve `CREATE INDEX <tablo>_workspace_id_idx`.
+2. Policy: `CREATE POLICY <tablo>_workspace ON public.<tablo> AS RESTRICTIVE FOR ALL TO authenticated USING (workspace_id = (SELECT public.current_workspace_id())) WITH CHECK (workspace_id = (SELECT public.current_workspace_id()));` Rol policy'leri (permissive) ayrıca yazılır; ikisi AND'lenir.
+3. Trigger: `CREATE TRIGGER aa_set_workspace BEFORE INSERT OR UPDATE ON public.<tablo> FOR EACH ROW EXECUTE FUNCTION private.set_workspace_from_parent('<fk>=<üst tablo>.<anahtar>', '?<diğer fk>=<tablo>.<anahtar>');` Alanı belirleyen "sahip" FK düz, yalnız aynı alanda olması gereken FK'ler `?` ile yazılır. Üst kaydı olmayan (kök) tabloda argümansız kurulur; yine de gereklidir (`workspace_id` UPDATE'te değişmez). **Kiracı tabloları arasındaki her FK bu listede olmalı**: FK kısıtı RLS'e bakmaz.
+4. Tekil kısıtlar `(workspace_id, …)` ile başlar (uuid üst kayda bağlı olanlar hariç).
+5. Tablo gerçekten kurulum geneliyse (kullanıcı verisi yok, kullanıcı yazamıyor) `supabase/tests/workspaces.test.sql` başındaki muafiyet listesine **gerekçesiyle** eklenir. Katalog testleri listede olmayan her public tabloda 1-3'ü denetler ve eksikse kırılır.
+
+RLS'i aşan kod alanı kendisi denetler:
+
+- **SECURITY DEFINER** fonksiyon kullanıcı adına id ile kayıt buluyorsa `workspace_id = public.current_workspace_id()` koşulu şarttır. Sistem işi (cron, trigger) tüm alanlarda çalışıyorsa okuduğu ayar/fiyat ve yazdığı satır ilgili kaydın `workspace_id`'siyle eşleşmelidir.
+- **Service role** (panelde `createSupabaseAdminClient()`, Edge Function'lar) sorguları `requireApiRole()` / `requireTeamMember()`'ın döndürdüğü `workspaceId` ile filtreler; kök tabloya yazarken `workspace_id`'yi açıkça verir. `current_workspace_id()` oturumsuz çağrıda yalnız tek alan varken değer döndürür: yerelde çalışan ama alanı vermeyen kod çok alanlı kurulumda `NOT NULL` hatası alır.
+- **Storage:** yeni bucket `public.storage_object_in_workspace()` içine eklenmeden istemciye kapalıdır.
+- **pgTAP:** iki alan kurup diğer alanın kullanıcısının satırı okuyamadığını, değiştiremediğini ve o alanın kaydına bağlı satır ekleyemediğini test et (`workspaces.test.sql` her tabloyu genel olarak dener; RPC'ler için ayrı satır ekle).
+
+> Neden: tek ekip modelinde DEFINER bütçe uyarısı bütün satırları topluyor, ekip API'si service role ile herhangi bir üyenin rolünü değiştirebiliyor, Storage okuma policy'si bucket'ın tamamını açıyordu. Tek alan varken görünmeyen bu açıklar ikinci alanla birlikte veri sızıntısına dönüşür (#181).
 
 **İstemciye güvenme**
 
@@ -82,7 +101,7 @@ Bir issue ancak şunların hepsi sağlandığında kapanır:
   | Korumalı sayfa                  | `src/app/(panel)/` altına koy, layout `requireTeamMember()` ile korur. Owner'a özel sayfa: `requireOwner()`                           |
   | API route                       | İlk satır `const auth = await requireApiRole('editor')` (`if (!auth.ok) return auth.response`), gövde `parseJson(request, zodSchema)` |
   | Veritabanı (kullanıcı adına)    | `createSupabaseServerClient()`, RLS uygulanır                                                                                         |
-  | RLS'i bilerek aşmak (davet vb.) | `createSupabaseAdminClient()`, sadece sunucuda, gerekçesi yorumla yazılır                                                             |
+  | RLS'i bilerek aşmak (davet vb.) | `createSupabaseAdminClient()`, sadece sunucuda, gerekçesi yorumla yazılır; her sorgu `workspaceId` ile filtrelenir (#181)             |
   | Redirect parametresi            | `src/lib/safe-redirect.ts`                                                                                                            |
 
 - **Yetki her zaman sunucuda kontrol edilir.** UI'da butonu gizlemek yetki kontrolü değildir. Route handler ve server action'lar oturumu ve rolü kendisi doğrular, RLS de ikinci savunma hattıdır.
@@ -151,7 +170,7 @@ Panel ekip bilgisayarlarında çalışır; zamanlanmış/arka plan işleri (senk
 - Testler aynı klasörde `*.test.ts` (Deno.test). CI'da `Edge Functions (Deno)` işi `deno lint`, `deno check`, `deno test` çalıştırır; `ci-ok` buna bağlı. Yerelde: `cd supabase/functions && deno test --allow-env`.
 - Formatı prettier yapar (`pnpm format`); ESLint/tsc bu klasörü taramaz.
 - **Zamanlanmış çağrı:** pg_cron + pg_net fonksiyonu `x-cron-secret` başlığıyla çağırır; fonksiyon ilk satırda `requireCronSecret(req)` (`_shared/http.ts`) kontrol eder. Sır yoksa 503, yanlışsa 401. Bu fonksiyonlar için `supabase/config.toml` içinde `[functions.<ad>] verify_jwt = false` verilir (doğrulamayı sır yapar). Sır değerleri: fonksiyon tarafında `supabase secrets set CRON_SECRET=...` (pipeline/owner), veritabanı tarafında Vault'ta `cron_secret` adıyla; migration sırrın **değerini asla** içermez, sadece Vault'tan okur.
-- Fonksiyon içinde veritabanına service role ile bağlanılır (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` platform tarafından otomatik verilir). Service role RLS'i aşar: her sorguda `influencer_id`/`account_id` filtresini açıkça yaz.
+- Fonksiyon içinde veritabanına service role ile bağlanılır (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` platform tarafından otomatik verilir). Service role RLS'i aşar: her sorguda `influencer_id`/`account_id` filtresini açıkça yaz. Yazılan satırın çalışma alanı üst kayıttan türetilir (trigger); üst kaydı olmayan satırda `workspace_id` açıkça verilir. Kullanıcı tetikli çağrı (ör. manuel senkronizasyon) gövdede `workspace_id` taşır ve yalnız o alanı işler.
 - Fonksiyonun URL'i pg_cron/pg_net tarafında Vault'taki `project_url` sırrından türetilir (`<project_url>/functions/v1/<ad>`); örnek: `private.invoke_sync()` (#53). Vault sırları yoksa çağrı sessizce atlanır.
 - Sosyal platform veri toplayıcıları `_shared/collectors/` altındaki `Collector` sözleşmesini uygular (`collectors/README.md`). Zamanlama, tekrar deneme ve DB yazımı `_shared/sync/` orkestratöründedir.
 - Dış API (Meta, Google, Higgsfield) çağrıları bir adaptör arkasında olur; testlerde `fetch` sahte implementasyonla değiştirilir, CI'da gerçek ağ çağrısı yapılmaz.
