@@ -22,3 +22,6 @@ ai-influencer-prompts-*.json
 
 # pnpm codemap --out çıktısı (koddan üretilir)
 .cache/
+
+# Python önbelleği (skill script'leri)
+__pycache__/

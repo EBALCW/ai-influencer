@@ -57,18 +57,39 @@ python3 scripts/tts_say.py --project <proje> \
 - `split_takes.py` hangi satırları işaretlerse dinle; yanlış okunan kelimeyi yeniden yaz.
 - `edge-tts` yoksa: `pip install edge-tts` (proje sanal ortamına).
 
-### 5. Dikey çıktı
+### 5. Dikey çıktı (denendi: `ornek/`)
 
-Motorun örnekleri yatay (16:9). Reels / Shorts / TikTok için:
+Motorun kendi örnekleri yatay (16:9). Dikey düzen bu projede uçtan uca denendi; çalışan örnek
+`ornek/script.json` + `ornek/scene.py` ("Mağarada 17 Gün", 46 sn). Yeni filme oradan başla.
 
-- Panoyu **dikey** tasarla: kümeleri yan yana değil alt alta diz, her kümede tek kahraman öğe.
-- Tüm deneme ve son render'da `--size 1080x1920` kullan (taslak için `--size 540x960`).
-- Güvenli alan: üstte ~%12, altta ~%20 boş kalsın (platform arayüzü ve caption kapatır).
-  Altyazıyı `burn_captions.py` ile göm; yazı telefonda bir saniyede okunacak büyüklükte olsun.
+- **Ölçü:** zoom 1'de kare her zaman **3840 dünya pikseli genişliğindedir**; 9:16'da yükseklik
+  ~6830 olur. Yani dikeyde genişlik dardır: kart en fazla ~3200 genişlikte, büyük yazı
+  (`BigText`) 1300 boyutta ~6 karakter sığar.
+- **Pano tek sütun:** kümeleri alt alta diz (aralık ~3500), kamera yukarıdan aşağı insin. Her
+  karede tek kahraman öğe; kamerayı zoom 0,9-1,1 arasında tut.
+- **Kanca ilk karede:** en çarpıcı sayı ya da sonuç `L(1)` anında ekranda olsun (kelimeyi
+  bekleme); ilk saniyede boş kare kaydırılır.
+- `prep_assets.py` fotoğraf olmasa da **ilk kareden önce bir kez** çalışmalı (pano dokularını üretir).
+- Taslak ve kontrol: `render.py --probe <satır ortaları> --size 540x960`; son render
+  `--size 1080x1920` (46 saniyelik film M4'te ~2 dakika).
+- **Altyazıyı motorla gömme.** `burn_captions.py` yazıyı yatay videoya göre boyutlar: dikeyde
+  okunmayacak kadar küçük kalır ve platform arayüzünün kapattığı en alt banda düşer. Bunun yerine
+  SRT al ve ffmpeg ile göm (libass'lı ffmpeg gerekir; macOS: `brew install ffmpeg-full`):
+
+  ```
+  python3 scripts/burn_captions.py --project <proje> --srt-only --out out/captions.srt
+  cd <proje>/out
+  ffmpeg -i final.mp4 -vf "subtitles=filename=captions.srt:force_style='FontName=Arial,FontSize=13,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=60,MarginL=20,MarginR=20'" \
+    -c:v libx264 -preset medium -crf 23 -maxrate 8M -bufsize 16M -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart <ad>.mp4
+  ```
+
+  Bu adım dosyayı da küçültür (motorun ham çıktısı 46 saniye için ~100 MB, bu adımdan sonra ~50 MB).
+  Altyazı kareyi alttan ~%22 yukarıda tutar; büyük sayı ve kartları bu bandın üstünde bırak.
+
 - Süre 45-90 saniye (yaklaşık 110-230 kelime). İlk cümle kanca: sonucu ya da en çarpıcı
   olguyu baştan söyle, sonra "nasıl oldu"ya dön.
-- Dikey düzen motorun yazarı tarafından belgelenmemiş. İlk kareleri (`render.py --probe`)
-  mutlaka kendin aç ve bak; taşan, kesilen ya da küçük kalan öğe varsa düzeni düzelt.
+- Yalnız kart ve sayılarla kare boş kalabiliyor. Lisanslı fotoğraf, harita ya da kesit çizimi
+  ekleyerek doldur (`fetch_commons.py`, `make_map.py`); göstermeden önce her satırdan bir kareye bak.
 
 ### 6. Dosyalar
 

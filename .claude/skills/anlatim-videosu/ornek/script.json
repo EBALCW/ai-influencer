@@ -1,0 +1,97 @@
+{
+  "title": "Mağarada 17 Gün",
+  "takes": [
+    {
+      "take": "T01_kanca",
+      "lines": [
+        {
+          "id": 1,
+          "text": "On iki çocuk ve antrenörleri, sular altındaki bir mağarada on yedi gün mahsur kaldı.",
+          "spoken": "On iki çocuk ve antrenörleri, sular altındaki bir mağarada on yedi gün mahsur kaldı.",
+          "hero": "başlık: 17 GÜN",
+          "typed": "17 GÜN",
+          "gap_after": 0.6
+        }
+      ]
+    },
+    {
+      "take": "T02_giris",
+      "lines": [
+        {
+          "id": 2,
+          "text": "23 Haziran 2018. Tayland'ın kuzeyinde, antrenmandan sonra Tham Luang mağarasına girdiler.",
+          "spoken": "Yirmi üç Haziran iki bin on sekiz. Tayland'ın kuzeyinde, antrenmandan sonra Tam Luang mağarasına girdiler.",
+          "hero": "kart: 23 HAZİRAN 2018",
+          "typed": "23 HAZİRAN 2018"
+        },
+        {
+          "id": 3,
+          "text": "Muson yağmuru bastırdı. Su yükseldi ve çıkış kapandı.",
+          "spoken": "Muson yağmuru bastırdı. Su yükseldi ve çıkış kapandı.",
+          "hero": "kart: SU YÜKSELDİ",
+          "typed": "SU YÜKSELDİ"
+        },
+        {
+          "id": 4,
+          "text": "Dokuz gün boyunca hiçbir haber alınamadı.",
+          "spoken": "Dokuz gün boyunca hiçbir haber alınamadı.",
+          "hero": "sayaç: 9 gün",
+          "typed": "9 GÜN",
+          "gap_after": 0.5
+        }
+      ]
+    },
+    {
+      "take": "T03_bulundular",
+      "lines": [
+        {
+          "id": 5,
+          "text": "2 Temmuz'da iki İngiliz dalgıç onları buldu: girişten yaklaşık dört kilometre içeride, hepsi hayattaydı.",
+          "spoken": "İki Temmuz'da iki İngiliz dalgıç onları buldu: girişten yaklaşık dört kilometre içeride, hepsi hayattaydı.",
+          "hero": "kart: 2 TEMMUZ + 4 km sayacı",
+          "typed": "2 TEMMUZ · 4 KM"
+        },
+        {
+          "id": 6,
+          "text": "Ama çıkış yolu dar, karanlık ve su doluydu.",
+          "spoken": "Ama çıkış yolu dar, karanlık ve su doluydu.",
+          "hero": "rota: çıkış yolu",
+          "typed": ""
+        },
+        {
+          "id": 7,
+          "text": "6 Temmuz'da gönüllü dalgıç Saman Kunan, mağaraya hava tüpü taşırken hayatını kaybetti.",
+          "spoken": "Altı Temmuz'da gönüllü dalgıç Saman Kunan, mağaraya hava tüpü taşırken hayatını kaybetti.",
+          "hero": "kart: SAMAN KUNAN",
+          "typed": "SAMAN KUNAN",
+          "gap_after": 0.6
+        }
+      ]
+    },
+    {
+      "take": "T04_kurtarma",
+      "lines": [
+        {
+          "id": 8,
+          "text": "8 Temmuz'da tahliye başladı. Dalgıçlar çocukları birer birer dışarı taşıdı.",
+          "spoken": "Sekiz Temmuz'da tahliye başladı. Dalgıçlar çocukları birer birer dışarı taşıdı.",
+          "hero": "kart: 8-10 TEMMUZ",
+          "typed": "8-10 TEMMUZ"
+        },
+        {
+          "id": 9,
+          "text": "Üç gün sonra on üç kişinin tamamı dışarıdaydı.",
+          "spoken": "Üç gün sonra on üç kişinin tamamı dışarıdaydı.",
+          "hero": "sayaç: 13 kurtarıldı",
+          "typed": "13 / 13"
+        }
+      ]
+    }
+  ],
+  "fact_notes": [
+    "12 çocuk (11-16 yaş) + 25 yaşındaki antrenör, 23 Haziran 2018'de girdi: AFP zaman çizelgesi (Jakarta Post, Manila Bulletin); History.com",
+    "2 Temmuz'da İngiliz mağara dalgıçlarınca bulundular, girişten yaklaşık 4 km içeride: Wikipedia 'Tham Luang cave rescue'; Diving Almanac",
+    "Saman Kunan (gönüllü, eski Tayland Donanması SEAL'i) 6 Temmuz'da hava tüpü taşırken öldü: AFP; Wikipedia. Yaşı kaynaklarda 37/38 olarak farklı, bu yüzden senaryoda yok",
+    "8-10 Temmuz arasında 13 kişinin tamamı çıkarıldı; mağarada 17 gün: AFP; History.com"
+  ]
+}

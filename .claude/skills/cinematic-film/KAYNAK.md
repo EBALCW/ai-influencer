@@ -13,4 +13,4 @@ Dosyalar elle kopyalandı, otomatik güncellenmez. Güncellemek için yeni sür�
 
 Eklenmeden önce kod okundu: ağ erişimi yalnızca görsel (Wikimedia Commons), harita sınırı ve açık lisanslı yazı tipi indirmek için; süreç çağrıları `ffmpeg`, `ffprobe` ve seslendirme komutu. `tts_say.py --cmd` verilen komutu kabukta çalıştırır: oraya yalnızca kendi yazdığın seslendirme komutunu ver.
 
-**Bu kopya henüz bu projede uçtan uca çalıştırılıp doğrulanmadı** (issue #178).
+Bu kopya projede uçtan uca çalıştırıldı (13 Kasım 2026, macOS, Python 3.14): seslendirme, kareler, ses efektleri, 1080×1920 render ve SRT üretimi. Dikey videoda `burn_captions.py` yazısı küçük kaldığı için altyazı ffmpeg ile gömülüyor (bkz. `anlatim-videosu/SKILL.md`).
