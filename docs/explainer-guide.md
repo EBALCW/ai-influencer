@@ -38,4 +38,6 @@ Proje dosyaları (ses, görsel, video) repo dışında `~/ai-influencer-films/<a
 
 ## Durum
 
-Skill projeye eklendi ve kodu okunarak denetlendi, ancak **bu projede henüz uçtan uca bir örnek video üretilmedi** (issue #178). İlk videoda dikey düzen ve Türkçe altyazı özellikle kontrol edilmeli; sorun çıkarsa issue'ya yazın.
+Akış bu projede uçtan uca denendi (13 Kasım 2026, macOS): "Mağarada 17 Gün" (2018 Tham Luang mağara kurtarması), 46 saniye, 1080×1920, `edge-tts` ile Türkçe ses, kodla üretilen ses efektleri, gömülü Türkçe altyazı. Senaryo ve sahne dosyası örnek olarak `.claude/skills/anlatim-videosu/ornek/` içinde.
+
+Denemede çıkanlar skill'e işlendi: motorun kendi altyazı gömme adımı dikey videoda çok küçük kalıyor, bu yüzden altyazı SRT olarak alınıp ffmpeg ile gömülüyor; dikey karede genişlik dar olduğu için pano tek sütun kuruluyor. Windows'ta henüz denenmedi. İlk örnek yalnızca kart ve sayılardan oluşuyor; fotoğraf ve haritalı bir film henüz üretilmedi.
