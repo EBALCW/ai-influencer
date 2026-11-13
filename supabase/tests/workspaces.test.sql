@@ -798,10 +798,9 @@ SELECT extensions.is(
                 'b1820000-0000-4000-8000-000000000001/b.png')),
   1, 'B owner sees only the own storage object (reads were bucket-wide before)'
 );
-SELECT extensions.is_empty(
-  $$DELETE FROM storage.objects WHERE name = 'a1820000-0000-4000-8000-000000000001/a.png' RETURNING 1$$,
-  'B owner cannot delete a workspace A storage object'
-);
+-- Silme SQL ile denenemez: Storage, storage.objects üzerinde doğrudan DELETE'i trigger ile kapatır
+-- (yalnız Storage API). Silme de aynı RESTRICTIVE FOR ALL policy'sinden geçer (yukarıdaki katalog
+-- testi) ve policy'nin USING koşulu aşağıdaki UPDATE ile davranışsal olarak sınanır.
 SELECT extensions.is_empty(
   $$UPDATE storage.objects SET name = 'b1820000-0000-4000-8000-000000000001/calinti.png'
     WHERE name = 'a1820000-0000-4000-8000-000000000001/a.png' RETURNING 1$$,
