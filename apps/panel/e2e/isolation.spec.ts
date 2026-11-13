@@ -75,7 +75,10 @@ test('birinci alanın üyesi kendi influencer’ını görür (kontrol)', async 
   const response = await page.goto(`/influencers/${INFLUENCER_SLUG}`);
   expect(response?.status()).toBe(200);
   await page.goto('/influencers');
-  await expect(page.getByText(INFLUENCER_NAME).first()).toBeVisible();
+  // Üst çubuktaki seçici (gizli <option>) değil, sayfa içeriğindeki liste.
+  await expect(
+    page.locator('main').getByText(INFLUENCER_NAME).first(),
+  ).toBeVisible();
   await context.close();
 });
 
