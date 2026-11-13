@@ -60,7 +60,7 @@ describe('AI settings API', () => {
     );
     expect(state.writes).toHaveBeenCalledWith(
       { key: 'ai', value: config },
-      { onConflict: 'key' },
+      { onConflict: 'workspace_id,key' },
     );
   });
   it.each(['editor', 'viewer'])('%s ayar değiştiremez', async (role) => {

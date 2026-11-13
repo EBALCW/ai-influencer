@@ -99,6 +99,44 @@ Deno.test(
 );
 
 Deno.test(
+  'manual: workspaceId verilirse yalnız o çalışma alanının hesapları işlenir (#181)',
+  async () => {
+    const store = setup();
+    store.accounts[0].workspaceId = 'ws-a';
+    store.accounts.push({
+      id: 'acc-2',
+      influencerId: 'inf-2',
+      platform: 'instagram',
+      handle: 'other-workspace',
+      externalId: 'ext-acc-2',
+      status: 'active',
+      workspaceId: 'ws-b',
+    });
+    store.tokens.set('acc-2', { accessToken: 'other-secret' });
+    // Diğer alanın zamanı gelen postu listede olsa bile yazılmaz.
+    store.due.push(due('p1', 1), due('p9', 1, 'acc-2'));
+    const { d } = deps(store, { instagram: createFakeCollector('instagram') });
+
+    const summary = await runSync('manual', d, { workspaceId: 'ws-a' });
+
+    assertEquals(
+      store.runs.map((r) => r.accountId),
+      ['acc-1'],
+    );
+    assertEquals(
+      summary.runs.map((r) => r.accountId),
+      ['acc-1'],
+    );
+    assertFalse(store.metrics.some((m) => m.post_id === 'p9'));
+    assertFalse(store.accountSnapshots.some((s) => s.account_id === 'acc-2'));
+
+    // Alan verilmezse (zamanlanmış iş) tüm alanlar işlenir.
+    const all = await runSync('accounts', d);
+    assertEquals(all.runs.map((r) => r.accountId).sort(), ['acc-1', 'acc-2']);
+  },
+);
+
+Deno.test(
   'metrics: aynı çalışma tekrar edilirse duplicate snapshot oluşmaz (idempotent)',
   async () => {
     const store = setup();

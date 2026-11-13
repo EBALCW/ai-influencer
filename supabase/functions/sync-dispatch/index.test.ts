@@ -67,6 +67,16 @@ Deno.test('geçersiz gövde 400', async () => {
   assertEquals(parseBody({ job: 'metrics', account_id: null }), {
     job: 'metrics',
   });
+  // #181: manuel istek çalışma alanıyla sınırlanır; bozuk alan kimliği yok sayılmaz, reddedilir.
+  assertEquals(parseBody({ job: 'manual', workspace_id: ACC }), {
+    job: 'manual',
+    workspaceId: ACC,
+  });
+  assertEquals(parseBody({ job: 'manual', workspace_id: 'hepsi' }), null);
+  assertEquals(
+    (await h(post({ job: 'manual', workspace_id: 'hepsi' }))).status,
+    400,
+  );
 });
 
 Deno.test('geçerli çağrı işi çalıştırır ve özet döner', async () => {

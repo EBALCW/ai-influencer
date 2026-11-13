@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { createSupabaseServerClient } from './supabase/server';
 
 type ApiAuthResult =
-  | { ok: true; user: User; role: TeamRole }
+  | { ok: true; user: User; role: TeamRole; workspaceId: string }
   | { ok: false; response: NextResponse };
 
 const rank: Record<TeamRole, number> = { viewer: 0, editor: 1, owner: 2 };
@@ -15,7 +15,11 @@ export function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-/** API route'ları için yetki kontrolü. Rol, RLS'e ek olarak sunucuda da doğrulanır. */
+/**
+ * API route'ları için yetki kontrolü. Rol, RLS'e ek olarak sunucuda da doğrulanır.
+ * `workspaceId` çağıranın çalışma alanıdır: service role (RLS'siz) sorgular bu değerle
+ * açıkça filtrelenmelidir.
+ */
 export async function requireApiRole(
   minimum: TeamRole,
 ): Promise<ApiAuthResult> {
@@ -39,18 +43,18 @@ export async function requireApiRole(
 
   const { data: member, error } = await supabase
     .from('team_members')
-    .select('role')
+    .select('role, workspace_id')
     .eq('user_id', user.id)
     .maybeSingle();
   const role = member?.role as TeamRole | undefined;
-  if (error || !role || rank[role] < rank[minimum]) {
+  if (error || !member || !role || rank[role] < rank[minimum]) {
     return {
       ok: false,
       response: jsonError(`${minimum} yetkisi gerekli.`, 403),
     };
   }
 
-  return { ok: true, user, role };
+  return { ok: true, user, role, workspaceId: member.workspace_id };
 }
 
 /** İstek gövdesini şemayla doğrular; hata durumunda 400 döner. */

@@ -7,10 +7,13 @@ import { createSupabaseServerClient } from './supabase/server';
 export type TeamMember = {
   user: { id: string; email: string | null };
   role: TeamRole;
+  /** Üyenin çalışma alanı. Service role sorguları bu değerle açıkça sınırlandırılır. */
+  workspaceId: string;
 };
 
 /**
- * Oturum açmış ve `team_members` tablosunda kaydı olan kullanıcıyı döndürür.
+ * Oturum açmış ve `team_members` tablosunda kaydı olan kullanıcıyı (rolü ve çalışma
+ * alanıyla) döndürür.
  * Aynı istekte layout ve sayfa birlikte çağırdığında tek sorgu yapılır (cache).
  * Üye değilse oturum /auth/signout ile kapatılır (Server Component cookie yazamaz).
  */
@@ -30,7 +33,7 @@ export const requireTeamMember = cache(async (): Promise<TeamMember> => {
 
   const { data: member, error } = await supabase
     .from('team_members')
-    .select('role')
+    .select('role, workspace_id')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -39,6 +42,7 @@ export const requireTeamMember = cache(async (): Promise<TeamMember> => {
   return {
     user: { id: user.id, email: user.email ?? null },
     role: member.role as TeamRole,
+    workspaceId: member.workspace_id,
   };
 });
 

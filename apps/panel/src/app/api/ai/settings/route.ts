@@ -32,7 +32,10 @@ export async function PUT(request: Request) {
     const db = await createSupabaseServerClient();
     const { error } = await db
       .from('app_settings')
-      .upsert({ key: 'ai', value: body.data }, { onConflict: 'key' });
+      .upsert(
+        { key: 'ai', value: body.data },
+        { onConflict: 'workspace_id,key' },
+      );
     if (error) return jsonError('AI ayarları kaydedilemedi.', 500);
     revalidatePath('/settings/ai');
     return NextResponse.json({ ok: true });

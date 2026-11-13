@@ -67,6 +67,7 @@ describe('satır eşlemesi', () => {
         created_at: '',
         updated_at: '',
         created_by: null,
+        workspace_id: '50000000-0000-4000-8000-000000000001',
       }),
     ).toEqual({
       viralMultiplier: 4.5,
