@@ -41,6 +41,12 @@ export type Database = {
 isOneToOne: false
       referencedRelation: "social_accounts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "account_snapshots_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"alert_reads": {
@@ -60,6 +66,12 @@ isOneToOne: false
       columns: ["alert_id"]
 isOneToOne: false
       referencedRelation: "alerts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alert_reads_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -81,6 +93,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alerts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"app_settings": {
@@ -95,7 +113,13 @@ isOneToOne: false
                     "created_at"?: string,"created_by"?: string | null,"key"?: string,"updated_at"?: string,"value"?: NonNullable<Json>,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "app_settings_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"assets": {
                   Row: {
@@ -114,6 +138,12 @@ isOneToOne: false
       columns: ["influencer_id"]
 isOneToOne: false
       referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -141,6 +171,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "content_items"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deal_content_items_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"brand_deal_files": {
@@ -160,6 +196,12 @@ isOneToOne: false
       columns: ["brand_deal_id"]
 isOneToOne: false
       referencedRelation: "brand_deals"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deal_files_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -187,6 +229,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deals_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"brands": {
@@ -201,7 +249,13 @@ isOneToOne: false
                     "contact_email"?: string | null,"contact_name"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"notes"?: string,"updated_at"?: string,"website"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "brands_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"budgets": {
                   Row: {
@@ -220,6 +274,12 @@ isOneToOne: false
       columns: ["influencer_id"]
 isOneToOne: false
       referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "budgets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -241,6 +301,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "team_members"
       referencedColumns: ["user_id"]
+    },{
+      foreignKeyName: "clip_sources_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"clips": {
@@ -273,6 +339,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "clip_sources"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clips_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"comment_replies": {
@@ -292,6 +364,12 @@ isOneToOne: false
       columns: ["comment_id"]
 isOneToOne: false
       referencedRelation: "comments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "comment_replies_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -325,6 +403,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "comments_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"content_item_assets": {
@@ -356,6 +440,12 @@ isOneToOne: false
       columns: ["generation_id"]
 isOneToOne: false
       referencedRelation: "generations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "content_item_assets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -389,6 +479,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "social_accounts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "content_items_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"costs": {
@@ -415,6 +511,12 @@ isOneToOne: true
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "costs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"credit_rates": {
@@ -429,7 +531,13 @@ isOneToOne: false
                     "created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate_per_credit"?: number,"tool"?: string,"updated_at"?: string,"valid_from"?: string,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "credit_rates_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"exchange_rates": {
                   Row: {
@@ -443,7 +551,13 @@ isOneToOne: false
                     "base_currency"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate"?: number,"updated_at"?: string,"valid_on"?: string,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "exchange_rates_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"generation_worker_status": {
                   Row: {
@@ -507,6 +621,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "generations"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "generations_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"influencer_personas": {
@@ -527,6 +647,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "influencer_personas_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"influencers": {
@@ -546,6 +672,12 @@ isOneToOne: false
       columns: ["avatar_asset_id"]
 isOneToOne: false
       referencedRelation: "assets"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "influencers_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -573,6 +705,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "learnings_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"metric_snapshots": {
@@ -593,6 +731,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "metric_snapshots_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"notification_settings": {
@@ -607,7 +751,13 @@ isOneToOne: false
                     "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number,"workspace_id"?: string,"youtube_quota_warn_units"?: number
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "notification_settings_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: true
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"posting_slots": {
                   Row: {
@@ -626,6 +776,12 @@ isOneToOne: false
       columns: ["account_id"]
 isOneToOne: false
       referencedRelation: "social_accounts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "posting_slots_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -653,6 +809,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "content_items"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "posts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"prompts": {
@@ -672,6 +834,12 @@ isOneToOne: false
       columns: ["influencer_id"]
 isOneToOne: false
       referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "prompts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -711,6 +879,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "publish_jobs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"reports": {
@@ -730,6 +904,12 @@ isOneToOne: false
       columns: ["influencer_id"]
 isOneToOne: false
       referencedRelation: "influencers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reports_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
       referencedColumns: ["id"]
     }
                   ]
@@ -751,6 +931,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "social_accounts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"sync_runs": {
@@ -771,6 +957,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "social_accounts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "sync_runs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"team_members": {
@@ -785,7 +977,13 @@ isOneToOne: false
                     "created_at"?: string,"created_by"?: string | null,"role"?: Database["public"]['Enums']["team_role"],"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "team_members_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"trends": {
                   Row: {
@@ -811,6 +1009,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "trends_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"workspaces": {
@@ -825,7 +1029,7 @@ isOneToOne: false
                     "created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"push_enabled"?: boolean,"updated_at"?: string
                   }
                   Relationships: [
-
+                    
                   ]
                 }
           }
@@ -908,7 +1112,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -947,7 +1152,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }[]
                           SetofOptions: {
         from: "*"
@@ -981,7 +1187,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["publish_job_status"],
 "tags": (string)[],
 "title": string,
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }[]
                           SetofOptions: {
         from: "*"
@@ -1017,7 +1224,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1080,7 +1288,8 @@ isOneToOne: false
 "sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
-"version": number
+"version": number,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1103,7 +1312,8 @@ isOneToOne: false
 "title": string,
 "updated_at": string,
 "variables": NonNullable<Json>,
-"version": number
+"version": number,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1164,7 +1374,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1222,7 +1433,8 @@ isOneToOne: false
 "timezone": string,
 "title": string,
 "updated_at": string,
-"viral_reason": string
+"viral_reason": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1308,7 +1520,8 @@ isOneToOne: false
 "sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
-"version": number
+"version": number,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1344,7 +1557,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1379,7 +1593,8 @@ isOneToOne: false
 "timezone": string,
 "title": string,
 "updated_at": string,
-"viral_reason": string
+"viral_reason": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1387,6 +1602,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"storage_object_in_workspace":
+{ Args: { "p_bucket_id": string,"p_object_name": string }; Returns: boolean
+                           },
 "store_social_token":
 { Args: { "p_account_id": string,"p_expires_at"?: string,"p_token": Json }; Returns: string
                            },
