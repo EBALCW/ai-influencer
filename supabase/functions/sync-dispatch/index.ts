@@ -1,6 +1,7 @@
 // sync-dispatch (#53): pg_cron/pg_net (ve panelden "Şimdi senkronize et" → public.request_sync)
 // tarafından `x-cron-secret` ile çağrılır. Gövde: { job: 'metrics'|'posts'|'accounts'|'manual',
-// account_id?: uuid }. İş arka planda sürer (EdgeRuntime.waitUntil), yanıt hemen 202 döner.
+// account_id?: uuid, workspace_id?: uuid }. workspace_id verilirse yalnız o çalışma alanının
+// hesapları işlenir (panelden gelen manuel istek; #181). İş arka planda sürer (EdgeRuntime.waitUntil), yanıt hemen 202 döner.
 import { errorResponse, json, requireCronSecret } from '../_shared/http.ts';
 import {
   type CollectorRegistry,
@@ -24,14 +25,27 @@ export interface HandlerDeps {
 
 export function parseBody(
   body: unknown,
-): { job: SyncJob; accountId?: string } | null {
+): { job: SyncJob; accountId?: string; workspaceId?: string } | null {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
-  const { job, account_id: accountId } = body as Record<string, unknown>;
+  const {
+    job,
+    account_id: accountId,
+    workspace_id: workspaceId,
+  } = body as Record<string, unknown>;
   if (typeof job !== 'string' || !JOBS.includes(job as SyncJob)) return null;
-  if (accountId === undefined || accountId === null)
-    return { job: job as SyncJob };
-  if (typeof accountId !== 'string' || !UUID.test(accountId)) return null;
-  return { job: job as SyncJob, accountId };
+  const parsed: { job: SyncJob; accountId?: string; workspaceId?: string } = {
+    job: job as SyncJob,
+  };
+  if (accountId !== undefined && accountId !== null) {
+    if (typeof accountId !== 'string' || !UUID.test(accountId)) return null;
+    parsed.accountId = accountId;
+  }
+  // Geçersiz alan kimliği sessizce yok sayılmaz: yok sayılsaydı istek tüm alanlara yayılırdı.
+  if (workspaceId !== undefined && workspaceId !== null) {
+    if (typeof workspaceId !== 'string' || !UUID.test(workspaceId)) return null;
+    parsed.workspaceId = workspaceId;
+  }
+  return parsed;
 }
 
 export function createHandler(deps: HandlerDeps) {
@@ -74,6 +88,7 @@ export function createHandler(deps: HandlerDeps) {
       { store, collectors: deps.collectors, fetch: deps.fetch },
       {
         accountId: body.accountId,
+        workspaceId: body.workspaceId,
       },
     ).then((summary: SyncSummary) => {
       console.log(

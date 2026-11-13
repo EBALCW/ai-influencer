@@ -215,7 +215,7 @@ class Budget {
 export async function runSync(
   job: SyncJob,
   deps: SyncDeps,
-  opts: { accountId?: string } = {},
+  opts: { accountId?: string; workspaceId?: string } = {},
 ): Promise<SyncSummary> {
   const now = deps.now ?? (() => new Date());
   const sleep = deps.sleep ?? sleepMs;
@@ -238,7 +238,12 @@ export async function runSync(
       opts.accountId,
     );
   }
-  let accounts = await deps.store.listAccounts(opts.accountId);
+  // workspaceId: panelden gelen manuel istek yalnız çağıranın çalışma alanını senkronize eder.
+  // Zamanlanmış işler (cron) alan vermez ve tüm alanları kapsar.
+  let accounts = await deps.store.listAccounts(
+    opts.accountId,
+    opts.workspaceId,
+  );
   if (job === 'metrics') {
     const withDue = new Set(due.map((d) => d.accountId));
     accounts = accounts.filter((a) => withDue.has(a.id));

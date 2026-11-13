@@ -136,6 +136,7 @@ export default async function InfluencerDetailPage({
   } else if (tab === 'persona') {
     const emails = await getTeamMemberEmails(
       data.personas.map((persona) => persona.created_by),
+      member.workspaceId,
     );
     content = (
       <PersonaTab

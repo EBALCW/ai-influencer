@@ -17,6 +17,8 @@ export interface SyncAccount {
   /** Platformdaki hesap/kanal id'si; bağlantı (#49) doldurur. */
   externalId: string | null;
   status: 'active' | 'error';
+  /** Hesabın çalışma alanı (#181); manuel senkronizasyon bununla sınırlanır. */
+  workspaceId?: string;
 }
 
 /** Vault'tan okunan token paketi (#49 `read_social_token`). Loglanmaz, döndürülmez. */

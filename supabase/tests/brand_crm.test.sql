@@ -56,7 +56,9 @@ SELECT extensions.is(
   ),
   ARRAY[
     'brand_deal_content_items_team_read', 'brand_deal_content_items_team_write',
-    'brand_deal_files_team_read', 'brand_deal_files_team_write'
+    'brand_deal_content_items_workspace',
+    'brand_deal_files_team_read', 'brand_deal_files_team_write',
+    'brand_deal_files_workspace'
   ]::text[],
   'yeni tablolarda ekip okuma / yazma politikaları var'
 );

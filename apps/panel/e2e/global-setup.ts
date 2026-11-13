@@ -9,6 +9,12 @@ export const VIEWER_STATE = 'e2e/.auth/viewer.json';
 export const VIEWER_EMAIL = 'e2e-viewer@example.test';
 export const EDITOR_STATE = 'e2e/.auth/editor.json';
 export const EDITOR_EMAIL = 'e2e-editor@example.test';
+// İkinci çalışma alanı (#181 yalıtım senaryosu). Alan yalnız isolation.spec çalışırken vardır:
+// service role yazımları "tek alan" varsayımına dayandığı için (current_workspace_id) diğer
+// testler sürerken ikinci bir alan bulunmamalıdır.
+export const OTHER_STATE = 'e2e/.auth/other-workspace.json';
+export const OTHER_EMAIL = 'e2e-other-workspace@example.test';
+export const OTHER_WORKSPACE_NAME = 'E2E İkinci Alan';
 
 /**
  * Oturumlu testler için yerel Supabase'te owner ve viewer kullanıcıları oluşturur ve
@@ -35,19 +41,43 @@ export default async function globalSetup() {
     await writeFile(OWNER_STATE, empty);
     await writeFile(VIEWER_STATE, empty);
     await writeFile(EDITOR_STATE, empty);
+    await writeFile(OTHER_STATE, empty);
     return;
   }
+  await removeOtherWorkspace();
   // Owner önce: viewer üyeliğini de owner'ın created_by'ı ile kaydetmek için
   const ownerId = await createSession(OWNER_EMAIL, 'owner', OWNER_STATE);
   await createSession(VIEWER_EMAIL, 'viewer', VIEWER_STATE, ownerId);
   await createSession(EDITOR_EMAIL, 'editor', EDITOR_STATE, ownerId);
 }
 
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+}
+
+/**
+ * Yarıda kalmış bir yalıtım testinden artan ikinci alanı siler (üyelikleri CASCADE ile gider).
+ * Kalırsa oturumsuz yazımlar alan bulamaz ve diğer testlerin kurulumları kırılır.
+ */
+export async function removeOtherWorkspace() {
+  const { error } = await adminClient()
+    .from('workspaces')
+    .delete()
+    .eq('name', OTHER_WORKSPACE_NAME);
+  if (error) throw error;
+}
+
+/** `workspaceId` verilmezse üyelik kurulumdaki tek alana yazılır. */
 export async function createSession(
   email: string,
   role: Role,
   statePath: string,
   createdBy?: string,
+  workspaceId?: string,
 ): Promise<string> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -74,9 +104,12 @@ export async function createSession(
     user = created.data.user;
   }
 
-  const { error: memberError } = await admin
-    .from('team_members')
-    .upsert({ user_id: user.id, role, created_by: createdBy ?? user.id });
+  const { error: memberError } = await admin.from('team_members').upsert({
+    user_id: user.id,
+    role,
+    created_by: createdBy ?? user.id,
+    ...(workspaceId ? { workspace_id: workspaceId } : {}),
+  });
   if (memberError) throw memberError;
 
   const jar = new Map<string, string>();

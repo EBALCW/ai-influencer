@@ -57,8 +57,15 @@ export interface AccountSnapshotRow {
 }
 
 export interface SyncStore {
-  /** status active/error ve token_ref'i olan hesaplar (accountId verilirse yalnız o). */
-  listAccounts(accountId?: string): Promise<SyncAccount[]>;
+  /**
+   * status active/error ve token_ref'i olan hesaplar (accountId verilirse yalnız o).
+   * workspaceId verilirse yalnız o çalışma alanının hesapları (#181): service role RLS'i
+   * aştığı için panelden gelen manuel istek alanla açıkça sınırlanır.
+   */
+  listAccounts(
+    accountId?: string,
+    workspaceId?: string,
+  ): Promise<SyncAccount[]>;
   readToken(accountId: string): Promise<SocialToken | null>;
   dueSnapshots(
     at: Date,

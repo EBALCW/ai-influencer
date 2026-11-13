@@ -21,7 +21,7 @@ test.beforeAll(async () => {
     .from('influencers')
     .upsert(
       { name: 'E2E Production Viewer', slug: SLUG, status: 'active' },
-      { onConflict: 'slug' },
+      { onConflict: 'workspace_id,slug' },
     )
     .select('id')
     .single();

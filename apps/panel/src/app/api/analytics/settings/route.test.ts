@@ -60,7 +60,7 @@ describe('PUT /api/analytics/settings', () => {
     expect((await call({ ...valid, created_by: 'injected' })).status).toBe(200);
     expect(state.upsert).toHaveBeenCalledWith(
       { key: 'analytics', value: valid },
-      { onConflict: 'key' },
+      { onConflict: 'workspace_id,key' },
     );
   });
   it.each(['editor', 'viewer'])('%s eşik değiştiremez', async (role) => {

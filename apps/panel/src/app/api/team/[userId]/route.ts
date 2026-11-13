@@ -29,6 +29,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       .from('team_members')
       .update({ role: body.data.role })
       .eq('user_id', userId)
+      // Service role RLS'i aşar: yalnız çağıranın çalışma alanındaki üye değiştirilebilir.
+      .eq('workspace_id', auth.workspaceId)
       .select('user_id');
     if (error?.code === LAST_OWNER) {
       return jsonError('Ekipte en az bir owner kalmalı.', 409);
@@ -55,6 +57,8 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
       .from('team_members')
       .delete()
       .eq('user_id', userId)
+      // Service role RLS'i aşar: yalnız çağıranın çalışma alanındaki üye çıkarılabilir.
+      .eq('workspace_id', auth.workspaceId)
       .select('user_id');
     if (error?.code === LAST_OWNER) {
       return jsonError('Ekipte en az bir owner kalmalı.', 409);

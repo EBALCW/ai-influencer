@@ -1,63 +1,47 @@
 #!/usr/bin/env node
-// İlk owner'ı (veya ek bir owner'ı) servis anahtarıyla oluşturur.
+// TEK çalışma alanlı kurulumda ilk owner'ı (veya ek bir owner'ı) servis anahtarıyla oluşturur.
 // Kullanım (repo kökünde): pnpm owner:create ad@ornek.com
 //
 // Uygulama içinden kimse kendini owner yapamaz (RLS); ilk owner sadece bu yolla eklenir.
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { createClient } from '@supabase/supabase-js';
+// Kullanıcı, kurulumdaki tek çalışma alanına eklenir. Birden çok alan varsa hangi alanın
+// kastedildiği belirsizdir: yeni bir alan için `pnpm workspace:create`, mevcut bir alana üye
+// eklemek için panel → Ayarlar → Ekip kullanılır (#181, docs/AUTH.md).
+import { createAdmin, findOrInviteUser, parseEmail } from './lib/admin.mjs';
 
-const rootEnv = fileURLToPath(new URL('../../../.env.local', import.meta.url));
-if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
+const email = parseEmail(
+  process.argv[2],
+  'Kullanım: pnpm owner:create ad@ornek.com',
+);
+const { admin, siteUrl } = createAdmin();
 
-const email = process.argv[2]?.trim().toLowerCase();
-if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-  console.error('Kullanım: pnpm owner:create ad@ornek.com');
-  process.exit(1);
-}
-
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!url || !serviceKey) {
+const { data: workspaces, error: workspaceError } = await admin
+  .from('workspaces')
+  .select('id, name')
+  .limit(2);
+if (workspaceError) throw workspaceError;
+if (workspaces.length !== 1) {
   console.error(
-    '.env.local içinde NEXT_PUBLIC_SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY gerekli.',
+    workspaces.length === 0
+      ? 'Hiç çalışma alanı yok. Yeni alan açmak için: pnpm workspace:create ad@ornek.com'
+      : 'Birden çok çalışma alanı var. Yeni bir alan + owner için: pnpm workspace:create ad@ornek.com\n' +
+          'Mevcut bir alana üye eklemek için o alanın owner’ı panelde Ayarlar → Ekip sayfasını kullanır.',
   );
   process.exit(1);
 }
+const [workspace] = workspaces;
 
-const admin = createClient(url, serviceKey, {
-  auth: { autoRefreshToken: false, persistSession: false },
-});
-const siteUrl = process.env.SITE_URL ?? 'http://localhost:3000';
+const user = await findOrInviteUser(admin, email, siteUrl);
 
-async function findUser() {
-  for (let page = 1; page <= 20; page++) {
-    const { data, error } = await admin.auth.admin.listUsers({
-      page,
-      perPage: 200,
-    });
-    if (error) throw error;
-    const match = data.users.find((u) => u.email?.toLowerCase() === email);
-    if (match || data.users.length < 200) return match ?? null;
-  }
-  return null;
-}
-
-let user = await findUser();
-if (user) {
-  console.log(`Mevcut kullanıcı bulundu: ${email}`);
-} else {
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback`,
-  });
-  if (error) throw error;
-  user = data.user;
-  console.log(`Davet e-postası gönderildi: ${email}`);
-}
-
+// Tek alan olduğu için kullanıcının varsa mevcut üyeliği de bu alandadır; rolü owner'a çıkar.
+// workspace_id açıkça verilir: service role yazımı varsayılana bırakılmaz.
 const { error } = await admin
   .from('team_members')
-  .upsert({ user_id: user.id, role: 'owner' }, { onConflict: 'user_id' });
+  .upsert(
+    { user_id: user.id, role: 'owner', workspace_id: workspace.id },
+    { onConflict: 'user_id' },
+  );
 if (error) throw error;
 
-console.log(`✓ ${email} owner olarak eklendi. Giriş: ${siteUrl}/login`);
+console.log(
+  `✓ ${email}, "${workspace.name}" alanına owner olarak eklendi. Giriş: ${siteUrl}/login`,
+);

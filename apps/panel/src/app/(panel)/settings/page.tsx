@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { ArrowUpRight, UsersRound } from 'lucide-react';
 import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { canManageTeam } from '@/lib/team-roles';
+import { WorkspaceNameForm } from './workspace-name-form';
 
 export default async function SettingsPage({
   searchParams,
@@ -14,7 +16,14 @@ export default async function SettingsPage({
   const aiHref = `/settings/ai${query}`;
   const notificationsHref = `/settings/notifications${query}`;
   const syncHref = `/settings/sync${query}`;
-  const { role } = await requireTeamMember();
+  const { role, workspaceId } = await requireTeamMember();
+  // RLS yalnız üyenin kendi alanını gösterir; id filtresi niyeti açık kılar.
+  const supabase = await createSupabaseServerClient();
+  const { data: workspace } = await supabase
+    .from('workspaces')
+    .select('name')
+    .eq('id', workspaceId)
+    .maybeSingle();
 
   return (
     <div className="page-stack">
@@ -28,6 +37,14 @@ export default async function SettingsPage({
           ⚙
         </span>
       </header>
+      {workspace && (
+        <section className="section-card">
+          <WorkspaceNameForm
+            name={workspace.name}
+            canEdit={canManageTeam(role)}
+          />
+        </section>
+      )}
       {canManageTeam(role) && (
         <section className="section-card">
           <div className="quick-links">

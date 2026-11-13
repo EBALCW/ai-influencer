@@ -31,6 +31,7 @@
     "supabase:test": "supabase test db",
     "supabase:types": "node scripts/generate-supabase-types.mjs",
     "owner:create": "pnpm --filter @ai-influencer/panel run owner:create",
+    "workspace:create": "pnpm --filter @ai-influencer/panel run workspace:create",
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
     "panel": "node scripts/panel.mjs",
     "backup": "node scripts/backup.mjs",

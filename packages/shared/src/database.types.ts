@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "account_snapshots": {
                   Row: {
-                    "account_id": string,"captured_at": string,"created_at": string,"created_by": string | null,"followers": number,"following": number | null,"id": string,"media_count": number | null,"profile_views": number | null,"reach_day": number | null,"total_likes": number | null,"total_views": number | null,"updated_at": string
+                    "account_id": string,"captured_at": string,"created_at": string,"created_by": string | null,"followers": number,"following": number | null,"id": string,"media_count": number | null,"profile_views": number | null,"reach_day": number | null,"total_likes": number | null,"total_views": number | null,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_likes"?: number | null,"total_views"?: number | null,"updated_at"?: string
+                    "account_id": string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_likes"?: number | null,"total_views"?: number | null,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "account_id"?: string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_likes"?: number | null,"total_views"?: number | null,"updated_at"?: string
+                    "account_id"?: string,"captured_at"?: string,"created_at"?: string,"created_by"?: string | null,"followers"?: number,"following"?: number | null,"id"?: string,"media_count"?: number | null,"profile_views"?: number | null,"reach_day"?: number | null,"total_likes"?: number | null,"total_views"?: number | null,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -41,18 +41,24 @@ export type Database = {
 isOneToOne: false
       referencedRelation: "social_accounts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "account_snapshots_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"alert_reads": {
                   Row: {
-                    "alert_id": string,"read_at": string,"user_id": string
+                    "alert_id": string,"read_at": string,"user_id": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "alert_id": string,"read_at"?: string,"user_id"?: string
+                    "alert_id": string,"read_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "alert_id"?: string,"read_at"?: string,"user_id"?: string
+                    "alert_id"?: string,"read_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -61,18 +67,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "alerts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alert_reads_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"alerts": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"dedupe_key": string | null,"id": string,"influencer_id": string | null,"payload": NonNullable<Json>,"read_at": string | null,"type": string,"updated_at": string
+                    "created_at": string,"created_by": string | null,"dedupe_key": string | null,"id": string,"influencer_id": string | null,"payload": NonNullable<Json>,"read_at": string | null,"type": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"dedupe_key"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type": string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"dedupe_key"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type": string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"dedupe_key"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type"?: string,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"dedupe_key"?: string | null,"id"?: string,"influencer_id"?: string | null,"payload"?: NonNullable<Json>,"read_at"?: string | null,"type"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -81,32 +93,44 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "alerts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"app_settings": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"key": string,"updated_at": string,"value": NonNullable<Json>
+                    "created_at": string,"created_by": string | null,"key": string,"updated_at": string,"value": NonNullable<Json>,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"key": string,"updated_at"?: string,"value": NonNullable<Json>
+                    "created_at"?: string,"created_by"?: string | null,"key": string,"updated_at"?: string,"value": NonNullable<Json>,"workspace_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"key"?: string,"updated_at"?: string,"value"?: NonNullable<Json>
+                    "created_at"?: string,"created_by"?: string | null,"key"?: string,"updated_at"?: string,"value"?: NonNullable<Json>,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "app_settings_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"assets": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"thumbnail_path": string | null,"updated_at": string,"version_tag": string | null,"width": number | null
+                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"thumbnail_path": string | null,"updated_at": string,"version_tag": string | null,"width": number | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null,"workspace_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null
+                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -115,18 +139,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "assets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"brand_deal_content_items": {
                   Row: {
-                    "brand_deal_id": string,"content_item_id": string,"created_at": string,"created_by": string | null,"id": string,"updated_at": string
+                    "brand_deal_id": string,"content_item_id": string,"created_at": string,"created_by": string | null,"id": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "brand_deal_id": string,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"updated_at"?: string
+                    "brand_deal_id": string,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "brand_deal_id"?: string,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"updated_at"?: string
+                    "brand_deal_id"?: string,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -141,18 +171,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "content_items"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deal_content_items_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"brand_deal_files": {
                   Row: {
-                    "brand_deal_id": string,"created_at": string,"created_by": string | null,"file_name": string,"file_size_bytes": number | null,"id": string,"mime_type": string | null,"storage_path": string,"updated_at": string
+                    "brand_deal_id": string,"created_at": string,"created_by": string | null,"file_name": string,"file_size_bytes": number | null,"id": string,"mime_type": string | null,"storage_path": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "brand_deal_id": string,"created_at"?: string,"created_by"?: string | null,"file_name": string,"file_size_bytes"?: number | null,"id"?: string,"mime_type"?: string | null,"storage_path": string,"updated_at"?: string
+                    "brand_deal_id": string,"created_at"?: string,"created_by"?: string | null,"file_name": string,"file_size_bytes"?: number | null,"id"?: string,"mime_type"?: string | null,"storage_path": string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "brand_deal_id"?: string,"created_at"?: string,"created_by"?: string | null,"file_name"?: string,"file_size_bytes"?: number | null,"id"?: string,"mime_type"?: string | null,"storage_path"?: string,"updated_at"?: string
+                    "brand_deal_id"?: string,"created_at"?: string,"created_by"?: string | null,"file_name"?: string,"file_size_bytes"?: number | null,"id"?: string,"mime_type"?: string | null,"storage_path"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -161,18 +197,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "brand_deals"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deal_files_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"brand_deals": {
                   Row: {
-                    "brand_id": string,"brief": NonNullable<Json>,"created_at": string,"created_by": string | null,"currency": string,"deliverables": NonNullable<Json>,"due_date": string | null,"fee": number | null,"id": string,"influencer_id": string,"notes": string,"paid_at": string | null,"stage": Database["public"]['Enums']["brand_deal_stage"],"updated_at": string
+                    "brand_id": string,"brief": NonNullable<Json>,"created_at": string,"created_by": string | null,"currency": string,"deliverables": NonNullable<Json>,"due_date": string | null,"fee": number | null,"id": string,"influencer_id": string,"notes": string,"paid_at": string | null,"stage": Database["public"]['Enums']["brand_deal_stage"],"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "brand_id": string,"brief"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id": string,"notes"?: string,"paid_at"?: string | null,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
+                    "brand_id": string,"brief"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id": string,"notes"?: string,"paid_at"?: string | null,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "brand_id"?: string,"brief"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"paid_at"?: string | null,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string
+                    "brand_id"?: string,"brief"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"deliverables"?: NonNullable<Json>,"due_date"?: string | null,"fee"?: number | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"paid_at"?: string | null,"stage"?: Database["public"]['Enums']["brand_deal_stage"],"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -187,32 +229,44 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "brand_deals_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"brands": {
                   Row: {
-                    "contact_email": string | null,"contact_name": string | null,"created_at": string,"created_by": string | null,"id": string,"name": string,"notes": string,"updated_at": string,"website": string | null
+                    "contact_email": string | null,"contact_name": string | null,"created_at": string,"created_by": string | null,"id": string,"name": string,"notes": string,"updated_at": string,"website": string | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "contact_email"?: string | null,"contact_name"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string,"notes"?: string,"updated_at"?: string,"website"?: string | null
+                    "contact_email"?: string | null,"contact_name"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string,"notes"?: string,"updated_at"?: string,"website"?: string | null,"workspace_id"?: string
                   }
                   Update: {
-                    "contact_email"?: string | null,"contact_name"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"notes"?: string,"updated_at"?: string,"website"?: string | null
+                    "contact_email"?: string | null,"contact_name"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"notes"?: string,"updated_at"?: string,"website"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "brands_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"budgets": {
                   Row: {
-                    "amount": number,"created_at": string,"created_by": string | null,"currency": string,"id": string,"influencer_id": string | null,"month": string,"updated_at": string,"warn_ratio": number
+                    "amount": number,"created_at": string,"created_by": string | null,"currency": string,"id": string,"influencer_id": string | null,"month": string,"updated_at": string,"warn_ratio": number,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount": number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"influencer_id"?: string | null,"month": string,"updated_at"?: string,"warn_ratio"?: number
+                    "amount": number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"influencer_id"?: string | null,"month": string,"updated_at"?: string,"warn_ratio"?: number,"workspace_id"?: string
                   }
                   Update: {
-                    "amount"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"influencer_id"?: string | null,"month"?: string,"updated_at"?: string,"warn_ratio"?: number
+                    "amount"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"influencer_id"?: string | null,"month"?: string,"updated_at"?: string,"warn_ratio"?: number,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -221,18 +275,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "budgets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"clip_sources": {
                   Row: {
-                    "channel_name": string,"channel_url": string | null,"created_at": string,"created_by": string | null,"duration_seconds": number | null,"id": string,"notes": string,"permission_checked_at": string | null,"permission_checked_by": string | null,"permission_ref": string,"permission_status": Database["public"]['Enums']["clip_permission_status"],"platform": string,"title": string,"updated_at": string,"video_id": string,"video_url": string
+                    "channel_name": string,"channel_url": string | null,"created_at": string,"created_by": string | null,"duration_seconds": number | null,"id": string,"notes": string,"permission_checked_at": string | null,"permission_checked_by": string | null,"permission_ref": string,"permission_status": Database["public"]['Enums']["clip_permission_status"],"platform": string,"title": string,"updated_at": string,"video_id": string,"video_url": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "channel_name": string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title": string,"updated_at"?: string,"video_id": string,"video_url": string
+                    "channel_name": string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title": string,"updated_at"?: string,"video_id": string,"video_url": string,"workspace_id"?: string
                   }
                   Update: {
-                    "channel_name"?: string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title"?: string,"updated_at"?: string,"video_id"?: string,"video_url"?: string
+                    "channel_name"?: string,"channel_url"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_seconds"?: number | null,"id"?: string,"notes"?: string,"permission_checked_at"?: string | null,"permission_checked_by"?: string | null,"permission_ref"?: string,"permission_status"?: Database["public"]['Enums']["clip_permission_status"],"platform"?: string,"title"?: string,"updated_at"?: string,"video_id"?: string,"video_url"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -241,18 +301,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "team_members"
       referencedColumns: ["user_id"]
+    },{
+      foreignKeyName: "clip_sources_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"clips": {
                   Row: {
-                    "content_item_id": string | null,"created_at": string,"created_by": string | null,"end_seconds": number,"hook": string | null,"id": string,"influencer_id": string | null,"notes": string,"source_id": string,"start_seconds": number,"status": Database["public"]['Enums']["clip_status"],"title": string,"updated_at": string
+                    "content_item_id": string | null,"created_at": string,"created_by": string | null,"end_seconds": number,"hook": string | null,"id": string,"influencer_id": string | null,"notes": string,"source_id": string,"start_seconds": number,"status": Database["public"]['Enums']["clip_status"],"title": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds": number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id": string,"start_seconds": number,"status"?: Database["public"]['Enums']["clip_status"],"title": string,"updated_at"?: string
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds": number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id": string,"start_seconds": number,"status"?: Database["public"]['Enums']["clip_status"],"title": string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds"?: number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id"?: string,"start_seconds"?: number,"status"?: Database["public"]['Enums']["clip_status"],"title"?: string,"updated_at"?: string
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds"?: number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id"?: string,"start_seconds"?: number,"status"?: Database["public"]['Enums']["clip_status"],"title"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -273,18 +339,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "clip_sources"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "clips_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"comment_replies": {
                   Row: {
-                    "attempts": number,"body": string,"comment_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"id": string,"next_attempt_at": string,"sent_at": string | null,"status": string,"updated_at": string
+                    "attempts": number,"body": string,"comment_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"id": string,"next_attempt_at": string,"sent_at": string | null,"status": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempts"?: number,"body": string,"comment_id": string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"id"?: string,"next_attempt_at"?: string,"sent_at"?: string | null,"status"?: string,"updated_at"?: string
+                    "attempts"?: number,"body": string,"comment_id": string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"id"?: string,"next_attempt_at"?: string,"sent_at"?: string | null,"status"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "attempts"?: number,"body"?: string,"comment_id"?: string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"id"?: string,"next_attempt_at"?: string,"sent_at"?: string | null,"status"?: string,"updated_at"?: string
+                    "attempts"?: number,"body"?: string,"comment_id"?: string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"id"?: string,"next_attempt_at"?: string,"sent_at"?: string | null,"status"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -293,18 +365,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "comments"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "comment_replies_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"comments": {
                   Row: {
-                    "account_id": string,"author_name": string,"brand_deal_id": string | null,"created_at": string,"created_by": string | null,"external_id": string,"id": string,"is_brand_inquiry": boolean,"like_count": number | null,"parent_external_id": string | null,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"replied_at": string | null,"status": string,"text": string,"updated_at": string
+                    "account_id": string,"author_name": string,"brand_deal_id": string | null,"created_at": string,"created_by": string | null,"external_id": string,"id": string,"is_brand_inquiry": boolean,"like_count": number | null,"parent_external_id": string | null,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"replied_at": string | null,"status": string,"text": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"author_name"?: string,"brand_deal_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"external_id": string,"id"?: string,"is_brand_inquiry"?: boolean,"like_count"?: number | null,"parent_external_id"?: string | null,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"replied_at"?: string | null,"status"?: string,"text": string,"updated_at"?: string
+                    "account_id": string,"author_name"?: string,"brand_deal_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"external_id": string,"id"?: string,"is_brand_inquiry"?: boolean,"like_count"?: number | null,"parent_external_id"?: string | null,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"replied_at"?: string | null,"status"?: string,"text": string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "account_id"?: string,"author_name"?: string,"brand_deal_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"external_id"?: string,"id"?: string,"is_brand_inquiry"?: boolean,"like_count"?: number | null,"parent_external_id"?: string | null,"platform"?: Database["public"]['Enums']["social_platform"],"post_id"?: string,"published_at"?: string,"replied_at"?: string | null,"status"?: string,"text"?: string,"updated_at"?: string
+                    "account_id"?: string,"author_name"?: string,"brand_deal_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"external_id"?: string,"id"?: string,"is_brand_inquiry"?: boolean,"like_count"?: number | null,"parent_external_id"?: string | null,"platform"?: Database["public"]['Enums']["social_platform"],"post_id"?: string,"published_at"?: string,"replied_at"?: string | null,"status"?: string,"text"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -325,18 +403,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "comments_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"content_item_assets": {
                   Row: {
-                    "asset_id": string | null,"content_item_id": string,"created_at": string,"created_by": string | null,"generation_id": string | null,"id": string,"updated_at": string
+                    "asset_id": string | null,"content_item_id": string,"created_at": string,"created_by": string | null,"generation_id": string | null,"id": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "asset_id"?: string | null,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"generation_id"?: string | null,"id"?: string,"updated_at"?: string
+                    "asset_id"?: string | null,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"generation_id"?: string | null,"id"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "asset_id"?: string | null,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"generation_id"?: string | null,"id"?: string,"updated_at"?: string
+                    "asset_id"?: string | null,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"generation_id"?: string | null,"id"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -357,18 +441,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "generations"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "content_item_assets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"content_items": {
                   Row: {
-                    "adaptation_score": number | null,"assignee_id": string | null,"checklist": NonNullable<Json>,"checklist_scored_by": string | null,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"notes": string,"scheduled_at": string | null,"sort_order": number,"source_checked_at": string | null,"source_checked_by": string | null,"source_license": string,"source_owner": string,"source_type": Database["public"]['Enums']["content_source_type"] | null,"source_url": string,"source_views": number | null,"stage": Database["public"]['Enums']["content_stage"],"target_account_id": string | null,"timezone": string,"title": string,"updated_at": string,"viral_reason": string
+                    "adaptation_score": number | null,"assignee_id": string | null,"checklist": NonNullable<Json>,"checklist_scored_by": string | null,"created_at": string,"created_by": string | null,"format": string,"hook_type": string | null,"id": string,"influencer_id": string,"notes": string,"scheduled_at": string | null,"sort_order": number,"source_checked_at": string | null,"source_checked_by": string | null,"source_license": string,"source_owner": string,"source_type": Database["public"]['Enums']["content_source_type"] | null,"source_url": string,"source_views": number | null,"stage": Database["public"]['Enums']["content_stage"],"target_account_id": string | null,"timezone": string,"title": string,"updated_at": string,"viral_reason": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"viral_reason"?: string
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id": string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title": string,"updated_at"?: string,"viral_reason"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"viral_reason"?: string
+                    "adaptation_score"?: number | null,"assignee_id"?: string | null,"checklist"?: NonNullable<Json>,"checklist_scored_by"?: string | null,"created_at"?: string,"created_by"?: string | null,"format"?: string,"hook_type"?: string | null,"id"?: string,"influencer_id"?: string,"notes"?: string,"scheduled_at"?: string | null,"sort_order"?: number,"source_checked_at"?: string | null,"source_checked_by"?: string | null,"source_license"?: string,"source_owner"?: string,"source_type"?: Database["public"]['Enums']["content_source_type"] | null,"source_url"?: string,"source_views"?: number | null,"stage"?: Database["public"]['Enums']["content_stage"],"target_account_id"?: string | null,"timezone"?: string,"title"?: string,"updated_at"?: string,"viral_reason"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -389,18 +479,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "social_accounts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "content_items_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"costs": {
                   Row: {
-                    "amount": number,"category": Database["public"]['Enums']["cost_category"],"created_at": string,"created_by": string | null,"credits": number | null,"currency": string,"description": string,"generation_id": string | null,"id": string,"incurred_on": string,"influencer_id": string,"updated_at": string
+                    "amount": number,"category": Database["public"]['Enums']["cost_category"],"created_at": string,"created_by": string | null,"credits": number | null,"currency": string,"description": string,"generation_id": string | null,"id": string,"incurred_on": string,"influencer_id": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount": number,"category": Database["public"]['Enums']["cost_category"],"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"currency"?: string,"description"?: string,"generation_id"?: string | null,"id"?: string,"incurred_on"?: string,"influencer_id": string,"updated_at"?: string
+                    "amount": number,"category": Database["public"]['Enums']["cost_category"],"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"currency"?: string,"description"?: string,"generation_id"?: string | null,"id"?: string,"incurred_on"?: string,"influencer_id": string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "amount"?: number,"category"?: Database["public"]['Enums']["cost_category"],"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"currency"?: string,"description"?: string,"generation_id"?: string | null,"id"?: string,"incurred_on"?: string,"influencer_id"?: string,"updated_at"?: string
+                    "amount"?: number,"category"?: Database["public"]['Enums']["cost_category"],"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"currency"?: string,"description"?: string,"generation_id"?: string | null,"id"?: string,"incurred_on"?: string,"influencer_id"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -415,35 +511,53 @@ isOneToOne: true
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "costs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"credit_rates": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"currency": string,"id": string,"rate_per_credit": number,"tool": string,"updated_at": string,"valid_from": string
+                    "created_at": string,"created_by": string | null,"currency": string,"id": string,"rate_per_credit": number,"tool": string,"updated_at": string,"valid_from": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"currency": string,"id"?: string,"rate_per_credit": number,"tool": string,"updated_at"?: string,"valid_from": string
+                    "created_at"?: string,"created_by"?: string | null,"currency": string,"id"?: string,"rate_per_credit": number,"tool": string,"updated_at"?: string,"valid_from": string,"workspace_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate_per_credit"?: number,"tool"?: string,"updated_at"?: string,"valid_from"?: string
+                    "created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate_per_credit"?: number,"tool"?: string,"updated_at"?: string,"valid_from"?: string,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "credit_rates_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"exchange_rates": {
                   Row: {
-                    "base_currency": string,"created_at": string,"created_by": string | null,"currency": string,"id": string,"rate": number,"updated_at": string,"valid_on": string
+                    "base_currency": string,"created_at": string,"created_by": string | null,"currency": string,"id": string,"rate": number,"updated_at": string,"valid_on": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "base_currency": string,"created_at"?: string,"created_by"?: string | null,"currency": string,"id"?: string,"rate": number,"updated_at"?: string,"valid_on": string
+                    "base_currency": string,"created_at"?: string,"created_by"?: string | null,"currency": string,"id"?: string,"rate": number,"updated_at"?: string,"valid_on": string,"workspace_id"?: string
                   }
                   Update: {
-                    "base_currency"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate"?: number,"updated_at"?: string,"valid_on"?: string
+                    "base_currency"?: string,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"rate"?: number,"updated_at"?: string,"valid_on"?: string,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "exchange_rates_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"generation_worker_status": {
                   Row: {
@@ -461,14 +575,14 @@ isOneToOne: false
                   ]
                 },"generations": {
                   Row: {
-                    "attempts": number,"cancel_requested_at": string | null,"cost_usd": number | null,"created_at": string,"created_by": string | null,"credits": number | null,"duration_ms": number | null,"error": string | null,"estimated_cost_usd": number | null,"finished_at": string | null,"id": string,"influencer_id": string,"input_asset_ids": (string)[],"max_attempts": number,"mode": string,"next_run_at": string,"output_asset_id": string | null,"params": NonNullable<Json>,"progress": number,"prompt_id": string | null,"provider_job_id": string | null,"retry_of": string | null,"started_at": string | null,"status": Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at": string
+                    "attempts": number,"cancel_requested_at": string | null,"cost_usd": number | null,"created_at": string,"created_by": string | null,"credits": number | null,"duration_ms": number | null,"error": string | null,"estimated_cost_usd": number | null,"finished_at": string | null,"id": string,"influencer_id": string,"input_asset_ids": (string)[],"max_attempts": number,"mode": string,"next_run_at": string,"output_asset_id": string | null,"params": NonNullable<Json>,"progress": number,"prompt_id": string | null,"provider_job_id": string | null,"retry_of": string | null,"started_at": string | null,"status": Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempts"?: number,"cancel_requested_at"?: string | null,"cost_usd"?: number | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"estimated_cost_usd"?: number | null,"finished_at"?: string | null,"id"?: string,"influencer_id": string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode": string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"cost_usd"?: number | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"estimated_cost_usd"?: number | null,"finished_at"?: string | null,"id"?: string,"influencer_id": string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode": string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool": string,"type": Database["public"]['Enums']["generation_type"],"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "attempts"?: number,"cancel_requested_at"?: string | null,"cost_usd"?: number | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"estimated_cost_usd"?: number | null,"finished_at"?: string | null,"id"?: string,"influencer_id"?: string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode"?: string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool"?: string,"type"?: Database["public"]['Enums']["generation_type"],"updated_at"?: string
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"cost_usd"?: number | null,"created_at"?: string,"created_by"?: string | null,"credits"?: number | null,"duration_ms"?: number | null,"error"?: string | null,"estimated_cost_usd"?: number | null,"finished_at"?: string | null,"id"?: string,"influencer_id"?: string,"input_asset_ids"?: (string)[],"max_attempts"?: number,"mode"?: string,"next_run_at"?: string,"output_asset_id"?: string | null,"params"?: NonNullable<Json>,"progress"?: number,"prompt_id"?: string | null,"provider_job_id"?: string | null,"retry_of"?: string | null,"started_at"?: string | null,"status"?: Database["public"]['Enums']["generation_status"],"tool"?: string,"type"?: Database["public"]['Enums']["generation_type"],"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -507,18 +621,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "generations"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "generations_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"influencer_personas": {
                   Row: {
-                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"sample_captions": (string)[],"tone": string,"updated_at": string,"version": number
+                    "appearance": NonNullable<Json>,"audience": NonNullable<Json>,"bio": string,"change_note": string,"created_at": string,"created_by": string | null,"hook_traits": (string)[],"id": string,"influencer_id": string,"is_current": boolean,"personality": NonNullable<Json>,"restored_from_version": number | null,"sample_captions": (string)[],"tone": string,"updated_at": string,"version": number,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version": number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id": string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version": number,"workspace_id"?: string
                   }
                   Update: {
-                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version"?: number
+                    "appearance"?: NonNullable<Json>,"audience"?: NonNullable<Json>,"bio"?: string,"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"hook_traits"?: (string)[],"id"?: string,"influencer_id"?: string,"is_current"?: boolean,"personality"?: NonNullable<Json>,"restored_from_version"?: number | null,"sample_captions"?: (string)[],"tone"?: string,"updated_at"?: string,"version"?: number,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -527,18 +647,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "influencer_personas_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"influencers": {
                   Row: {
-                    "avatar_asset_id": string | null,"created_at": string,"created_by": string | null,"id": string,"language": string,"name": string,"niche": string | null,"slug": string,"status": Database["public"]['Enums']["influencer_status"],"updated_at": string
+                    "avatar_asset_id": string | null,"created_at": string,"created_by": string | null,"id": string,"language": string,"name": string,"niche": string | null,"slug": string,"status": Database["public"]['Enums']["influencer_status"],"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "avatar_asset_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"language"?: string,"name": string,"niche"?: string | null,"slug": string,"status"?: Database["public"]['Enums']["influencer_status"],"updated_at"?: string
+                    "avatar_asset_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"language"?: string,"name": string,"niche"?: string | null,"slug": string,"status"?: Database["public"]['Enums']["influencer_status"],"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "avatar_asset_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"language"?: string,"name"?: string,"niche"?: string | null,"slug"?: string,"status"?: Database["public"]['Enums']["influencer_status"],"updated_at"?: string
+                    "avatar_asset_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"language"?: string,"name"?: string,"niche"?: string | null,"slug"?: string,"status"?: Database["public"]['Enums']["influencer_status"],"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -547,18 +673,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "assets"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "influencers_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"learnings": {
                   Row: {
-                    "body": string,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"post_id": string | null,"tags": (string)[],"updated_at": string
+                    "body": string,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"post_id": string | null,"tags": (string)[],"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "body": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"post_id"?: string | null,"tags"?: (string)[],"updated_at"?: string
+                    "body": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"post_id"?: string | null,"tags"?: (string)[],"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "body"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"post_id"?: string | null,"tags"?: (string)[],"updated_at"?: string
+                    "body"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"post_id"?: string | null,"tags"?: (string)[],"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -573,18 +705,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "learnings_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"metric_snapshots": {
                   Row: {
-                    "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"source": string,"target_hours": number | null,"updated_at": string,"views": number
+                    "avg_watch_time_s": number | null,"captured_at": string,"comments": number,"completion_rate": number | null,"created_at": string,"created_by": string | null,"hours_since_publish": number | null,"id": string,"likes": number,"post_id": string,"raw_payload": NonNullable<Json>,"reach": number | null,"saves": number,"shares": number,"source": string,"target_hours": number | null,"updated_at": string,"views": number,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id": string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"source"?: string,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id": string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"source"?: string,"target_hours"?: number | null,"updated_at"?: string,"views"?: number,"workspace_id"?: string
                   }
                   Update: {
-                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id"?: string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"source"?: string,"target_hours"?: number | null,"updated_at"?: string,"views"?: number
+                    "avg_watch_time_s"?: number | null,"captured_at"?: string,"comments"?: number,"completion_rate"?: number | null,"created_at"?: string,"created_by"?: string | null,"hours_since_publish"?: number | null,"id"?: string,"likes"?: number,"post_id"?: string,"raw_payload"?: NonNullable<Json>,"reach"?: number | null,"saves"?: number,"shares"?: number,"source"?: string,"target_hours"?: number | null,"updated_at"?: string,"views"?: number,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -593,32 +731,44 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "metric_snapshots_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"notification_settings": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"follower_milestones": (number)[],"id": boolean,"push_email": boolean,"push_ntfy": boolean,"push_telegram": boolean,"token_expiry_days": number,"updated_at": string,"viral_multiplier": number,"youtube_quota_warn_units": number
+                    "created_at": string,"created_by": string | null,"follower_milestones": (number)[],"id": boolean,"push_email": boolean,"push_ntfy": boolean,"push_telegram": boolean,"token_expiry_days": number,"updated_at": string,"viral_multiplier": number,"workspace_id": string,"youtube_quota_warn_units": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number,"youtube_quota_warn_units"?: number
+                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number,"workspace_id"?: string,"youtube_quota_warn_units"?: number
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number,"youtube_quota_warn_units"?: number
+                    "created_at"?: string,"created_by"?: string | null,"follower_milestones"?: (number)[],"id"?: boolean,"push_email"?: boolean,"push_ntfy"?: boolean,"push_telegram"?: boolean,"token_expiry_days"?: number,"updated_at"?: string,"viral_multiplier"?: number,"workspace_id"?: string,"youtube_quota_warn_units"?: number
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "notification_settings_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: true
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"posting_slots": {
                   Row: {
-                    "account_id": string,"created_at": string,"created_by": string | null,"id": string,"local_time": string,"timezone": string,"updated_at": string,"weekday": number
+                    "account_id": string,"created_at": string,"created_by": string | null,"id": string,"local_time": string,"timezone": string,"updated_at": string,"weekday": number,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"local_time": string,"timezone"?: string,"updated_at"?: string,"weekday": number
+                    "account_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"local_time": string,"timezone"?: string,"updated_at"?: string,"weekday": number,"workspace_id"?: string
                   }
                   Update: {
-                    "account_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"local_time"?: string,"timezone"?: string,"updated_at"?: string,"weekday"?: number
+                    "account_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"local_time"?: string,"timezone"?: string,"updated_at"?: string,"weekday"?: number,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -627,18 +777,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "social_accounts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "posting_slots_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"posts": {
                   Row: {
-                    "account_id": string,"caption": string,"content_item_id": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"external_id": string | null,"id": string,"is_short": boolean,"published_at": string | null,"sound_type": string | null,"updated_at": string,"url": string | null
+                    "account_id": string,"caption": string,"content_item_id": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"external_id": string | null,"id": string,"is_short": boolean,"published_at": string | null,"sound_type": string | null,"updated_at": string,"url": string | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "account_id": string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null,"workspace_id"?: string
                   }
                   Update: {
-                    "account_id"?: string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null
+                    "account_id"?: string,"caption"?: string,"content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"external_id"?: string | null,"id"?: string,"is_short"?: boolean,"published_at"?: string | null,"sound_type"?: string | null,"updated_at"?: string,"url"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -653,18 +809,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "content_items"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "posts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"prompts": {
                   Row: {
-                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"change_note": string,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"key": string,"negative": string,"rating": number | null,"title": string,"updated_at": string,"variables": NonNullable<Json>,"version": number
+                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"change_note": string,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"key": string,"negative": string,"rating": number | null,"title": string,"updated_at": string,"variables": NonNullable<Json>,"version": number,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"key"?: string,"negative"?: string,"rating"?: number | null,"title"?: string,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
+                    "body": string,"category": Database["public"]['Enums']["prompt_category"],"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"key"?: string,"negative"?: string,"rating"?: number | null,"title"?: string,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number,"workspace_id"?: string
                   }
                   Update: {
-                    "body"?: string,"category"?: Database["public"]['Enums']["prompt_category"],"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"key"?: string,"negative"?: string,"rating"?: number | null,"title"?: string,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number
+                    "body"?: string,"category"?: Database["public"]['Enums']["prompt_category"],"change_note"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"key"?: string,"negative"?: string,"rating"?: number | null,"title"?: string,"updated_at"?: string,"variables"?: NonNullable<Json>,"version"?: number,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -673,18 +835,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "prompts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"publish_jobs": {
                   Row: {
-                    "account_id": string,"asset_id": string | null,"attempts": number,"caption": string,"container_created_at": string | null,"content_item_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"finished_at": string | null,"id": string,"max_attempts": number,"next_attempt_at": string,"paid_partnership": boolean,"platform": Database["public"]['Enums']["social_platform"],"provider_container_id": string | null,"provider_upload_url": string | null,"published_post_id": string | null,"scheduled_for": string,"started_at": string | null,"status": Database["public"]['Enums']["publish_job_status"],"tags": (string)[],"title": string,"updated_at": string
+                    "account_id": string,"asset_id": string | null,"attempts": number,"caption": string,"container_created_at": string | null,"content_item_id": string,"created_at": string,"created_by": string | null,"error": string | null,"external_id": string | null,"finished_at": string | null,"id": string,"max_attempts": number,"next_attempt_at": string,"paid_partnership": boolean,"platform": Database["public"]['Enums']["social_platform"],"provider_container_id": string | null,"provider_upload_url": string | null,"published_post_id": string | null,"scheduled_for": string,"started_at": string | null,"status": Database["public"]['Enums']["publish_job_status"],"tags": (string)[],"title": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id": string,"asset_id"?: string | null,"attempts"?: number,"caption"?: string,"container_created_at"?: string | null,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"finished_at"?: string | null,"id"?: string,"max_attempts"?: number,"next_attempt_at"?: string,"paid_partnership"?: boolean,"platform": Database["public"]['Enums']["social_platform"],"provider_container_id"?: string | null,"provider_upload_url"?: string | null,"published_post_id"?: string | null,"scheduled_for"?: string,"started_at"?: string | null,"status"?: Database["public"]['Enums']["publish_job_status"],"tags"?: (string)[],"title": string,"updated_at"?: string
+                    "account_id": string,"asset_id"?: string | null,"attempts"?: number,"caption"?: string,"container_created_at"?: string | null,"content_item_id": string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"finished_at"?: string | null,"id"?: string,"max_attempts"?: number,"next_attempt_at"?: string,"paid_partnership"?: boolean,"platform": Database["public"]['Enums']["social_platform"],"provider_container_id"?: string | null,"provider_upload_url"?: string | null,"published_post_id"?: string | null,"scheduled_for"?: string,"started_at"?: string | null,"status"?: Database["public"]['Enums']["publish_job_status"],"tags"?: (string)[],"title": string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "account_id"?: string,"asset_id"?: string | null,"attempts"?: number,"caption"?: string,"container_created_at"?: string | null,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"finished_at"?: string | null,"id"?: string,"max_attempts"?: number,"next_attempt_at"?: string,"paid_partnership"?: boolean,"platform"?: Database["public"]['Enums']["social_platform"],"provider_container_id"?: string | null,"provider_upload_url"?: string | null,"published_post_id"?: string | null,"scheduled_for"?: string,"started_at"?: string | null,"status"?: Database["public"]['Enums']["publish_job_status"],"tags"?: (string)[],"title"?: string,"updated_at"?: string
+                    "account_id"?: string,"asset_id"?: string | null,"attempts"?: number,"caption"?: string,"container_created_at"?: string | null,"content_item_id"?: string,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"external_id"?: string | null,"finished_at"?: string | null,"id"?: string,"max_attempts"?: number,"next_attempt_at"?: string,"paid_partnership"?: boolean,"platform"?: Database["public"]['Enums']["social_platform"],"provider_container_id"?: string | null,"provider_upload_url"?: string | null,"published_post_id"?: string | null,"scheduled_for"?: string,"started_at"?: string | null,"status"?: Database["public"]['Enums']["publish_job_status"],"tags"?: (string)[],"title"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -711,18 +879,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "posts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "publish_jobs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"reports": {
                   Row: {
-                    "actions": (string)[],"ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string
+                    "actions": (string)[],"ai_summary": string | null,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at"?: string
+                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end": string,"period_start": string,"summary": NonNullable<Json>,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end"?: string,"period_start"?: string,"summary"?: NonNullable<Json>,"updated_at"?: string
+                    "actions"?: (string)[],"ai_summary"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"influencer_id"?: string | null,"period_end"?: string,"period_start"?: string,"summary"?: NonNullable<Json>,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -731,18 +905,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reports_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"social_accounts": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"external_id": string | null,"handle": string,"id": string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status": Database["public"]['Enums']["social_account_status"],"token_expires_at": string | null,"token_ref": string | null,"updated_at": string
+                    "created_at": string,"created_by": string | null,"external_id": string | null,"handle": string,"id": string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status": Database["public"]['Enums']["social_account_status"],"token_expires_at": string | null,"token_ref": string | null,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"external_id"?: string | null,"handle": string,"id"?: string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status"?: Database["public"]['Enums']["social_account_status"],"token_expires_at"?: string | null,"token_ref"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"external_id"?: string | null,"handle": string,"id"?: string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status"?: Database["public"]['Enums']["social_account_status"],"token_expires_at"?: string | null,"token_ref"?: string | null,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"external_id"?: string | null,"handle"?: string,"id"?: string,"influencer_id"?: string,"platform"?: Database["public"]['Enums']["social_platform"],"status"?: Database["public"]['Enums']["social_account_status"],"token_expires_at"?: string | null,"token_ref"?: string | null,"updated_at"?: string
+                    "created_at"?: string,"created_by"?: string | null,"external_id"?: string | null,"handle"?: string,"id"?: string,"influencer_id"?: string,"platform"?: Database["public"]['Enums']["social_platform"],"status"?: Database["public"]['Enums']["social_account_status"],"token_expires_at"?: string | null,"token_ref"?: string | null,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -751,18 +931,24 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "social_accounts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"sync_runs": {
                   Row: {
-                    "account_id": string | null,"created_at": string,"created_by": string | null,"error": string | null,"finished_at": string | null,"id": string,"job": string,"platform": Database["public"]['Enums']["social_platform"] | null,"processed_count": number,"quota_units": number | null,"started_at": string,"status": string,"updated_at": string
+                    "account_id": string | null,"created_at": string,"created_by": string | null,"error": string | null,"finished_at": string | null,"id": string,"job": string,"platform": Database["public"]['Enums']["social_platform"] | null,"processed_count": number,"quota_units": number | null,"started_at": string,"status": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job": string,"platform"?: Database["public"]['Enums']["social_platform"] | null,"processed_count"?: number,"quota_units"?: number | null,"started_at"?: string,"status"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job": string,"platform"?: Database["public"]['Enums']["social_platform"] | null,"processed_count"?: number,"quota_units"?: number | null,"started_at"?: string,"status"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "account_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job"?: string,"platform"?: Database["public"]['Enums']["social_platform"] | null,"processed_count"?: number,"quota_units"?: number | null,"started_at"?: string,"status"?: string,"updated_at"?: string
+                    "account_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job"?: string,"platform"?: Database["public"]['Enums']["social_platform"] | null,"processed_count"?: number,"quota_units"?: number | null,"started_at"?: string,"status"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -771,32 +957,44 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "social_accounts"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "sync_runs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
                   ]
                 },"team_members": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"role": Database["public"]['Enums']["team_role"],"updated_at": string,"user_id": string
+                    "created_at": string,"created_by": string | null,"role": Database["public"]['Enums']["team_role"],"updated_at": string,"user_id": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"role": Database["public"]['Enums']["team_role"],"updated_at"?: string,"user_id": string
+                    "created_at"?: string,"created_by"?: string | null,"role": Database["public"]['Enums']["team_role"],"updated_at"?: string,"user_id": string,"workspace_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"role"?: Database["public"]['Enums']["team_role"],"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"created_by"?: string | null,"role"?: Database["public"]['Enums']["team_role"],"updated_at"?: string,"user_id"?: string,"workspace_id"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "team_members_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"trends": {
                   Row: {
-                    "account_handle": string,"adaptation_idea": string,"adaptation_score": number | null,"captured_on": string,"comments": number | null,"content_item_id": string | null,"cost_estimate": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"format": string,"hook": string,"id": string,"influencer_id": string | null,"likes": number | null,"notes": string,"platform": string,"sound": string,"source": string,"status": string,"updated_at": string,"url": string,"views": number | null,"why_viral": string
+                    "account_handle": string,"adaptation_idea": string,"adaptation_score": number | null,"captured_on": string,"comments": number | null,"content_item_id": string | null,"cost_estimate": string | null,"created_at": string,"created_by": string | null,"duration_s": number | null,"format": string,"hook": string,"id": string,"influencer_id": string | null,"likes": number | null,"notes": string,"platform": string,"sound": string,"source": string,"status": string,"updated_at": string,"url": string,"views": number | null,"why_viral": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url": string,"views"?: number | null,"why_viral"?: string
+                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url": string,"views"?: number | null,"why_viral"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url"?: string,"views"?: number | null,"why_viral"?: string
+                    "account_handle"?: string,"adaptation_idea"?: string,"adaptation_score"?: number | null,"captured_on"?: string,"comments"?: number | null,"content_item_id"?: string | null,"cost_estimate"?: string | null,"created_at"?: string,"created_by"?: string | null,"duration_s"?: number | null,"format"?: string,"hook"?: string,"id"?: string,"influencer_id"?: string | null,"likes"?: number | null,"notes"?: string,"platform"?: string,"sound"?: string,"source"?: string,"status"?: string,"updated_at"?: string,"url"?: string,"views"?: number | null,"why_viral"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -811,7 +1009,27 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "influencers"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "trends_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
     }
+                  ]
+                },"workspaces": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"name": string,"push_enabled": boolean,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name": string,"push_enabled"?: boolean,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"name"?: string,"push_enabled"?: boolean,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 }
           }
@@ -894,7 +1112,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -933,7 +1152,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }[]
                           SetofOptions: {
         from: "*"
@@ -967,7 +1187,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["publish_job_status"],
 "tags": (string)[],
 "title": string,
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }[]
                           SetofOptions: {
         from: "*"
@@ -1003,7 +1224,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1066,7 +1288,8 @@ isOneToOne: false
 "sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
-"version": number
+"version": number,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1089,7 +1312,8 @@ isOneToOne: false
 "title": string,
 "updated_at": string,
 "variables": NonNullable<Json>,
-"version": number
+"version": number,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1097,6 +1321,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"create_workspace_for_user":
+{ Args: { "p_name": string,"p_user_id": string }; Returns: string
+                           },
 "credits_to_money":
 { Args: { "p_credits": number,"p_on": string,"p_tool": string }; Returns: {
               "amount": number,"currency": string
@@ -1104,6 +1331,9 @@ isOneToOne: false
                            },
 "current_team_role":
 { Args: Record<PropertyKey, never>; Returns: Database["public"]['Enums']["team_role"]
+                           },
+"current_workspace_id":
+{ Args: Record<PropertyKey, never>; Returns: string
                            },
 "dashboard_overview":
 { Args: { "p_from": string,"p_influencer_slug"?: string,"p_platform"?: Database["public"]['Enums']["social_platform"],"p_to": string }; Returns: Json
@@ -1144,7 +1374,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1202,7 +1433,8 @@ isOneToOne: false
 "timezone": string,
 "title": string,
 "updated_at": string,
-"viral_reason": string
+"viral_reason": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1288,7 +1520,8 @@ isOneToOne: false
 "sample_captions": (string)[],
 "tone": string,
 "updated_at": string,
-"version": number
+"version": number,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1324,7 +1557,8 @@ isOneToOne: false
 "status": Database["public"]['Enums']["generation_status"],
 "tool": string,
 "type": Database["public"]['Enums']["generation_type"],
-"updated_at": string
+"updated_at": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1359,7 +1593,8 @@ isOneToOne: false
 "timezone": string,
 "title": string,
 "updated_at": string,
-"viral_reason": string
+"viral_reason": string,
+"workspace_id": string
             }
                           SetofOptions: {
         from: "*"
@@ -1367,6 +1602,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"storage_object_in_workspace":
+{ Args: { "p_bucket_id": string,"p_object_name": string }; Returns: boolean
+                           },
 "store_social_token":
 { Args: { "p_account_id": string,"p_expires_at"?: string,"p_token": Json }; Returns: string
                            },

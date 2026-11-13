@@ -18,7 +18,10 @@ export async function PUT(request: Request) {
     const db = await createSupabaseServerClient();
     const { error } = await db
       .from('app_settings')
-      .upsert({ key: 'analytics', value: body.data }, { onConflict: 'key' });
+      .upsert(
+        { key: 'analytics', value: body.data },
+        { onConflict: 'workspace_id,key' },
+      );
     if (error) {
       if (error.code === '23514')
         return jsonError('Eşik değerleri geçersiz.', 400);
