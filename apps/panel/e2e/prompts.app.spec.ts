@@ -39,7 +39,7 @@ test.beforeAll(async () => {
         { name: 'E2E Prompt A', slug: 'e2e-prompt-a', status: 'active' },
         { name: 'E2E Prompt B', slug: 'e2e-prompt-b', status: 'active' },
       ],
-      { onConflict: 'slug' },
+      { onConflict: 'workspace_id,slug' },
     )
     .select('id, slug');
   if (error) throw error;

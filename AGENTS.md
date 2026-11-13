@@ -129,6 +129,7 @@ node scripts/doctor.mjs
 | `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`) | Güncel kod haritası (aşağıya bak)                                           |
 | `pnpm clip:fetch <adres>` / `clip:moments <klasör>` / `clip:cut …` | Yayından en çok izlenecek anları bul, dikey klip kes (`docs/clip-guide.md`) |
 | `pnpm env:pull`                                                    | Test Supabase anahtarlarını `.env.local`'e çeker                            |
+| `pnpm owner:create <e-posta>` / `pnpm workspace:create <e-posta>`  | İlk owner (tek alan) / yeni çalışma alanı + owner'ı (`docs/AUTH.md`)        |
 | `pnpm release`                                                     | `test` → `main` release PR'ı                                                |
 | `cd supabase/functions && deno test --allow-env`                   | Edge Function testleri (`deno lint`, `deno check` de CI'da)                 |
 
@@ -182,6 +183,7 @@ Alan dokümanları: veri modeli `docs/data-model.md`, AI `docs/AI.md`, auth `doc
 - View yazarken `WITH (security_invoker = true)`; fonksiyonlar varsayılan `SECURITY INVOKER`. `SECURITY DEFINER` sadece API rollerine kapalı `private` şemasında ve boş `search_path` ile. Panelin çağırdığı ve yetki yükseltmesi gereken RPC: `public`'te INVOKER sarmalayıcı + `internal` şemasında DEFINER çekirdek (tek tek `GRANT EXECUTE`; ör. `cancel_generation`, `request_sync`).
 - Sırlar (token, webhook URL) migration'a yazılmaz; Vault'tan okunur. Sır yoksa iş sessizce atlanır, hata yağdırmaz.
 - Playwright'ta ekran okuyucu metni (ör. "Yeni: ") yüzünden tam eşleşen locator kırılır; `getByRole(..., { name: /…/ })` kullan.
+- Veri çalışma alanı başına yalıtılır (#181, `docs/adr/0003-workspaces.md`). Yeni tablo: `workspace_id` + RESTRICTIVE `<tablo>_workspace` policy'si + `aa_set_workspace` trigger'ı (FK'ler argümanda); `supabase/tests/workspaces.test.sql` eksikse kırılır. SECURITY DEFINER ve service role kodu RLS'i aşar: alanı kendisi filtreler (`requireApiRole()` → `workspaceId`). Service role ile kök tabloya yazarken `workspace_id` ver; oturumsuz `current_workspace_id()` yalnız tek alan varken değer döndürür.
 - Edge Function'lar ESLint/tsc ile değil `deno lint/check/test` ile denetlenir; editör "Cannot find name 'Deno'" derse yok say, CI belirleyicidir.
 
 ## Yol haritası

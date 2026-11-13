@@ -33,9 +33,13 @@ export class MemoryStore implements SyncStore {
   runs: MemoryRun[] = [];
   statusChanges: { accountId: string; status: string }[] = [];
 
-  listAccounts(accountId?: string) {
+  listAccounts(accountId?: string, workspaceId?: string) {
     return Promise.resolve(
-      this.accounts.filter((a) => !accountId || a.id === accountId),
+      this.accounts.filter(
+        (a) =>
+          (!accountId || a.id === accountId) &&
+          (!workspaceId || a.workspaceId === workspaceId),
+      ),
     );
   }
   readToken(accountId: string) {

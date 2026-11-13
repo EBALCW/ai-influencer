@@ -1,6 +1,6 @@
 # Admin Panel Veri Modeli
 
-Bu belge `supabase/migrations/20261021090000_initial_schema.sql` ile kurulan ilk sürüm şemasını açıklar. Proje ilk sürümde tek ekip/workspace içindir; bütün uygulama kayıtları aynı takım üyeliği ve RLS sınırını paylaşır.
+Bu belge `supabase/migrations/20261021090000_initial_schema.sql` ile kurulan ilk sürüm şemasını açıklar. İlk sürüm tek ortak ekip içindi; #181 ile her kullanıcı verisi satırı bir **çalışma alanına** (workspace) aittir ve alanlar birbirini göremez (aşağıda "Çalışma alanları", karar: `docs/adr/0003-workspaces.md`).
 
 ## İlişkiler
 
@@ -34,11 +34,25 @@ erDiagram
 
 `influencers.avatar_asset_id`, `generations.output_asset_id` ve `posts.content_item_id` isteğe bağlıdır. Üretilen varlıkları silmek, geçmiş üretim kayıtlarını silmez; varlık bağlantısı `NULL` olur.
 
+## Çalışma alanları (#181)
+
+Migration: `20261113100000_workspaces.sql`. Testler: `supabase/tests/workspaces.test.sql`.
+
+- **`workspaces`** (`id`, `name` 1-80, `push_enabled`, audit kolonları). Üye yalnız kendi alanını görür; owner yalnız `name`'i değiştirir; istemciden INSERT/DELETE yoktur. Yeni alan: `pnpm workspace:create` → `create_workspace_for_user(p_user_id, p_name)` (yalnız service role).
+- **`team_members.workspace_id`**: kullanıcı başına tek alan (`user_id` PK). Üye yalnız kendi alanının üyelerini görür. Son owner kuralı alan başınadır.
+- **Kiracı tabloları:** `generation_worker_status` ve `workspaces` dışındaki bütün public tablolar. Her birinde `workspace_id uuid NOT NULL DEFAULT current_workspace_id() REFERENCES workspaces ON DELETE CASCADE`, indeks, `<tablo>_workspace` adlı **RESTRICTIVE** policy (`workspace_id = current_workspace_id()`, USING + WITH CHECK) ve `aa_set_workspace` trigger'ı vardır. Mevcut rol policy'leri (aşağıdaki yetki matrisi) değişmedi; restrictive policy onlarla AND'lenir.
+- **`current_workspace_id()`**: oturumdaki üyenin alanı. Oturumsuz çağrıda (service role, postgres, seed, cron) **yalnız tam olarak bir alan varsa** o alan, aksi halde `NULL`. Çok alanlı kurulumda sunucu kodu alanı açıkça verir ya da satır üst kayıttan türetilir.
+- **Üst kayıttan türetme (`private.set_workspace_from_parent`)**: INSERT'te `workspace_id` "sahip" FK'nin üst kaydından alınır (ör. `content_items` ← `influencers`, `posts` ← `social_accounts`, `metric_snapshots` ← `posts`, `clips` ← `clip_sources`); istemcinin verdiği değer ezilir. Diğer FK'lerin (`assignee_id`, `brand_id`, `asset_id`, `content_item_id` …) üst kayıtları aynı alanda olmak zorundadır (23514). UPDATE'te `workspace_id` hiçbir rol için değişmez. FK kısıtı RLS'e bakmadığı için bu trigger, başka alanın kaydına bağlanmayı engelleyen asıl kuraldır.
+- **Alan başına tekil kısıtlar:** `influencers (workspace_id, slug)`, `brands (workspace_id, lower(name))`, `app_settings (workspace_id, key)` (PK), `notification_settings (workspace_id)` (PK; alan başına tek satır, alan açılınca oluşur), `budgets (workspace_id, month)` (toplam bütçe), `exchange_rates`, `credit_rates`, `reports (workspace_id, influencer_id, period_start)`, `alerts (workspace_id, dedupe_key)`, prompt soyu, `trends` (url + kapsam), `clip_sources (workspace_id, video_url)`. **Küresel kalanlar:** `social_accounts (platform, external_id)` (gerçek bir hesap tek alana bağlanır), `assets.storage_path` ve `brand_deal_files.storage_path` (yol `<influencer|deal uuid>/…` ile başlar, tek bucket'taki fiziksel nesneyi gösterir).
+- **RLS'i aşan fonksiyonlar** alanı açıkça filtreler: `internal.cancel_generation`, `internal.request_sync` (çağıranın alanı), OAuth RPC'leri (parametredeki kullanıcının alanı), uyarı/bütçe/maliyet/rapor işleri (satırın kendi alanı). Kur, kredi fiyatı, bütçe ve rapor özetinin çekirdekleri `internal.fx_rate / credits_to_money / cost_entries_converted / budget_status / report_summary(…, p_workspace_id)`'dir; aynı adlı `public` fonksiyonlar imzası değişmeyen sarmalayıcılardır.
+- **Storage:** `storage.objects` üzerinde restrictive `storage_objects_workspace` policy'si; `storage_object_in_workspace(bucket, ad)` nesnenin ilk klasörünün (assets → influencer, contracts → deal) çağıranın alanında olmasını ister. Tanımsız bucket kapalıdır.
+- **Push kanalları** kurulum genelidir (Vault); yalnız `workspaces.push_enabled` açık alanlar kullanır.
+
 ## Tablolar
 
 | Tablo                      | Sorumluluk                                     | Önemli kurallar                                                                                                                                                                                              |
 | -------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `team_members`             | Supabase Auth kullanıcısının rolü              | `owner`, `editor`, `viewer`; son owner silinemez. İlk doğrulanmış kullanıcı yalnızca boş workspace'te owner olarak kaydolabilir.                                                                             |
+| `team_members`             | Kullanıcının çalışma alanı ve rolü             | `owner`, `editor`, `viewer`; kullanıcı başına tek alan; alanın son owner'ı silinemez. İlk owner servis anahtarıyla eklenir (`pnpm owner:create`).                                                            |
 | `influencers`              | Karakterin kimliği ve yaşam döngüsü            | Benzersiz URL dostu `slug`; durum `draft`, `active`, `paused`, `archived`.                                                                                                                                   |
 | `influencer_personas`      | Persona metni ve versiyonları                  | Influencer başına versiyon numarası benzersiz; aynı anda en fazla bir güncel sürüm.                                                                                                                          |
 | `assets`                   | Storage'daki görsel/video metadata'sı          | `storage_path` benzersiz; dosyanın kendisi private Storage bucket'ta tutulur.                                                                                                                                |
@@ -310,7 +324,9 @@ Google Sheets takip tablosunun yerine `/analytics/performance` sayfası kullanı
 | `viewer`            | Evet                    | Hayır                 | Hayır                   |
 | Takım dışı / `anon` | Hayır                   | Hayır                 | Hayır                   |
 
-Her uygulama tablosunda RLS açıktır. Anon rolüne tablo yetkisi verilmez; `authenticated` rolü tabloya erişse bile RLS yalnızca `team_members` içindeki kullanıcılara satır gösterir. Viewer için yazma politikası yoktur. Supabase `service_role` anahtarı RLS'i baypas edebildiği için sadece güvenilir sunucu işlerinde kullanılmalı ve asla tarayıcıya verilmemelidir.
+Roller **çalışma alanı içinde** geçerlidir: owner da dahil hiçbir rol başka bir alanın satırını göremez, değiştiremez ya da o alanın kaydına bağlı satır ekleyemez.
+
+Her uygulama tablosunda RLS açıktır. Anon rolüne tablo yetkisi verilmez; `authenticated` rolü tabloya erişse bile RLS yalnızca `team_members` içindeki kullanıcılara ve yalnızca kendi çalışma alanlarının satırlarını gösterir. Viewer için yazma politikası yoktur. Supabase `service_role` anahtarı RLS'i (alan yalıtımı dahil) baypas edebildiği için sadece güvenilir sunucu işlerinde kullanılmalı, her sorguda çalışma alanı açıkça filtrelenmeli ve anahtar asla tarayıcıya verilmemelidir.
 
 ## Yerel geliştirme ve tip üretimi
 
@@ -322,7 +338,7 @@ Her uygulama tablosunda RLS açıktır. Anon rolüne tablo yetkisi verilmez; `au
 
 ## Kapsam sınırları
 
-- Bu model tek bir ortak ekip içindir. Birden çok müşteri/ekip workspace'i gerekirse her iş tablosuna `team_id` eklenmeli ve RLS politikaları workspace üyeliğine göre yeniden kurulmalıdır.
+- Kullanıcı başına tek çalışma alanı vardır. Çoklu alan üyeliği, alan değiştirme ve kendi kendine kayıt sonraki fazdır (`docs/adr/0003-workspaces.md`).
 - Sosyal OAuth token'ları bu şemaya düz metin olarak yazılmaz; Vault secret adı veya kimliği `token_ref` alanında tutulur.
 - Storage bucket oluşturma, dosya yükleme politikaları ve asset kullanıcı akışı #45 kapsamındadır.
 - Paylaşım ve OAuth entegrasyonlarına özel alanlar, kendi issue'larında sağlayıcı koşulları doğrulandıkça migration ile eklenmelidir.

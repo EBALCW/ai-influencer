@@ -6,15 +6,31 @@ Panel Supabase Auth ile e-posta magic link ve isteğe bağlı Google OAuth kulla
 
 `supabase/config.toml` sadece **yerel** Supabase'i ayarlar. Ortak dev ve production projelerinde **Authentication → Sign In / Providers → "Allow new users to sign up"** kapatılmalıdır. Kapatılmazsa herkes magic link ile hesap açabilir. Bu kişi ekip üyesi olmadığı için panele giremez, ama gereksiz auth hesapları birikir.
 
-## İlk owner
+## Çalışma alanları (#181)
 
-Uygulama içinden hiç kimse kendini owner yapamaz. Bunu RLS engelliyor ve tablo boşken de geçerli. İlk owner servis anahtarıyla oluşturulur:
+Her kullanıcı tam olarak bir **çalışma alanının** üyesidir ve yalnız o alanın verisini görür. Roller (owner / editor / viewer) alan içinde geçerlidir. Yalıtım veritabanında uygulanır: her kiracı tablosunda `workspace_id` ve RESTRICTIVE bir RLS policy'si vardır (`docs/adr/0003-workspaces.md`, `docs/data-model.md` → Çalışma alanları).
+
+- `requireTeamMember()` ve `requireApiRole()` üyenin `workspaceId`'sini döndürür.
+- **Service role istemcisi RLS'i aşar.** Onu kullanan her sorgu `workspaceId` ile açıkça filtrelenir (ekip listesi, davet, rol değiştirme, üye çıkarma, e-posta eşlemesi). Davet edilen kişi davet edenin alanına eklenir.
+- Kullanıcı başına tek alan: başka bir alanın üyesi davet edilemez ("Bu kişi zaten bir çalışma alanının üyesi").
+- Alanın adını owner **Ayarlar** sayfasından değiştirir (`PATCH /api/workspace`). İstemciden alan oluşturulamaz, silinemez.
+
+## İlk owner ve yeni çalışma alanı
+
+Uygulama içinden hiç kimse kendini owner yapamaz ve kendine alan açamaz. Bunu RLS engelliyor ve tablo boşken de geçerli. İkisi de servis anahtarıyla yapılır:
 
 ```bash
-pnpm owner:create ad@ornek.com
+pnpm owner:create ad@ornek.com                   # tek alanlı kurulum: mevcut alana owner ekler
+pnpm workspace:create ad@ornek.com "Alan adı"    # yeni bir çalışma alanı + owner'ı
 ```
 
-Script `.env.local`'deki `NEXT_PUBLIC_SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` değerlerini kullanır. Kullanıcı yoksa davet e-postası gönderir, varsa sadece owner üyeliğini ekler. Bundan sonraki üyeler panelde **Ayarlar → Ekip** sayfasından davet edilir. Ekipten çıkarılan biri aynı sayfadan tekrar eklenebilir; auth hesabı silinmez, sadece üyeliği kaldırılır.
+Script'ler `.env.local`'deki `NEXT_PUBLIC_SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` değerlerini kullanır. Kullanıcı yoksa davet e-postası gönderilir.
+
+- **`owner:create`** kurulumda **tam olarak bir** alan varken çalışır (ilk kurulum, yerel geliştirme): kullanıcıyı o alana owner olarak ekler, zaten üyeyse rolünü owner'a çıkarır. Birden çok alan varsa hangi alanın kastedildiği belirsiz olduğu için durur ve aşağıdaki iki yola yönlendirir.
+- **`workspace:create`** yeni bir alan açar ve kullanıcıyı onun owner'ı yapar (`create_workspace_for_user`). Kullanıcı başka bir alanda üyeyse yeni alana **taşınır**; o alanın son owner'ıysa işlem reddedilir (önce başka bir owner atanmalı). Ad verilmezse e-postanın kullanıcı adından türetilir.
+- Mevcut bir alana üye eklemek için o alanın owner'ı panelde **Ayarlar → Ekip** sayfasını kullanır. Ekipten çıkarılan biri aynı sayfadan tekrar eklenebilir; auth hesabı silinmez, sadece üyeliği kaldırılır.
+
+İkinci alan açıldıktan sonra oturumsuz (service role) yazımlar alanı açıkça vermek ya da üst kayıttan türetmek zorundadır; `seed.sql` ve yerel demo verisi tek alan varsayar (ADR 0003 → "tek alan uyumluluğu"). Kendi kendine kayıt ve alan değiştirme sonraki fazdır.
 
 ## Ortam değişkenleri
 
@@ -32,7 +48,7 @@ Supabase Authentication → URL Configuration bölümünde yerel panel URL'sini 
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `src/proxy.ts`               | Her istekte oturumu yeniler; oturum yoksa sayfaları `/login?next=...`'e yönlendirir (API'ler kendi kontrolünü yapar)   |
 | `src/app/(panel)/layout.tsx` | Korumalı tüm sayfaların kapısı: `requireTeamMember()`. Yeni sayfa bu klasöre eklenir                                   |
-| `src/lib/auth.ts`            | Server Component'ler için `requireTeamMember()` / `requireOwner()`                                                     |
+| `src/lib/auth.ts`            | Server Component'ler için `requireTeamMember()` / `requireOwner()` (rol + `workspaceId`)                               |
 | `src/lib/auth-api.ts`        | API route'ları için `requireApiRole('owner' \| 'editor' \| 'viewer')`, `parseJson(request, zodSchema)`, `apiError()`   |
 | `src/lib/safe-redirect.ts`   | `next` parametresini aynı origin'e indirger (open redirect koruması)                                                   |
 | `src/lib/supabase/admin.ts`  | Service role istemcisi, `server-only`. Sadece RLS'i bilerek aşmak gereken yerlerde (davet, e-posta listesi) kullanılır |
@@ -42,11 +58,13 @@ Kurallar:
 
 - Yeni API route'u **her zaman** `requireApiRole(...)` ile başlar, gövdeyi `parseJson` + Zod ile doğrular.
 - Service role istemcisi `'use client'` dosyasından import edilemez (`server-only` build'i kırar).
+- Service role ile yapılan her sorgu çağıranın `workspaceId`'siyle filtrelenir; kök tabloya yazarken `workspace_id` açıkça verilir.
 - Yetki UI'da gizlemeyle değil, sunucuda (API + RLS) uygulanır.
 
 ## E2E testleri
 
 - `e2e/guest.spec.ts`: Oturumsuz senaryolar. Her ortamda çalışır.
+- `e2e/isolation.spec.ts`: Çalışma alanı yalıtımı (#181). İkinci alanı ve kullanıcısını kendisi açıp siler; diğer projeler bittikten sonra çalışır (ikinci alan varken oturumsuz yazımlar alan vermek zorundadır, diğer testlerin kurulumları bunu yapmaz).
 - `e2e/app.spec.ts`: Oturumlu senaryolar. Sadece **yerel** Supabase'e karşı çalışır (`pnpm supabase:start`, ardından `supabase status` değerlerini env olarak ver). Global setup ortak dev projesine asla test kullanıcısı yazmaz. CI bu testleri yerel Supabase ile her PR'da çalıştırır.
 
 ## Sosyal hesap OAuth geliştirmesi (#49)

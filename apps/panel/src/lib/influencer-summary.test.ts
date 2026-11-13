@@ -15,6 +15,7 @@ describe('toInfluencerSummary', () => {
       created_at: '2026-10-21T09:00:00.000Z',
       updated_at: '2026-10-21T09:00:00.000Z',
       created_by: null,
+      workspace_id: '50000000-0000-4000-8000-000000000001',
     } satisfies Database['public']['Tables']['influencers']['Row'];
 
     expect(toInfluencerSummary(row)).toEqual({

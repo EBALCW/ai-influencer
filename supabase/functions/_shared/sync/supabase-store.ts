@@ -18,15 +18,18 @@ export function createSupabaseStore(
   });
 
   return {
-    async listAccounts(accountId) {
+    async listAccounts(accountId, workspaceId) {
       let query = db
         .from('social_accounts')
-        .select('id, influencer_id, platform, handle, external_id, status')
+        .select(
+          'id, influencer_id, platform, handle, external_id, status, workspace_id',
+        )
         .in('status', ['active', 'error'])
         .not('token_ref', 'is', null)
         .order('platform')
         .order('id');
       if (accountId) query = query.eq('id', accountId);
+      if (workspaceId) query = query.eq('workspace_id', workspaceId);
       const { data, error } = await query;
       if (error) throw fail('Hesaplar okunamadı', error);
       return (data ?? []).map((r): SyncAccount => ({
@@ -36,6 +39,7 @@ export function createSupabaseStore(
         handle: r.handle,
         externalId: r.external_id,
         status: r.status,
+        workspaceId: r.workspace_id,
       }));
     },
 

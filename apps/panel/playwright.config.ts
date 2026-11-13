@@ -39,6 +39,14 @@ export default defineConfig({
       testMatch: /analytics\.spec\.ts/,
       use: { storageState: 'e2e/.auth/editor.json' },
     },
+    {
+      // Çalışma alanı yalıtımı (#181). İkinci alanı kendisi açıp siler; diğer projeler
+      // bittikten sonra tek başına çalışır, çünkü ikinci alan varken oturumsuz (service role)
+      // yazımlar alanı açıkça vermek zorundadır ve diğer testlerin kurulumları bunu yapmaz.
+      name: 'isolation',
+      testMatch: /isolation\.spec\.ts/,
+      dependencies: ['guest', 'owner', 'editor', 'viewer', 'analytics'],
+    },
   ],
   webServer: {
     // CI'da build edilmiş uygulama test edilir, yerelde dev sunucusu

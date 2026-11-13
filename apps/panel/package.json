@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "owner:create": "node scripts/create-owner.mjs"
+    "owner:create": "node scripts/create-owner.mjs",
+    "workspace:create": "node scripts/create-workspace.mjs"
   },
   "dependencies": {
     "@ai-influencer/shared": "workspace:*",

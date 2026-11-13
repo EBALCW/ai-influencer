@@ -2,7 +2,7 @@
 -- sync_runs RLS + uyarı, manuel tetikleme yetkisi/kısıtlaması, pg_cron işleri.
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
-SELECT extensions.plan(52);
+SELECT extensions.plan(53);
 
 INSERT INTO auth.users (id, aud, role, email, encrypted_password, created_at, updated_at) VALUES
   ('a5300000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'sync-owner@example.invalid', '', now(), now()),
@@ -292,11 +292,18 @@ SELECT extensions.is(
 );
 RESET ROLE;
 SELECT extensions.results_eq(
-  $$SELECT url, convert_from(body, 'UTF8')::jsonb FROM net.http_request_queue
+  $$SELECT url, convert_from(body, 'UTF8')::jsonb - 'workspace_id' FROM net.http_request_queue
     WHERE id > (SELECT id FROM sync_queue_before)$$,
   $$VALUES ('http://kong:8000/functions/v1/sync-dispatch'::text,
             '{"job": "manual", "account_id": "a5320000-0000-4000-8000-000000000001"}'::jsonb)$$,
   'one async request to sync-dispatch with the job body'
+);
+SELECT extensions.is(
+  (SELECT convert_from(body, 'UTF8')::jsonb ->> 'workspace_id' FROM net.http_request_queue
+   WHERE id > (SELECT id FROM sync_queue_before)),
+  (SELECT workspace_id::text FROM public.team_members
+   WHERE user_id = 'a5300000-0000-4000-8000-000000000002'),
+  'manual sync is scoped to the caller''s workspace (#181)'
 );
 SELECT extensions.is(
   (SELECT headers ->> 'x-cron-secret' FROM net.http_request_queue WHERE id > (SELECT id FROM sync_queue_before)),

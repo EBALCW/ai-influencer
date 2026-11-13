@@ -40,8 +40,10 @@ SELECT extensions.throws_ok(
   'empty workspace: a signed-in user cannot make themselves owner (first owner is created with the service role)'
 );
 
--- İlk owner servis rolüyle oluşturulur (pnpm owner:create ile aynı yol)
+-- İlk owner servis rolüyle oluşturulur (pnpm owner:create ile aynı yol). Servis rolü kullanıcı
+-- kimliği taşımaz: kimlik kalırsa current_workspace_id() o (henüz üye olmayan) kullanıcıya bakar.
 RESET ROLE;
+SELECT set_config('request.jwt.claim.sub', '', true);
 INSERT INTO public.team_members (user_id, role) VALUES ('90000000-0000-4000-8000-000000000001', 'owner');
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '90000000-0000-4000-8000-000000000001', true);

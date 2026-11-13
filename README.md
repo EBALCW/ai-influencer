@@ -117,13 +117,14 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅          | #58             |
 | Birleşik yorum gelen kutusu                                                                        | ✅          | #61             |
 | Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | 🚧 (PR)     | #173            |
+| Çalışma alanları: kiracı başına yalıtım (RLS, Storage, service role), `pnpm workspace:create`      | 🚧 (PR)     | #181            |
 | Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel) | #41             |
 
 **Ortamlar:** `test` dalı → AiInfTest Supabase projesi, `main` → AiInfMain (production). Veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0). Son production release: `v2026.10.21-0c1131d`. `test`'teki yenilikler `pnpm release` ile `main`'e geçer.
 
 **Bekleyen manuel adımlar (owner):**
 
-- İlk owner hesabı (`pnpm owner:create`) ve ekip davetleri
+- İlk owner hesabı (`pnpm owner:create`) ve ekip davetleri; ek çalışma alanı için `pnpm workspace:create <e-posta>` (`docs/AUTH.md`)
 - Supabase: Edge Function secret'ları `CRON_SECRET`, `HIGGSFIELD_API_KEY_ID` / `HIGGSFIELD_API_KEY_SECRET`; Vault'ta `cron_secret` (aynı değer) ve `project_url`. Bunlar yoksa zamanlanmış işler sessizce bekler.
 - Google Cloud: YouTube Data API v3 + YouTube Analytics API; OAuth scope'ları `youtube.readonly`, `yt-analytics.readonly`, `youtube.upload`, `youtube.force-ssl`
 - Meta: Instagram Login uygulaması; `instagram_business_content_publish`, `instagram_business_manage_comments`

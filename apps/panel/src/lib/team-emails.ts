@@ -2,14 +2,17 @@ import 'server-only';
 import { createSupabaseAdminClient } from './supabase/admin';
 
 /**
- * Verilen kullanıcı id'lerinden SADECE ekip üyesi olanların e-postalarını döndürür.
+ * Verilen kullanıcı id'lerinden SADECE `workspaceId` alanının üyesi olanların e-postalarını
+ * döndürür.
  *
- * Service role gerekir: e-posta auth.users'ta durur ve RLS ile okunamaz. Ekip üyesi
- * olmayan id'ler (ör. ekipten çıkarılmış biri) sorgulanmaz, sonuçta yer almaz.
+ * Service role gerekir: e-posta auth.users'ta durur ve RLS ile okunamaz. Service role RLS'i
+ * aştığı için alan filtresi burada açıkça uygulanır: başka bir çalışma alanının üyesi ya da
+ * ekipten çıkarılmış biri sorgulanmaz, sonuçta yer almaz.
  * Service role tanımlı değilse boş Map döner; çağıran "bilinmiyor" gösterir.
  */
 export async function getTeamMemberEmails(
   userIds: Array<string | null | undefined>,
+  workspaceId: string,
 ): Promise<Map<string, string>> {
   const emails = new Map<string, string>();
   const ids = [...new Set(userIds.filter((id): id is string => !!id))];
@@ -24,6 +27,7 @@ export async function getTeamMemberEmails(
   const { data: members, error } = await admin
     .from('team_members')
     .select('user_id')
+    .eq('workspace_id', workspaceId)
     .in('user_id', ids);
   if (error) throw new Error('Ekip üyeleri alınamadı.');
 

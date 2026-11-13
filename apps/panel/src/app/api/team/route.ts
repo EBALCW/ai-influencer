@@ -11,16 +11,19 @@ export async function GET() {
     const auth = await requireApiRole('owner');
     if (!auth.ok) return auth.response;
 
+    // Service role RLS'i aşar: liste çağıranın çalışma alanıyla açıkça sınırlandırılır.
     const admin = createSupabaseAdminClient();
     const { data: members, error } = await admin
       .from('team_members')
       .select('user_id, role, created_at')
+      .eq('workspace_id', auth.workspaceId)
       .order('created_at');
     if (error) throw new Error('Ekip listesi alınamadı.');
 
     // Sadece ekip üyelerinin e-postalarını getir (tüm auth kullanıcılarını listelemek yerine)
     const emails = await getTeamMemberEmails(
       members.map((member) => member.user_id),
+      auth.workspaceId,
     );
 
     return NextResponse.json({
@@ -66,9 +69,12 @@ export async function POST(request: NextRequest) {
       invited = true;
     }
 
+    // Davet edilen kişi davet edenin çalışma alanına eklenir. Kullanıcı başına tek alan
+    // (user_id PK): başka bir alanın üyesi buraya eklenemez, 23505 döner.
     const { error: memberError } = await admin.from('team_members').insert({
       user_id: userId,
       role,
+      workspace_id: auth.workspaceId,
       // Servis rolüyle yazıldığı için set_created_by trigger'ı bu değere dokunmaz;
       // gönderilmezse daveti kimin yaptığı kaybolur.
       created_by: auth.user.id,
@@ -77,7 +83,7 @@ export async function POST(request: NextRequest) {
       // Yeni davet ettiğimiz kullanıcıyı geri al; mevcut kullanıcıya dokunma
       if (invited) await admin.auth.admin.deleteUser(userId);
       return memberError.code === '23505'
-        ? jsonError('Bu kişi zaten ekipte.', 409)
+        ? jsonError('Bu kişi zaten bir çalışma alanının üyesi.', 409)
         : jsonError('Üyelik kaydı oluşturulamadı.', 400);
     }
 
