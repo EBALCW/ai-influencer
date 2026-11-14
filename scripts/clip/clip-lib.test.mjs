@@ -353,6 +353,20 @@ test('yerel transkript: pencereler birleşir, whisper çıktısı kaydırılır,
     repeated.map((cue) => cue.text),
     ['No!', 'No!', 'Tamam.'],
   );
+  // 30 saniyeye yayılmış dört sözcük (müzik üstüne uydurma) atılır; uzun ama dolu bölüm kalır
+  const stretched = whisperCues({
+    transcription: [
+      { offsets: { from: 0, to: 29980 }, text: " We'll be right back." },
+      {
+        offsets: { from: 30000, to: 42000 },
+        text: ' bir iki üç dört beş altı',
+      },
+    ],
+  });
+  assert.deepEqual(
+    stretched.map((cue) => cue.text),
+    ['bir iki üç dört beş altı'],
+  );
   // VTT'ye yazılan satırlar aynı ayrıştırıcıyla geri okunur
   assert.deepEqual(
     parseSubtitles(toVtt(cues)).map(({ start, text }) => ({ start, text })),

@@ -799,7 +799,11 @@ export function assessClip({
 
   // Gerekçeler: önce eleme sebepleri, sonra zayıf yanlar, sonra güçlü yanlar
   const reject = [];
-  const noSpeech = !hasSpeechData || metrics.speechCoverage < 0.3;
+  // Yerel döküm müzik üstüne metin uydurabilir: etiketleyici "konuşma yok" diyorsa ona güvenilir
+  const noSpeech =
+    !hasSpeechData ||
+    metrics.speechCoverage < 0.3 ||
+    (tags != null && tags.speech < 0.3);
   if (visual?.blackRatio >= 0.5)
     reject.push('görüntünün yarısından fazlası siyah');
   if (visual && noSpeech && visual.scrollRatio >= 0.5)
@@ -816,7 +820,7 @@ export function assessClip({
   // Müzik baskın, konuşma geri planda: çalan/söylenen şarkı. Telifli müzik klibe girmez
   if (tags && tags.music >= 0.6 && tags.speech < 0.4)
     reject.push(
-      'müzik baskın, konuşma yok (çalan şarkı: telif/Content ID riski; müzik kaynağın kendisine aitse "keep" ile geri al)',
+      'müzik baskın, konuşma yok (çalan şarkı: telif/Content ID riski; müzik kaynağın kendisine aitse --keep ile geri al)',
     );
 
   const weak = [];
@@ -876,54 +880,112 @@ export function assessClip({
   };
 }
 
-/** Aday için okunacak transkript: klip satırları ve `context` saniyelik öncesi/sonrası. */
+/**
+ * Transkript satırı üçüncü kişinin sözüdür (YouTube altyazısı ya da yerel döküm) ve agent'ın
+ * okuyacağı dosyaya girer. Veri olarak kalsın, biçim ya da talimat gibi görünmesin diye
+ * kontrol/yön karakterleri, ters tırnak (kod çiti), başlık/alıntı işaretleri, bağlantı ve
+ * HTML sözdizimi temizlenir; satır `max` karakterle sınırlanır.
+ */
+export function sanitizeTranscript(text, max = 200) {
+  const clean = String(text ?? '')
+    .replace(
+      /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g,
+      ' ',
+    )
+    .replace(/`+/g, "'")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\b[a-z][a-z0-9+.-]*:\/\/\S+/gi, '(bağlantı)')
+    .replace(/[<>[\]{}|\\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^[#>*=~\-\s]+/, '');
+  return clean.length > max ? clean.slice(0, max - 1) + '…' : clean;
+}
+
+/** Aday için okunacak transkript: klip satırları ve `context` saniyelik öncesi/sonrası (temizlenmiş). */
 export function contextTranscript(cues, start, end, context = 10) {
   return cues
     .filter((cue) => cue.end > start - context && cue.start < end + context)
     .map((cue) => ({
       at: cue.start,
       inside: cue.start >= start - 0.3 && cue.start < end,
-      text: cue.text,
-    }));
+      text: sanitizeTranscript(cue.text),
+    }))
+    .filter((line) => line.text);
 }
 
 export const DECISIONS = ['keep', 'drop'];
+const DECISION_FIELDS = [
+  'peak',
+  'decision',
+  'shiftStart',
+  'shiftEnd',
+  'caption',
+  'title',
+  'note',
+];
 
 /**
- * Agent'ın/kullanıcının aday başına kararları (clips/kararlar.json) doğrulanır.
+ * Aday başına kararlar (clips/kararlar.json) sıkı doğrulanır: yalnız bilinen alanlar, sayısal
+ * aralıklar, sınırlı uzunlukta düz metin. Dosyayı üçüncü kişinin transkriptini okumuş bir agent
+ * yazdığı için içeriğine güvenilmez; buradaki "keep" aracın "ele" kararını aşmaz (onu yalnız
+ * kullanıcının komut satırındaki --keep / --keep-all aşar).
  * Biçim: { "candidates": { "2": { "peak": "12:50", "decision": "keep"|"drop"|null,
  *   "shiftStart": -4, "shiftEnd": 3, "caption": "üst yazı", "title": "başlık", "note": "…" } } }
  * `peak` aday listesinin değişmediğini doğrular: sıra numarası başka bir ana kaymışsa hata.
  */
 export function parseDecisions(data, moments) {
   const out = new Map();
-  const entries = data?.candidates;
+  if (data == null) return out;
+  if (typeof data !== 'object' || Array.isArray(data))
+    throw new Error('kararlar.json bir nesne olmalı.');
+  for (const key of Object.keys(data))
+    if (key !== 'note' && key !== 'candidates')
+      throw new Error(`kararlar.json: bilinmeyen alan "${key.slice(0, 40)}".`);
+  const entries = data.candidates;
   if (entries == null) return out;
   if (typeof entries !== 'object' || Array.isArray(entries))
     throw new Error('kararlar.json: "candidates" bir nesne olmalı.');
-  for (const [key, value] of Object.entries(entries)) {
-    const rank = Number(key);
+  for (const [rawKey, value] of Object.entries(entries)) {
+    const key = rawKey.slice(0, 20);
+    const rank = /^[1-9]\d{0,2}$/.test(rawKey) ? Number(rawKey) : NaN;
     const moment = moments.find((m) => m.rank === rank);
     if (!moment) throw new Error(`kararlar.json: ${key} numaralı aday yok.`);
-    if (value?.peak != null && value.peak !== moment.peak)
+    if (value == null || typeof value !== 'object' || Array.isArray(value))
+      throw new Error(`kararlar.json: ${key}. aday bir nesne olmalı.`);
+    for (const field of Object.keys(value))
+      if (!DECISION_FIELDS.includes(field))
+        throw new Error(
+          `kararlar.json: ${key}. adayda bilinmeyen alan "${field.slice(0, 40)}". İzin verilenler: ${DECISION_FIELDS.join(', ')}.`,
+        );
+    if (value.peak != null && value.peak !== moment.peak)
       throw new Error(
-        `kararlar.json: ${key}. adayın zirvesi değişmiş (${value.peak} → ${moment.peak}). Aday listesi farklı seçeneklerle yeniden üretilmiş; kararları yeni listeye göre güncelle ya da dosyayı sil.`,
+        `kararlar.json: ${key}. adayın zirvesi değişmiş (${String(value.peak).slice(0, 12)} → ${moment.peak}). Aday listesi farklı seçeneklerle yeniden üretilmiş; kararları yeni listeye göre güncelle ya da dosyayı sil.`,
       );
     const shift = (name) => {
-      const n = value?.[name] ?? 0;
-      if (typeof n !== 'number' || !(Math.abs(n) <= 60))
+      const n = value[name] ?? 0;
+      if (typeof n !== 'number' || !Number.isFinite(n) || Math.abs(n) > 60)
         throw new Error(
           `kararlar.json: ${key}. aday için ${name} -60 ile 60 arasında saniye olmalı.`,
         );
       return n;
     };
-    const decision = value?.decision ?? null;
+    const decision = value.decision ?? null;
     if (decision !== null && !DECISIONS.includes(decision))
       throw new Error(
         `kararlar.json: ${key}. aday için decision "keep", "drop" ya da null olmalı.`,
       );
     const text = (name, max) => {
-      const t = String(value?.[name] ?? '').trim();
+      const raw = value[name] ?? '';
+      if (typeof raw !== 'string')
+        throw new Error(
+          `kararlar.json: ${key}. aday için ${name} metin olmalı.`,
+        );
+      if (/[\u0000-\u001f\u007f{}\\]/.test(raw))
+        throw new Error(
+          `kararlar.json: ${key}. aday için ${name} düz metin olmalı (satır sonu, ters eğik çizgi, süslü parantez olmaz).`,
+        );
+      const t = raw.trim();
       if (t.length > max)
         throw new Error(
           `kararlar.json: ${key}. aday için ${name} en çok ${max} karakter olabilir.`,

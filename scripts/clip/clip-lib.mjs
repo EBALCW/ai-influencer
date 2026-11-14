@@ -444,6 +444,9 @@ export function whisperCues(json, offset = 0) {
     if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) continue;
     // Sessizlikte ya da müzikte model aynı satırı art arda uydurabilir: üçüncü tekrar atılır
     if (out.at(-1)?.text === text && out.at(-2)?.text === text) continue;
+    // Birkaç sözcüğün onlarca saniyeye yayılması da uydurmadır (ör. müzik üstüne tek cümle)
+    const words = text.split(' ').length;
+    if ((to - from) / 1000 > 10 && words < (to - from) / 3000) continue;
     const end = offset + to / 1000;
     out.push({ start: offset + from / 1000, end, text, spokenEnd: end });
   }
