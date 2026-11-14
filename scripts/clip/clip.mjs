@@ -2,13 +2,17 @@
 // Yayıncı videolarından kısa dikey klip (Reels / Shorts / TikTok).
 //   pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40]
 //       [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr]
+//       [--preview-only] [--exclude 1,3]
 //       Tek adım: indirir, en güçlü anları bulur ve hepsini <klasör>/clips/ altına keser.
 //       --count verilmezse klip sayısı yayın süresine göre seçilir (10 dakikaya bir, 3-15).
+//       Her aday için clips/onizleme/ altına kare şeridi yazılır. --preview-only kesmeden durur;
+//       şeritlere bakıp jenerik, bekleme ekranı gibi adayları --exclude ile ele: yerlerine
+//       sıradaki adaylar kesilir.
 //       --translate tr: altyazı başka dildeyse her klibin metnini clips/altyazi/ altına ayırır;
 //       çevrilmiş NN.tr.srt dosyaları konunca aynı komut klipleri Türkçe altyazıyla keser.
 //   pnpm clip:fetch <youtube-adresi> [--out <klasör>] [--lang tr,en] [--no-video] [--chat]
 //       Videoyu, altyazıyı ve zaman damgalı transkripti ~/ai-influencer-clips/<id>/ altına indirir.
-//   pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--no-audio]
+//   pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--skip-end <sn>] [--no-audio]
 //       En çok tekrar izlenen yerler + sohbet patlamaları + ses zirvelerinden en güçlü anları sıralar.
 //   pnpm clip:cut <video> --start 12:30 --end 13:05 --out <klip.mp4> --permission "<izin referansı>"
 //       [--layout blur|crop] [--x-offset -1..1] [--subs <altyazı.vtt|srt>]
@@ -42,6 +46,7 @@ import {
   combine,
   createChatCounter,
   createLoudnessMeter,
+  defaultSkipEnd,
   pickMoments,
   replaySeries,
   transcriptFor,
@@ -393,12 +398,12 @@ function measureLoudness(video) {
 
 async function moments(argv) {
   const { positional, options } = parseCli(argv, {
-    values: ['top', 'length', 'skip-start'],
+    values: ['top', 'length', 'skip-start', 'skip-end'],
     flags: ['no-audio'],
   });
   if (positional.length !== 1)
     throw new Error(
-      'Kullanım: pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--no-audio]',
+      'Kullanım: pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--skip-end <sn>] [--no-audio]',
     );
   const dir = resolve(positional[0]);
   const sourceFile = join(dir, 'source.json');
@@ -417,6 +422,7 @@ async function moments(argv) {
   const top = number('top', 10, 1, 50);
   const length = number('length', 40, 10, 180);
   const skipStart = number('skip-start', 60, 0, 3600);
+  const skipEndOption = options['skip-end'];
 
   const video = join(dir, `${source.videoId}.mp4`);
   const hasVideo = existsSync(video);
@@ -466,18 +472,26 @@ async function moments(argv) {
   const cues = subtitle
     ? parseSubtitles(readFileSync(join(dir, subtitle), 'utf8'))
     : [];
-  const list = pickMoments(combined, { top, length, duration, skipStart }).map(
-    (moment, i) => ({
-      rank: i + 1,
-      start: formatTime(moment.start),
-      end: formatTime(moment.end),
-      peak: formatTime(moment.peak),
-      score: moment.score,
-      why: names[moment.why],
-      signals: moment.signals,
-      transcript: transcriptFor(cues, moment.start, moment.end),
-    }),
-  );
+  const skipEnd =
+    skipEndOption === undefined
+      ? defaultSkipEnd(duration)
+      : number('skip-end', 0, 0, 3600);
+  const list = pickMoments(combined, {
+    top,
+    length,
+    duration,
+    skipStart,
+    skipEnd,
+  }).map((moment, i) => ({
+    rank: i + 1,
+    start: formatTime(moment.start),
+    end: formatTime(moment.end),
+    peak: formatTime(moment.peak),
+    score: moment.score,
+    why: names[moment.why],
+    signals: moment.signals,
+    transcript: transcriptFor(cues, moment.start, moment.end),
+  }));
   writeFileSync(
     join(dir, 'moments.json'),
     JSON.stringify({ source, signals: combined.used, moments: list }, null, 2) +
@@ -505,13 +519,19 @@ async function auto(argv) {
       'open-license',
       'layout',
       'translate',
+      'exclude',
     ],
-    flags: ['own', 'no-subs'],
+    flags: ['own', 'no-subs', 'preview-only'],
   });
   if (positional.length !== 1)
     throw new Error(
-      'Kullanım: pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40] [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr]',
+      'Kullanım: pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40] [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr] [--preview-only] [--exclude 1,3]',
     );
+  const excluded = new Set(
+    (options.exclude ?? '').split(',').filter(Boolean).map(Number),
+  );
+  if ([...excluded].some((n) => !Number.isInteger(n) || n < 1))
+    throw new Error('--exclude aday numaraları ister. Örnek: --exclude 1,3');
   const target = options.translate;
   if (target !== undefined && !/^[a-z]{2,3}$/.test(target))
     throw new Error('--translate bir dil kodu ister. Örnek: --translate tr');
@@ -546,10 +566,14 @@ async function auto(argv) {
   const count = options.count ?? String(clipCountFor(source.durationSeconds));
 
   console.log('\n2/3 En güçlü anlar');
+  // Elenenlerin yerine geçecek yedekler: istenen sayının yarısı kadar fazla aday
+  const wanted = Number(count);
+  if (!(wanted >= 1 && wanted <= 30))
+    throw new Error('--count 1-30 arasında bir sayı olmalı.');
   await moments([
     dir,
     '--top',
-    count,
+    String(wanted + Math.ceil(wanted / 2)),
     ...(options.length ? ['--length', options.length] : []),
   ]);
   const list = JSON.parse(
@@ -560,7 +584,50 @@ async function auto(argv) {
       'Öne çıkan an bulunamadı (sinyal düz). Aralığı elle seçip pnpm clip:cut ile kes.',
     );
 
-  console.log(`\n3/3 Kesim (${list.length} klip)`);
+  // Önizleme: puan içeriği görmez; jenerik ya da bekleme ekranı da yüksek puan alabilir
+  const previewDir = join(dir, 'clips', 'onizleme');
+  mkdirSync(previewDir, { recursive: true });
+  const previewFfmpeg = pickFfmpeg(false);
+  for (const moment of list) {
+    const sheet = join(
+      previewDir,
+      `${String(moment.rank).padStart(2, '0')}-${moment.start.replaceAll(':', '.')}.jpg`,
+    );
+    if (existsSync(sheet)) continue;
+    const from = parseTime(moment.start);
+    const span = parseTime(moment.end) - from;
+    spawnSync(
+      previewFfmpeg,
+      [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-nostdin',
+        '-ss',
+        String(from),
+        '-t',
+        String(span),
+        '-i',
+        video,
+        '-vf',
+        `fps=6/${span},scale=320:-2,tile=6x1`,
+        '-frames:v',
+        '1',
+        sheet,
+      ],
+      { stdio: 'ignore' },
+    );
+  }
+  ok(`Aday önizlemeleri: ${previewDir}`);
+  if (options['preview-only']) {
+    console.log(
+      `\n${list.length} aday var, ilk ${wanted} tanesi kesilecek. Şeritlere bak; klip olmayacakları (jenerik, bekleme ekranı, boş sahne) ` +
+        '--exclude <numaralar> ile eleyip komutu --preview-only olmadan yeniden çalıştır.',
+    );
+    return;
+  }
+
+  console.log(`\n3/3 Kesim (${wanted} klip)`);
   const languages = (options.lang ?? 'tr,en').split(',').filter(Boolean);
   const subtitle = options['no-subs']
     ? null
@@ -586,6 +653,8 @@ async function auto(argv) {
   const clips = [];
   let waiting = 0;
   for (const moment of list) {
+    if (excluded.has(moment.rank)) continue;
+    if (clips.length + waiting >= wanted) break;
     const stem = `${String(moment.rank).padStart(2, '0')}-${moment.start.replaceAll(':', '.')}`;
     const name = `${stem}.mp4`;
     const output = join(dir, 'clips', name);

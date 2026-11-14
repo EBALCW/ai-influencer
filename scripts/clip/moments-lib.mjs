@@ -23,6 +23,12 @@ export function clipCountFor(durationSeconds) {
   return Math.min(15, Math.max(3, Math.round(durationSeconds / 600)));
 }
 
+/** Sondan atlanacak süre için varsayılan: yayının %5'i, en çok 2 dakika. */
+export function defaultSkipEnd(durationSeconds) {
+  if (!(durationSeconds > 0)) return 0;
+  return Math.min(120, Math.round(durationSeconds * 0.05));
+}
+
 /** yt-dlp info.json → heatmap [{start_time,end_time,value}] → saniye başına değer (0-1). */
 export function replaySeries(heatmap, duration) {
   if (!Array.isArray(heatmap) || heatmap.length === 0) return null;
@@ -190,7 +196,14 @@ export function combine(signals, size = BUCKET_SECONDS) {
  */
 export function pickMoments(
   { score, scaled, used },
-  { top = 10, length = 40, duration, size = BUCKET_SECONDS, skipStart = 0 },
+  {
+    top = 10,
+    length = 40,
+    duration,
+    size = BUCKET_SECONDS,
+    skipStart = 0,
+    skipEnd = 0,
+  },
 ) {
   const order = Array.from(score.keys()).sort((a, b) => score[b] - score[a]);
   const picked = [];
@@ -198,6 +211,8 @@ export function pickMoments(
     if (picked.length >= top || !(score[bucket] > 0)) break;
     const peak = bucket * size + size / 2;
     if (peak < skipStart) continue;
+    // Yayın sonu: jenerik, veda ekranı, 'yayın bitti' kartı sık sık tekrar izlenir ama klip olmaz
+    if (duration != null && skipEnd > 0 && peak > duration - skipEnd) continue;
     if (picked.some((m) => Math.abs(m.peak - peak) < length)) continue;
     let start = Math.max(0, Math.round(peak - length * 0.65));
     let end = start + length;
