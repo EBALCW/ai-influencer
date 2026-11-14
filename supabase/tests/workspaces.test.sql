@@ -295,6 +295,15 @@ VALUES ('a1910000-0000-4000-8000-000000000001', 'wsAAAAAAAA1', 'https://www.yout
 INSERT INTO public.clips (id, source_id, influencer_id, title, start_seconds, end_seconds)
 VALUES ('a1920000-0000-4000-8000-000000000001', 'a1910000-0000-4000-8000-000000000001',
   'a1820000-0000-4000-8000-000000000001', 'A klibi', 10, 40);
+-- Ortak üretim işi modeli (#201): makine, iş, aşama, iş varlığı.
+INSERT INTO public.production_workers (id, user_id, name, platform)
+VALUES ('a1930000-0000-4000-8000-000000000001', 'a1810000-0000-4000-8000-000000000002', 'ws-a-makine', 'darwin');
+INSERT INTO public.jobs (id, module, kind, clip_source_id)
+VALUES ('a1940000-0000-4000-8000-000000000001', 'clip', 'clip.cut', 'a1910000-0000-4000-8000-000000000001');
+INSERT INTO public.job_stages (job_id, seq, key)
+VALUES ('a1940000-0000-4000-8000-000000000001', 1, 'cut');
+INSERT INTO public.job_assets (job_id, asset_id, role)
+VALUES ('a1940000-0000-4000-8000-000000000001', 'a1830000-0000-4000-8000-000000000001', 'final');
 
 -- ── İkinci alan: create_workspace_for_user ──────────────────────────────────
 CREATE TEMP TABLE ws ON COMMIT DROP AS
@@ -693,6 +702,14 @@ SELECT extensions.throws_ok(
 SELECT extensions.throws_ok(
   $$SELECT public.push_clip_to_backlog('b1920000-0000-4000-8000-000000000001', 'a1820000-0000-4000-8000-000000000001')$$,
   'P0002', NULL, 'push_clip_to_backlog cannot target a workspace A influencer'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.request_cancel_job('a1940000-0000-4000-8000-000000000001')$$,
+  'P0002', NULL, 'request_cancel_job (DEFINER core) cannot see a workspace A job'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.retry_job('a1940000-0000-4000-8000-000000000001')$$,
+  'P0002', NULL, 'retry_job (DEFINER core) cannot see a workspace A job'
 );
 SELECT extensions.throws_ok(
   $$SELECT public.save_content_item('a1870000-0000-4000-8000-000000000001', '{"title":"ele geçirildi"}'::jsonb)$$,
