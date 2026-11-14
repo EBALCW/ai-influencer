@@ -39,7 +39,8 @@ pnpm clip:auto "https://www.youtube.com/watch?v=<id>" --permission "<izin refera
 İndirir, en güçlü anları bulur ve hepsini `~/ai-influencer-clips/<id>/clips/` altına keser. Dosyalar puana göre sıralıdır (`01-…` en güçlü); `clips.json` her klibin aralığını, puanını ve transkriptini tutar. Hepsini izleyip yayınlanacakları seçersin.
 
 - Klip sayısı yayın süresine göre seçilir: 10 dakikaya bir klip, en az 3, en çok 15. Elle vermek için `--count 8`.
-- Kaynakta altyazı varsa kliplere gömülür; istemiyorsan `--no-subs`. Altyazı kaynağın dilindedir, çeviri yapılmaz.
+- Kaynakta altyazı varsa kliplere gömülür; istemiyorsan `--no-subs`.
+- **Türkçe altyazı:** kaynak başka dildeyse `--translate tr` ekle. İlk çalıştırmada klipler kesilmez; her klibin metni `clips/altyazi/<ad>.srt` olarak ayrılır. Çevirisini aynı klasöre `<ad>.tr.srt` adıyla koyup aynı komutu yeniden çalıştırınca klipler Türkçe altyazıyla kesilir. Çeviride satır numaraları ve zamanlar aynı kalır, yalnız metin değişir. YouTube'un otomatik Türkçe çevirisi çoğu zaman istek sınırına takıldığı için kullanılmıyor.
 - `--permission` yerine açık lisanslı kaynakta `--open-license "<lisans>"`, kendi çekiminde `--own`. Biri verilmeden indirme de başlamaz.
 - Yarıda kesilirse aynı komut kaldığı yerden sürer: inen video yeniden inmez, kesilmiş klip atlanır.
 - Ölçüm (MacBook Air M4): 36 dakikalık videodan 4 altyazılı klip, indirme dahil yaklaşık 2,5 dakika.

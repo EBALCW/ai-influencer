@@ -227,3 +227,17 @@ test('komut satırı ayrıştırma', () => {
   );
   assert.throws(() => parseCli(['--overwrite'], spec), /Bilinmeyen/);
 });
+
+test('clipSrt absolute: zamanlar kaynağa göre kalır, yeniden kesilince aynı klibi verir', () => {
+  const cues = [
+    { start: 95, end: 99, text: 'önce' },
+    { start: 100, end: 104, text: 'bir' },
+    { start: 104, end: 108, text: 'iki' },
+  ];
+  const absolute = clipSrt(cues, 100, 110, { absolute: true });
+  assert.match(absolute, /00:01:40,000 --> 00:01:44,000\nbir/);
+  assert.equal(
+    clipSrt(parseSubtitles(absolute), 100, 110),
+    clipSrt(cues, 100, 110),
+  );
+});

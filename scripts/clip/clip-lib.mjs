@@ -145,13 +145,18 @@ function srtTime(seconds) {
   return `${pad(Math.floor(ms / 3600000))}:${pad(Math.floor((ms % 3600000) / 60000))}:${pad(Math.floor((ms % 60000) / 1000))},${pad(ms % 1000, 3)}`;
 }
 
-/** [start, end] aralığına düşen satırları, klip 0'dan başlayacak şekilde SRT'ye çevirir. */
-export function clipSrt(cues, start, end) {
+/**
+ * [start, end] aralığına düşen satırları, klip 0'dan başlayacak şekilde SRT'ye çevirir.
+ * `absolute` verilirse zamanlar kaynak videoya göre kalır: çeviri için ayrılan dosya
+ * sonradan yine clip:cut --subs ile kullanılabilsin diye.
+ */
+export function clipSrt(cues, start, end, { absolute = false } = {}) {
+  const shift = absolute ? 0 : start;
   const inside = cues
     .filter((cue) => cue.end > start && cue.start < end)
     .map((cue) => ({
-      start: Math.max(cue.start, start) - start,
-      end: Math.min(cue.end, end) - start,
+      start: Math.max(cue.start, start) - shift,
+      end: Math.min(cue.end, end) - shift,
       text: cue.text,
     }));
   // Otomatik altyazıda satırlar üst üste biner; bir sonraki başlayınca öncekini bitir

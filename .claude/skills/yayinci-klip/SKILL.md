@@ -43,6 +43,13 @@ pnpm clip:auto "<youtube-adresi>" --permission "<izin referansı>"   # ya da --o
 
 İndirir, anları bulur, yayın süresine göre 3-15 klibi altyazılı keser (`clips/`, `clips.json`). Sonra 4. adımdaki kontrolü her klip için yap ve kullanıcıya seçim listesini sun. Puan öneridir: jenerik, bekleme ekranı ya da bağlamsız anlar da yüksek puan alabilir; bunları ele ve gerekirse aşağıdaki adımlarla elle kes.
 
+**Videolar Türkçe yayınlanır.** Kaynak Türkçe değilse komuta `--translate tr` ekle. İlk çalıştırma `clips/altyazi/<ad>.srt` dosyalarını bırakır ve durur. Her birini kendin Türkçeye çevirip `<ad>.tr.srt` olarak yaz, sonra aynı komutu yeniden çalıştır.
+
+- Satır numaralarına ve zamanlara dokunma; yalnız metni çevir.
+- Otomatik altyazıda cümleler satır ortasında bölünür ve yanlış duyulmuş sözcükler olur. Önce tüm metni okuyup anlamı çıkar, sonra satırlara dağıt; kelime kelime çevirme.
+- Satır başına en çok 40-45 karakter; konuşma dili kullan, argo ve küfrü yumuşatmadan ama platform kurallarını aşmadan aktar.
+- Emin olmadığın özel adı ya da oyun terimini çevirmeden bırak.
+
 ## 1. İndir
 
 ```
