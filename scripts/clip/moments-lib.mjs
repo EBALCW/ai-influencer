@@ -14,6 +14,15 @@ export const WEIGHTS = { replay: 0.4, chat: 0.35, audio: 0.25 };
 const REACTION =
   /\b(lo+l|lmf?a+o+|rofl|kekw|omegalul|lul|ha(ha)+|ah(ah)+|jaja+|wtf+|omg+|no way|bro+|clip( it| that)?|w+|l+|sheesh|ayo+|dead|crying|insane|crazy)\b|[😂🤣💀😭😱🔥]/iu;
 
+/**
+ * Yayın süresine göre kaç klip çıkarılacağı: her 10 dakikaya bir klip, en az 3, en çok 15.
+ * Kısa videodan çok klip zayıf anları da alır; saatlerce süren yayında 15 seçim için yeter.
+ */
+export function clipCountFor(durationSeconds) {
+  if (!(durationSeconds > 0)) return 3;
+  return Math.min(15, Math.max(3, Math.round(durationSeconds / 600)));
+}
+
 /** yt-dlp info.json → heatmap [{start_time,end_time,value}] → saniye başına değer (0-1). */
 export function replaySeries(heatmap, duration) {
   if (!Array.isArray(heatmap) || heatmap.length === 0) return null;
