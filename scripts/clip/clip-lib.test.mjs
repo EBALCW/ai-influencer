@@ -1,17 +1,21 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  captionAss,
   clipSrt,
   cutArgs,
   fetchArgs,
   formatTime,
+  mergeWindows,
   parseCli,
   parseSubtitles,
   parseTime,
   parseYoutubeUrl,
   toTranscript,
+  toVtt,
   validatePermission,
   validateRange,
+  whisperCues,
 } from './clip-lib.mjs';
 
 test('YouTube adresi: tek video kabul, diğer her şey ret', () => {
@@ -95,8 +99,9 @@ const AUTO_VTT = [
 
 test('altyazı: YouTube otomatik altyazısındaki tekrarlar atılır', () => {
   assert.deepEqual(parseSubtitles(AUTO_VTT), [
-    { start: 1, end: 3, text: 'bugün size bir' },
-    { start: 3.01, end: 5, text: 'şey anlatacağım' },
+    // spokenEnd: son sözcüğün zamanı + 0,6 sn (satır ekranda daha uzun kalsa da)
+    { start: 1, end: 3, text: 'bugün size bir', spokenEnd: 2.6 },
+    { start: 3.01, end: 5, text: 'şey anlatacağım', spokenEnd: 4.1 },
     { start: 25, end: 27, text: 'Tom & Jerry' },
   ]);
   assert.equal(
@@ -239,5 +244,118 @@ test('clipSrt absolute: zamanlar kaynağa göre kalır, yeniden kesilince aynı 
   assert.equal(
     clipSrt(parseSubtitles(absolute), 100, 110),
     clipSrt(cues, 100, 110),
+  );
+});
+
+test('zaman: onda bir saniye istenirse korunur ve parseTime geri okur', () => {
+  assert.equal(formatTime(750.44, { tenths: true }), '12:30.4');
+  assert.equal(formatTime(750, { tenths: true }), '12:30');
+  assert.equal(formatTime(3725.96, { tenths: true }), '1:02:06');
+  assert.equal(formatTime(59.96, { tenths: true }), '01:00');
+  assert.equal(parseTime(formatTime(750.44, { tenths: true })), 750.4);
+  assert.equal(formatTime(750.9), '12:30');
+});
+
+test('yt-dlp: --max-height çözünürlüğü sınırlar, geçersiz değer reddedilir', () => {
+  const format = (options) => {
+    const args = fetchArgs('u', 'out', options);
+    return args[args.indexOf('--format') + 1];
+  };
+  assert.match(format({}), /height<=1080/);
+  assert.match(format({ maxHeight: 360 }), /^bv\*\[height<=360\]/);
+  assert.doesNotMatch(format({ maxHeight: 360 }), /1080/);
+  assert.throws(() => fetchArgs('u', 'out', { maxHeight: 100 }), /max-height/);
+  assert.throws(() => fetchArgs('u', 'out', { maxHeight: Number('x') }));
+});
+
+test('üst yazı: Türkçe metin korunur, ASS komutu sızmaz, uzun metin reddedilir', () => {
+  const ass = captionAss('  Yayıncı {\\b1}ilk kez   ÇÖĞÜŞİ ığ görüyor ', 31.25);
+  assert.match(ass, /PlayResX: 1080\nPlayResY: 1920/);
+  assert.match(
+    ass,
+    /Dialogue: 0,0:00:00\.00,0:00:31\.25,Ust,,0,0,0,,Yayıncı b1ilk kez ÇÖĞÜŞİ ığ görüyor\n/,
+  );
+  // Üstten hizalı (8) ve platform arayüzünün altında
+  assert.match(ass, /,3,14,0,8,90,90,250,1\n/);
+  assert.throws(() => captionAss('   ', 10), /boş/);
+  assert.throws(() => captionAss('x'.repeat(61), 10), /en çok 60/);
+});
+
+test('ffmpeg: üst yazı altyazıdan sonra gömülür, dosya adı denetlenir', () => {
+  const args = cutArgs({
+    input: 'a.mp4',
+    output: 'b.mp4',
+    start: 0,
+    end: 20,
+    subtitles: 'subs.srt',
+    caption: 'ust.ass',
+  });
+  const filter = args[args.indexOf('-filter_complex') + 1];
+  assert.match(
+    filter,
+    /subtitles=filename=subs\.srt:force_style='[^']+',subtitles=filename=ust\.ass\[v\]$/,
+  );
+  const only = cutArgs({
+    input: 'a',
+    output: 'b',
+    start: 0,
+    end: 20,
+    caption: 'ust.ass',
+  });
+  assert.match(
+    only[only.indexOf('-filter_complex') + 1],
+    /format=yuv420p,subtitles=filename=ust\.ass\[v\]$/,
+  );
+  assert.throws(
+    () =>
+      cutArgs({ input: 'a', output: 'b', start: 0, end: 20, caption: "x':y" }),
+    /Üst yazı dosya adı/,
+  );
+});
+
+test('yerel transkript: pencereler birleşir, whisper çıktısı kaydırılır, konuşma olmayan satır atılır', () => {
+  assert.deepEqual(
+    mergeWindows([
+      [100.4, 160],
+      [10, 50],
+      [163, 200.2],
+      [300, 300],
+    ]),
+    [
+      [10, 50],
+      [100, 201],
+    ],
+  );
+  const cues = whisperCues(
+    {
+      transcription: [
+        { offsets: { from: 0, to: 2500 }, text: ' Bugün  çok iyiyiz.' },
+        { offsets: { from: 2500, to: 4000 }, text: ' [Music]' },
+        { offsets: { from: 4000, to: 4000 }, text: ' boş' },
+        { offsets: { from: 5000, to: 6500 }, text: ' Hadi başlayalım!' },
+      ],
+    },
+    600,
+  );
+  assert.deepEqual(cues, [
+    { start: 600, end: 602.5, text: 'Bugün çok iyiyiz.', spokenEnd: 602.5 },
+    { start: 605, end: 606.5, text: 'Hadi başlayalım!', spokenEnd: 606.5 },
+  ]);
+  assert.deepEqual(whisperCues(null), []);
+  // Uydurulmuş tekrar: aynı satır en çok iki kez kalır
+  const repeated = whisperCues({
+    transcription: [1, 2, 3, 4, 5].map((i) => ({
+      offsets: { from: i * 1000, to: i * 1000 + 900 },
+      text: i === 5 ? ' Tamam.' : ' No!',
+    })),
+  });
+  assert.deepEqual(
+    repeated.map((cue) => cue.text),
+    ['No!', 'No!', 'Tamam.'],
+  );
+  // VTT'ye yazılan satırlar aynı ayrıştırıcıyla geri okunur
+  assert.deepEqual(
+    parseSubtitles(toVtt(cues)).map(({ start, text }) => ({ start, text })),
+    cues.map(({ start, text }) => ({ start, text })),
   );
 });
