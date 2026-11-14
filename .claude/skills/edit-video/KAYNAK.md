@@ -41,6 +41,7 @@ Eklenen dosyalar: her klasörde `LICENSE`, `THIRD_PARTY_NOTICES.md` (depo kökü
 | `edit-video/references/local-tools.md` | Alınmayan `INSTALL_FOR_AGENTS.md` atfı ve "optional FavStash CLI" ifadesi silindi. |
 | `edit-video/references/voice.md` | Başa Türkçe not: Türkçe ses için `edge-tts` yolu. |
 | `edit-video/scripts/reference-analyze.mjs` | `--url` yalnız http(s) adresi kabul eder ve yt-dlp'ye `--` ardından verilir (seçenek kaçırmayı önler). |
+| `edit-video/lib/sync.mjs` | Sentezlenen ses önbelleği `$TMPDIR` yerine `~/.cache/favstash-sfx/` (0700); önbellekteki dosya her kullanımda sha256 ile doğrulanır, sembolik bağ kabul edilmez. |
 | `edit-video/scripts/doctor.mjs` | FavStash CLI denetimi, çıktı satırı ve `npm install -g @sketric/favstash-mcp` önerisi silindi. |
 | `film-styles/SKILL.md` | Başa Türkçe not. |
 | `film-styles/references/building.md` | `--quality delivery` → `--quality high` (sabitlenen HyperFrames 0.8.32 yalnızca draft/standard/high kabul ediyor; `delivery` hata veriyor) ve komuta `< /dev/null` eklendi. |
@@ -61,7 +62,7 @@ Eklenmeden önce betikler okundu:
   `eval`, kabuk üzerinden komut ya da gizli kodlama yok.
 - Süreç çağrıları: `ffmpeg`, `ffprobe`, `npm`, `yt-dlp`, `hyperframes`, `python3`.
 - Yazdığı yerler: verilen çalışma klasörü (`<workspace>/.favstash-studio/`, reel klasörü) ve ses
-  efektleri için `$TMPDIR/favstash-sfx/`. `voice.py` ve `build.py` reel klasöründeki `spec.py`
+  efektleri için `~/.cache/favstash-sfx/`. `voice.py` ve `build.py` reel klasöründeki `spec.py`
   dosyasını Python olarak çalıştırır: oraya yalnızca kendi yazdığın dosyayı koy.
 - `reference-analyze.mjs --cookies-from-browser` tarayıcı çerezlerini `yt-dlp`'ye verir; kullanma.
 - HyperFrames CLI anonim kullanım verisi gönderebilir ve iş bitince geri bildirim sorabilir:

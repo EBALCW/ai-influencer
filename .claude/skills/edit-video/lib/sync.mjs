@@ -81,7 +81,8 @@ export function snapUp(t, fps) {
 
 // Synthesized pack sounds don't ship as audio: each is made from its definition in lib/sfx.mjs on first use, checked
 // against the manifest's checksum, and kept in a small cache.
-export const SYNTH_CACHE = path.join(os.tmpdir(), "favstash-sfx");
+// Kullanıcıya özel önbellek: paylaşılan /tmp altında başkası dosya yerleştiremesin.
+export const SYNTH_CACHE = path.join(os.homedir(), ".cache", "favstash-sfx");
 
 /** The audio file for one manifest sound: the shipped recording, or the synthesized sound from the cache. */
 export async function packFile(dir, sound) {
@@ -89,14 +90,22 @@ export async function packFile(dir, sound) {
   if (sound.origin === "curated") return shipped;
   try { await fs.access(shipped); return shipped; } catch {}
   const cached = path.join(SYNTH_CACHE, `${sound.id}-${sound.sha256.slice(0, 12)}.wav`);
-  try { await fs.access(cached); return cached; } catch {}
+  // Önbellekteki dosya her kullanımda doğrulanır: sıradan dosya olmalı ve özeti manifestle eşleşmeli.
+  try {
+    const stat = await fs.lstat(cached);
+    if (stat.isFile()) {
+      const digest = crypto.createHash("sha256").update(await fs.readFile(cached)).digest("hex");
+      if (digest === sound.sha256) return cached;
+    }
+    await fs.rm(cached, { force: true });
+  } catch {}
   const definition = SOUND_DEFINITIONS.find((d) => d.id === sound.id);
   if (!definition) throw new Error(`No definition for the synthesized sound ${sound.id}`);
   const buffer = wavBuffer(definition);
   if (crypto.createHash("sha256").update(buffer).digest("hex") !== sound.sha256) {
     throw new Error(`The synthesized ${sound.id} no longer matches its manifest checksum; run scripts/generate-sfx.mjs`);
   }
-  await fs.mkdir(SYNTH_CACHE, { recursive: true });
+  await fs.mkdir(SYNTH_CACHE, { recursive: true, mode: 0o700 });
   const partial = `${cached}.${process.pid}.part`;
   await fs.writeFile(partial, buffer);
   await fs.rename(partial, cached);
