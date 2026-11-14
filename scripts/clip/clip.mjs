@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 // Yayıncı videolarından kısa dikey klip (Reels / Shorts / TikTok).
 //   pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40]
-//       [--lang tr,en] [--layout blur|crop] [--no-subs]
+//       [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr]
 //       Tek adım: indirir, en güçlü anları bulur ve hepsini <klasör>/clips/ altına keser.
 //       --count verilmezse klip sayısı yayın süresine göre seçilir (10 dakikaya bir, 3-15).
+//       --translate tr: altyazı başka dildeyse her klibin metnini clips/altyazi/ altına ayırır;
+//       çevrilmiş NN.tr.srt dosyaları konunca aynı komut klipleri Türkçe altyazıyla keser.
 //   pnpm clip:fetch <youtube-adresi> [--out <klasör>] [--lang tr,en] [--no-video] [--chat]
 //       Videoyu, altyazıyı ve zaman damgalı transkripti ~/ai-influencer-clips/<id>/ altına indirir.
 //   pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--no-audio]
@@ -502,13 +504,17 @@ async function auto(argv) {
       'permission',
       'open-license',
       'layout',
+      'translate',
     ],
     flags: ['own', 'no-subs'],
   });
   if (positional.length !== 1)
     throw new Error(
-      'Kullanım: pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40] [--lang tr,en] [--layout blur|crop] [--no-subs]',
+      'Kullanım: pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40] [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr]',
     );
+  const target = options.translate;
+  if (target !== undefined && !/^[a-z]{2,3}$/.test(target))
+    throw new Error('--translate bir dil kodu ister. Örnek: --translate tr');
   // İzin kontrolü en başta: saatlerce indirdikten sonra reddetmek yerine hemen dur
   sourceRights(options);
   const rights = options.own
@@ -569,9 +575,19 @@ async function auto(argv) {
         )[0];
   if (!options['no-subs'] && !subtitle)
     console.log('  [UYARI] Altyazı dosyası yok; klipler altyazısız kesiliyor.');
+  // Çeviri: kaynak altyazı hedef dilde değilse metin ayrılır, çevrilmiş dosya beklenir
+  const translating =
+    Boolean(target && subtitle) && !subtitle.includes(`.${target}.`);
+  const cues = translating
+    ? parseSubtitles(readFileSync(join(dir, subtitle), 'utf8'))
+    : [];
+  const subsDir = join(dir, 'clips', 'altyazi');
+  if (translating) mkdirSync(subsDir, { recursive: true });
   const clips = [];
+  let waiting = 0;
   for (const moment of list) {
-    const name = `${String(moment.rank).padStart(2, '0')}-${moment.start.replaceAll(':', '.')}.mp4`;
+    const stem = `${String(moment.rank).padStart(2, '0')}-${moment.start.replaceAll(':', '.')}`;
+    const name = `${stem}.mp4`;
     const output = join(dir, 'clips', name);
     const base = [
       video,
@@ -584,11 +600,29 @@ async function auto(argv) {
       ...rights,
       ...(options.layout ? ['--layout', options.layout] : []),
     ];
+    let subs = subtitle ? join(dir, subtitle) : null;
+    if (translating && !existsSync(output)) {
+      const original = join(subsDir, `${stem}.srt`);
+      const translated = join(subsDir, `${stem}.${target}.srt`);
+      const text = clipSrt(
+        cues,
+        parseTime(moment.start),
+        parseTime(moment.end),
+        { absolute: true },
+      );
+      if (!text) subs = null;
+      else if (existsSync(translated)) subs = translated;
+      else {
+        if (!existsSync(original)) writeFileSync(original, text);
+        waiting++;
+        continue;
+      }
+    }
     let subtitled = false;
     if (existsSync(output)) ok(`${name} zaten var; atlandı`);
-    else if (subtitle) {
+    else if (subs) {
       try {
-        cut([...base, '--subs', join(dir, subtitle)]);
+        cut([...base, '--subs', subs]);
         subtitled = true;
       } catch (error) {
         // Konuşmasız aralıkta altyazı satırı olmaz; klip altyazısız kesilir
@@ -598,14 +632,22 @@ async function auto(argv) {
     } else cut(base);
     clips.push({ file: name, ...moment, subtitled });
   }
+  if (waiting > 0) {
+    console.log(
+      `\n${waiting} klip çeviri bekliyor: ${subsDir}\n` +
+        `Her <ad>.srt dosyasını çevirip yanına <ad>.${target}.srt olarak kaydet: satır numaraları ve zamanlar aynı kalır, yalnız metin değişir. ` +
+        'Sonra aynı komutu yeniden çalıştır.',
+    );
+  }
   writeFileSync(
     join(dir, 'clips', 'clips.json'),
     JSON.stringify({ source, clips }, null, 2) + '\n',
   );
-  console.log(
-    `\n${clips.length} klip hazır: ${join(dir, 'clips')}\n` +
-      'Sıra puana göre (01 en güçlü). Hepsini izle, yayınlanacakları seç; puan bir öneridir.',
-  );
+  if (clips.length > 0)
+    console.log(
+      `\n${clips.length} klip hazır: ${join(dir, 'clips')}\n` +
+        'Sıra puana göre (01 en güçlü). Hepsini izle, yayınlanacakları seç; puan bir öneridir.',
+    );
 }
 
 const [mode, ...rest] = process.argv.slice(2);
