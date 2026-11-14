@@ -1,0 +1,6 @@
+interface:
+  display_name: "Edit Video"
+  short_description: "Cut, caption, sound and review a vertical short"
+  default_prompt: "Use $edit-video to turn my brief and footage into a reviewed vertical short, in the style that fits it."
+policy:
+  allow_implicit_invocation: true

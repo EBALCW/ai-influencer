@@ -1,0 +1,6 @@
+interface:
+  display_name: "Write Script"
+  short_description: "Scroll-stopping hooks to test, one shared body and a filmable brief"
+  default_prompt: "Use $write-script to adapt this reference into a few openings to test and a shared body in my voice, then prepare the editor brief."
+policy:
+  allow_implicit_invocation: true

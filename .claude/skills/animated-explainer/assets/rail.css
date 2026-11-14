@@ -1,0 +1,45 @@
+/* Rail look: white grid paper, a terracotta progress rail down the left edge with the character's head riding it and a
+   chapter chip, short centred captions whose accent words get a marker swipe, quiet white cards.
+   Loaded after explainer.css when a spec sets STYLE = 'rail'. */
+#root.rail { background: #FBFAF7; color: #15161A; }
+.f-paper { background-color: #FBFAF7;
+  background-image: linear-gradient(rgba(21,22,26,.055) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(21,22,26,.055) 1.5px, transparent 1.5px);
+  background-size: 54px 54px; background-position: 27px 27px; }
+.f-paper2 { background-color: #F7F4EE;
+  background-image: linear-gradient(rgba(21,22,26,.05) 1.5px, transparent 1.5px), linear-gradient(90deg, rgba(21,22,26,.05) 1.5px, transparent 1.5px);
+  background-size: 54px 54px; background-position: 27px 27px; }
+#root.rail #vig { background: radial-gradient(ellipse 85% 70% at 50% 46%, transparent 62%, rgba(60,40,20,.07) 100%); }
+#root.rail #hud { display: none; }
+
+/* captions: centred, short, ink on paper */
+#root.rail #say { left: 180px; width: 780px; top: 300px; text-align: center; }
+#root.rail .ph { width: 780px; font-size: 68px; line-height: 1.08; letter-spacing: -.03em; font-weight: 620; }
+#root.rail .ph.big { font-size: 84px; }
+#root.rail .ph .w { color: #CFCAC0; }
+#root.rail .ph .w.i { font-family: var(--sans); font-style: normal; font-size: 1em; line-height: 1.08; letter-spacing: -.03em; padding: 0 8px; margin: 0 -2px;
+  background-image: linear-gradient(#F4C95D, #F4C95D); background-repeat: no-repeat; background-position: 0 72%; background-size: 0% 80%; border-radius: 6px; }
+#root.rail .ph.guest .tag { margin: 0 auto 14px; }
+
+/* the rail */
+#rail { position: absolute; inset: 0; z-index: 70; pointer-events: none; }
+#rail .line { position: absolute; left: 156px; top: 0; width: 4px; height: 1920px; background: rgba(180,83,61,.18); border-radius: 2px; }
+#rail .prog { position: absolute; left: 156px; top: 0; width: 4px; height: 0; background: #B4533D; border-radius: 2px; }
+#rhead { position: absolute; left: -50px; top: -50px; width: 100px; height: 100px; transform-origin: 50% 50%; }
+#rhead .badge { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: #F4C95D; border: 5px solid #FFFFFF;
+  box-shadow: 0 10px 22px -8px rgba(60,30,10,.45), 0 0 0 2px rgba(180,83,61,.35); }
+#rhead #presenter { -webkit-mask-image: none; mask-image: none; z-index: auto; }
+#rhead #pr-glow { filter: none !important; }
+#rhead #pr-zzz { display: none; }
+#rchip { position: absolute; left: 0px; top: 112px; padding: 10px 16px; border-radius: 999px; background: #B4533D; color: #FFFFFF;
+  font: 600 23px/1 var(--sans); white-space: nowrap; box-shadow: 0 8px 18px -10px rgba(120,40,20,.6); }
+
+/* paper cards */
+.pcard { position: absolute; background: #FFFFFF; color: #15161A; border-radius: 30px; border: 2px solid #ECE6DB;
+  box-shadow: 0 2px 0 rgba(255,255,255,.8) inset, 0 26px 50px -26px rgba(60,40,20,.35); }
+.pcard .k { color: #9A9387; }
+.pchip { display: inline-flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: 999px; background: #FFFFFF; border: 2px solid #ECE6DB;
+  font: 600 26px/1 var(--sans); color: #15161A; box-shadow: 0 10px 20px -14px rgba(60,40,20,.4); }
+.tickbox { width: 40px; height: 40px; border-radius: 50%; border: 3px solid #D8D1C4; display: inline-flex; align-items: center; justify-content: center;
+  font: 800 22px/1 var(--sans); color: transparent; flex: none; }
+.tickbox.on { background: #B4533D; border-color: #B4533D; color: #FFFFFF; }
+#rhead .badge .dot { position: absolute; inset: 26px; border-radius: 50%; background: #B4533D; }

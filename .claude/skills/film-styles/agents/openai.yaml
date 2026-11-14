@@ -1,0 +1,6 @@
+interface:
+  display_name: "Style: Film Styles"
+  short_description: "99 film looks drawn in code, as reels or YouTube explainers: whiteboard, stick figures, cel anime, newsreel, 3D maps, tilt-shift…"
+  default_prompt: "Use $film-styles with $edit-video to make a 30-second reel in the Whiteboard style about this topic, with a free local voice and a sound on every action."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Planör nasıl uçar? — Blueprint</title>
+    <style>
+      @font-face {
+        font-family: 'Architects Daughter';
+        font-weight: 400;
+        src: url('assets/fonts/ArchitectsDaughter-Regular.ttf')
+          format('truetype');
+      }
+      @font-face {
+        font-family: 'IBM Plex Mono';
+        font-weight: 500;
+        src: url('assets/fonts/IBMPlexMono-Medium.ttf') format('truetype');
+      }
+      html,
+      body {
+        margin: 0;
+        background: #0d1116;
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #18336b;
+      }
+      canvas {
+        display: block;
+        width: 1080px;
+        height: 1920px;
+      }
+      .preload {
+        position: absolute;
+        left: -9999px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="48.79"
+      data-width="1080"
+      data-height="1920"
+      data-no-timeline
+    >
+      <canvas id="c" width="2160" height="3840"></canvas>
+      <span class="preload" style="font-family: 'Architects Daughter'"
+        >İıŞşĞğ</span
+      ><span
+        class="preload"
+        style="font-family: 'IBM Plex Mono'; font-weight: 500"
+        >İıŞşĞğ</span
+      >
+    </div>
+    <script>
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      window.__hf.buildReady.scene = new Promise((r) => {
+        window.__sceneReady = r;
+      });
+    </script>
+    <script src="assets/timing.js"></script>
+    <script src="assets/plan.js"></script>
+    <script src="assets/bp.js"></script>
+    <script src="assets/film.js"></script>
+    <script>
+      let ready = false,
+        pending = 0;
+      window.addEventListener('hf-seek', (e) => {
+        pending = e.detail.time;
+        if (ready) window.__film.draw(pending);
+        else if (e.detail.waitUntil)
+          e.detail.waitUntil(
+            window.__film.ready.then(() => window.__film.draw(pending)),
+          );
+      });
+      window.__film.ready.then(() => {
+        ready = true;
+        window.__film.draw(pending);
+        window.__sceneReady();
+      });
+    </script>
+  </body>
+</html>

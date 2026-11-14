@@ -12,6 +12,23 @@ koddan çizilir. Motor `.claude/skills/cinematic-film/` içindedir (dışarıdan
 **Önce o klasördeki `SKILL.md` dosyasını oku**: iş akışı, kurallar ve komutlar orada. Bu dosya
 yalnızca projeye özgü farkları söyler. İnsanlar için rehber: `docs/explainer-guide.md`.
 
+## Hangi motor?
+
+İki çizim yolu var; ikisi de koddan çizer, ücretsizdir, aynı kaynak ve onay kurallarına uyar.
+
+|               | Skia yolu (`cinematic-film`)                                                                    | Stil yolu (`film-styles` + `edit-video`, HyperFrames)                                                                                        |
+| ------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Görünüm       | Düz dolgulu renkli 2B şema, sahneden sahneye kayma                                              | 99 hazır "film görünümü"nden biri (ozalit, beyaz tahta, kesit çizimi, eskiz defteri…); her birinin düzen, yazı, hareket ve ses kuralı yazılı |
+| Ne zaman      | Renkle anlam taşıyan şemalar (sıcak/soğuk, kuvvet renkleri), fotoğraf ve haritalı olay filmleri | Kaydırmayı durduracak belirgin bir görsel kimlik, seri formatı ("Nasıl çalışır? · Pafta 01"), kelimeye kilitli çizim ve ses efekti           |
+| Dil           | Python + Skia                                                                                   | HTML canvas / SVG + JS; tarayıcıda kare kare render                                                                                          |
+| Kelime zamanı | Harf payından tahmin (±0,3 sn)                                                                  | edge-tts'in kendi kelime zamanları (ölçülen sapma ~0,05 sn)                                                                                  |
+| Altyazı       | SRT + ffmpeg ile gömme                                                                          | Kompozisyonun içinde, stilin kendi "not kutusu" olarak                                                                                       |
+| Render        | 66 sn film birkaç dakika                                                                        | 48,8 sn film 1 dk 18 sn (M4, 4 işçi)                                                                                                         |
+| Kılavuz       | Bölüm 5-7                                                                                       | Bölüm 8                                                                                                                                      |
+
+Kararsızsan: mekanik "nasıl çalışır" konusu ve seri düşünülüyorsa stil yolu; fotoğraf, harita ya da
+çok renkli akış gerekiyorsa skia yolu. Aşağıdaki akış, doğruluk ve hassasiyet kuralları ikisinde aynıdır.
+
 ## Akış: istekten videoya
 
 İki tür video var; ikisi de aynı akıştan geçer:
@@ -49,10 +66,21 @@ Adımlar (✋ = kullanıcı onayı beklenir):
      gerektiren konu bu yöntemle zayıf kalır. Öyleyse söyle ya da listeye koyma.
    - **Kaynak adayları** 2 tane; biri birincil olmaya aday (kurum, resmî rapor, hakemli yayın).
    - Gerçek olay önerisinde hassasiyet notunu ekle (ör. "can kaybı var; saygılı anlatım").
+   - **Kanıt düzeyi** (`find-ideas` kuralı): konunun kısa videoda işlediğine dair bir örnek
+     bulduysan yaz. Bir örnek ancak **kendi kanalının ölçüsüyle** kanıttır: izlenmesi, o kanalın
+     yakın tarihli benzer videolarının medyanının **en az 3 katı** ise "kanıtlı" de ve izlenme,
+     medyan, örnek sayısı, yayın ve bakış tarihini yaz. Kanal ortalamasını bilmiyorsan "format
+     örneği" de (yapı için işe yarar, kancanın tuttuğunu kanıtlamaz). Örnek yoksa "özgün" yaz;
+     uydurma izlenme sayısı yazma. Sırala: kanıtlı olanlar üstte. Alınan şey kanca kalıbı, yapı ve
+     tempodur; görüntü, ses, çizim alınmaz. Kanıt düzeyi olguların doğruluğu hakkında hiçbir şey
+     söylemez: iki kaynak kuralı ayrıca geçerlidir.
 
 3. ✋ **Seçim.** Kullanıcı bir ya da birkaç konu seçer; seçilmeyenler için iş yapılmaz.
 4. ✋ **Senaryo.** Seçilen konu için tam araştırma (bölüm 1), `script.json` ve `fact_notes`;
    kullanıcı senaryoyu ve olguları onaylar. Onaysız seslendirme ve çizime başlanmaz.
+   Kancayı ve ara kancaları `write-script` yöntemiyle kur: ilk beş saniye tek birim (kanca +
+   gerçek bir sayı + açık bırakılan soru), her iki-üç cümlede bir yeni soru ya da vuruş, sonda
+   sorunun cevabı. O skill'in "abartı serbest" tavrı burada olgu kuralının altındadır.
 5. **Üretim.** Seslendirme → zamanlama → `scene.py` (bölüm 5 ve 6) → kare kontrolü → render →
    altyazı. Bittiğinde dosya yolu, süre, sahne listesi ve kaynaklarla birlikte teslim et.
 
@@ -242,7 +270,7 @@ mercan = ağırlık/kayıp, camgöbeği = hava). Bir rengin anlamı film boyunca
 
 Süre: 66 saniyelik filmin 1080×1920 render'ı birkaç dakika sürer; 540×960 tek kare ~0,1 sn, yani taslak döngüsü hızlıdır.
 
-### 7. Dosyalar
+### 7. Dosyalar (skia yolu)
 
 - Proje klasörü repo dışında: `~/ai-influencer-films/<kısa-ad>/`. Video, ses ve indirilen
   görseller repoya girmez.
@@ -259,10 +287,98 @@ Süre: 66 saniyelik filmin 1080×1920 render'ı birkaç dakika sürer; 540×960 
 - Bittiğinde: `out/final.mp4`, `credits.md` ve kaynak listesi (`fact_notes`) birlikte teslim
   edilir. Panelde içerik kartı açarken kaynak türü ve notlara bunları yaz.
 
+### 8. Stil yolu: `film-styles` + `edit-video` (denendi: `ornek/planor-stil/`)
+
+Dışarıdan alınan beş skill (`find-ideas`, `write-script`, `edit-video`, `film-styles`,
+`animated-explainer`; kaynak ve değişiklikler `.claude/skills/edit-video/KAYNAK.md`) bu yolun
+parçasıdır. Önce `film-styles/SKILL.md`, seçtiğin stilin `STYLE.md` dosyası,
+`film-styles/references/directing.md` ve `building.md` okunur. Bu bölüm yalnızca projeye özgü
+farkları ve çalıştığı görülen komutları verir. FavStash servisi, CLI'ı ve `publish-and-analyze`
+kullanılmaz; yayın panelden yapılır.
+
+Çalışan örnek: `ornek/planor-stil/` ("Planör nasıl uçar?", Blueprint/ozalit stili, 48,8 sn, dokuz
+şekil). `assets/bp.js` yeniden kullanılabilir çizim motorudur (kâğıt dokusu, uçta kalemle çizilen
+yol, tarama, ölçü çizgisi, balon, soldan sağa yazılan yazı, etiket); `assets/film.js` sahneler,
+`assets/plan.js` sahne başlangıçları ve ses işaretleridir. Yeni film = bu klasörü kopyala,
+`spec.py`, `plan.js` ve `film.js` içindeki sahneleri değiştir.
+
+**Bir kez kurulum** (repo dışında; ~410 MB, Chrome olarak makinedeki Google Chrome kullanılır):
+
+```
+node .claude/skills/edit-video/scripts/init-workspace.mjs --workspace ~/ai-influencer-films --install
+node .claude/skills/edit-video/scripts/doctor.mjs --workspace ~/ai-influencer-films
+```
+
+HyperFrames 0.8.32, GSAP 3.14.2 ve three 0.168.0 `~/ai-influencer-films/.favstash-studio/runtime/`
+altına kurulur. Python tarafı skia yoluyla aynı sanal ortamdır (`numpy`, `edge-tts`).
+
+**Her film için** (`R=~/ai-influencer-films/<ad>`, `PY=~/.local/share/ai-influencer-film-venv/bin/python`,
+`S=.claude/skills`, `HF=~/ai-influencer-films/.favstash-studio/runtime/node_modules/.bin/hyperframes`):
+
+```
+cp -R $S/anlatim-videosu/ornek/planor-stil $R          # iskelet; sonra spec.py, plan.js, film.js yazılır
+$PY $S/anlatim-videosu/scripts/edge_takes.py $R        # satır başına edge-tts kaydı + kelime zamanları
+$PY $S/edit-video/scripts/voice.py $R --engine files   # sesi kilitler: voice/vo.wav, voice/timing.json
+$PY $S/anlatim-videosu/scripts/zaman_js.py $R          # assets/timing.js + out/captions.srt
+node $R/tools/cues.mjs                                 # plan.js -> cues.json
+export HYPERFRAMES_NO_TELEMETRY=1 HYPERFRAMES_NO_UPDATE_CHECK=1
+$HF lint $R < /dev/null
+$R/tools/shots.sh a 0,0.5,3,7.5,12.6                   # kareler: snapshots/a/sheet-N.jpg (3'lü tabaka), bak
+$HF render $R --fps 30 --quality high --workers 4 --output $R/previews/<ad>-v01.mp4 < /dev/null
+node $S/edit-video/scripts/sfx-sync.mjs mix $R/cues.json --voice $R/voice/vo.wav \
+  --out $R/out/mix-v01.wav --video $R/previews/<ad>-v01.mp4 --mux $R/out/<ad>-tr.mp4
+node $S/edit-video/scripts/sfx-sync.mjs check $R/out/<ad>-tr.mp4 --mix $R/out/mix-v01.wav \
+  --cues $R/cues.json --strips $R/reports/sync-v01 --min-gain 0
+```
+
+`spec.py` içinde `LINES` ekranda görünecek haliyle yazılır ("3.000 kilometre"), okunuş `SPOKEN`
+sözlüğüne (`{'3.000': 'üç bin'}`); `" | "` altyazı parçasını böler, sesi etkilemez. Ses ve hız:
+`VOICE = 'tr-TR-AhmetNeural'`, `RATE = '+8%'`. Paketin Kokoro ve ElevenLabs seçenekleri kullanılmaz
+(Kokoro'da Türkçe ses yok, ElevenLabs ücretli); `hyperframes tts` ve `hyperframes transcribe`
+çalıştırma, model indirirler.
+
+**Düzen (1080×1920, paketin güvenli alanı).** Okunması gereken her şey x 72-900, y 269-1248
+içinde: başlık y 280-360, şekil y 390-1050, altyazı kutusu alt kenarı y 1236 ve en çok 720 px
+genişlik, x=540 ortalı. y 1248'in altı ve üstteki 269 px platform arayüzünün altında kalır: oraya
+yalnızca dekor (örnekte GENEL NOTLAR sütunu, antet, seri adı). Bu, skia yolundaki altyazı bandından
+(alttan %22) daha yukarıdadır; iki yolun ölçülerini karıştırma.
+
+**Tuzaklar (hepsi bu filmde yaşandı)**
+
+- Paketin belgelerindeki `--quality delivery` sabitlenen sürümde yok ("Invalid quality"); `high` kullan.
+- `hyperframes render` ve `snapshot` iş bitince girdi bekleyip dakikalarca asılı kalabiliyor
+  (2 saniyelik render 3 dakika sürdü). Her komuta `< /dev/null` ekle.
+- Yazı tipi: stil rehberinin önerdiği B612 Mono'da ve `animated-explainer` paketindeki üç yazı
+  tipinde İ ı Ş ş Ğ ğ yoktu (eksik harf başka yazı tipiyle çizilir, kimse hata vermez). Seçmeden
+  önce harfleri denetle; örnekte Architects Daughter + IBM Plex Mono var, ikisi de tam.
+- Architects Daughter'da "1" büyük "I" gibi görünür; sayıları mono yazı tipiyle yaz. Ok (→)
+  karakteri yok; oku çiz.
+- edge-tts kelime zamanları sese göre ~0,05 sn erken; `edge_takes.py` bunu düzeltir. `voice.py`
+  satırlar arasına yalnızca 0,14 sn koyar; duraklama istiyorsan cümleyi aynı satırda noktayla böl
+  (edge-tts noktada ~1 sn bekler).
+- Sahne kesmesinde boş kare: yeni sahnenin ilk çizgileri kesmeden **önce** başlamalı
+  (`ramp(t, a - 0.5, …)`), yoksa ilk kareler yalnız zemin çizgisidir (termik sahnesinde oldu).
+- Kelimeye bağlı öğe, kelime gelene kadar görünmez: `eback(0)` gibi sıfıra çok yakın değerler
+  başıboş bir ok ucu çizdi. Koşulu ilerleme değerine değil zamana bağla (`t > t_kelime`).
+- Solan etiketle yeni büyük yazı aynı yere düştü ("ÇEKİCİ UÇAK" / "HALAT BIRAKILDI"). Her
+  sahnenin başını, ortasını ve sonunu ayrı karelerde gör.
+- Büyük yazı zaten cümleyi söylüyorsa (MOTOR YOK) altyazı kutusunu o parça için kapat; iki
+  transkript katmanı üst üste biner (`HIDE_CAPTION`).
+- Ses işaretini olayın ilk göründüğü kareye koy; `check --strips` tabakasında kırmızı kare olayın
+  ilk karesi değilse `plan.js`'teki zamanı düzelt (damga bir kare geç kalmıştı).
+- Çalışma klasörünü repo içinde açma: `init-workspace.mjs` bulunduğu yere `.favstash-studio/`
+  kurar (`.gitignore`'da, ama 400 MB).
+
+Bilinen eksikler: müzik yok (paket müzik içermez; kendi lisanslı parçan olursa `cues.json`'a
+`"bed": true` ile eklenir), kalem/kâğıt sesi yok, stilin WebGL kâğıt bileşimi yerine Canvas 2D
+kullanıldı. `animated-explainer` örneği derleniyor ve lint'ten geçiyor, ancak denemede anlık
+görüntülerde üstteki konuşma satırı görünmedi ve tam render alınmadı; o stili kullanmadan önce
+kısa bir render ile doğrula.
+
 ## Teslimden önce
 
 - [ ] Her olgunun kaynağı `fact_notes` içinde, kullanıcı senaryoyu onayladı
-- [ ] İlk 2 saniye kanca; süre 45-90 sn
+- [ ] İlk 2 saniye kanca; süre 45-90 sn (stil yolunda ilk karede konu ve iddia yazılı)
 - [ ] 1080×1920, altyazı gömülü ve güvenli alanda, Türkçe karakterler doğru
 - [ ] Her sahnede anlatımı taşıyan hareketli bir çizim var; ekrandaki yazı kısa etiket
 - [ ] Her satırdan bir kareye baktın; karanlık, taşan, üst üste binen öğe yok

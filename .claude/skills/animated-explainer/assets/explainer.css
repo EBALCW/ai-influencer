@@ -1,0 +1,88 @@
+/* Animated explainer: one full-bleed lit colour field per scene, one hero object, the spoken line big and word-lit at the
+   top, and an optional cartoon character as a small cursor that drives the UI. 1080x1920.
+   Text and explained UI stay inside the safe area; decoration and the cursor may leave it. */
+:root { --cream: #FBF4EA; --ink: #15161A; --mut: #8A8578; --line: #E9E2D6; --yel: #F4C95D; --red: #C2412B; --ok: #1F8A5B;
+  --pink: #F05AA6; --violet: #7C5CFF;
+  --sans: "Inter Tight", "Helvetica Neue", sans-serif; --serif: "Instrument Serif", Georgia, serif; --mono: "Geist Mono", Menlo, monospace; }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; background: #000; }
+#root { position: relative; width: 1080px; height: 1920px; overflow: hidden; font-family: var(--sans); color: var(--cream); background: #0A1124; }
+
+/* fields */
+.field { position: absolute; inset: 0; }
+.f-clay   { background: radial-gradient(85% 52% at 50% 40%, #C8644B 0%, #B4533D 50%, #8C3C2B 100%); }
+.f-forest { background: radial-gradient(85% 52% at 50% 44%, #23705F 0%, #17574A 50%, #0D372E 100%); }
+.f-night  { background: radial-gradient(60% 34% at 50% 56%, rgba(84,70,200,.36) 0%, transparent 100%), radial-gradient(90% 60% at 50% 40%, #16204A 0%, #0A1124 60%, #060A17 100%); }
+.f-ink    { background: radial-gradient(70% 44% at 50% 46%, #22252D 0%, #15161A 60%, #0B0C0F 100%); }
+.f-cream  { background: radial-gradient(85% 52% at 50% 40%, #FFF9F0 0%, #F6EEE1 55%, #EADFCC 100%); color: var(--ink); }
+.f-lilac  { background: radial-gradient(85% 52% at 50% 40%, #F3F0FE 0%, #E7E2FB 55%, #D6CFF4 100%); color: var(--ink); }
+.f-ultra  { background: radial-gradient(85% 52% at 50% 42%, #5147F0 0%, #3D34E6 50%, #2A22B8 100%); }
+.f-peach  { background: radial-gradient(85% 52% at 50% 40%, #FDEFDF 0%, #FAE3CC 55%, #F1CDAC 100%); color: var(--ink); }
+#grain { display: none; }
+#vig { position: absolute; inset: 0; pointer-events: none; z-index: 89; background: radial-gradient(ellipse 80% 64% at 50% 46%, transparent 55%, rgba(4,6,14,.32) 100%); }
+
+/* scene layers: .scene (timed clip) > .field + .cam (slow push) */
+.scene { position: absolute; inset: 0; }
+.cam { position: absolute; inset: 0; transform-origin: 540px 900px; }
+
+/* HUD: tiny, quiet */
+#hud { position: absolute; left: 128px; right: 180px; top: 276px; display: flex; justify-content: space-between; align-items: center; z-index: 60;
+  font: 500 23px/1 var(--mono); letter-spacing: .04em; color: rgba(251,244,234,.6); }
+#hud.dark { color: rgba(21,22,26,.55); }
+#hud .bar { position: absolute; left: 0; right: 0; top: 36px; height: 3px; border-radius: 3px; background: rgba(251,244,234,.16); overflow: hidden; }
+#hud.dark .bar { background: rgba(21,22,26,.12); }
+#hud .bar i { position: absolute; inset: 0; background: currentColor; transform-origin: 0 50%; transform: scaleX(0); }
+
+/* the spoken line, big, word-lit */
+#say { position: absolute; left: 128px; width: 800px; top: 330px; z-index: 50; }
+.ph { position: absolute; left: 0; top: 0; width: 800px; padding-bottom: 14px; font-weight: 640; font-size: 84px; line-height: 1.0; letter-spacing: -.035em; opacity: 0; }
+.ph.big { font-size: 112px; letter-spacing: -.042em; line-height: .97; }
+.ph .w { display: inline-block; color: var(--dimc, rgba(251,244,234,.42)); }
+.ph .w.i { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -.005em; font-size: 1.1em; line-height: .9; }
+.dark-text .ph .w { color: rgba(21,22,26,.26); }
+
+/* cards */
+.card { position: absolute; background: #FFFFFF; color: var(--ink); border-radius: 40px;
+  box-shadow: 0 2px 0 rgba(255,255,255,.6) inset, 0 42px 84px -24px rgba(8,6,4,.48), 0 12px 24px -10px rgba(8,6,4,.26); }
+.card.cream { background: #F6F1E9; }
+.card.inkc { background: #15161A; color: var(--cream); box-shadow: 0 42px 84px -24px rgba(0,0,0,.6), 0 0 0 1.5px rgba(255,255,255,.08) inset; }
+.mono { font-family: var(--mono); font-weight: 500; }
+.k { font: 500 23px/1 var(--mono); color: var(--mut); letter-spacing: .03em; text-transform: uppercase; }
+.thumb { border-radius: 16px; background-size: cover; background-position: center; }
+.pill { display: inline-flex; align-items: center; gap: 12px; padding: 13px 20px; border-radius: 999px; font: 600 26px/1 var(--sans); }
+.plat { width: 46px; height: 46px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center; font: 700 22px/1 var(--sans); color: #fff; flex: none; }
+.plat.ig { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
+.plat.tt { background: #111; } .plat.yt { background: #FF0033; } .plat.li { background: #0A66C2; } .plat.x { background: #000; }
+.ripple { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 4px solid rgba(251,244,234,.95); opacity: 0; z-index: 79; pointer-events: none; }
+
+/* The character as a cursor: #ava is moved (x/y = the arrow tip); .badge holds the lip-synced rig in a circle */
+#ava { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 80; }
+#ava .arrow { position: absolute; left: -5px; top: -5px; width: 46px; height: 58px; filter: drop-shadow(0 6px 8px rgba(0,0,0,.35)); transform-origin: 5px 5px; }
+#ava .bw { position: absolute; left: 30px; top: 40px; width: 204px; height: 204px; transform-origin: 0 0; }  /* whole head, hair and collar */
+#ava .badge { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: var(--yel); border: 6px solid var(--cream);
+  box-shadow: 0 18px 30px -10px rgba(0,0,0,.5); }
+#ava .ring { position: absolute; inset: -12px; border-radius: 50%; border: 3px solid rgba(244,201,93,.9); opacity: 0; }
+#ava .name { position: absolute; left: 172px; top: 170px; padding: 10px 18px; border-radius: 999px; background: var(--yel); color: var(--ink); font: 650 27px/1 var(--sans); white-space: nowrap; }
+#ava #presenter { -webkit-mask-image: none; mask-image: none; z-index: auto; }
+#ava #pr-glow { filter: none !important; }
+#ava #pr-zzz { display: none; }
+
+/* The second voice's lines: a small tag and warmer type, so a viewer with the sound off knows who's speaking */
+.ph.guest .tag { display: block; width: fit-content; margin-bottom: 14px; padding: 9px 16px 9px 44px; border-radius: 999px; position: relative;
+  font: 600 26px/1 var(--sans); letter-spacing: 0; color: #2A1A12; background: #F2C1A8; }
+.ph.guest .tag::before { content: ''; position: absolute; left: 14px; top: 50%; width: 20px; height: 20px; margin-top: -10px; border-radius: 50%;
+  background: var(--guest-dot, #D97757); }
+.ph.guest .w { font-style: normal; }
+
+/* unlit words on light fields stay readable (dark-text phrases) */
+.ph.dark .w { --dimc: rgba(21,22,26,.26); }
+
+/* ---------- hook hit: on the hook's key word a light streak slashes the hero card and a stamp slams on ---------- */
+.hk-slash { position: absolute; left: -8%; width: 116%; top: 50%; height: 12px; margin-top: -6px; border-radius: 6px; z-index: 5; pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,0), #FFFFFF 18%, #F6D5C2 55%, #D97757); box-shadow: 0 0 22px 6px rgba(217,119,87,.55);
+  transform-origin: 100% 50%; transform: rotate(-24deg) scaleX(0); }
+.hk-stamp { position: absolute; left: 50%; top: 50%; z-index: 6; pointer-events: none; text-align: center; white-space: nowrap;
+  transform: translate(-50%, -50%) rotate(-8deg); padding: 14px 28px 16px; border: 7px solid currentColor; border-radius: 18px;
+  background: rgba(251,244,234,.94); color: #C2412B; font: 900 76px/1 var(--sans); letter-spacing: -.01em; text-transform: uppercase;
+  box-shadow: 0 18px 40px -14px rgba(0,0,0,.5); opacity: 0; }
+.hk-stamp small { display: block; margin-top: 8px; font: 700 22px/1 var(--mono); letter-spacing: .12em; }

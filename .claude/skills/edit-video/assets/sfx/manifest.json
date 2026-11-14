@@ -1,0 +1,298 @@
+{
+  "schemaVersion": 1,
+  "title": "FavStash Short-Form SFX Pack",
+  "generatedBy": "scripts/generate-sfx.mjs",
+  "guidance": "Choose a sound for a visible event and audition it against speech. Prefer the creator's established library when they have one; ordinary caption changes stay silent.",
+  "count": 16,
+  "sounds": [
+    {
+      "id": "clean-ding",
+      "title": "Clean Ding",
+      "file": "clean-ding.wav",
+      "durationSeconds": 0.55,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "success",
+        "reveal",
+        "bright"
+      ],
+      "recommendedUse": "A positive result or satisfying completion; use sparingly.",
+      "sha256": "26f2540b63529cc1dcedfc8037ad314a93dc7d24073c7026f7a6bf101e3d5834",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "sub-impact",
+      "title": "Sub Impact",
+      "file": "sub-impact.wav",
+      "durationSeconds": 0.64,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "impact",
+        "reveal",
+        "low"
+      ],
+      "recommendedUse": "One important claim, number, or final reveal—not every cut.",
+      "sha256": "c910408bd9f2ca52ceff846cda65207ed218e928ccde1d494694de81c694b157",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "typing-tick",
+      "title": "Typing Tick",
+      "file": "typing-tick.wav",
+      "durationSeconds": 0.055,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "typing",
+        "input",
+        "ui"
+      ],
+      "recommendedUse": "Occasional typed-character accents; never repeat on every letter for long copy.",
+      "sha256": "343a4fb37d25eded633c23cdd035c188b5be07c7313224a8ed33728b0ebfe3dc",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "sparkle",
+      "title": "Sparkle",
+      "file": "sparkle.wav",
+      "durationSeconds": 0.72,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "delight",
+        "highlight",
+        "bright"
+      ],
+      "recommendedUse": "A delightful payoff or premium highlight; keep below the voice.",
+      "sha256": "ac0bed2ac2ff2fe4cf1c42ec5914d4e4d9e271fc8d4801c5f3f293fb06dbf846",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "tick",
+      "title": "Tick",
+      "file": "tick.wav",
+      "durationSeconds": 0.09,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "step",
+        "mechanical",
+        "precise"
+      ],
+      "recommendedUse": "One step, checklist row or spec callout landing; keep it quiet under the voice.",
+      "sha256": "2f3d2096c09a999a57a82553a644c34e79d34540b4bd724e7d94ae854c409b47",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "latch",
+      "title": "Latch",
+      "file": "latch.wav",
+      "durationSeconds": 0.2,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "lock",
+        "connected",
+        "mechanical"
+      ],
+      "recommendedUse": "Something locks, closes or connects: a lid, a clasp, an account linked.",
+      "sha256": "6ec7f81f74a19465d6ab4f1146a546b852bc02a37caedb56b33257149275e2e3",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "ratchet",
+      "title": "Ratchet",
+      "file": "ratchet.wav",
+      "durationSeconds": 0.4,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "progress",
+        "mechanism",
+        "mechanical"
+      ],
+      "recommendedUse": "Progress or a mechanism engaging: a dial turning, a setting stepping into place.",
+      "sha256": "3de2919ecc696c2094b376c82c1ed618538b36bca236fed941a6d3e08914909f",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "thock",
+      "title": "Thock",
+      "file": "thock.wav",
+      "durationSeconds": 0.12,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "land",
+        "settle",
+        "wood"
+      ],
+      "recommendedUse": "A product, card or block settling into place.",
+      "sha256": "cb319c3cdb55cf37685fdbfa21a365abfb4698acc8a3128f1ad34b145273acb1",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "shimmer",
+      "title": "Shimmer",
+      "file": "shimmer.wav",
+      "durationSeconds": 0.9,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "highlight",
+        "sheen",
+        "premium"
+      ],
+      "recommendedUse": "A highlight or sheen passing over the product; syncs on its peak, keep it under the voice.",
+      "sha256": "41d4a8f508794ed87b66201d08a34514b6e779f21d71599376a9620c955e736f",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "ui-pop",
+      "title": "UI Pop",
+      "file": "ui-pop.wav",
+      "durationSeconds": 0.2,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "arrival",
+        "graphic"
+      ],
+      "recommendedUse": "An element visibly arrives; not every caption.",
+      "suggestedGainDb": -12,
+      "sha256": "9a5ce51433a9a62145c93e68b385664e4d48f19615860dc3b591c64fd11be974",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "ui-click",
+      "title": "UI Click",
+      "file": "ui-click.wav",
+      "durationSeconds": 0.3,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "ui",
+        "selection"
+      ],
+      "recommendedUse": "A visible click, selection or editing action.",
+      "suggestedGainDb": -13,
+      "sha256": "7a7c8d4f950b2735c526181984612c00aa5ff517aa04f4a78332e326c2968804",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "camera-shutter",
+      "title": "Camera Shutter",
+      "file": "camera-shutter.wav",
+      "durationSeconds": 0.31,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "camera",
+        "cut"
+      ],
+      "recommendedUse": "A substantial camera or layout change.",
+      "suggestedGainDb": -11,
+      "sha256": "4c1836fdec8413f11f9537bed2fd3a8a70866283796c3d174cfe51126ea8f791",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "camera-shutter-light",
+      "title": "Light Shutter",
+      "file": "camera-shutter-light.wav",
+      "durationSeconds": 0.16,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "camera",
+        "cut",
+        "subtle"
+      ],
+      "recommendedUse": "A smaller framing or take change.",
+      "suggestedGainDb": -12,
+      "sha256": "dd95a646e7308078a5b6b9f34d46764dd089b05cc9e86ede1355bc93b9b546f0",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "zoom-swish",
+      "title": "Zoom Swish",
+      "file": "zoom-swish.wav",
+      "durationSeconds": 0.76,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "zoom",
+        "movement"
+      ],
+      "recommendedUse": "A motivated zoom; align its rise with travel.",
+      "suggestedGainDb": -8,
+      "sha256": "541441044d8a85cba77e34c96d311fd85a2d955ce82448358d825056efa4f2f2",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "hook-impact",
+      "title": "Hook Impact",
+      "file": "hook-impact.wav",
+      "durationSeconds": 1.9,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "hook",
+        "reveal"
+      ],
+      "recommendedUse": "The payoff of a reveal, below speech.",
+      "suggestedGainDb": -6,
+      "sha256": "a493793ad707fbbd4f1a366c03172d76e3ddaf73ae687157490b5be6346f58fa",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    },
+    {
+      "id": "metallic-riser",
+      "title": "Metallic Riser",
+      "file": "metallic-riser.wav",
+      "durationSeconds": 1.64,
+      "sampleRate": 48000,
+      "channels": 1,
+      "bitDepth": 16,
+      "tags": [
+        "build",
+        "reveal"
+      ],
+      "recommendedUse": "Build anticipation and end at the reveal.",
+      "suggestedGainDb": -6,
+      "sha256": "3f44c39905b2e99135ed47894549da250a23ee1fd306dfc33ab03dfe5c8bc6b9",
+      "license": "Apache-2.0",
+      "provenance": "Deterministically synthesized by scripts/generate-sfx.mjs; contains no third-party recording."
+    }
+  ]
+}
