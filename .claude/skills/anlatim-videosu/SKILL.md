@@ -14,7 +14,7 @@ yalnızca projeye özgü farkları söyler. İnsanlar için rehber: `docs/explai
 
 ## Hangi motor?
 
-İki çizim yolu var; ikisi de koddan çizer, ücretsizdir, aynı kaynak ve onay kurallarına uyar.
+Üç çizim yolu var; hepsi koddan çizer, ücretsizdir, aynı kaynak ve onay kurallarına uyar.
 
 |               | Skia yolu (`cinematic-film`)                                                                    | Stil yolu (`film-styles` + `edit-video`, HyperFrames)                                                                                        |
 | ------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -25,6 +25,8 @@ yalnızca projeye özgü farkları söyler. İnsanlar için rehber: `docs/explai
 | Altyazı       | SRT + ffmpeg ile gömme                                                                          | Kompozisyonun içinde, stilin kendi "not kutusu" olarak                                                                                       |
 | Render        | 66 sn film birkaç dakika                                                                        | 48,8 sn film 1 dk 18 sn (M4, 4 işçi)                                                                                                         |
 | Kılavuz       | Bölüm 5-7                                                                                       | Bölüm 8                                                                                                                                      |
+
+**Üçüncü yol: Blender ile 3D kesit** (`blender/README.md`). Gerilimli gerçek olaylar için: toprağı yandan kesen şema, loş 3D tünel ve oda sahneleri, fener ışığı, yavaş uzun planlar. Mağara, dalış, maden, batık, dağ gibi "içeride ne oldu" hikâyelerinde ilk tercih budur. Altyazı SRT + ffmpeg ile gömülür. Ölçüm: 5 dakikalık film (40 çekim) 720×1280'de render edilip büyütülerek yaklaşık 50 dakika. Çalışan örnek: `ornek/tham-luang-3d/`.
 
 Kararsızsan: mekanik "nasıl çalışır" konusu ve seri düşünülüyorsa stil yolu; fotoğraf, harita ya da
 çok renkli akış gerekiyorsa skia yolu. Aşağıdaki akış, doğruluk ve hassasiyet kuralları ikisinde aynıdır.

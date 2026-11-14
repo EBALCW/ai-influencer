@@ -1,0 +1,179 @@
+{
+  "title": "Mağarada 17 Gün (3D)",
+  "voice": "tr-TR-AhmetNeural",
+  "rate": "-2%",
+  "display": {
+    "Tam": "Tham",
+    "Rik": "Rick",
+    "Stenton.": "Stanton.",
+    "Stenton": "Stanton",
+    "Con": "John",
+    "Volanten.": "Volanthen.",
+    "Volanten": "Volanthen",
+    "Riçard": "Richard",
+    "Heris,": "Harris,",
+    "Heris": "Harris"
+  },
+  "segments": [
+    {
+      "id": "01",
+      "gap": 0.35,
+      "text": "Bir dağın içinde, girişten yaklaşık dört kilometre uzakta, karanlıkta on üç kişi bekliyor. On ikisi çocuk."
+    },
+    {
+      "id": "02",
+      "gap": 0.7,
+      "text": "Önlerindeki su yükseliyor. Soludukları hava azalıyor. Ve dışarı çıkmanın tek yolu, saatlerce su altından geçmek."
+    },
+    {
+      "id": "03",
+      "gap": 0.35,
+      "text": "Yirmi üç Haziran iki bin on sekiz. Tayland'ın kuzeyi. Yaban Domuzları adlı futbol takımından on iki çocuk ve yirmi beş yaşındaki antrenörleri, antrenmandan sonra Tam Luang mağarasına giriyor."
+    },
+    {
+      "id": "04",
+      "gap": 0.35,
+      "text": "Çocuklar on bir ile on altı yaşında. Planları kısa bir gezi. Ama muson yağmuru bastırıyor."
+    },
+    {
+      "id": "05",
+      "gap": 0.4,
+      "text": "Su, arkalarındaki geçitleri birer birer dolduruyor. Geri dönemiyorlar. Daha derine, daha yükseğe kaçmak zorunda kalıyorlar."
+    },
+    {
+      "id": "06",
+      "gap": 0.7,
+      "text": "Akşam olduğunda mağaranın girişinde yalnızca bisikletleri ve çantaları duruyor."
+    },
+    {
+      "id": "07",
+      "gap": 0.35,
+      "text": "Tayland donanmasının dalgıçları içeri giriyor. Ama su çamur renginde, görüş neredeyse sıfır, akıntı çok güçlü."
+    },
+    {
+      "id": "08",
+      "gap": 0.8,
+      "text": "Dışarıda binlerce kişi toplanıyor. Pompalar gece gündüz su çekiyor. Günler geçiyor. İçeriden ses yok."
+    },
+    {
+      "id": "09",
+      "gap": 0.35,
+      "text": "Dokuz gün sonra, iki Temmuz'da, iki İngiliz mağara dalgıcı kılavuz ipini döşeyerek ilerliyor: Rik Stenton ve Con Volanten."
+    },
+    {
+      "id": "10",
+      "gap": 0.5,
+      "text": "Bir hava boşluğunda yüzeye çıkıyorlar. Ve karanlıkta bir fener ışığı görüyorlar."
+    },
+    {
+      "id": "11",
+      "gap": 0.7,
+      "text": "Volanten soruyor: Kaç kişisiniz? Cevap geliyor: On üç. On üçü de hayatta."
+    },
+    {
+      "id": "12",
+      "gap": 0.6,
+      "text": "Dokuz gündür neredeyse hiçbir şey yememişler. Kayalardan damlayan suyu içmişler. Eskiden rahip olan antrenörleri, onlara meditasyonla sakin kalmayı öğretmiş."
+    },
+    {
+      "id": "13",
+      "gap": 0.5,
+      "text": "Ama onları bulmak, kurtarmak demek değil."
+    },
+    {
+      "id": "14",
+      "gap": 0.35,
+      "text": "Çıkışa giden yol kilometrelerce uzunlukta. Büyük bölümü su altında. Bazı geçitler bir insanın zor sığacağı kadar dar. Deneyimli dalgıçlar için bile gidiş dönüş saatler sürüyor."
+    },
+    {
+      "id": "15",
+      "gap": 0.6,
+      "text": "Çocukların hiçbiri dalış bilmiyor. Bazılarının yüzme bile bilmediği düşünülüyor."
+    },
+    {
+      "id": "16",
+      "gap": 0.8,
+      "text": "Seçenekler konuşuluyor. Dağı yukarıdan delmek. Ya da yağmur mevsiminin bitmesini aylarca beklemek. İkisi de umut vermiyor."
+    },
+    {
+      "id": "17",
+      "gap": 0.45,
+      "text": "Altı Temmuz. Eski Tayland donanma komandosu Saman Kunan, gönüllü olarak mağarada. Yol boyunca hava tüpleri yerleştiriyor."
+    },
+    {
+      "id": "18",
+      "gap": 1.0,
+      "text": "Dönüş yolunda bilincini kaybediyor. Kurtarılamıyor. Bu yol, eğitimli bir dalgıç için bile ölümcül."
+    },
+    {
+      "id": "19",
+      "gap": 0.4,
+      "text": "Ve zaman daralıyor. Çocukların bulunduğu bölümde oksijen yüzde on beşe düşüyor. Normal havada bu oran yüzde yirmi bir."
+    },
+    {
+      "id": "20",
+      "gap": 0.8,
+      "text": "Üstelik tahminler yeni bir yağışı gösteriyor. Beklemek artık seçenek değil."
+    },
+    {
+      "id": "21",
+      "gap": 0.5,
+      "text": "Geriye tek bir plan kalıyor. Daha önce hiç denenmemiş bir plan."
+    },
+    {
+      "id": "22",
+      "gap": 0.4,
+      "text": "Su altında paniğe kapılan bir çocuk, hem kendini hem dalgıcı öldürebilir. O yüzden çocuklar uyutulacak."
+    },
+    {
+      "id": "23",
+      "gap": 0.4,
+      "text": "Avustralyalı anestezi uzmanı ve mağara dalgıcı Doktor Riçard Heris, her birine sakinleştirici ve anestezik veriyor. Yüzlerine, oksijen veren tam yüz maskeleri takılıyor."
+    },
+    {
+      "id": "24",
+      "gap": 0.9,
+      "text": "Heris sonradan, planın işe yarayacağına kendisinin de inanmadığını anlatacaktı."
+    },
+    {
+      "id": "25",
+      "gap": 0.4,
+      "text": "Sekiz Temmuz. İlk çocuk, bilinci kapalı halde suya giriyor. Dalgıç onu sıkıca tutuyor, diğer eliyle kılavuz ipini izliyor."
+    },
+    {
+      "id": "26",
+      "gap": 0.6,
+      "text": "Görüş yok. Dar geçitlerde çocuğu önüne alıp kayaların arasından geçiriyor. Yol üstündeki hava boşluklarında bekleyen dalgıçlar nefesini kontrol ediyor. Gerekirse ilacı tazeliyor."
+    },
+    {
+      "id": "27",
+      "gap": 0.6,
+      "text": "Üçüncü odadan sonra çok sayıda kurtarıcı devralıyor. Sedye elden ele, halatlarla, kayaların üzerinden çıkışa taşınıyor."
+    },
+    {
+      "id": "28",
+      "gap": 0.7,
+      "text": "İlk gün dört çocuk. İkinci gün dört çocuk daha. On Temmuz'da son dört çocuk ve antrenörleri."
+    },
+    {
+      "id": "29",
+      "gap": 1.0,
+      "text": "On üçü de hayatta."
+    },
+    {
+      "id": "30",
+      "gap": 0.9,
+      "text": "Son çocuk çıktıktan birkaç saat sonra, ekipler hâlâ içerideyken ana pompa arızalanıyor. Su hızla yükseliyor. Kurtarıcılar aceleyle dışarı çıkıyor."
+    },
+    {
+      "id": "31",
+      "gap": 0.7,
+      "text": "On yedi gün. On binden fazla insan. Ve imkânsız denen bir plan."
+    },
+    {
+      "id": "32",
+      "gap": 1.6,
+      "text": "Mağaranın girişinde bugün Saman Kunan'ın heykeli duruyor. O on üç kişi gün ışığına çıktıysa, bunda onun da payı var."
+    }
+  ]
+}

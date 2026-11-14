@@ -1,0 +1,41 @@
+[0.651, 9.388, 20.146, 34.903, 43.55, 54.199, 59.905, 68.884]
+0:00.0-0:09.1 h1 Oda: karanlıkta 13 figür, yavaş yaklaşma
+0:09.1-0:14.9 h2 Oda: su yükseliyor (alçak kamera)
+0:14.9-0:19.8 h3 Kesit genel: 13 KİŞİ işareti, rota çizilir, YAKLAŞIK 4 KM, şematik notu
+0:19.8-0:25.6 a1 Dağ kesiti + 23 HAZİRAN 2018 başlığı
+0:25.6-0:34.6 a2 Kesit giriş: 13 nokta mağaraya girer, bisikletler
+0:34.6-0:38.1 a3 Kesit: grup 3. odayı geçer
+0:38.1-0:43.2 a4 Dağ + yağmur, MUSON
+0:43.2-0:53.9 a5 Kesit: su yükselir, grup 9. odaya kaçar
+0:53.9-0:59.6 a6 Giriş: bisikletler, çantalar, yağmur
+0:59.6-1:08.6 b1 Bulanık su tüneli: iki dalgıç, tortu akıntısı
+1:08.6-1:20.1 b2 Giriş önü: çadırlar, pompa, boru, kalabalık, GÜN 1-9 sayacı
+1:20.1-1:28.8 c1 Tünel: iki dalgıç kılavuz ipiyle, 2 TEMMUZ 2018
+1:28.8-1:35.7 c2 Oda: su yüzeyinde dalgıç başı, fener çocuklara döner
+1:35.7-1:44.3 c3 Oda: fener ışığında 13 figür, 13 / 13 HEPSİ HAYATTA
+1:44.2-1:52.0 c4 Oda yakın: çocuklar, tavandan damlalar
+1:52.0-1:58.0 c5 Oda: başka açı
+1:58.0-2:01.6 d1 Kesit genel: 9. oda işareti
+2:01.6-2:08.2 d2 Kesit: 9. odadan girişe kayma, rota, SU ALTINDA etiketleri
+2:08.2-2:16.6 d3 Tünel: dar boğazdan geçen dalgıç
+2:16.6-2:23.6 d4 Oda: çocuklar orta plan
+2:23.6-2:35.9 d5 Kesit genel: YUKARIDAN DELMEK çizgisi + çarpı, AYLARCA BEKLEMEK + çarpı
+2:35.9-2:46.8 e1 Tünel: ip boyunca tüp yerleştiren dalgıç, 6 TEMMUZ 2018
+2:46.8-2:56.7 e2 Tünel: ipte asılı tüpler, sönen ışık, SAMAN KUNAN
+2:56.7-3:06.9 f1 Oda: OKSİJEN %21→%15 göstergesi
+3:06.9-3:14.1 f2 Kesit 9. oda: su yükselir, YENİ YAĞIŞ BEKLENİYOR
+3:14.1-3:20.4 g1 Boş tünel ve ip: TEK PLAN
+3:20.4-3:29.1 g2 Tünel: dalgıç + taşınan çocuk (geniş)
+3:29.1-3:37.5 g3 Oda: yatan çocuk, doktor, DR. RICHARD HARRIS
+3:37.5-3:41.7 g4 Oda: TAM YÜZ MASKESİ
+3:41.7-3:47.9 g5 Oda: su kenarında tek figür, kafa lambası
+3:47.9-3:54.2 i0 Tünel: dalgıç + çocuk, 8 TEMMUZ 2018
+3:54.2-3:58.9 i1 Tünel yakın: dalgıç + çocuk
+3:58.9-4:05.9 i2 Dar boğaz: çocuk önde, dalgıç arkada
+4:05.9-4:14.5 i3 Kesit: hava boşluğunda bekleyenler, NEFES KONTROLÜ
+4:14.5-4:24.2 i4 Kesit 3. oda→giriş: insan zinciri, halat, sedye noktası
+4:24.2-4:33.3 i5 Kesit genel: 8/9/10 TEMMUZ, 0→4→8→13 / 13
+4:33.3-4:36.0 i6 Gün ışığı, giriş: 13 / 13 HEPSİ KURTARILDI
+4:36.0-4:49.0 i7 Kesit: POMPA ARIZASI, su yükselir, ekip çıkar
+4:49.0-4:56.8 j1 Dağ: 17 GÜN · 10.000+ İNSAN · 13 HAYAT
+4:56.8-5:08.3 j2 Heykel silueti: SAMAN KUNAN, şematik notu
