@@ -6,6 +6,7 @@ import {
   clipCountFor,
   combine,
   createLoudnessMeter,
+  defaultSkipEnd,
   pickMoments,
   replaySeries,
   robustScale,
@@ -164,4 +165,22 @@ test('klip sayısı yayın süresine göre: 10 dakikaya bir, 3 ile 15 arasında'
   assert.equal(clipCountFor(49 * 60), 5);
   assert.equal(clipCountFor(2 * 3600), 12);
   assert.equal(clipCountFor(8 * 3600), 15);
+});
+
+test('yayın sonu atlanır: sondaki zirve seçilmez, varsayılan %5 ve en çok 2 dakika', () => {
+  const duration = 600;
+  const audio = new Float64Array(duration).fill(0.1);
+  audio.fill(0.9, 300, 305);
+  audio.fill(0.99, 585, 590); // jenerik
+  const moments = pickMoments(combine({ audio }), {
+    top: 5,
+    length: 40,
+    duration,
+    skipEnd: 30,
+  });
+  assert.equal(moments.length, 1);
+  assert.ok(moments[0].peak > 300 && moments[0].peak < 306);
+  assert.equal(defaultSkipEnd(600), 30);
+  assert.equal(defaultSkipEnd(4 * 3600), 120);
+  assert.equal(defaultSkipEnd(null), 0);
 });

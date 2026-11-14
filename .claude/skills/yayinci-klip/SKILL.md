@@ -41,7 +41,13 @@ Kullanıcı yalnızca link verip "kliplerini çıkar" diyorsa ve izin durumu bel
 pnpm clip:auto "<youtube-adresi>" --permission "<izin referansı>"   # ya da --open-license "<lisans>" / --own
 ```
 
-İndirir, anları bulur, yayın süresine göre 3-15 klibi altyazılı keser (`clips/`, `clips.json`). Sonra 4. adımdaki kontrolü her klip için yap ve kullanıcıya seçim listesini sun. Puan öneridir: jenerik, bekleme ekranı ya da bağlamsız anlar da yüksek puan alabilir; bunları ele ve gerekirse aşağıdaki adımlarla elle kes.
+Bunu her zaman iki geçişte çalıştır; adaylara bakmadan kesme:
+
+1. Komutun sonuna `--preview-only` ekle. İndirir, anları bulur, her aday için `clips/onizleme/<sıra>-<başlangıç>.jpg` kare şeridini yazar ve durur.
+2. Şeritlerin **hepsini** Read ile aç ve her adayı değerlendir. Şunları ele: jenerik ve isim listesi, bekleme/"başlıyor"/"bitti" ekranı, donuk ya da boş sahne, reklam arası, bağlamı olmayan geçiş. Emin değilsen `moments.json` içindeki transkripte bak.
+3. Aynı komutu `--preview-only` olmadan, elediklerinle çalıştır: `--exclude 1,3`. Yerlerine sıradaki adaylar kesilir.
+
+Puan yalnızca tekrar izlenme, sohbet ve ses sinyalidir; içeriği görmez. İlk denemede en yüksek puanlı üç adayın üçü de jenerikti. Kullanıcıya klipleri sunarken neyi neden elediğini de yaz.
 
 **Videolar Türkçe yayınlanır.** Kaynak Türkçe değilse komuta `--translate tr` ekle. İlk çalıştırma `clips/altyazi/<ad>.srt` dosyalarını bırakır ve durur. Her birini kendin Türkçeye çevirip `<ad>.tr.srt` olarak yaz, sonra aynı komutu yeniden çalıştır.
 

@@ -38,6 +38,7 @@ pnpm clip:auto "https://www.youtube.com/watch?v=<id>" --permission "<izin refera
 
 İndirir, en güçlü anları bulur ve hepsini `~/ai-influencer-clips/<id>/clips/` altına keser. Dosyalar puana göre sıralıdır (`01-…` en güçlü); `clips.json` her klibin aralığını, puanını ve transkriptini tutar. Hepsini izleyip yayınlanacakları seçersin.
 
+- **Önce adaylara bak.** Puan içeriği görmez: jenerik, bekleme ekranı ya da "yayın bitti" kartı da yüksek puan alabilir. `--preview-only` ekleyince kesim yapılmaz; her adayın 6 karelik şeridi `clips/onizleme/` altına yazılır. Klip olmayacak adayları `--exclude 1,3` ile ele; yerlerine sıradaki adaylar kesilir (istenen sayının yarısı kadar yedek aday bulunur). Yayının son %5'i (en çok 2 dakika) kendiliğinden atlanır; `clip:moments --skip-end` ile değiştirilebilir.
 - Klip sayısı yayın süresine göre seçilir: 10 dakikaya bir klip, en az 3, en çok 15. Elle vermek için `--count 8`.
 - Kaynakta altyazı varsa kliplere gömülür; istemiyorsan `--no-subs`.
 - **Türkçe altyazı:** kaynak başka dildeyse `--translate tr` ekle. İlk çalıştırmada klipler kesilmez; her klibin metni `clips/altyazi/<ad>.srt` olarak ayrılır. Çevirisini aynı klasöre `<ad>.tr.srt` adıyla koyup aynı komutu yeniden çalıştırınca klipler Türkçe altyazıyla kesilir. Çeviride satır numaraları ve zamanlar aynı kalır, yalnız metin değişir. YouTube'un otomatik Türkçe çevirisi çoğu zaman istek sınırına takıldığı için kullanılmıyor.
