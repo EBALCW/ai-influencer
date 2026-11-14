@@ -21,6 +21,17 @@ Agent'tan istemek için: "Havacılıkla ilgili anlatım videosu fikirleri ver" y
 
 Çizimle iyi anlatılan konular şemaya dökülebilenlerdir: mekanizma, akış, ölçek, rota, karşılaştırma. Yüz, kalabalık ya da gerçekçi görüntü gerektiren konular bu yöntemle zayıf kalır; agent öneri listesinde bunu belirtir.
 
+## İki çizim yolu
+
+| Yol                                              | Görünüm                                                                     | Ne zaman                                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Skia (`cinematic-film`)                          | Düz dolgulu renkli 2B şema                                                  | Renkle anlam taşıyan şemalar, fotoğraf ve haritalı olay filmleri           |
+| Stil (`film-styles` + `edit-video`, HyperFrames) | 99 hazır görünümden biri: ozalit, beyaz tahta, kesit çizimi, eskiz defteri… | Belirgin görsel kimlik, seri formatı, kelimeye kilitli çizim ve ses efekti |
+
+Stil yolu açık kaynak `alisadiq-ai/favstash-ai-video-editing-skills` paketinden alınan beş skill ile çalışır (Apache-2.0; ne alındı, ne değişti: `.claude/skills/edit-video/KAYNAK.md`). Paketin FavStash servisine bağlanan yayın ve analitik kısmı alınmadı; yayın panelden yapılır. Paketten gelen iki yöntem akışa işlendi: konu önerisinde "kanıtlı = örnek videonun izlenmesi kendi kanalının medyanının en az 3 katı" ölçüsü, senaryoda ilk beş saniyelik kanca ve ara kancalar. Türkçe ses yine `edge-tts` iledir. Komutlar ve tuzaklar skill'in 8. bölümünde.
+
+Stil yolunun bir kez yapılan kurulumu: Node 22+ ve `node .claude/skills/edit-video/scripts/init-workspace.mjs --workspace ~/ai-influencer-films --install` (HyperFrames 0.8.32 + GSAP, ~410 MB, repo dışında; render için makinedeki Google Chrome kullanılır).
+
 ## Kurallar
 
 | Kural                  | Açıklama                                                                                                                          |
@@ -52,8 +63,10 @@ Akış bu projede iki filmle uçtan uca denendi (macOS):
 | "Mağarada 17 Gün" (13 Kasım 2026)    | Olay          | 46 sn | Yalnızca kart ve sayılar; kare çoğu yerde boş kalıyor            | `.claude/skills/anlatim-videosu/ornek/`        |
 | "Planör Nasıl Uçar?" (14 Kasım 2026) | Nasıl çalışır | 66 sn | On sahne, hepsi hareketli çizim; yazı yalnızca etiket ve üç sayı | `.claude/skills/anlatim-videosu/ornek/planor/` |
 
-İkisi de 1080×1920, `edge-tts` ile Türkçe ses, kodla üretilen ses efektleri ve gömülü Türkçe altyazı. Yeni filme ikinci örnekten başlanır.
+| "Planör Nasıl Uçar?" ozalit sürümü (14 Kasım 2026) | Nasıl çalışır | 49 sn | Stil yolu, Blueprint görünümü: dokuz şekil, canlı ölçüler, not kutusu altyazı | `.claude/skills/anlatim-videosu/ornek/planor-stil/` |
+
+Üçü de 1080×1920, `edge-tts` ile Türkçe ses, kodla üretilen ses efektleri ve gömülü Türkçe altyazı. Skia yolunda yeni filme ikinci örnekten, stil yolunda üçüncü örnekten başlanır.
 
 Denemelerde çıkanlar skill'e işlendi: motorun kendi altyazı gömme adımı dikey videoda çok küçük kalıyor, bu yüzden altyazı SRT olarak alınıp ffmpeg ile gömülüyor; uzun altyazı parçaları çizimin üstüne taştığı için SRT kısa parçalarla üretiliyor (`scripts/kisa_srt.py`); çizimler karenin üst üçte ikisinde, altyazı bandının üstünde tutuluyor. Çizim kalıpları, güvenli alan ölçüleri ve yaşanan hatalar skill'in "Çizimle anlatım" bölümünde.
 
-Bilinen sınırlar: stil düz 2B şemadır (3B ya da gerçekçi görüntü yok); konu önerisi adımı henüz gerçek bir istekle denenmedi; fotoğraf ve haritalı bir olay filmi henüz üretilmedi; Windows'ta denenmedi.
+Bilinen sınırlar: stil yolunda müzik ve kalem/kâğıt sesi yok, `animated-explainer` stili tam render ile denenmedi, yalnızca bir görünüm (Blueprint) üretildi; skia yolunda stil düz 2B şemadır (3B ya da gerçekçi görüntü yok); konu önerisi adımı henüz gerçek bir istekle denenmedi; fotoğraf ve haritalı bir olay filmi henüz üretilmedi; Windows'ta denenmedi.

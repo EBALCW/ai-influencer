@@ -25,3 +25,6 @@ ai-influencer-prompts-*.json
 
 # Python önbelleği (skill script'leri)
 __pycache__/
+
+# edit-video skill'inin çalışma klasörü (repo dışında, ~/ai-influencer-films/ altında tutulur; yanlışlıkla burada oluşursa girmesin)
+.favstash-studio/

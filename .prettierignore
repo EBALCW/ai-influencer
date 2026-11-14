@@ -8,3 +8,10 @@ supabase/functions/deno.lock
 
 # Dışarıdan alınan skill (değiştirilmeden tutulur; bkz. .claude/skills/cinematic-film/KAYNAK.md)
 .claude/skills/cinematic-film/
+
+# Dışarıdan alınan skill'ler (bkz. .claude/skills/edit-video/KAYNAK.md)
+.claude/skills/find-ideas/
+.claude/skills/write-script/
+.claude/skills/edit-video/
+.claude/skills/film-styles/
+.claude/skills/animated-explainer/

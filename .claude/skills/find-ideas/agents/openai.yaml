@@ -1,0 +1,6 @@
+interface:
+  display_name: "Find Ideas"
+  short_description: "Find proven reels to adapt and the next idea to test"
+  default_prompt: "Use $find-ideas to find three proven reels I could adapt for my audience and tell me which one to make first."
+policy:
+  allow_implicit_invocation: true

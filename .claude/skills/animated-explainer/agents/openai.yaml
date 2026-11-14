@@ -1,0 +1,6 @@
+interface:
+  display_name: "Style: Animated Explainer"
+  short_description: "Fully animated reel, no camera: a lit field and one hero card per spoken beat, keyed to the voice"
+  default_prompt: "Use $animated-explainer with $edit-video to turn this script into a fully animated reel with no camera, a free local voice and my cartoon character as the cursor."
+policy:
+  allow_implicit_invocation: true

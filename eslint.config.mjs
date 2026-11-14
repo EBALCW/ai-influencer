@@ -17,6 +17,9 @@ const config = [
       '**/playwright-report/**',
       '**/test-results/**',
       'supabase/functions/**', // Deno ortamı; ayrı lint edilir
+      // Dışarıdan alınan skill'ler ve tarayıcıda çalışan film örnekleri (bkz. .claude/skills/edit-video/KAYNAK.md)
+      '.claude/skills/{find-ideas,write-script,edit-video,film-styles,animated-explainer}/**',
+      '.claude/skills/anlatim-videosu/ornek/**',
     ],
   },
 ];

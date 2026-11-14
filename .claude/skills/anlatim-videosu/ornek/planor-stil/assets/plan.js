@@ -1,0 +1,65 @@
+// Zaman planı: sahne başlangıçları ve ses işaretleri, hepsi sesin kelime zamanlarından.
+// Hem sayfa (index.html) hem de cues.json üreten komut (tools/cues.mjs) bu dosyayı okur.
+(function () {
+  const TM = window.TIMING;
+  const L = (i) => TM.lines[i].start,
+    E = (i) => TM.lines[i].end,
+    Wd = (i, j) => TM.lines[i].words[j].s;
+  const S = [
+    0,
+    L(2) - 0.08,
+    Wd(3, 2) - 0.12,
+    L(4) - 0.08,
+    L(5) - 0.08,
+    L(6) - 0.08,
+    L(7) - 0.08,
+    L(9) - 0.08,
+    L(10) - 0.1,
+    TM.duration,
+  ];
+  const cues = [
+    [Wd(0, 1), 'ui-click', 0, 'pervaneye çarpı'],
+    [Wd(0, 2) + 0.05, 'typing-tick', -2, 'YAKIT YOK yazılıyor'],
+    [Wd(0, 3), 'ui-click', 0, 'depoya çarpı'],
+    [Wd(0, 6), 'ratchet', -2, 'menzil sayacı'],
+    [Wd(0, 8) + 0.36, 'thock', 2, '3.008 KM oturur'],
+    [Wd(1, 3), 'ui-pop', 0, 'NASIL?'],
+    [S[1], 'camera-shutter-light', -3, 'şek. 2'],
+    [Wd(2, 5), 'tick', 0, 'vinç'],
+    [Wd(3, 1), 'latch', 2, 'halat bırakıldı'],
+    [S[2], 'camera-shutter-light', -3, 'şek. 3'],
+    [Wd(3, 5), 'tick', 0, 'yükseklik ölçüsü'],
+    [Wd(3, 6), 'zoom-swish', -4, 'hız oku'],
+    [S[3], 'camera-shutter-light', -3, 'şek. 4'],
+    [Wd(4, 2), 'tick', 0, 'hava aşağı'],
+    [Wd(4, 7), 'ui-pop', 2, 'KALDIRMA'],
+    [S[4], 'camera-shutter-light', -3, 'şek. 5'],
+    [Wd(5, 3), 'tick', 0, '1 km'],
+    [Wd(5, 6) - 0.45, 'ratchet', -2, 'km sayacı'],
+    [Wd(5, 7), 'thock', 2, '40-50 km'],
+    [S[5], 'camera-shutter-light', -3, 'şek. 6'],
+    [Wd(6, 5) + 0.1, 'sub-impact', -3, 'soru işareti'],
+    [S[6], 'camera-shutter-light', -3, 'şek. 7'],
+    [Wd(7, 1), 'ui-pop', 0, 'yükselen hava okları'],
+    [Wd(7, 3), 'tick', 0, 'güneş'],
+    [Wd(7, 8), 'shimmer', -4, 'sütun'],
+    [Wd(7, 12), 'latch', 2, 'TERMİK'],
+    [Wd(8, 4), 'tick', -1, 'tur 1'],
+    [Wd(8, 5), 'tick', -1, 'tur 2'],
+    [Wd(8, 6), 'tick', -1, 'tur 3'],
+    [S[7], 'camera-shutter-light', -3, 'şek. 8'],
+    [Wd(9, 5), 'zoom-swish', -4, 'dalgalar'],
+    [Wd(9, 6), 'ratchet', -2, 'irtifa sayacı'],
+    [Wd(9, 7) + 0.4, 'clean-ding', 0, '22+ KM'],
+    [S[8], 'camera-shutter-light', -3, 'şek. 9'],
+    [Wd(10, 1), 'ui-click', 0, 'motor yok onayı'],
+    [Wd(10, 3), 'ui-click', 0, 'yakıt yok onayı'],
+    [Wd(10, 4), 'thock', 5, 'damga'],
+  ].map(([t, sound, gain, label]) => ({
+    t: Math.round(t * 1000) / 1000,
+    sound,
+    gain,
+    label,
+  }));
+  window.PLAN = { S, L, E, Wd, cues };
+})();
