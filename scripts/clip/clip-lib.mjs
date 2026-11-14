@@ -50,13 +50,19 @@ export function parseTime(value) {
   return parts.reduce((total, part) => total * 60 + part, 0);
 }
 
-export function formatTime(seconds) {
-  const whole = Math.floor(seconds);
+/** `tenths` verilirse saniyenin onda biri korunur ("12:30.4"); parseTime bunu geri okur. */
+export function formatTime(seconds, { tenths = false } = {}) {
+  const total = tenths ? Math.round(seconds * 10) / 10 : seconds;
+  const whole = Math.floor(total);
   const pad = (n) => String(n).padStart(2, '0');
   const h = Math.floor(whole / 3600);
   const m = Math.floor((whole % 3600) / 60);
   const s = whole % 60;
-  return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  const tenth = tenths ? Math.round((total - whole) * 10) : 0;
+  const tail = tenth > 0 ? `.${tenth}` : '';
+  return h > 0
+    ? `${h}:${pad(m)}:${pad(s)}${tail}`
+    : `${pad(m)}:${pad(s)}${tail}`;
 }
 
 export function validateRange(start, end, duration) {
@@ -91,6 +97,7 @@ function cleanCueText(line) {
 /**
  * WebVTT veya SRT metnini satırlara ayırır. YouTube otomatik altyazısı aynı satırı
  * kayan pencereyle tekrar eder; tekrarlar atılır, her satır ilk göründüğü anla kalır.
+ * Sözcük zamanı taşıyan satırlara `spokenEnd` (son sözcüğün bittiği an) eklenir.
  */
 export function parseSubtitles(text) {
   const cues = [];
@@ -107,6 +114,10 @@ export function parseSubtitles(text) {
     } // YouTube cue içinde tek boşluklu satır kullanır; cue'yu yalnız tamamen boş satır bitirir
     else if (raw === '') current = null;
     else if (current) {
+      // Otomatik altyazıda sözcük zamanları satırın içindedir (<00:25:40.149>): sonuncusu,
+      // satır ekranda beklerken konuşmanın gerçekte ne zaman bittiğini verir
+      for (const stamp of raw.matchAll(/<((?:\d+:)?\d{2}:\d{2}\.\d{3})>/g))
+        current.lastWord = parseTime(stamp[1]);
       const line = cleanCueText(raw);
       if (line) current.lines.push(line);
     }
@@ -118,7 +129,14 @@ export function parseSubtitles(text) {
     previous = cue.lines;
     // 10 ms'lik "geçiş" satırları yalnızca bir önceki metni tekrarlar
     if (fresh.length === 0 || cue.end - cue.start < 0.05) continue;
-    out.push({ start: cue.start, end: cue.end, text: fresh.join(' ') });
+    out.push({
+      start: cue.start,
+      end: cue.end,
+      text: fresh.join(' '),
+      ...(cue.lastWord == null
+        ? {}
+        : { spokenEnd: Math.min(cue.end, cue.lastWord + 0.6) }),
+    });
   }
   return out;
 }
@@ -175,8 +193,18 @@ export function clipSrt(cues, start, end, { absolute = false } = {}) {
 export function fetchArgs(
   url,
   dir,
-  { languages = ['tr', 'en'], video = true, chat = false } = {},
+  {
+    languages = ['tr', 'en'],
+    video = true,
+    chat = false,
+    maxHeight = 1080,
+  } = {},
 ) {
+  // Analiz geçişi için düşük çözünürlük (ör. 360) saatlerce süren yayını küçük tutar
+  if (!Number.isInteger(maxHeight) || maxHeight < 144 || maxHeight > 2160)
+    throw new Error(
+      '--max-height 144-2160 arasında bir tam sayı olmalı. Örnek: 360.',
+    );
   for (const language of languages)
     if (!/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/.test(language))
       throw new Error(`Dil kodu "${language}" geçersiz. Örnek: tr, en, pt-BR.`);
@@ -204,7 +232,7 @@ export function fetchArgs(
     ...(video
       ? [
           '--format',
-          'bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]/b[height<=1080]',
+          `bv*[height<=${maxHeight}][ext=mp4]+ba[ext=m4a]/b[height<=${maxHeight}][ext=mp4]/b[height<=${maxHeight}]`,
           '--merge-output-format',
           'mp4',
         ]
@@ -217,12 +245,54 @@ export function fetchArgs(
 const SUBTITLE_STYLE =
   'FontName=Arial,FontSize=13,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=60,MarginL=20,MarginR=20';
 
+export const CAPTION_MAX_CHARS = 60;
+
+/**
+ * Klibin üstüne gömülecek tek satırlık bağlam yazısı için ASS dosyası: 1080×1920 tuvalde,
+ * platform arayüzünün altında kalan güvenli bölgede (üstten 250 px), yarı saydam koyu kutu
+ * içinde beyaz kalın yazı. Uzun metin kendiliğinden iki satıra bölünür.
+ */
+export function captionAss(text, seconds) {
+  const clean = String(text ?? '')
+    .replace(/[{}\\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!clean) throw new Error('Üst yazı boş olamaz.');
+  if (clean.length > CAPTION_MAX_CHARS)
+    throw new Error(
+      `Üst yazı en çok ${CAPTION_MAX_CHARS} karakter olabilir (şu an ${clean.length}); tek satırda bağlamı ver.`,
+    );
+  const stamp = (s) => {
+    const cs = Math.round(s * 100);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${Math.floor(cs / 360000)}:${pad(Math.floor((cs % 360000) / 6000))}:${pad(Math.floor((cs % 6000) / 100))}.${pad(cs % 100)}`;
+  };
+  return [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    'PlayResX: 1080',
+    'PlayResY: 1920',
+    'WrapStyle: 0',
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    'Style: Ust,Arial,62,&H00FFFFFF,&H00FFFFFF,&H50000000,&H50000000,1,0,0,0,100,100,0,0,3,14,0,8,90,90,250,1',
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+    `Dialogue: 0,${stamp(0)},${stamp(seconds)},Ust,,0,0,0,,${clean}`,
+    '',
+  ].join('\n');
+}
+
 /**
  * ffmpeg argümanları: [start, end] aralığını 1080×1920, 30 fps, H.264 + AAC olarak üretir.
  *   blur → videonun tamamı ortada, arkada aynı görüntünün bulanık dolgusu (hiçbir şey kırpılmaz)
  *   crop → ortadan (xOffset ile kaydırılabilir) 9:16 kırpma, ekranı doldurur
- * `subtitles` verilirse ffmpeg'in çalışma klasöründeki dosya adıdır (yol değil): filtre
- * içinde Windows yolu kaçırmak yerine clip.mjs geçici klasörde çalıştırır.
+ * `subtitles` (altyazı) ve `caption` (üst bağlam yazısı, captionAss çıktısı) verilirse ffmpeg'in
+ * çalışma klasöründeki dosya adıdır (yol değil): filtre içinde Windows yolu kaçırmak yerine
+ * clip.mjs geçici klasörde çalıştırır.
  */
 export function cutArgs({
   input,
@@ -232,6 +302,7 @@ export function cutArgs({
   layout = 'blur',
   xOffset = 0,
   subtitles = null,
+  caption = null,
 }) {
   if (!LAYOUTS.includes(layout))
     throw new Error(`Yerleşim ${LAYOUTS.join(' veya ')} olmalı.`);
@@ -241,11 +312,16 @@ export function cutArgs({
     throw new Error(
       'Altyazı dosya adı yalnız harf, rakam, nokta ve tire içerebilir.',
     );
+  if (caption && !/^[A-Za-z0-9_.-]+$/.test(caption))
+    throw new Error(
+      'Üst yazı dosya adı yalnız harf, rakam, nokta ve tire içerebilir.',
+    );
   const length = end - start;
-  const caption = subtitles
-    ? `,subtitles=filename=${subtitles}:force_style='${SUBTITLE_STYLE}'`
-    : '';
-  const tail = `fps=30,format=yuv420p${caption}`;
+  const burned =
+    (subtitles
+      ? `,subtitles=filename=${subtitles}:force_style='${SUBTITLE_STYLE}'`
+      : '') + (caption ? `,subtitles=filename=${caption}` : '');
+  const tail = `fps=30,format=yuv420p${burned}`;
   const square = 'scale=trunc(iw*sar/2)*2:ih,setsar=1';
   const video =
     layout === 'crop'
@@ -334,4 +410,53 @@ export function parseCli(argv, { values = [], flags = [] }) {
     } else throw new Error(`Bilinmeyen seçenek: ${arg}`);
   }
   return { positional, options };
+}
+
+/** Üst üste binen ya da `gap` saniyeden yakın [from, to] pencerelerini birleştirir. */
+export function mergeWindows(windows, gap = 5) {
+  const sorted = windows
+    .map(([from, to]) => [Math.floor(from), Math.ceil(to)])
+    .filter(([from, to]) => to > from)
+    .sort((a, b) => a[0] - b[0]);
+  const out = [];
+  for (const [from, to] of sorted) {
+    const last = out.at(-1);
+    if (last && from <= last[1] + gap) last[1] = Math.max(last[1], to);
+    else out.push([from, to]);
+  }
+  return out;
+}
+
+/**
+ * whisper.cpp (`whisper-cli -oj`) çıktısını altyazı satırlarına çevirir; zamanlar pencerenin
+ * videodaki başlangıcı (`offset`, sn) kadar kaydırılır. Müzik/gürültü için üretilen
+ * "[Music]", "(laughs)" gibi konuşma olmayan satırlar ve aynı satırın ikiden fazla tekrarı atılır.
+ */
+export function whisperCues(json, offset = 0) {
+  const out = [];
+  for (const segment of json?.transcription ?? []) {
+    const text = String(segment.text ?? '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const from = segment.offsets?.from;
+    const to = segment.offsets?.to;
+    if (!text || /^[[(♪*].*[\])♪*]$/.test(text)) continue;
+    if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from) continue;
+    // Sessizlikte ya da müzikte model aynı satırı art arda uydurabilir: üçüncü tekrar atılır
+    if (out.at(-1)?.text === text && out.at(-2)?.text === text) continue;
+    const end = offset + to / 1000;
+    out.push({ start: offset + from / 1000, end, text, spokenEnd: end });
+  }
+  return out;
+}
+
+/** Satırlardan WebVTT metni (yerel transkripti kesimde altyazı olarak kullanmak için). */
+export function toVtt(cues) {
+  const stamp = (seconds) => srtTime(seconds).replace(',', '.');
+  return (
+    'WEBVTT\n\n' +
+    cues
+      .map((cue) => `${stamp(cue.start)} --> ${stamp(cue.end)}\n${cue.text}\n`)
+      .join('\n')
+  );
 }

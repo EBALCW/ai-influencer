@@ -116,22 +116,22 @@ node scripts/doctor.mjs
 
 ## Komutlar
 
-| Komut                                                              | Ne yapar                                                                    |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------------- |
-| `pnpm doctor`                                                      | Ortam sağlık kontrolü                                                       |
-| `pnpm setup:mac` / `pnpm setup:win`                                | Kurulum script'leri                                                         |
-| `pnpm install`                                                     | Bağımlılıklar                                                               |
-| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`)        | Paneli build edip başlatır, tarayıcıyı açar                                 |
-| `pnpm backup` / `pnpm backup:restore <klasör>`                     | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`)           |
-| `pnpm dev` / `pnpm build`                                          | Geliştirme sunucusu / production build                                      |
-| `pnpm check`                                                       | Format + lint + typecheck + unit test (PR öncesi zorunlu)                   |
-| `pnpm test:e2e`                                                    | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)                       |
-| `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`) | Güncel kod haritası (aşağıya bak)                                           |
-| `pnpm clip:fetch <adres>` / `clip:moments <klasör>` / `clip:cut …` | Yayından en çok izlenecek anları bul, dikey klip kes (`docs/clip-guide.md`) |
-| `pnpm env:pull`                                                    | Test Supabase anahtarlarını `.env.local`'e çeker                            |
-| `pnpm owner:create <e-posta>` / `pnpm workspace:create <e-posta>`  | İlk owner (tek alan) / yeni çalışma alanı + owner'ı (`docs/AUTH.md`)        |
-| `pnpm release`                                                     | `test` → `main` release PR'ı                                                |
-| `cd supabase/functions && deno test --allow-env`                   | Edge Function testleri (`deno lint`, `deno check` de CI'da)                 |
+| Komut                                                                                            | Ne yapar                                                                                               |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `pnpm doctor`                                                                                    | Ortam sağlık kontrolü                                                                                  |
+| `pnpm setup:mac` / `pnpm setup:win`                                                              | Kurulum script'leri                                                                                    |
+| `pnpm install`                                                                                   | Bağımlılıklar                                                                                          |
+| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`)                                      | Paneli build edip başlatır, tarayıcıyı açar                                                            |
+| `pnpm backup` / `pnpm backup:restore <klasör>`                                                   | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`)                                      |
+| `pnpm dev` / `pnpm build`                                                                        | Geliştirme sunucusu / production build                                                                 |
+| `pnpm check`                                                                                     | Format + lint + typecheck + unit test (PR öncesi zorunlu)                                              |
+| `pnpm test:e2e`                                                                                  | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)                                                  |
+| `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`)                               | Güncel kod haritası (aşağıya bak)                                                                      |
+| `pnpm clip:auto <adres> …` / `clip:fetch` / `clip:moments <klasör>` / `clip:cut …` / `clip:mark` | Yayından en çok izlenecek anları bul, kalite kontrolünden geçir, dikey klip kes (`docs/clip-guide.md`) |
+| `pnpm env:pull`                                                                                  | Test Supabase anahtarlarını `.env.local`'e çeker                                                       |
+| `pnpm owner:create <e-posta>` / `pnpm workspace:create <e-posta>`                                | İlk owner (tek alan) / yeni çalışma alanı + owner'ı (`docs/AUTH.md`)                                   |
+| `pnpm release`                                                                                   | `test` → `main` release PR'ı                                                                           |
+| `cd supabase/functions && deno test --allow-env`                                                 | Edge Function testleri (`deno lint`, `deno check` de CI'da)                                            |
 
 Ortam değişkeni ipucu: agent ortamında kurulum/komut takılırsa başına `CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0` ekle.
 

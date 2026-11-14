@@ -12,6 +12,7 @@
     "clip:fetch": "node scripts/clip/clip.mjs fetch",
     "clip:moments": "node scripts/clip/clip.mjs moments",
     "clip:cut": "node scripts/clip/clip.mjs cut",
+    "clip:mark": "node scripts/clip/clip.mjs mark",
     "doctor": "node scripts/doctor.mjs",
     "setup:mac": "bash scripts/setup-mac.sh",
     "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1",
