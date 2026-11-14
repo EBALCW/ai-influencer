@@ -33,6 +33,16 @@ izniyle** kullanılır. Kesmeden önce kullanıcıya sor ve üç durumdan birini
 - `clip:fetch` çıktısındaki `source.json` → `license` alanı "Creative Commons" diyorsa açık
   lisans yolu kullanılabilir; "Standard YouTube License" ise izin gerekir.
 
+## Hızlı yol: tek komut
+
+Kullanıcı yalnızca link verip "kliplerini çıkar" diyorsa ve izin durumu belliyse:
+
+```bash
+pnpm clip:auto "<youtube-adresi>" --permission "<izin referansı>"   # ya da --open-license "<lisans>" / --own
+```
+
+İndirir, anları bulur, yayın süresine göre 3-15 klibi altyazılı keser (`clips/`, `clips.json`). Sonra 4. adımdaki kontrolü her klip için yap ve kullanıcıya seçim listesini sun. Puan öneridir: jenerik, bekleme ekranı ya da bağlamsız anlar da yüksek puan alabilir; bunları ele ve gerekirse aşağıdaki adımlarla elle kes.
+
 ## 1. İndir
 
 ```

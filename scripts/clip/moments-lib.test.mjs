@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   bucketize,
   chatSeries,
+  clipCountFor,
   combine,
   createLoudnessMeter,
   pickMoments,
@@ -155,4 +156,12 @@ test('transkript: aralıktaki satırlar, uzunsa kırpılır', () => {
   assert.equal(transcriptFor(cues, 9, 20), 'içeride bir cümle');
   assert.equal(transcriptFor(cues, 9, 20, 8), 'içeride…');
   assert.equal(transcriptFor(cues, 100, 120), '');
+});
+
+test('klip sayısı yayın süresine göre: 10 dakikaya bir, 3 ile 15 arasında', () => {
+  assert.equal(clipCountFor(null), 3);
+  assert.equal(clipCountFor(5 * 60), 3);
+  assert.equal(clipCountFor(49 * 60), 5);
+  assert.equal(clipCountFor(2 * 3600), 12);
+  assert.equal(clipCountFor(8 * 3600), 15);
 });

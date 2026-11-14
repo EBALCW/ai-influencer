@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 // Yayıncı videolarından kısa dikey klip (Reels / Shorts / TikTok).
+//   pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40]
+//       [--lang tr,en] [--layout blur|crop] [--no-subs]
+//       Tek adım: indirir, en güçlü anları bulur ve hepsini <klasör>/clips/ altına keser.
+//       --count verilmezse klip sayısı yayın süresine göre seçilir (10 dakikaya bir, 3-15).
 //   pnpm clip:fetch <youtube-adresi> [--out <klasör>] [--lang tr,en] [--no-video] [--chat]
 //       Videoyu, altyazıyı ve zaman damgalı transkripti ~/ai-influencer-clips/<id>/ altına indirir.
 //   pnpm clip:moments <indirilen-klasör> [--top 10] [--length 40] [--skip-start 60] [--no-audio]
@@ -32,6 +36,7 @@ import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { isInside } from '../lib/panel-lib.mjs';
 import {
+  clipCountFor,
   combine,
   createChatCounter,
   createLoudnessMeter,
@@ -225,6 +230,28 @@ function probeDuration(file) {
   return r.status === 0 && Number.isFinite(seconds) ? seconds : null;
 }
 
+/** Kaynağın hak durumu: tam olarak bir seçenek verilmeli; yoksa kesim yapılmaz. */
+function sourceRights(options) {
+  const given = ['own', 'permission', 'open-license'].filter(
+    (name) => options[name],
+  );
+  if (given.length !== 1)
+    throw new Error(
+      'Kaynağın durumu tek bir seçenekle belirtilmeli: başkasının videosu için --permission "<izin referansı>", ' +
+        'açık lisanslı video için --open-license "<lisans adı, ör. CC BY>", kendi çekimin için --own. ' +
+        'Yazılı izin ya da uygun lisans yoksa klip kesilmez (docs/compliance.md → Kaynak içerik).',
+    );
+  const sourceType = {
+    own: 'own',
+    permission: 'third_party',
+    'open-license': 'open_license',
+  }[given[0]];
+  const permission = options.own
+    ? null
+    : validatePermission(options.permission ?? options['open-license']);
+  return { sourceType, permission };
+}
+
 function cut(argv) {
   const { positional, options } = parseCli(argv, {
     values: [
@@ -243,23 +270,7 @@ function cut(argv) {
     throw new Error(
       'Kullanım: pnpm clip:cut <video> --start 12:30 --end 13:05 --out <klip.mp4> --permission "<izin referansı>" [--layout blur|crop] [--x-offset -1..1] [--subs <altyazı.vtt>]',
     );
-  const given = ['own', 'permission', 'open-license'].filter(
-    (name) => options[name],
-  );
-  if (given.length !== 1)
-    throw new Error(
-      'Kaynağın durumu tek bir seçenekle belirtilmeli: başkasının videosu için --permission "<izin referansı>", ' +
-        'açık lisanslı video için --open-license "<lisans adı, ör. CC BY>", kendi çekimin için --own. ' +
-        'Yazılı izin ya da uygun lisans yoksa klip kesilmez (docs/compliance.md → Kaynak içerik).',
-    );
-  const sourceType = {
-    own: 'own',
-    permission: 'third_party',
-    'open-license': 'open_license',
-  }[given[0]];
-  const permission = options.own
-    ? null
-    : validatePermission(options.permission ?? options['open-license']);
+  const { sourceType, permission } = sourceRights(options);
 
   const input = resolve(positional[0]);
   if (!existsSync(input) || !statSync(input).isFile())
@@ -480,14 +491,132 @@ async function moments(argv) {
   );
 }
 
+/** Tek adım: indir → anları bul → hepsini kes. Yarıda kalırsa aynı komut kaldığı yerden sürer. */
+async function auto(argv) {
+  const { positional, options } = parseCli(argv, {
+    values: [
+      'out',
+      'lang',
+      'count',
+      'length',
+      'permission',
+      'open-license',
+      'layout',
+    ],
+    flags: ['own', 'no-subs'],
+  });
+  if (positional.length !== 1)
+    throw new Error(
+      'Kullanım: pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40] [--lang tr,en] [--layout blur|crop] [--no-subs]',
+    );
+  // İzin kontrolü en başta: saatlerce indirdikten sonra reddetmek yerine hemen dur
+  sourceRights(options);
+  const rights = options.own
+    ? ['--own']
+    : options.permission
+      ? ['--permission', options.permission]
+      : ['--open-license', options['open-license']];
+  const { videoId, url } = parseYoutubeUrl(positional[0]);
+  const dir = resolve(
+    options.out ?? join(homedir(), 'ai-influencer-clips', videoId),
+  );
+  const video = join(dir, `${videoId}.mp4`);
+  const sourceFile = join(dir, 'source.json');
+
+  console.log('\n1/3 İndirme');
+  if (existsSync(video) && existsSync(sourceFile))
+    ok('Video zaten indirilmiş; yeniden indirilmiyor');
+  else {
+    fetchSource([
+      url,
+      '--out',
+      dir,
+      '--chat',
+      ...(options.lang ? ['--lang', options.lang] : []),
+    ]);
+    if (process.exitCode) return;
+  }
+  const source = JSON.parse(readFileSync(sourceFile, 'utf8'));
+  const count = options.count ?? String(clipCountFor(source.durationSeconds));
+
+  console.log('\n2/3 En güçlü anlar');
+  await moments([
+    dir,
+    '--top',
+    count,
+    ...(options.length ? ['--length', options.length] : []),
+  ]);
+  const list = JSON.parse(
+    readFileSync(join(dir, 'moments.json'), 'utf8'),
+  ).moments;
+  if (list.length === 0)
+    throw new Error(
+      'Öne çıkan an bulunamadı (sinyal düz). Aralığı elle seçip pnpm clip:cut ile kes.',
+    );
+
+  console.log(`\n3/3 Kesim (${list.length} klip)`);
+  const languages = (options.lang ?? 'tr,en').split(',').filter(Boolean);
+  const subtitle = options['no-subs']
+    ? null
+    : readdirSync(dir)
+        .filter(
+          (name) => name.startsWith(`${videoId}.`) && name.endsWith('.vtt'),
+        )
+        .sort(
+          (a, b) =>
+            languages.findIndex((l) => a.includes(`.${l}`)) -
+            languages.findIndex((l) => b.includes(`.${l}`)),
+        )[0];
+  if (!options['no-subs'] && !subtitle)
+    console.log('  [UYARI] Altyazı dosyası yok; klipler altyazısız kesiliyor.');
+  const clips = [];
+  for (const moment of list) {
+    const name = `${String(moment.rank).padStart(2, '0')}-${moment.start.replaceAll(':', '.')}.mp4`;
+    const output = join(dir, 'clips', name);
+    const base = [
+      video,
+      '--start',
+      moment.start,
+      '--end',
+      moment.end,
+      '--out',
+      output,
+      ...rights,
+      ...(options.layout ? ['--layout', options.layout] : []),
+    ];
+    let subtitled = false;
+    if (existsSync(output)) ok(`${name} zaten var; atlandı`);
+    else if (subtitle) {
+      try {
+        cut([...base, '--subs', join(dir, subtitle)]);
+        subtitled = true;
+      } catch (error) {
+        // Konuşmasız aralıkta altyazı satırı olmaz; klip altyazısız kesilir
+        if (!/altyazı satırı yok/.test(error.message)) throw error;
+        cut(base);
+      }
+    } else cut(base);
+    clips.push({ file: name, ...moment, subtitled });
+  }
+  writeFileSync(
+    join(dir, 'clips', 'clips.json'),
+    JSON.stringify({ source, clips }, null, 2) + '\n',
+  );
+  console.log(
+    `\n${clips.length} klip hazır: ${join(dir, 'clips')}\n` +
+      'Sıra puana göre (01 en güçlü). Hepsini izle, yayınlanacakları seç; puan bir öneridir.',
+  );
+}
+
 const [mode, ...rest] = process.argv.slice(2);
 try {
   if (mode === 'fetch') fetchSource(rest);
   else if (mode === 'cut') cut(rest);
   else if (mode === 'moments') await moments(rest);
+  else if (mode === 'auto') await auto(rest);
   else
     throw new Error(
-      'Kullanım: pnpm clip:fetch <youtube-adresi>  |  pnpm clip:moments <klasör>  |  pnpm clip:cut <video> --start … --end … --out … --permission …',
+      'Kullanım: pnpm clip:auto <youtube-adresi> --permission …  |  pnpm clip:fetch <youtube-adresi>  |  pnpm clip:moments <klasör>  |  pnpm clip:cut <video> --start … --end … --out … --permission …',
     );
 } catch (error) {
   console.error(`\x1b[31m[HATA]\x1b[0m ${error.message}`);
