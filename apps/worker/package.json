@@ -1,0 +1,17 @@
+{
+  "name": "@ai-influencer/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "doctor": "node src/doctor.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"src/**/*.test.ts\""
+  },
+  "dependencies": {
+    "@ai-influencer/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1"
+  }
+}

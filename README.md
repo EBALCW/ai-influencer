@@ -49,6 +49,7 @@ Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 | `pnpm env:pull`                 | Test Supabase anahtarlarını şifreli olarak `.env.local`'e çeker                     |
 | `pnpm panel`                    | Paneli build edip başlatır, tarayıcıyı açar (günlük kullanım)                       |
 | `pnpm codemap`                  | Güncel kod haritası: sayfalar, API, modüller, migration'lar, testler                |
+| `pnpm worker:doctor`            | Üretim makinesi denetimi: hangi video yolları üretilebilir, eksikler nasıl kurulur  |
 | `pnpm release`                  | `test` → `main` release PR'ını açar/yeniler                                         |
 
 Geliştirme kuralları: **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** · Branch, PR ve CI/CD akışı: **[docs/WORKFLOW.md](docs/WORKFLOW.md)** (`feature → test → main`, CI geçince otomatik onay + merge)
