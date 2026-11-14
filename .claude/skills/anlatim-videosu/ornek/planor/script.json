@@ -1,0 +1,138 @@
+{
+  "title": "Planör Nasıl Uçar?",
+  "takes": [
+    {
+      "take": "T01_kanca",
+      "lines": [
+        {
+          "id": 1,
+          "text": "Bu uçağın motoru yok. Yine de saatlerce havada kalıp yüzlerce kilometre uçabiliyor.",
+          "spoken": "Bu uçağın motoru yok. Yine de saatlerce havada kalıp yüzlerce kilometre uçabiliyor.",
+          "hero": "çizim: süzülen planör, burunda üstü çizili pervane",
+          "typed": "MOTOR YOK",
+          "gap_after": 0.5
+        }
+      ]
+    },
+    {
+      "take": "T02_kalkis",
+      "lines": [
+        {
+          "id": 2,
+          "text": "Önce havaya çıkması gerek: onu motorlu bir uçak ya da yerdeki bir vinç halatla çeker.",
+          "spoken": "Önce havaya çıkması gerek: onu motorlu bir uçak ya da yerdeki bir vinç halatla çeker.",
+          "hero": "çizim: çekici uçak + halat + planör tırmanıyor; altta vinç kutusu",
+          "typed": "ÇEKİCİ UÇAK · VİNÇ"
+        },
+        {
+          "id": 3,
+          "text": "Yeterince yükselince halat bırakılır.",
+          "spoken": "Yeterince yükselince halat bırakılır.",
+          "hero": "çizim: halat kopar, çekici uçak ayrılır",
+          "typed": "HALAT BIRAKILDI"
+        },
+        {
+          "id": 4,
+          "text": "Artık hep hafifçe alçalır. Hızını da bu alçalıştan alır.",
+          "spoken": "Artık hep hafifçe alçalır. Hızını da bu alçalıştan alır.",
+          "hero": "çizim: eğimli süzülüş yolu, yükseklik göstergesi düşüyor",
+          "typed": "YÜKSEKLİK → HIZ",
+          "gap_after": 0.4
+        }
+      ]
+    },
+    {
+      "take": "T03_kaldirma",
+      "lines": [
+        {
+          "id": 5,
+          "text": "Hava kanadın çevresinden akarken aşağı doğru çevrilir; kanat da yukarı itilir.",
+          "spoken": "Hava kanadın çevresinden akarken aşağı doğru çevrilir; kanat da yukarı itilir.",
+          "hero": "çizim: kanat kesiti, akım çizgileri arkada aşağı kıvrılıyor",
+          "typed": "HAVA AŞAĞI"
+        },
+        {
+          "id": 6,
+          "text": "Bu kaldırma kuvveti, ağırlığı taşır.",
+          "spoken": "Bu kaldırma kuvveti, ağırlığı taşır.",
+          "hero": "çizim: büyüyen kaldırma oku ve ağırlık oku",
+          "typed": "KALDIRMA · AĞIRLIK"
+        },
+        {
+          "id": 7,
+          "text": "Modern bir planör bin metre alçalırken kırk, elli kilometre ileri gidebilir.",
+          "spoken": "Modern bir planör bin metre alçalırken kırk, elli kilometre ileri gidebilir.",
+          "hero": "çizim: süzülme üçgeni, 1 km aşağı 40-50 km ileri",
+          "typed": "1 KM → 40-50 KM",
+          "gap_after": 0.4
+        }
+      ]
+    },
+    {
+      "take": "T04_yukselme",
+      "lines": [
+        {
+          "id": 8,
+          "text": "Peki motorsuz nasıl yükselir? Güneş yeri ısıtır; ısınan hava sütun halinde yükselir.",
+          "spoken": "Peki motorsuz nasıl yükselir? Güneş yeri ısıtır; ısınan hava sütun halinde yükselir.",
+          "hero": "çizim: güneş, ısınan tarla, yükselen sıcak hava sütunu",
+          "typed": "TERMİK"
+        },
+        {
+          "id": 9,
+          "text": "Buna termik denir. Pilot bu sütunun içinde daireler çizerek tırmanır.",
+          "spoken": "Buna termik denir. Pilot bu sütunun içinde daireler çizerek tırmanır.",
+          "hero": "çizim: planör sütunda sarmal çizerek kümülüs bulutuna tırmanıyor",
+          "typed": "TERMİK"
+        },
+        {
+          "id": 10,
+          "text": "Rüzgâr bir yamaca çarpınca da yukarı yönelir; planör bu akımda süzülür.",
+          "spoken": "Rüzgâr bir yamaca çarpınca da yukarı yönelir; planör bu akımda süzülür.",
+          "hero": "çizim: yamaçta yukarı kıvrılan rüzgâr çizgileri, sırtın üstünde planör",
+          "typed": "YAMAÇ AKIMI"
+        },
+        {
+          "id": 11,
+          "text": "Dağların ardında oluşan dalgalar ise planörleri 22 kilometrenin üzerine çıkardı.",
+          "spoken": "Dağların ardında oluşan dalgalar ise planörleri yirmi iki kilometrenin üzerine çıkardı.",
+          "hero": "çizim: dağ ardı dalga akımı, yükseklik cetveli 22 km",
+          "typed": "22+ KM",
+          "gap_after": 0.4
+        }
+      ]
+    },
+    {
+      "take": "T05_kanat",
+      "lines": [
+        {
+          "id": 12,
+          "text": "Kanatların uzun ve ince olması da verim için: uçlardaki girdaplar zayıflar, sürükleme azalır.",
+          "spoken": "Kanatların uzun ve ince olması da verim için: uçlardaki girdaplar zayıflar, sürükleme azalır.",
+          "hero": "çizim: üstten uzun ince kanat ve kısa geniş kanat, uç girdapları",
+          "typed": "UZUN İNCE · KISA GENİŞ"
+        },
+        {
+          "id": 13,
+          "text": "Rekor mu? Tek uçuşta 3.000 kilometreden fazla. Motor yok, yakıt yok; sadece hava.",
+          "spoken": "Rekor mu? Tek uçuşta üç bin kilometreden fazla. Motor yok, yakıt yok; sadece hava.",
+          "hero": "çizim: termikten termiğe testere dişi rota, bulut sokağı",
+          "typed": "3.008 KM"
+        }
+      ]
+    }
+  ],
+  "fact_notes": [
+    "Motor/itki yok; havaya göre hep alçalır, yükseklik enerjisini hıza çevirir: NASA Glenn 'Gliders'; Wikipedia 'Glider (sailplane)'",
+    "Saatlerce / yüzlerce km: FAI Silver rozeti 5 saat + 50 km (FAI, BGA); Wikipedia 'Gliding' (500 km üzeri uçuşlar olağan)",
+    "Kalkış uçakla çekme ya da vinç: Wikipedia 'Glider (sailplane)'; NASA Glenn 'Gliders'; FAA-S-8081-22/23. Bırakma yüksekliği için sayı verilmedi",
+    "Kaldırma = kanadın havayı aşağı çevirmesi (Newton 3): NASA Glenn 'What is Lift?'; Wikipedia 'Lift (force)'. 'Eşit süre' açıklaması kullanılmadı",
+    "Süzülme oranı 40-50 (standart sınıf ~44, 18 m >50, açık sınıf 60-70): Wikipedia 'Gliding' ve 'Glider (sailplane)'; üretici ölçümleri (Discus 42,5; SZD-55 >44); NASA NTRS",
+    "Termik ve daire çizerek tırmanma: Wikipedia 'Lift (soaring)'; NASA Glenn 'Gliders'",
+    "Yamaç akımı: NASA Glenn 'Gliders'; Wikipedia 'Lift (soaring)'",
+    "Dalga ile 22 km üzeri: Perlan 2, 2 Eylül 2018, 76.124 ft basınç irtifası (AOPA, Airbus/Perlan Project); Wikipedia 22.657 m GPS. Kaynaklar 22,7-23,2 km, bu yüzden '22 km'nin üzerine'",
+    "Uzun ince kanat, daha az indüklenmiş sürükleme: NASA Glenn 'Induced Drag Coefficient'; Smithsonian How Things Fly",
+    "Rekor 3.008/3.009 km, Klaus Ohlmann, 21 Ocak 2003, Arjantin (üç dönüş noktalı serbest mesafe): FAI IGC rekor listesi; Guinness World Records",
+    "Ayrıntılı tablo ve bağlantılar: proje klasöründe sources.md"
+  ]
+}

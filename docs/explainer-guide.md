@@ -1,25 +1,32 @@
 # Anlatım videoları rehberi
 
-Üçüncü içerik türümüz: bir olayı ya da konuyu görselleştirip seslendirme ve altyazıyla anlatan kısa dikey videolar. Örnek: bir mağara dalışı kazasının nasıl geliştiğini harita, kesit çizimi, zaman çizelgesi ve sayılarla anlatan 60 saniyelik film. Yüz gösterilmez, AI influencer karakteri gerekmez.
+Üçüncü içerik türümüz: bir olayı ya da "nasıl çalışır" konusunu hareketli çizimler, seslendirme ve altyazıyla anlatan kısa dikey videolar. Örnek: planörün motorsuz nasıl uçtuğunu kanat kesiti, akım çizgileri, süzülme üçgeni ve termik sütunuyla anlatan 66 saniyelik film. Yüz gösterilmez, AI influencer karakteri gerekmez; üretici görsel ya da video modeli de kullanılmaz, bütün görseller koddan çizilir.
+
+İki tür var: **olay** (bir kurtarma, keşif, rekor; zaman sırasıyla anlatılır) ve **nasıl çalışır** (bir mekanizma ya da doğa olayı; şemayla anlatılır).
 
 AI agent'ları için akış `.claude/skills/anlatim-videosu/SKILL.md` içinde. Film motoru `.claude/skills/cinematic-film/` (dışarıdan alındı: `Moh4696/cinematic-skill`, MIT; ayrıntı o klasördeki `KAYNAK.md`).
 
 ## Nasıl çalışır
 
-1. **Araştırma ve senaryo.** Konu araştırılır, her olgu kaynağıyla not edilir. 45-90 saniyelik senaryo yazılır (110-230 kelime). İlk cümle kancadır.
-2. **Onay.** Senaryo ve olgular bir ekip üyesince onaylanır. Onaysız üretime geçilmez.
-3. **Seslendirme.** Ücretsiz `edge-tts` ile Türkçe ses (`tr-TR-AhmetNeural` ya da `tr-TR-EmelNeural`). Film sese göre zamanlanır.
-4. **Görsel.** Fotoğraflar, belgeler, haritalar, kartlar ve sayılar tek bir pano üzerine dizilir; kamera anlatıcıyla birlikte aralarında gezer. Tamamı kodla çizilir (Python + Skia), ücretli servis gerekmez.
-5. **Ses ve altyazı.** Ses efektleri kodla üretilir, altyazı videoya gömülür.
-6. **Çıktı.** 1080×1920 MP4, yanında kaynak listesi ve görsel künyesi (`credits.md`).
+1. **Kısa istek.** Bir alan ("havacılık", "ilginç mühendislik") ya da belirli bir soru yazarsın.
+2. **Konu önerileri.** Agent 5-8 konu önerir. Her öneride çalışma başlığı, 2-3 cümlelik özet, kanca (neden izlenir), ekranda ne çizileceği ve iki kaynak adayı bulunur.
+3. **Seçim.** Özetleri okuyup beğendiğin konuları seçersin. Seçilmeyenler için iş yapılmaz.
+4. **Araştırma, senaryo ve onay.** Seçilen konu araştırılır, her olgu kaynağıyla not edilir. 45-90 saniyelik senaryo yazılır (110-230 kelime); ilk cümle kancadır. Senaryo ve olgular bir ekip üyesince onaylanır; onaysız üretime geçilmez.
+5. **Seslendirme.** Ücretsiz `edge-tts` ile Türkçe ses (`tr-TR-AhmetNeural` ya da `tr-TR-EmelNeural`). Film sese göre zamanlanır.
+6. **Görsel.** Her cümleyi bir hareketli çizim taşır: kesit, akım çizgisi, büyüyen ok, ölçekli üçgen, rota, karşılaştırma. Ekrandaki yazı kısa etiketlerden ibarettir. Tamamı kodla çizilir (Python + Skia), ücretli servis gerekmez. Olay videolarında lisanslı fotoğraf ve harita da kullanılabilir.
+7. **Ses ve altyazı.** Ses efektleri kodla üretilir, altyazı videoya gömülür.
+8. **Çıktı.** 1080×1920 MP4, yanında kaynak listesi ve görsel künyesi (`credits.md`).
 
-Agent'tan istemek için: "Şu olayı anlatan 60 saniyelik anlatım videosu yap: …" demek yeterli.
+Agent'tan istemek için: "Havacılıkla ilgili anlatım videosu fikirleri ver" ya da doğrudan "Planör nasıl uçar, 60 saniyelik anlatım videosu yap" demek yeterli. Konuyu doğrudan verirsen öneri adımı atlanır, senaryo onayı yine istenir.
+
+Çizimle iyi anlatılan konular şemaya dökülebilenlerdir: mekanizma, akış, ölçek, rota, karşılaştırma. Yüz, kalabalık ya da gerçekçi görüntü gerektiren konular bu yöntemle zayıf kalır; agent öneri listesinde bunu belirtir.
 
 ## Kurallar
 
 | Kural                  | Açıklama                                                                                                                          |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | İki kaynak             | Her olgu en az iki bağımsız kaynaktan doğrulanır, biri birincil (resmî rapor, kurum açıklaması, hakemli yayın).                   |
+| Şema dürüstlüğü        | Abartılı ölçek ya da sadeleştirilmiş çizim kaynak notunda belirtilir; mümkünse yanında gerçek ölçek gösterilir.                   |
 | Uydurma yok            | Kaynaklar çelişiyorsa çelişki anlatılır ya da ayrıntı çıkarılır. Emin olunmayan şey "rapora göre" diye söylenir.                  |
 | Hassas konular         | Kaza, ölüm, suç: saygılı dil, yakınların mahremiyeti, sömürü başlığı yok, yaralanma/ceset görüntüsü yok.                          |
 | Lisanslı görsel        | Gerçek fotoğraf yalnız lisansı uygun kaynaktan (Wikimedia Commons, kamu malı arşivler). Haber sitesi ve sosyal medya görseli yok. |
@@ -31,13 +38,22 @@ Agent'tan istemek için: "Şu olayı anlatan 60 saniyelik anlatım videosu yap: 
 | Araç                             | Kurulum                                                                     |
 | -------------------------------- | --------------------------------------------------------------------------- |
 | Python 3.9+                      | macOS: `brew install python` · Windows: `winget install Python.Python.3.12` |
-| `ffmpeg` + `ffprobe`             | macOS: `brew install ffmpeg` · Windows: `winget install Gyan.FFmpeg`        |
+| `ffmpeg` + `ffprobe` (libass'lı) | macOS: `brew install ffmpeg-full` · Windows: `winget install Gyan.FFmpeg`   |
 | Python paketleri (sanal ortamda) | `pip install -r .claude/skills/cinematic-film/requirements.txt edge-tts`    |
 
 Proje dosyaları (ses, görsel, video) repo dışında `~/ai-influencer-films/<ad>/` altında tutulur.
 
 ## Durum
 
-Akış bu projede uçtan uca denendi (13 Kasım 2026, macOS): "Mağarada 17 Gün" (2018 Tham Luang mağara kurtarması), 46 saniye, 1080×1920, `edge-tts` ile Türkçe ses, kodla üretilen ses efektleri, gömülü Türkçe altyazı. Senaryo ve sahne dosyası örnek olarak `.claude/skills/anlatim-videosu/ornek/` içinde.
+Akış bu projede iki filmle uçtan uca denendi (macOS):
 
-Denemede çıkanlar skill'e işlendi: motorun kendi altyazı gömme adımı dikey videoda çok küçük kalıyor, bu yüzden altyazı SRT olarak alınıp ffmpeg ile gömülüyor; dikey karede genişlik dar olduğu için pano tek sütun kuruluyor. Windows'ta henüz denenmedi. İlk örnek yalnızca kart ve sayılardan oluşuyor; fotoğraf ve haritalı bir film henüz üretilmedi.
+| Film                                 | Tür           | Süre  | Görsel                                                           | Örnek dosyalar                                 |
+| ------------------------------------ | ------------- | ----- | ---------------------------------------------------------------- | ---------------------------------------------- |
+| "Mağarada 17 Gün" (13 Kasım 2026)    | Olay          | 46 sn | Yalnızca kart ve sayılar; kare çoğu yerde boş kalıyor            | `.claude/skills/anlatim-videosu/ornek/`        |
+| "Planör Nasıl Uçar?" (14 Kasım 2026) | Nasıl çalışır | 66 sn | On sahne, hepsi hareketli çizim; yazı yalnızca etiket ve üç sayı | `.claude/skills/anlatim-videosu/ornek/planor/` |
+
+İkisi de 1080×1920, `edge-tts` ile Türkçe ses, kodla üretilen ses efektleri ve gömülü Türkçe altyazı. Yeni filme ikinci örnekten başlanır.
+
+Denemelerde çıkanlar skill'e işlendi: motorun kendi altyazı gömme adımı dikey videoda çok küçük kalıyor, bu yüzden altyazı SRT olarak alınıp ffmpeg ile gömülüyor; uzun altyazı parçaları çizimin üstüne taştığı için SRT kısa parçalarla üretiliyor (`scripts/kisa_srt.py`); çizimler karenin üst üçte ikisinde, altyazı bandının üstünde tutuluyor. Çizim kalıpları, güvenli alan ölçüleri ve yaşanan hatalar skill'in "Çizimle anlatım" bölümünde.
+
+Bilinen sınırlar: stil düz 2B şemadır (3B ya da gerçekçi görüntü yok); konu önerisi adımı henüz gerçek bir istekle denenmedi; fotoğraf ve haritalı bir olay filmi henüz üretilmedi; Windows'ta denenmedi.
