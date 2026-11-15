@@ -29,6 +29,11 @@ export function defaultSkipEnd(durationSeconds) {
   return Math.min(120, Math.round(durationSeconds * 0.05));
 }
 
+/** Sohbet mesajının ağırlığı: tepki sözcüğü/emojisi içeren mesaj 3, diğerleri 1 sayılır. */
+export function chatWeight(text) {
+  return REACTION.test(String(text ?? '')) ? 3 : 1;
+}
+
 /** yt-dlp info.json → heatmap [{start_time,end_time,value}] → saniye başına değer (0-1). */
 export function replaySeries(heatmap, duration) {
   if (!Array.isArray(heatmap) || heatmap.length === 0) return null;
@@ -73,7 +78,7 @@ export function createChatCounter(duration) {
         if (!item) continue;
         const second = Math.floor(offset / 1000) - CHAT_LAG_SECONDS;
         if (second < 0 || second >= series.length) continue;
-        series[second] += REACTION.test(chatText(item)) ? 3 : 1;
+        series[second] += chatWeight(chatText(item));
         messages++;
       }
     },

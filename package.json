@@ -13,6 +13,8 @@
     "clip:moments": "node scripts/clip/clip.mjs moments",
     "clip:cut": "node scripts/clip/clip.mjs cut",
     "clip:mark": "node scripts/clip/clip.mjs mark",
+    "clip:live": "node scripts/clip/live.mjs live",
+    "clip:live-cut": "node scripts/clip/live.mjs live-cut",
     "doctor": "node scripts/doctor.mjs",
     "setup:mac": "bash scripts/setup-mac.sh",
     "setup:win": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1",

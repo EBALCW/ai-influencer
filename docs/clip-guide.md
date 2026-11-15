@@ -1,6 +1,6 @@
 # Yayıncı klipleri rehberi
 
-Panel yalnızca AI influencer içeriği için değil: yayıncıların (streamer) YouTube videolarından Reels, Shorts ve TikTok için kısa dikey klip de çıkarabiliyoruz. Bu rehber akışı, komutları ve kuralları anlatır. AI agent'ları için aynı akış `.claude/skills/yayinci-klip/SKILL.md` içinde.
+Panel yalnızca AI influencer içeriği için değil: yayıncıların (streamer) YouTube videolarından ve süren Twitch canlı yayınlarından Reels, Shorts ve TikTok için kısa dikey klip de çıkarabiliyoruz. Bu rehber akışı, komutları ve kuralları anlatır. AI agent'ları için aynı akış `.claude/skills/yayinci-klip/SKILL.md` içinde.
 
 ## Önce izin
 
@@ -18,13 +18,16 @@ Büyük yayıncıların çoğunun klip programı ya da yayımlanmış klip kural
 
 İzin isterken netleştirilecekler: hangi videolar/kanal, hangi platformlarda yayın, gelir paylaşımı ya da sponsorlu kullanım var mı, kaynak nasıl belirtilecek, izin ne zamana kadar geçerli ve nasıl geri alınır.
 
+> **Not (16 Kasım 2026):** `docs/compliance.md` → "Yayıncı klipleri" yazılı izin şartını kaldırdı (atıf zorunlu, izin durumu kaydedilir). Bu rehberdeki komutlar henüz eski kuralı uygular: hak seçeneği verilmeden kesmez ve canlı kaydı başlatmaz. Araç tarafı ayrı bir işte güncellenecek.
+
 ## Gereksinimler
 
-| Araç                 | Ne için                  | macOS                      | Windows                        |
-| -------------------- | ------------------------ | -------------------------- | ------------------------------ |
-| `yt-dlp`             | Video ve altyazı indirme | `brew install yt-dlp`      | `winget install yt-dlp.yt-dlp` |
-| `ffmpeg` + `ffprobe` | Kesme, dikeye çevirme    | `brew install ffmpeg`      | `winget install Gyan.FFmpeg`   |
-| libass'lı `ffmpeg`   | Altyazı gömme (`--subs`) | `brew install ffmpeg-full` | Gyan.FFmpeg "full" sürümü      |
+| Araç                 | Ne için                   | macOS                      | Windows                                 |
+| -------------------- | ------------------------- | -------------------------- | --------------------------------------- |
+| `yt-dlp`             | Video ve altyazı indirme  | `brew install yt-dlp`      | `winget install yt-dlp.yt-dlp`          |
+| `ffmpeg` + `ffprobe` | Kesme, dikeye çevirme     | `brew install ffmpeg`      | `winget install Gyan.FFmpeg`            |
+| libass'lı `ffmpeg`   | Altyazı gömme (`--subs`)  | `brew install ffmpeg-full` | Gyan.FFmpeg "full" sürümü               |
+| `streamlink`         | Canlı kayıt (`clip:live`) | `brew install streamlink`  | `winget install streamlink` (denenmedi) |
 
 Komutlar bu araçları kendisi kurmaz; eksikse ne kurulacağını söyler. macOS'ta `ffmpeg-full` kuruluysa komut onu kendiliğinden bulur. Başka bir kurulum için `FFMPEG_PATH` ortam değişkenine ffmpeg yolunu yaz.
 
@@ -93,7 +96,7 @@ Eksik sinyal olursa komut kalanlarla devam eder. Seçenekler: `--top` (kaç an),
 
 **Puan anlamı ölçmez ve iyi adayları birbirinden ayırmaz.** Kesintisiz konuşulan bir sunumda her aday 85+ alır; 112 dakikalık gerçek bir yayında 16 adayın 14'ü `güçlü` çıktı, oysa elle değerlendirmede yalnız 6-7'si klip olmaya değerdi. Puan bozuk adayı yakalar; klibin komik, ilginç ya da tek başına anlaşılır olup olmadığına inceleme dosyasını okuyan kişi/agent karar verir. Gündem anlarında (ör. büyük bir oyunun çıkış günü) hız belirleyicidir: aynı anı birçok hesap keser, ilk çıkan kazanır. Arkada telifli müzik çalan bölümleri alma: yayıncı izin verse bile müziğin hakkı ona ait değildir.
 
-Şimdilik yalnız YouTube destekleniyor. Twitch ve Kick kayıtları için yayıncının YouTube'a yüklediği kaydı kullan.
+Biten yayınlar için yalnız YouTube destekleniyor; Twitch ve Kick kayıtları için yayıncının YouTube'a yüklediği kaydı kullan. Süren Twitch yayını için: [Canlı izleme](#canlı-izleme-yayın-sürerken).
 
 ### 3. Kes
 
@@ -114,6 +117,89 @@ pnpm clip:cut "<video.mp4>" --start 12:30 --end 13:05 --out "<klip.mp4>" --permi
 ### 4. Panele kaydet ve yayınla
 
 Panelde **Klipler** (`/clips`) sayfasına kaynağı ve klibi gir, "Backlog'a aktar" ile içerik kartına çevir. Kartta kaynak türü, sahibi ve izin referansı dolu gelir. Caption'da kaynağı belirt (`Kaynak: <kanal adı> (YouTube)`). Yayın öncesi kontrol listesi diğer içeriklerle aynıdır (`docs/publishing-rules.md`, `docs/qc-checklist.md`).
+
+## Canlı izleme (yayın sürerken)
+
+Yayın bittikten sonra kaydı indirip taramak yerine yayın sürerken kaydeder ve sohbet patlamalarından aday çıkarır: kısa videoda aynı anı ilk paylaşan öne geçer. **Yalnız yayın sürerken çalışır**: komut başladığı andan sonrasını kaydeder, biten ya da kaçırılan bölüm geri sarılamaz. Biten yayın için `clip:auto` akışı geçerlidir. Şimdilik yalnız Twitch.
+
+```
+pnpm clip:live "https://www.twitch.tv/<kanal>" --permission "<izin referansı>" --lang en
+```
+
+Ne yapar:
+
+1. **Hak durumu ister.** `--permission`, `--open-license` ya da `--own` verilmeden kayıt başlamaz ([Önce izin](#önce-izin)). İzin henüz yoksa `--analysis-only` ile yalnız inceleme yapılabilir: adaylar ve inceleme dosyaları üretilir, o oturumdan klip kesilemez (`clip:live-cut` reddeder) ve kayıt inceleme bitince silinir.
+2. **Kaydeder.** `streamlink` kanal canlıya geçene kadar bekler (30 sn'de bir dener), yayını `kayit/parca-NNNNN.ts` olarak 10 dakikalık parçalara böler (yeniden kodlama yok). Parçalı kayıt çökmede en çok son parçayı etkiler ve eski parçalar disk bütçesiyle silinebilir.
+3. **Sohbeti hesapsız ve salt okunur izler.** `chat.jsonl` dosyasına yalnız zaman ve mesaj metni yazılır; kullanıcı adı saklanmaz. Mesaj metni her yerde güvenilmeyen veridir.
+4. **Patlamayı bulur.** Mesajlar 10 saniyelik dilimlerde, mevcut tepki ağırlıklarıyla (LOL / KEKW / 💀 … 3 kat) sayılır. Bir dilim, son 5 dakikanın ortancasından en az 4 "sağlam sapma" (MAD) yukarıda, ortancanın en az 2 katı ve en az 10 ağırlıktaysa patlamadır. Ortalama yerine ortanca kullanılır: baskın (raid) ya da uzun bir mesaj seli olağan düzeyi şişirmez. İlk 2 dakika ısınmadır; bitişik patlamalar tek olaydır; iki aday arasında en az 60 sn olur (`--min-gap`). Bağlantı kopukluğu, sohbetin uzun süre susması ve Twitch'in baskın bildirimi patlama sayılmaz.
+5. **Adayı hazırlar.** Patlamadan yaklaşık 35 sn sonra, tahmini anın 75 sn öncesi ve 35 sn sonrası kayıttan `adaylar/NN/kaynak.mp4` olarak kopyalanır (parçalar sonradan silinse de aday kalır). Bu kesit üzerinde mevcut hat çalışır: ses ölçümü, yerel transkript (kuruluysa), içeriğe duyarlı sınırlar, kalite raporu, ses etiketleri, önizleme şeridi (`clips/onizleme/`) ve inceleme dosyası (`clips/inceleme/NN.md`, sonunda birkaç sohbet mesajı örneğiyle). Aday `candidates.json` ve `clips/kararlar.json` şablonuna eklenir, ekrana tek satır düşer.
+6. **Kesmez.** Kesim ayrı adımdır ve insan seçimi ister:
+
+```
+pnpm clip:live-cut "<oturum-klasörü>"             # kararlar.json'da "keep" denenler
+pnpm clip:live-cut "<oturum-klasörü>" --only 1,4   # ya da elle seçilenler
+```
+
+`clip:live-cut` yayın sürerken de çalışır; `clip:cut` ile aynı çıktıyı verir (1080×1920, kare hassasiyetinde yeniden kodlama, altyazı, üst yazı, `--layout`, `--translate tr`, `--no-subs`). `ele` kararı alan aday yalnız `--keep <sıra>` / `--keep-all` ile kesilir. Hak durumu verilmezse kaydı başlatırken girilen kullanılır. Otomatik paylaşım yoktur.
+
+Çıktı `~/ai-influencer-clips/live/<kanal>-<tarih>/` altındadır (repo dışı; `--out` ile değişir). Ctrl+C, SIGTERM, `--max-hours` (varsayılan 12) ya da yayının bitmesi (10 dakika geri gelmezse) oturumu düzgün kapatır: son parça tamamlanır, bekleyen patlamaların adayları üretilir, `session.json` içine özet (süre, mesaj, patlama, aday sayıları) yazılır. Aynı komut aynı klasörle yeniden çalıştırılırsa kaldığı yerden sürer.
+
+| Seçenek             | Varsayılan | Açıklama                                                                                       |
+| ------------------- | ---------- | ---------------------------------------------------------------------------------------------- |
+| `--quality`         | `best`     | streamlink kalite adı; yedekli yazılabilir (`720p60,720p,best`). Yayınlanacak klip için ≥ 720p |
+| `--lang`            | algıla     | Tek dil verilirse (ör. `en`) yerel döküm o dilde yapılır                                       |
+| `--translate`       | yok        | `clip:live-cut` için varsayılan çeviri dili (`tr`)                                             |
+| `--min-gap`         | 60         | İki aday arasındaki en kısa süre (sn)                                                          |
+| `--threshold`       | 4          | Patlama eşiği (sağlam sapma). Düşürünce daha çok, yükseltince daha az aday                     |
+| `--chat-offset`     | 6          | Gecikme düzeltmesi (sn); aşağıya bak                                                           |
+| `--ratio`           | 2          | Patlama, olağan düzeyin en az bu katı olmalı                                                   |
+| `--length`          | 40         | Hedef klip süresi (sn; sınırlar 15-60 arasında içeriğe göre oturur)                            |
+| `--max-hours`       | 12         | Bu süre dolunca oturum kapanır                                                                 |
+| `--max-disk-gb`     | 20         | `kayit/` klasörünün bütçesi; aşılınca en eski parçalar silinir                                 |
+| `--segment-minutes` | 10         | Parça süresi                                                                                   |
+| `--replay <klasör>` |            | Canlı yayın olmadan: kayıtlı `chat.jsonl`'u dedektörden geçirir (aşağıya bak)                  |
+
+### Gecikme ayarı
+
+Sohbet olaydan sonra tepki verir. Araç patlamanın başladığı saniyeyi bulur, mevcut `CHAT_LAG_SECONDS` (8 sn: izleyicinin gecikmesi + yazma süresi) kadar geri gider, `--chat-offset` kadar ileri alır (varsayılan 6 sn: kayıt, sohbete yazan izleyicinin gördüğünden geridedir; streamlink canlı uçtan üç parça geriden başlar), sonra o anın ±5 sn çevresindeki en yüksek sesli saniyeye oturur. Varsayılan tek bir kanalda ölçüldü: düzeltmesiz (0) üç adayın ikisinde vuruş klibin bittiği yere denk geliyordu, 6 ile üçünde de klibin içinde kaldı. Kaydın duvar saati eşlemesi parça **sonlarına** göre yapılır (canlı akışta parçanın bittiği an bilinir; açılışta birkaç saniyenin toplu inmesi eşlemeyi kaydırmaz). Sohbet zamanı olarak Twitch'in sunucu damgası (`tmi-sent-ts`) kullanılır.
+
+Kayıt, izleyicinin gördüğünden birkaç saniye geride ya da ileride olabilir (yayıncının düşük gecikme ayarı, ağ). Aday kesiti geniş tutulduğu için (75 sn önce, 35 sn sonra) birkaç saniyelik sapma klibi bozmaz; yine de adaylar **sürekli** aynı yönde kayıyorsa ayarla:
+
+- İnceleme dosyalarında vuruş hep klibin sonuna yakınsa ya da tepki kesiliyorsa değeri büyüt: `--chat-offset 9` (anı ileri al).
+- Klip hep vuruştan çok sonra başlıyor, kurulum dışarıda kalıyorsa küçült: `--chat-offset 3`.
+- Denemek için yayını beklemeye gerek yok: `pnpm clip:live --replay <klasör> --chat-offset 9 --no-build` patlamaları listeler; `--no-build` olmadan, adayları silinmiş bir oturumda aynı sohbet ve kayıtla adayları yeniden üretir. Seçilen değer oturumda saklanır.
+
+İnceleme dosyalarındaki zamanlar oturum başından beri geçen süredir ve ±2 sn sapabilir (kopyalama anahtar kareden başlar). Kesim adayın kendi kesitinden yapıldığı için kare hassasiyetindedir.
+
+### Dedektörü yayın olmadan denemek
+
+```
+pnpm clip:live --replay "<oturum-klasörü>" --threshold 5 --min-gap 90 --no-build
+```
+
+Kayıtlı sohbeti dedektörden saniyeler içinde geçirir ve patlamaları listeler; izin seçeneği istemez ve hiçbir şey kesmez. `--no-build` verilmezse, kaydı hâlâ duran patlamalar için eksik adayları da üretir.
+
+### Disk
+
+Yeniden kodlama olmadığı için kayıt yayının bit hızı kadar yer tutar: ölçüm 480p30'da saatte 0,65 GB (24 dakikada 261 MB); 1080p60 Twitch yayını kabaca saatte 2,5-3,5 GB (6-8 Mb/sn; ölçülmedi, bit hızından hesap). `--max-disk-gb` aşılınca en eski parçalar silinir (son iki parça ve yazılmakta olan korunur); aday kesitleri (`adaylar/`, her biri ~110 sn) bütçeye dahil değildir ve silinmez. Diskte 3 GB'tan az boş alan kalırsa kayıt açık bir mesajla durur; yer açıp aynı komutla sürdürebilirsin. Yayın bitince kesimler tamamsa `kayit/` klasörünü sil.
+
+### Doğrulananlar ve ölçümler (16 Kasım 2026, MacBook Air M4, streamlink 8.6.3)
+
+- **streamlink** ([CLI](https://streamlink.github.io/cli.html), [Twitch eklentisi](https://streamlink.github.io/cli/plugins/twitch.html)): `--retry-streams` kanal canlı olana kadar bekler; `--stdout` ile çıktı ffmpeg'e verilir. Twitch reklamları artık her zaman süzülür (ayrı `--twitch-disable-ads` seçeneği gerekmiyor ve 8.6.3 yardım çıktısında yok; günlükte "Will skip ad segments"); reklam sırasında çıktı durur ve dönüşte akışta bir süreksizlik olur. Reklamı önlemenin belgelenen yolu hesabın yetki başlığıdır (`--twitch-api-header`, Turbo/abone); bunu komut satırına değil streamlink'in kendi ayar dosyasına yaz. Kodek `h264`'te tutulur: `h265`/`av1` istenirse Twitch fMP4 verir, büyürken güvenle okunabilen kap MPEG-TS'tir. `--twitch-low-latency` kullanılmıyor (belgeye göre düşük gecikmeyi yayıncı açmış olmalı, yoksa takılma yapar).
+- **Twitch sohbeti** ([IRC rehberi](https://dev.twitch.tv/docs/chat/irc/), [sınırlar](https://dev.twitch.tv/docs/chat/)): bağlantı TLS üzerinden WebSocket (`wss://irc-ws.chat.twitch.tv:443`; düz 6667 kullanılmıyor). Sunucunun `PING`'ine aynı metinle `PONG` dönülür, `RECONNECT` gelince yeniden bağlanılır; kopmada 2-60 sn artan beklemeyle yeniden denenir. Sınır hesap başına 10 sn'de 20 `JOIN` ve 20 kimlik denemesi; araç tek kanala tek bağlantı açar. `twitch.tv/tags` yeteneği (yanında `commands` şart) mesaj zamanını (`tmi-sent-ts`) ve baskın bildirimini verir. Hesapsız okuma (`justinfan<sayı>` takma adı) resmî belgede **yazmıyor**; yaygın kullanılan bir davranış ve bu makinede denendi, Twitch haber vermeden kapatabilir. Twitch'in önerdiği yol EventSub'dır ve hesap ister.
+- **YouTube canlı**: streamlink YouTube canlı yayınını kaydedebiliyor ([eklenti listesi](https://streamlink.github.io/plugins.html): "live"; korumalı videolar hariç) ama hesapsız, anlık canlı sohbet için bu araçta hazır bir yol yok. v1'de desteklenmiyor; yayın bittikten sonra `clip:auto` sohbet tekrarını zaten kullanıyor. **Kick**: streamlink eklentisi tarayıcı gerektiriyor; desteklenmiyor.
+- **Canlı deneme** (`--analysis-only`, 480p30, sohbeti saniyede ~4 mesaj olan İngilizce bir "Just Chatting" yayını, 24 + 2 dakika; klip kesilmedi, oturum klasörü deneme sonunda silindi): 5.000'den fazla mesajdan 4 patlama ve 4 aday çıktı. Aday, olaydan 61-73 sn sonra hazırdı (35 sn tepki payı + ~21 sn üretim; üretimin çoğu yerel döküm). Kayıt + sohbet + dedektör 12,75 dakikada toplam 5,9 sn işlemci süresi kullandı (bir çekirdeğin %1'inden az); aday üretimi aday başına ~12 sn işlemci süresi. Disk 480p30'da saatte 0,65 GB. Dört patlamanın dördü de gerçek bir izleyici tepkisine denk geldi ama elle değerlendirmede yalnız biri klip olmaya değerdi (yayıncının izlediği komik bir video; yani asıl içerik üçüncü bir kişiye ait). Diğerleri: zayıf bir geçiş anı, izlenen videodaki ani sponsor geçişi, siyasi bir yorumun ardından bağlantı yağmuru. Sohbetin 5 dakika boyunca hareketli kaldığı bölümde dedektör bilerek tutucu davrandı (olağan düzey yükseldiği için iki küçük dalga aday olmadı). Yeniden bağlanma ve disk dolması gerçek koşulda oluşmadı; bunlar birim testleriyle ve kaldığı yerden sürdürme denemesiyle sınandı.
+- **Windows**: `winget install streamlink` ya da `pip install -U streamlink` ([kurulum](https://streamlink.github.io/install.html)). **Gerçek Windows'ta denenmedi** (kayıt, süreç sonlandırma, Ctrl+C); birim testleri CI'da Windows'ta da çalışır.
+
+### Canlı izlemede sık sorunlar
+
+- **"streamlink bulunamadı":** macOS `brew install streamlink`; Windows yukarıdaki satır. Sonra yeni terminal.
+- **"Kanal şu an canlı değil":** beklenen durum; yayın açılınca kayıt kendiliğinden başlar.
+- **Hiç aday çıkmıyor:** ilk 2 dakika ısınmadır. Sohbeti seyrek kanalda (10 sn'de 10 ağırlıktan az) patlama oluşmaz. `--replay … --threshold 3 --no-build` ile eşiği dene.
+- **"Sohbet patlaması görüldü ama o an kayıtta yok":** kayıt o sırada başlamamış ya da kopmuştu (reklam arası, bağlantı). Kayıt ve sohbet ayrı ayrı yeniden bağlanır.
+- **Yayın başında birkaç saniye eksik:** Twitch açılış reklamı süzülür; kayıt reklamdan sonra başlar.
+- **Aday üretilemedi:** ayrıntı oturum klasöründeki `kayit.log` dosyasında; kayıt ve sohbet etkilenmez.
+- **Bilgisayar uyursa** kayıt ve sohbet kopar; uyanınca yeniden bağlanır, aradaki bölüm kaydedilmez. Uzun yayında uykuyu kapat (`caffeinate -i pnpm clip:live …`).
 
 ## Viral klip rubriği (ölçüme dayalı)
 
