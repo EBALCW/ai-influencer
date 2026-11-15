@@ -43,8 +43,8 @@ import {
 
 const REFRESH_MS = 10_000;
 
-/** Makineler sayfası: eşleme ve makine listesi orada yönetilir. */
-export const MACHINES_HREF = '/production';
+/** Makineler sayfası (Ayarlar → Üretim makineleri): liste ve yetki kaldırma orada. */
+export const MACHINES_HREF = '/settings/machines';
 
 const capabilityLabel = (capability: string) =>
   isWorkerCapability(capability)

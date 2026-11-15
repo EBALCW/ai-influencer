@@ -51,7 +51,7 @@ export async function establishGuard(rpc: RawRpc): Promise<GuardState> {
   if (mark.state === 'revoked') {
     throw new ToolError(
       'oturum_gecersiz',
-      'Bu MCP oturumunun yetkisi panelden kaldırılmış.',
+      'Bu MCP oturumu artık geçerli değil: yetkisi kaldırılmış ya da eski türde (makine olarak) kayıtlı.',
       {
         advice:
           'Kullanıcı `pnpm mcp:logout`, sonra `pnpm mcp:login` çalıştırmalı.',
@@ -69,9 +69,8 @@ export async function establishGuard(rpc: RawRpc): Promise<GuardState> {
 }
 
 const READ_ONLY_SESSION =
-  'Bu MCP oturumu şu an salt okur: veritabanı bu oturuma yazma yetkisi vermiyor. ' +
-  '(Otomasyon oturumlarının taslak yazma yetkisi henüz açılmamıştır; ' +
-  'docs/mcp-panel.md → "Yazma araçlarının durumu".)';
+  'Bu MCP oturumu şu an salt okur: veritabanı bu oturuma taslak yazma yetkisi vermiyor ' +
+  '(üyenin rolü editor ya da owner olmalı; docs/mcp-panel.md → "Yazma araçlarının durumu").';
 
 export function createPanelSession(options: {
   config: PanelConfig;
@@ -145,7 +144,7 @@ export function createPanelSession(options: {
       await ensureGuard();
       if (kind === 'read') return db;
       if (!canWrite || Date.now() - canWrite.at > 60_000) {
-        const { data, error } = await rpc('can_write_data', {});
+        const { data, error } = await rpc('can_draft', {});
         if (error) throw toToolError(error);
         canWrite = { value: data === true, at: Date.now() };
       }
@@ -163,9 +162,11 @@ export function createPanelSession(options: {
           oneri: error.advice ?? null,
         };
       }
+      // Otomasyon oturumunun tablolardaki etkin rolü her zaman viewer'dır; taslak yetkisi
+      // (can_draft) üyenin gerçek rolünden gelir.
       const [role, writable, workspaces] = await Promise.all([
         rpc('current_team_role', {}),
-        rpc('can_write_data', {}),
+        rpc('can_draft', {}),
         db.select({ table: 'workspaces', columns: 'id,name', limit: 2 }),
       ]);
       const who = manager.identity();

@@ -30,6 +30,10 @@ export async function POST(request: NextRequest) {
  * tarafından buraya GET ile (`?error=not_allowed`) yönlendirilir. GET başka sitedeki bir
  * bağlantı/görselle de tetiklenebildiği için (CSRF) oturum yalnız kullanıcı gerçekten ekip
  * üyesi değilse kapatılır; üyenin oturumuna dokunulmaz. Diğer GET'ler çıkış yapmaz.
+ *
+ * Yalnız BU oturum kapatılır (`scope: 'local'`). Otomasyon oturumu (üretim makinesi, MCP) panelde
+ * üye sayılmaz; token'ı bir panel sayfasına gelirse buraya düşer. Genel kapsamla çıkış o üyenin
+ * bütün oturumlarını (tarayıcıdaki paneli de) kapatırdı.
  */
 export async function GET(request: NextRequest) {
   if (request.nextUrl.searchParams.get('error') !== 'not_allowed')
@@ -53,6 +57,6 @@ export async function GET(request: NextRequest) {
     if (!error && member)
       return NextResponse.redirect(new URL('/', request.nextUrl.origin), 303);
   }
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: 'local' });
   return NextResponse.redirect(loginUrl(request, 'not_allowed'), 303);
 }

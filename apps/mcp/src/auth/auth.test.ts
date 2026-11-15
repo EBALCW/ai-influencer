@@ -459,14 +459,18 @@ function fakeRpc(
   return { rpc, calls };
 }
 
-test('güvence: oturum yeteneksiz bir kayıtla işaretlenir', async () => {
-  const { rpc, calls } = fakeRpc({ register_worker: () => null });
+test('güvence: oturum MCP oturumu olarak işaretlenir (makine kaydı açılmaz)', async () => {
+  const { rpc, calls } = fakeRpc({ register_mcp_session: () => null });
   assert.deepEqual(await markAutomationSession(rpc, 'Batu-MacBook.local'), {
     state: 'marked',
     name: 'MCP istemcisi (Batu-MacBook)',
   });
-  assert.deepEqual(calls[0]!.args.p_capabilities, []);
-  assert.equal(calls[0]!.args.p_version, 'mcp-0.1.0');
+  assert.deepEqual(calls, [
+    {
+      name: 'register_mcp_session',
+      args: { p_client_name: 'MCP istemcisi (Batu-MacBook)' },
+    },
+  ]);
 });
 
 test('güvence: bilgisayar adı temizlenir ve sınırlanır', () => {
@@ -479,34 +483,31 @@ test('güvence: bilgisayar adı temizlenir ve sınırlanır', () => {
 });
 
 test('güvence: viewer işaretlenemez (yetki hatası, ipucu yok)', async () => {
-  const { rpc } = fakeRpc({ register_worker: () => ({ code: '42501' }) });
+  const { rpc } = fakeRpc({ register_mcp_session: () => ({ code: '42501' }) });
   assert.deepEqual(await markAutomationSession(rpc, 'h'), { state: 'viewer' });
 });
 
-test('güvence: eski kayıt kaldırılmışsa yeni adla dener; oturum kaldırılmışsa revoked', async () => {
-  let n = 0;
-  const first = fakeRpc({
-    register_worker: () =>
-      (n += 1) === 1 ? { code: '42501', hint: 'worker_revoked' } : null,
-  });
-  const marked = await markAutomationSession(first.rpc, 'h');
-  assert.equal(marked.state, 'marked');
-  assert.match(
-    (marked as { name: string }).name,
-    /^MCP istemcisi \(h\) [0-9a-f]{4}$/,
-  );
-
-  const second = fakeRpc({
-    register_worker: () => ({ code: '42501', hint: 'worker_revoked' }),
-  });
-  assert.deepEqual(await markAutomationSession(second.rpc, 'h'), {
-    state: 'revoked',
-  });
+test('güvence: yetkisi kaldırılmış ya da makine olarak kayıtlı (eski) oturum revoked sayılır', async () => {
+  for (const hint of ['session_revoked', 'worker_session']) {
+    const { rpc, calls } = fakeRpc({
+      register_mcp_session: () => ({ code: '42501', hint }),
+    });
+    assert.deepEqual(await markAutomationSession(rpc, 'h'), {
+      state: 'revoked',
+    });
+    assert.equal(calls.length, 1, 'yeniden denenmez');
+  }
 });
 
 test('güvence: beklenmeyen kayıt hatası girişi durdurur', async () => {
-  const { rpc } = fakeRpc({ register_worker: () => ({ code: '54000' }) });
-  await assert.rejects(markAutomationSession(rpc, 'h'), AutomationGuardError);
+  for (const error of [
+    { code: '54000' },
+    { code: '42501', hint: 'session_required' },
+    { code: 'PGRST202' },
+  ]) {
+    const { rpc } = fakeRpc({ register_mcp_session: () => error });
+    await assert.rejects(markAutomationSession(rpc, 'h'), AutomationGuardError);
+  }
 });
 
 test('güvence: iki onay RPC’si de yetki hatası vermeli', async () => {

@@ -2,19 +2,17 @@
 //
 // Veritabanı onayı yalnız insan oturumuna verir: `approve_episode_script()` ve
 // `approve_job_stage()` (ve altlarındaki trigger'lar) oturum kimliği (`session_id` claim'i)
-// `private.worker_sessions`'a kayıtlı olan oturumu reddeder (#201, #216). Bugün bir oturumu bu
-// şekilde kalıcı olarak "insan değil" diye işaretlemenin tek yolu `register_worker()`'dır:
-// çağıran oturumu yeteneksiz bir makine kaydına bağlar. İşaret kalıcıdır, yenilemede korunur
-// (aynı session_id) ve yalnız yetki DÜŞÜRÜR.
+// otomasyon oturumu olarak kayıtlı olan oturumu reddeder (#201, #216). MCP sunucusu oturumunu
+// `register_mcp_session()` ile "MCP oturumu" olarak işaretler (#241): işaret kalıcıdır, yenilemede
+// korunur (aynı session_id) ve yalnız yetki DÜŞÜRÜR. İşaretli oturum tablolarda ve genel
+// RPC'lerde viewer sayılır; yalnız taslak RPC'lerinde üyenin gerçek rolüyle çalışır. Makine
+// kaydı açılmaz: MCP oturumu üretim makineleri listesinde görünmez.
 //
 // Bu modül iki şey yapar:
 //   1. `markAutomationSession`: oturumu işaretler (girişte, token kasaya yazılmadan ÖNCE).
 //   2. `probeApprovalRefused`: iki onay RPC'sini rastgele kimliklerle çağırıp veritabanının bu
 //      oturumu yetki hatasıyla (42501) reddettiğini doğrular. Reddetmiyorsa sunucu hiçbir araç
 //      çalıştırmaz. Yoklama hiçbir satıra dokunmaz: reddedilmese bile "kayıt bulunamadı" döner.
-//
-// Planlanan değişiklik (docs/mcp-panel.md → "Takip migration'ı"): makine kaydı yerine ayrı bir
-// "otomasyon oturumu" türü. O gelince yalnız bu dosya değişir.
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
 import type { DbErrorLike } from '../lib/errors.ts';
@@ -25,64 +23,43 @@ export type RawRpc = (
   args: Record<string, unknown>,
 ) => Promise<{ data: unknown; error: DbErrorLike | null }>;
 
-export const MCP_SESSION_VERSION = 'mcp-0.1.0';
-
 export type MarkResult =
   /** Oturum otomasyon oturumu olarak kayıtlı. */
   | { readonly state: 'marked'; readonly name: string }
   /** Üye viewer: işaretlenemedi, ama viewer zaten onay veremez ve yazamaz. */
   | { readonly state: 'viewer' }
-  /** Kayıt panelden kaldırılmış: oturum kullanılmamalı. */
+  /** Oturumun yetkisi kaldırılmış ya da oturum eski türde (makine) kayıtlı: kullanılmamalı. */
   | { readonly state: 'revoked' };
 
 export class AutomationGuardError extends Error {}
 
-export function automationSessionName(
-  host: string = hostname(),
-  suffix = '',
-): string {
+export function automationSessionName(host: string = hostname()): string {
   const clean =
     host
       .replace(/\.local$/i, '')
       .replace(/[^A-Za-z0-9._-]+/g, '-')
       .slice(0, 50) || 'bilgisayar';
-  return `MCP istemcisi (${clean})${suffix ? ` ${suffix}` : ''}`;
-}
-
-function platformName(): 'darwin' | 'win32' | 'linux' {
-  return process.platform === 'darwin' || process.platform === 'win32'
-    ? process.platform
-    : 'linux';
+  return `MCP istemcisi (${clean})`;
 }
 
 export async function markAutomationSession(
   rpc: RawRpc,
   host?: string,
 ): Promise<MarkResult> {
-  const attempt = async (name: string) =>
-    rpc('register_worker', {
-      p_name: name,
-      p_platform: platformName(),
-      p_version: MCP_SESSION_VERSION,
-      p_capabilities: [],
-    });
-
   const name = automationSessionName(host);
-  let result = await attempt(name);
-  if (result.error?.hint === 'worker_revoked') {
-    // Aynı adlı eski kayıt kaldırılmış olabilir (yeni giriş): yeni adla bir kez daha dene.
-    // Oturumun KENDİSİ kaldırılmışsa bu da reddedilir.
-    const fresh = automationSessionName(host, randomUUID().slice(0, 4));
-    result = await attempt(fresh);
-    if (!result.error) return { state: 'marked', name: fresh };
-    if (result.error.hint === 'worker_revoked') return { state: 'revoked' };
-  }
-  if (!result.error) return { state: 'marked', name };
-  if (result.error.code === '42501' && !result.error.hint) {
-    return { state: 'viewer' };
+  const { error } = await rpc('register_mcp_session', { p_client_name: name });
+  if (!error) return { state: 'marked', name };
+  // Kodsuz hata veritabanından gelmemiştir (ağ, zaman aşımı): olduğu gibi yukarı verilir.
+  if (!error.code) throw error;
+  if (error.code === '42501') {
+    // `session_revoked`: yetki panelden kaldırıldı. `worker_session`: oturum #241 öncesinde
+    // makine olarak işaretlenmiş (eski MCP girişi); yeni giriş gerekir.
+    if (error.hint === 'session_revoked' || error.hint === 'worker_session')
+      return { state: 'revoked' };
+    if (!error.hint) return { state: 'viewer' };
   }
   throw new AutomationGuardError(
-    `Oturum otomasyon oturumu olarak kaydedilemedi (kod ${result.error.code ?? '?'}).`,
+    `Oturum otomasyon oturumu olarak kaydedilemedi (kod ${error.code}).`,
   );
 }
 

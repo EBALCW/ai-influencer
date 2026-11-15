@@ -76,7 +76,8 @@ const updateSeries = defineTool({
   title: 'Seriyi güncelle',
   description:
     'Bir serinin adını ya da varsayılanlarını değiştirir. Yalnız gönderilen alanlar değişir; `null` gönderilen ' +
-    'tercih (tür, görsel yol, ses) temizlenir. Var olan bölümlerin kendi üstüne yazdıkları etkilenmez.',
+    'tercih (tür, görsel yol, ses) temizlenir. Var olan bölümlerin kendi üstüne yazdıkları etkilenmez. Seride ' +
+    'senaryosu onaylanmış ya da üretimi süren bir bölüm varsa bu oturum seriyi değiştiremez; panelden yapılır.',
   kind: 'write',
   idempotent: true,
   input: z.strictObject({
@@ -224,7 +225,9 @@ const updateEpisode = defineTool({
   description:
     'Bölümün başlığını, özetini, kancasını, "ekranda ne var" notunu ya da seri varsayılanlarının üstüne ' +
     'yazdıklarını (görsel yol, stil, ses) değiştirir. `kind` ya da `language` değişirse senaryonun yeni sürümü ' +
-    'açılır ve varsa insan onayı SİLİNİR; bunu kullanıcıya söyle. Senaryo metni için `save_episode_script` kullan.',
+    'açılır ve varsa insan onayı SİLİNİR; bunu kullanıcıya söyle. Senaryo metni için `save_episode_script` kullan. ' +
+    'Senaryosu onaylanmış ya da üretimi süren bölüm bu oturuma kilitlidir (üretim ayarları onaylanan videoyu ' +
+    'değiştirir); o bölümü kullanıcı panelden düzenler.',
   kind: 'write',
   idempotent: true,
   input: z.strictObject({
@@ -335,7 +338,8 @@ const requestCancelJob = defineTool({
   title: 'İşin iptalini iste',
   description:
     'Bitmemiş bir işin iptalini ister: sıradaki iş hemen iptal olur, çalışan iş makinenin bir sonraki ilerleme ' +
-    'çağrısında durur. Yapılan iş boşa gider; yalnız kullanıcı istediğinde çağır.',
+    'çağrısında durur. Yapılan iş boşa gider; yalnız kullanıcı istediğinde çağır. Bu oturum yalnız ön hazırlık ' +
+    'işlerini (`explainer.topics`, `explainer.script`) iptal edebilir; üretim (render) işini kullanıcı panelden iptal eder.',
   kind: 'write',
   destructive: true,
   idempotent: true,

@@ -1598,6 +1598,9 @@ isOneToOne: false
               "amount": number,"budget_id": string,"currency": string,"influencer_id": string,"missing_rate_count": number,"month": string,"ratio": number,"spent": number,"warn_ratio": number
             }[]
                            },
+"can_draft":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "can_manage_team":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
@@ -2244,6 +2247,11 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"list_mcp_sessions":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "active": boolean,"client_name": string,"created_at": string,"revoked_at": string,"session_id": string,"user_id": string
+            }[]
+                           },
 "mark_alerts_read":
 { Args: { "p_alert_ids"?: (string)[] }; Returns: number
                            },
@@ -2391,6 +2399,9 @@ isOneToOne: false
 "record_manual_metrics":
 { Args: { "p_avg_watch_time_s"?: number,"p_comments": number,"p_completion_rate"?: number,"p_likes": number,"p_post_id": string,"p_reach"?: number,"p_saves"?: number,"p_shares": number,"p_target_hours"?: number,"p_views": number }; Returns: Json
                            },
+"register_mcp_session":
+{ Args: { "p_client_name"?: string }; Returns: boolean
+                           },
 "register_worker":
 { Args: { "p_capabilities"?: (string)[],"p_name": string,"p_platform": string,"p_version"?: string }; Returns: {
               "capabilities": (string)[],
@@ -2439,6 +2450,42 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "topic_suggestions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"release_job":
+{ Args: { "p_job_id": string,"p_worker_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -2619,6 +2666,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"revoke_mcp_session":
+{ Args: { "p_session_id": string }; Returns: boolean
+                           },
 "revoke_worker":
 { Args: { "p_worker_id": string }; Returns: {
               "capabilities": (string)[],
@@ -2676,7 +2726,7 @@ isOneToOne: false
         isSetofReturn: false
       } },
 "save_episode_script":
-{ Args: { "p_episode_id": string,"p_expected_version"?: number,"p_fact_notes"?: Json,"p_script"?: Json,"p_script_text": string,"p_sensitivity_flags"?: (string)[],"p_sensitivity_note"?: string }; Returns: {
+{ Args: { "p_clear_script"?: boolean,"p_episode_id": string,"p_expected_version"?: number,"p_fact_notes"?: Json,"p_script"?: Json,"p_script_text": string,"p_sensitivity_flags"?: (string)[],"p_sensitivity_note"?: string }; Returns: {
               "archived_at": string | null,
 "caption_style": Json | null,
 "created_at": string,

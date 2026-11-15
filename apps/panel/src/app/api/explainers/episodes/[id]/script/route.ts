@@ -46,9 +46,13 @@ export async function PUT(request: Request, context: Context) {
       p_episode_id: id,
       p_script_text: input.script_text,
       ...(input.fact_notes ? { p_fact_notes: input.fact_notes } : {}),
-      // JSON null PostgREST'te SQL NULL olur ("dokunma"); yapılandırılmış senaryo buradan
-      // temizlenemez, yalnız değiştirilebilir.
-      ...(input.script ? { p_script: input.script as Json } : {}),
+      // JSON null PostgREST'te SQL NULL olur ("dokunma"); `script: null` bu yüzden açık
+      // bayrakla (`p_clear_script`) temizler.
+      ...(input.script
+        ? { p_script: input.script as Json }
+        : input.script === null
+          ? { p_clear_script: true }
+          : {}),
       ...(input.sensitivity_flags
         ? { p_sensitivity_flags: input.sensitivity_flags }
         : {}),
