@@ -658,11 +658,15 @@ test('boş alan: eşik altında kayıt durur', () => {
 
 // --- Hak kuralı ve komut satırı -----------------------------------------------
 
-test('hak kuralı: tam olarak bir seçenek gerekir', () => {
-  assert.throws(() => sourceRights({}), /tek bir seçenekle/);
+test('hak kuralı: seçenek isteğe bağlı, birden çok seçenek hata', () => {
+  // 16 Kasım 2026 kararı: izin şart değil; seçenek yoksa "izin alınmadı" olarak kaydedilir
+  assert.deepEqual(sourceRights({}), {
+    sourceType: 'third_party',
+    permission: null,
+  });
   assert.throws(
     () => sourceRights({ own: true, permission: 'IZIN-2026-014' }),
-    /tek bir seçenekle/,
+    /en çok bir seçenekle/,
   );
   assert.deepEqual(sourceRights({ own: true }), {
     sourceType: 'own',
@@ -685,10 +689,10 @@ const cli = (args, env = process.env) =>
     env,
   });
 
-test('clip:live hak seçeneği olmadan başlamaz', () => {
-  const r = cli(['live', 'https://www.twitch.tv/kanal_adi']);
-  assert.equal(r.status, 1);
-  assert.match(r.stderr, /tek bir seçenekle/);
+test('clip:live birden çok hak seçeneğini ve çelişen seçenekleri reddeder', () => {
+  const two = cli(['live', 'kanal_adi', '--own', '--permission', 'IZIN-1']);
+  assert.equal(two.status, 1);
+  assert.match(two.stderr, /en çok bir seçenekle/);
   const both = cli(['live', 'kanal_adi', '--analysis-only', '--own']);
   assert.equal(both.status, 1);
   assert.match(
@@ -723,7 +727,7 @@ test('clip:live streamlink yoksa kurulum ipucuyla çıkar', () => {
   }
 });
 
-test('clip:live-cut yalnız inceleme oturumundan kesmez; hak durumu olmadan da kesmez', () => {
+test('clip:live-cut yalnız inceleme oturumundan kesmez; hak durumu olmadan kesime geçer', () => {
   const dir = mkdtempSync(join(tmpdir(), 'canli-test-'));
   try {
     const session = {
@@ -740,9 +744,48 @@ test('clip:live-cut yalnız inceleme oturumundan kesmez; hak durumu olmadan da k
       join(dir, 'session.json'),
       JSON.stringify({ ...session, analysisOnly: false }),
     );
+    // Hak seçeneği artık şart değil: komut hak kuralına takılmaz, sıradaki denetime (aday yok) geçer
     const noRights = cli(['live-cut', dir, '--only', '1']);
-    assert.equal(noRights.status, 1);
-    assert.match(noRights.stderr, /tek bir seçenekle/);
+    assert.doesNotMatch(noRights.stderr, /seçenekle belirt/);
+    const two = cli([
+      'live-cut',
+      dir,
+      '--only',
+      '1',
+      '--own',
+      '--permission',
+      'IZIN-1',
+    ]);
+    assert.equal(two.status, 1);
+    assert.match(two.stderr, /en çok bir seçenekle/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('clip:cut izin alınmamış kaynakta atıf ister', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'atif-test-'));
+  try {
+    const video = join(dir, 'girdi.mp4');
+    writeFileSync(video, 'video değil');
+    const r = spawnSync(
+      process.execPath,
+      [
+        join(here, 'clip.mjs'),
+        'cut',
+        video,
+        '--start',
+        '0',
+        '--end',
+        '10',
+        '--out',
+        join(dir, 'klip.mp4'),
+      ],
+      { encoding: 'utf8' },
+    );
+    // Kaynak dosyası (source.json) ve --credit yok: atıfsız kesilmez
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /atıf zorunlu/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
