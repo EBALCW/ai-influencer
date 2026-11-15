@@ -353,6 +353,8 @@ export async function runJob(
         clearInterval(flush);
         deps.shutdown.removeEventListener('abort', onShutdown);
         if (sending) await sending;
+        // Seyreltme yüzünden bekleyen son ilerleme kaybolmasın (aşamanın son notu görünsün)
+        if (dirty && !stop && !failure) await send();
       }
 
       // 6) Sonucu bildir
