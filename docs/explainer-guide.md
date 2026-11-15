@@ -38,6 +38,29 @@ Aynı akışın panel veritabanındaki karşılığı (#216; ayrıntı `docs/dat
 
 Onaysız senaryoyla üretim işi açılamaz ve iki kaynaktan azı olan iddia `unsourced_claim_count` ile işaretlenir; ikisi de veritabanında zorlanır.
 
+## Panelde kullanım
+
+Panelde **Anlatım videoları** (`/explainers`) aynı akışı ekranlarla yürütür. Karakter seçilmez; seri isteğe bağlıdır. Owner ve editör yazar, izleyici her şeyi salt okunur görür.
+
+| Ne yapmak istiyorsunuz?              | Nereden                                              | Ne olur                                                                                                                                                                     |
+| ------------------------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Konu belli, tek video                | **Tekil video**                                      | Başlık ve tür yeter; numarasız bir video açılır                                                                                                                             |
+| Aynı formatta devam (Bölüm 1, 2, 3…) | **Yeni seri** → seri sayfasında **Bölüm ekle**       | Tema, görsel yol, stil, ses, altyazı ve dil bir kez seçilir; her bölüm devralır, bölümde değiştirilebilir                                                                   |
+| Fikir arıyorum                       | **Konu önerisi iste**                                | Kısa bir istek açılır; öneriler kart olarak yan yana durur. Bugün önerileri elle eklersiniz (tek tek ya da her satıra bir başlık); yapay zekâ önerileri aynı ekrana gelecek |
+| Öneriyi videoya çevirmek             | Öneri kartında **Bu konuyu seç**                     | Öneri bölüme dönüşür (serideyse sıradaki numarayla). **Ele** ile elenen öneri silinmez, sonradan **Yine de seç** ile seçilebilir                                            |
+| Bölümü başka seriye almak            | Seri sayfasındaki ya da bölüm ayarlarındaki **Taşı** | Yalnız üretim başlamadan; yeni serinin sıradaki numarasını alır, eski numara boş kalır                                                                                      |
+
+Başlık yazarken ya da öneri seçerken panel **benzer eski konuları** gösterir. Uyarı engellemez; aynı videoyu iki kez yapmamak içindir.
+
+**Bölüm sayfası** üstteki şeritte akışta nerede olduğunuzu ve sıradaki adımı söyler:
+
+1. **Senaryo ve kaynak notları.** Anlatıcı metnini yazın. Her olgu için "İddia ekle" ile iddiayı ve kaynaklarını girin. İki kaynaktan azı olan iddia anında işaretlenir; kaynaklar ayrışıyorsa "temkinli ifade" alanına senaryoda kullanılacak ifadeyi yazın. Gerçek olaylarda hassasiyet kutularını işaretleyin; kurallar o anda ekranda görünür.
+2. **Kaydet.** Her değişiklik yeni bir **sürüm** açar; eskisi "Sürüm geçmişi"nde kalır, güncel sürümle karşılaştırılabilir ve "bu sürümü geri yükle" ile yeni sürüm olarak geri getirilebilir. Siz yazarken başka biri kaydettiyse kaydınız reddedilir, yazdıklarınız silinmez: iki sürüm arasındaki farkı görür, güncel sürümü yükler ya da kendi metninizi bilerek yeni sürüm olarak kaydedersiniz.
+3. **Senaryo onayı.** Owner ya da editör, okuduğu sürümü onaylar; kim ve ne zaman onayladı kaydedilir. Kaynak eksiği varsa "Kaynak eksiğini biliyorum" kutusu işaretlenmeden onay verilemez. Senaryo, kaynak notu, hassasiyet ya da tür sonradan değişirse **onay silinir** ve yeniden onay gerekir.
+4. **Üretime gönder.** Onaylı senaryo ve seçili bir görsel yol ister. O anda stil, ses ve altyazı ayarları iş için dondurulur. Bağlı ve çevrimiçi bir üretim makinesi yoksa iş sırada bekler; panel bunu açıkça söyler. Aşamalar (seslendirme → altyazı → görseller → render ve video onayı) aynı sayfada izlenir. Üretim sürerken senaryo kilitlidir; değiştirmek için önce işi iptal edin.
+
+Henüz panelde olmayanlar: yapay zekâ ile öneri ve senaryo taslağı (#217, #218), aşamaları çalıştıran makine programı ve video onayı (#211, #219, #205), dışa aktarma ve yayın (#234).
+
 ## İki çizim yolu
 
 | Yol                                              | Görünüm                                                                     | Ne zaman                                                                   |

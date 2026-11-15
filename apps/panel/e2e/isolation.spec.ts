@@ -126,6 +126,168 @@ test('ikinci alanın ana ekranı birinci alanın üretimlerini göstermez', asyn
   await context.close();
 });
 
+test('ikinci alan birinci alanın anlatım serisini, bölümünü ve konu isteğini göremez, değiştiremez', async ({
+  browser,
+}) => {
+  const run = crypto.randomUUID().slice(0, 8);
+  const seriesName = `E2E Yalıtım Seri ${run}`;
+  const episodeTitle = `E2E Yalıtım Bölüm ${run}`;
+
+  // Birinci alanın editörü panel API'siyle veri açar (alan oturumdan gelir).
+  const first = await browser.newContext({ storageState: EDITOR_STATE });
+  const create = async <T>(url: string, data: unknown): Promise<T> => {
+    const response = await first.request.post(url, { data });
+    expect(response.status(), url).toBe(201);
+    return (await response.json()) as T;
+  };
+  const seriesId = (
+    await create<{ series: { id: string } }>('/api/explainers/series', {
+      name: seriesName,
+      settings: { kind: 'event' },
+    })
+  ).series.id;
+  const requestId = (
+    await create<{ request: { id: string } }>(
+      '/api/explainers/topic-requests',
+      {
+        prompt: `Yalıtım isteği ${run}`,
+        series_id: seriesId,
+        suggestions: [{ title: `Yalıtım önerisi ${run}`, kind: 'event' }],
+      },
+    )
+  ).request.id;
+  const episodeId = (
+    await create<{ episode: { id: string } }>('/api/explainers/episodes', {
+      title: episodeTitle,
+      series_id: seriesId,
+    })
+  ).episode.id;
+  const similarFirst = await first.request.get(
+    `/api/explainers/similar?title=${encodeURIComponent(episodeTitle)}`,
+  );
+  const ownMatches = (
+    (await similarFirst.json()) as { similar: Array<{ id: string }> }
+  ).similar;
+  expect(ownMatches.map((item) => item.id)).toContain(episodeId);
+  const suggestionId = (
+    (await (
+      await first.request.get(
+        `/api/explainers/similar?title=${encodeURIComponent(`Yalıtım önerisi ${run}`)}`,
+      )
+    ).json()) as { similar: Array<{ id: string; source: string }> }
+  ).similar.find((item) => item.source === 'suggestion')!.id;
+  // Kontrol: sahibi sayfaları görür.
+  const own = await first.newPage();
+  expect((await own.goto(`/explainers/episodes/${episodeId}`))?.status()).toBe(
+    200,
+  );
+  await first.close();
+
+  const context = await browser.newContext({ storageState: OTHER_STATE });
+  const page = await context.newPage();
+  const list = await page.goto('/explainers?show=archived');
+  expect(list?.status()).toBe(200);
+  await expect(
+    page.getByRole('heading', { name: 'İlk anlatım videonuzu başlatın' }),
+  ).toBeVisible();
+  await expect(page.getByText(seriesName)).toHaveCount(0);
+  await expect(page.getByText(episodeTitle)).toHaveCount(0);
+
+  for (const path of [
+    `/explainers/series/${seriesId}`,
+    `/explainers/series/${seriesId}/edit`,
+    `/explainers/episodes/${episodeId}`,
+    `/explainers/topics/${requestId}`,
+  ])
+    expect((await page.goto(path))?.status(), path).toBe(404);
+  // Başka alanın serisi form seçeneklerine de sızmaz.
+  await page.goto(`/explainers/episodes/new?series=${seriesId}`);
+  await expect(
+    page.getByRole('form', { name: 'Yeni video' }).getByLabel(/^Seri/),
+  ).toHaveValue('');
+  await expect(page.getByRole('option', { name: seriesName })).toHaveCount(0);
+
+  // API: başka alanın kimliği "bulunamadı"dır; hiçbir şey değişmez.
+  const api = context.request;
+  expect(
+    (await api.get(`/api/explainers/episodes/${episodeId}/script`)).status(),
+  ).toBe(404);
+  const writes: Array<[string, 'post' | 'patch' | 'put', unknown]> = [
+    [`/api/explainers/series/${seriesId}`, 'patch', { name: 'Ele geçirildi' }],
+    [`/api/explainers/series/${seriesId}/archive`, 'post', { archived: true }],
+    [
+      `/api/explainers/topic-requests/${requestId}/suggestions`,
+      'post',
+      { suggestions: [{ title: 'Sızma', kind: 'event' }] },
+    ],
+    [`/api/explainers/suggestions/${suggestionId}/pick`, 'post', {}],
+    [`/api/explainers/suggestions/${suggestionId}/reject`, 'post', {}],
+    [
+      '/api/explainers/episodes',
+      'post',
+      { title: 'Sızma', kind: 'event', series_id: seriesId },
+    ],
+    [`/api/explainers/episodes/${episodeId}`, 'patch', { title: 'Sızma' }],
+    [`/api/explainers/episodes/${episodeId}/move`, 'post', { series_id: null }],
+    [
+      `/api/explainers/episodes/${episodeId}/archive`,
+      'post',
+      { archived: true },
+    ],
+    [
+      `/api/explainers/episodes/${episodeId}/script`,
+      'put',
+      { script_text: 'Sızma' },
+    ],
+    [
+      `/api/explainers/episodes/${episodeId}/approve`,
+      'post',
+      { script_version: 1, acknowledge_fact_gaps: true },
+    ],
+    [
+      `/api/explainers/episodes/${episodeId}/jobs`,
+      'post',
+      { kind: 'explainer.render' },
+    ],
+  ];
+  for (const [url, method, data] of writes)
+    expect((await api[method](url, { data })).status(), url).toBe(404);
+  const similarOther = await api.get(
+    `/api/explainers/similar?title=${encodeURIComponent(episodeTitle)}`,
+  );
+  expect(similarOther.status()).toBe(200);
+  expect(
+    ((await similarOther.json()) as { similar: unknown[] }).similar,
+  ).toEqual([]);
+  // Seri adı alan içinde tekildir: ikinci alan aynı adı kullanabilir.
+  const sameName = await api.post('/api/explainers/series', {
+    data: { name: seriesName },
+  });
+  expect(sameName.status()).toBe(201);
+  await context.close();
+
+  // Birinci alanın kayıtları değişmedi.
+  const { data: series, error: seriesError } = await adminClient()
+    .from('series')
+    .select('name, status')
+    .eq('id', seriesId)
+    .single();
+  if (seriesError) throw seriesError;
+  expect(series).toEqual({ name: seriesName, status: 'active' });
+  const { data: episode, error: episodeError } = await adminClient()
+    .from('episodes')
+    .select('title, series_id, script_text, archived_at')
+    .eq('id', episodeId)
+    .single();
+  if (episodeError) throw episodeError;
+  expect(episode).toEqual({
+    title: episodeTitle,
+    series_id: seriesId,
+    script_text: '',
+    archived_at: null,
+  });
+});
+
 test('ikinci alanın owner’ı yalnız kendi alanının adını ve üyelerini görür', async ({
   browser,
 }) => {

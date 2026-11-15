@@ -211,3 +211,37 @@ export const episodeJobParamsSchema = z.object({
   caption_style: z.record(z.string(), z.unknown()),
   params: z.record(z.string(), z.unknown()),
 });
+
+// ── Panel API gövdeleri (#217, #218 arayüzü) ────────────────────────────────
+
+export const archiveSchema = z.strictObject({ archived: z.boolean() });
+
+export const suggestionsAddSchema = z.strictObject({
+  suggestions: topicSuggestionsSchema.min(1, 'En az bir öneri gerekli.'),
+});
+
+export const suggestionRejectSchema = z.strictObject({
+  reason: text(L.rejectionReason).optional(),
+});
+
+export const episodeMoveSchema = z.strictObject({
+  series_id: z.uuid().nullable(),
+});
+
+/**
+ * "Üretime gönder": istemci yalnız türü ve (isteğe bağlı) duracağı aşamayı seçer. Aşamalar,
+ * parametreler ve gereken yetenekler sunucuda belirlenir.
+ */
+export const episodeJobSchema = z.strictObject({
+  kind: z.string().regex(/^explainer\.[a-z_]{1,40}$/),
+  stop_at: z
+    .string()
+    .regex(/^[a-z_]{1,40}$/)
+    .nullable()
+    .default(null),
+});
+
+export const similarQuerySchema = z.strictObject({
+  title: requiredText(L.title, 'Başlık boş olamaz.'),
+  exclude: z.uuid().optional(),
+});
