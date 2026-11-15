@@ -64,6 +64,20 @@ jobs:
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install --yes postgresql-client-17
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+      # Panel MCP sunucusu (#241): gerçek Auth oturumlarıyla araçlar, "MCP oturumu onay veremez"
+      # güvencesi, çalışma alanı yalıtımı ve tarayıcıyla giriş. `pnpm test`ten ÖNCE ve ayrı
+      # çalışır: oradaki geri yükleme testi yerel veriyi siler ve kullanıcı sayısını karşılaştırır;
+      # bu test kullanıcı ve çalışma alanı açıp siler.
+      - name: Panel MCP entegrasyon testleri (yerel Supabase)
+        run: |
+          pnpm exec supabase status -o env > "$RUNNER_TEMP/sb-mcp.env"
+          get() { grep "^$1=" "$RUNNER_TEMP/sb-mcp.env" | cut -d= -f2- | tr -d '"'; }
+          export LOCAL_SUPABASE_URL="$(get API_URL)"
+          export LOCAL_SUPABASE_ANON_KEY="$(get ANON_KEY)"
+          export LOCAL_SUPABASE_SERVICE_ROLE_KEY="$(get SERVICE_ROLE_KEY)"
+          pnpm test:integration:mcp
+        env:
+          MCP_INTEGRATION: '1'
       - run: pnpm test
         env:
           # Gerçek yerel Supabase'e karşı geri yükleme/rollback testi (scripts/backup-restore.integration.test.mjs)
@@ -140,6 +154,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+        env:
+          # Panel MCP sunucusunun kimlik kasası (Windows Credential Manager) gerçek kasada denenir.
+          MCP_CREDENTIAL_STORE_TEST: '1'
       # Runner'da araçların çoğu yok: komut asılmadan bitmeli ve dürüst bir rapor vermeli.
       # 0 = en az bir üretim yolu tam, 2 = hiçbiri tam değil (burada beklenen); başka kod hatadır.
       - name: Üretim makinesi denetimi (duman testi)

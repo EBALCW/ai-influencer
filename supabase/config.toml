@@ -19,7 +19,8 @@ sql_paths = ["./seed.sql"]
 enabled = true
 enable_signup = false
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://127.0.0.1:3000/**"]
+# İkinci adres: panel MCP sunucusunun tarayıcıyla girişi (pnpm mcp:login, docs/mcp-panel.md).
+additional_redirect_urls = ["http://127.0.0.1:3000/**", "http://127.0.0.1:47821/callback"]
 
 # [auth.email] enable_signup'ı false yapma: CLI bunu e-posta sağlayıcısını
 # tamamen kapatma olarak yorumlar ve magic link girişi de çalışmaz.

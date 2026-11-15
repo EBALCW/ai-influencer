@@ -129,6 +129,7 @@ node scripts/doctor.mjs
 | `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`)                               | Güncel kod haritası (aşağıya bak)                                                                      |
 | `pnpm clip:auto <adres> …` / `clip:fetch` / `clip:moments <klasör>` / `clip:cut …` / `clip:mark` | Yayından en çok izlenecek anları bul, kalite kontrolünden geçir, dikey klip kes (`docs/clip-guide.md`) |
 | `pnpm worker:doctor` (`--json`, `--require <yetenek,...>`)                                       | Üretim makinesi denetimi: üretilebilen video yolları, eksiklerin kurulumu (`docs/SETUP.md`)            |
+| `pnpm mcp:login` (`--email <adres>` \| `--google`) / `mcp:status` / `mcp:logout` / `mcp:start`   | Panel MCP sunucusu: giriş, durum, çıkış, stdio sunucusu (`docs/mcp-panel.md`)                          |
 | `pnpm env:pull`                                                                                  | Test Supabase anahtarlarını `.env.local`'e çeker                                                       |
 | `pnpm owner:create <e-posta>` / `pnpm workspace:create <e-posta>`                                | İlk owner (tek alan) / yeni çalışma alanı + owner'ı (`docs/AUTH.md`)                                   |
 | `pnpm release`                                                                                   | `test` → `main` release PR'ı                                                                           |
@@ -160,6 +161,7 @@ supabase/functions/                   Edge Functions (Deno), ortak kod _shared/
 supabase/seed.sql                     yerel/CI demo verisi
 docs/                                 kurallar (DEVELOPMENT, WORKFLOW, data-model, AI, AUTH …)
 apps/worker/src/                      üretim makinesi programı (Node'un TS desteğiyle derlemesiz çalışır; saf mantık lib/, testler node --test)
+apps/mcp/src/                         panel MCP sunucusu (araçlar tools/, kimlik auth/, saf mantık lib/; testler node --test; docs/mcp-panel.md)
 scripts/                              Node script'leri (cross-platform)
 ```
 

@@ -50,6 +50,7 @@ Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 | `pnpm panel`                    | Paneli build edip başlatır, tarayıcıyı açar (günlük kullanım)                       |
 | `pnpm codemap`                  | Güncel kod haritası: sayfalar, API, modüller, migration'lar, testler                |
 | `pnpm worker:doctor`            | Üretim makinesi denetimi: hangi video yolları üretilebilir, eksikler nasıl kurulur  |
+| `pnpm mcp:login`                | Panel MCP sunucusu: Claude Code paneli araç olarak kullanır (docs/mcp-panel.md)     |
 | `pnpm release`                  | `test` → `main` release PR'ını açar/yeniler                                         |
 
 Geliştirme kuralları: **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** · Branch, PR ve CI/CD akışı: **[docs/WORKFLOW.md](docs/WORKFLOW.md)** (`feature → test → main`, CI geçince otomatik onay + merge)
