@@ -1,6 +1,7 @@
 // Ortak üretim işi modeli (#201, docs/adr/0004-moduler-panel.md → Karar 1-3).
 // Listeler `20261115100000_production_jobs.sql` içindeki CHECK kısıtlarıyla aynıdır; panel testi
 // (apps/panel/src/lib/jobs/job-model.test.ts) iki tarafın ayrışmadığını denetler.
+// Bu dosya başka dosya içe aktarmaz: hem panel (bundler) hem makine programı (Node) doğrudan okur.
 
 /** Panel modülleri. Veritabanında `jobs.module` (text + CHECK). */
 export const MODULES = ['influencer', 'explainer', 'clip'] as const;

@@ -12,6 +12,7 @@ import {
   MODULES,
   PARKED_MODULES,
   TERMINAL_JOB_STATUSES,
+  WORKER_CAPABILITIES,
   WORKER_PLATFORMS,
   canCancelJob,
   canRetryJob,
@@ -89,6 +90,20 @@ describe('iş modeli sabitleri migration ile aynı', () => {
       );
       expect(sqlTargets).toEqual([...targets]);
     }
+  });
+});
+
+describe('yetenek anahtarları', () => {
+  it('her anahtar veritabanındaki yetenek biçimine uyar', () => {
+    // jobs_capabilities_valid / production_workers_capabilities_valid CHECK'lerindeki eleman kalıbı.
+    const guard = migrations
+      .filter((sql) => sql.includes('jobs_capabilities_valid'))
+      .at(-1);
+    expect(guard).toContain("'^([a-z0-9][a-z0-9_.:-]{0,39}(,|$))*$'");
+    for (const capability of WORKER_CAPABILITIES) {
+      expect(capability).toMatch(/^[a-z0-9][a-z0-9_.:-]{0,39}$/);
+    }
+    expect(WORKER_CAPABILITIES.length).toBeLessThanOrEqual(50);
   });
 });
 
