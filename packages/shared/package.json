@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./capabilities": "./src/capabilities.ts",
+    "./explainer": "./src/explainer.ts",
     "./jobs": "./src/jobs.ts"
   },
   "scripts": {

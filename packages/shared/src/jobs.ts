@@ -107,12 +107,24 @@ export type JobStageDefinition = {
  * İş türleri ve aşamaları (`jobs.kind` = `<modül>.<iş>`). Aşama sırası ve onay kapıları işe
  * alınırken `job_stages`'e yazılır ve sonradan değişmez. Başlangıç tanımıdır: aşamaların içi
  * modül issue'larında (#218-#220, #226, #227) doldurulurken liste oradan güncellenir.
+ *
+ * Anlatım modülü (#216): senaryo onayı işin aşaması değil, bölümün kendisindedir
+ * (`approve_episode_script`). `explainer.topics` ve `explainer.script` ön hazırlık işleridir;
+ * diğer her `explainer.*` türü üretim işidir, yalnız `enqueue_episode_job` ile ve onaylı
+ * senaryoyla açılır, son aşaması video onayıdır (bkz. `explainer.ts`).
  */
 export const JOB_KINDS = {
+  'explainer.topics': {
+    module: 'explainer',
+    stages: [{ key: 'research' }],
+  },
+  'explainer.script': {
+    module: 'explainer',
+    stages: [{ key: 'research' }, { key: 'draft' }],
+  },
   'explainer.render': {
     module: 'explainer',
     stages: [
-      { key: 'script', requires_approval: true },
       { key: 'voice' },
       { key: 'captions' },
       { key: 'visuals' },

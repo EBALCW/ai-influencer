@@ -304,6 +304,15 @@ INSERT INTO public.job_stages (job_id, seq, key)
 VALUES ('a1940000-0000-4000-8000-000000000001', 1, 'cut');
 INSERT INTO public.job_assets (job_id, asset_id, role)
 VALUES ('a1940000-0000-4000-8000-000000000001', 'a1830000-0000-4000-8000-000000000001', 'final');
+-- Anlatım modülü (#216): seri, istek, öneri, bölüm; senaryo sürümünü bölüm trigger'ı yazar.
+INSERT INTO public.series (id, name) VALUES ('a1950000-0000-4000-8000-000000000001', 'WS Seri');
+INSERT INTO public.topic_requests (id, series_id, prompt)
+VALUES ('a1960000-0000-4000-8000-000000000001', 'a1950000-0000-4000-8000-000000000001', 'A isteği');
+INSERT INTO public.topic_suggestions (id, request_id, position, title, kind)
+VALUES ('a1970000-0000-4000-8000-000000000001', 'a1960000-0000-4000-8000-000000000001', 1, 'A önerisi', 'event');
+INSERT INTO public.episodes (id, series_id, episode_number, suggestion_id, title, kind, script_text)
+VALUES ('a1980000-0000-4000-8000-000000000001', 'a1950000-0000-4000-8000-000000000001', 1,
+  'a1970000-0000-4000-8000-000000000001', 'A bölümü', 'event', 'A senaryosu');
 
 -- ── İkinci alan: create_workspace_for_user ──────────────────────────────────
 CREATE TEMP TABLE ws ON COMMIT DROP AS

@@ -21,6 +21,23 @@ Agent'tan istemek için: "Havacılıkla ilgili anlatım videosu fikirleri ver" y
 
 Çizimle iyi anlatılan konular şemaya dökülebilenlerdir: mekanizma, akış, ölçek, rota, karşılaştırma. Yüz, kalabalık ya da gerçekçi görüntü gerektiren konular bu yöntemle zayıf kalır; agent öneri listesinde bunu belirtir.
 
+## Panel modeli
+
+Aynı akışın panel veritabanındaki karşılığı (#216; ayrıntı `docs/data-model.md` → "Anlatım modülü"). Seri isteğe bağlıdır: tekil video seri olmadan açılır.
+
+| Adım                   | Tablo / alan                                                                     | RPC                                                |
+| ---------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Kısa istek             | `topic_requests.prompt`                                                          | `create_topic_request`                             |
+| Konu önerileri         | `topic_suggestions`: özet, kanca, `visual_idea`, tür, kanıt düzeyi, kaynak adayı | `create_topic_request`, `add_topic_suggestions`    |
+| Seçim                  | `topic_suggestions.status` → `episodes` (seride sıradaki numara)                 | `pick_topic_suggestion`, `reject_topic_suggestion` |
+| Konu doğrudan verildi  | `episodes` (önerisiz)                                                            | `create_episode`                                   |
+| Senaryo ve kaynak notu | `episodes.script_text`, `script` (`script.json`), `fact_notes`, hassasiyet       | `save_episode_script`                              |
+| Senaryo onayı          | `episodes.script_approved_*` (insan oturumu; değişiklikte silinir)               | `approve_episode_script`                           |
+| Üretim                 | `jobs.episode_id` + dondurulmuş `params` (seri varsayılanı → bölüm)              | `enqueue_episode_job`                              |
+| Video onayı            | işin son aşaması (`job_stages.approved_at`) → bölüm `approved`                   | `approve_job_stage`                                |
+
+Onaysız senaryoyla üretim işi açılamaz ve iki kaynaktan azı olan iddia `unsourced_claim_count` ile işaretlenir; ikisi de veritabanında zorlanır.
+
 ## İki çizim yolu
 
 | Yol                                              | Görünüm                                                                     | Ne zaman                                                                   |
