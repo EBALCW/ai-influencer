@@ -120,7 +120,7 @@ test('makine oturumu kaydolur, listede görünür ve yalnız makine işlerini ya
   expect(team.error).toBeNull();
   expect(team.data).toEqual([]);
 
-  // Makine oturumu panelin kendisine de giremez: API 403, sayfa oturumu kapatır.
+  // Makine oturumu panelin kendisine de giremez: API 403, sayfa çıkışa yönlendirir.
   const jar = new Map<string, string>();
   const ssr = createServerClient(url(), anonKey(), {
     cookies: {
@@ -155,9 +155,16 @@ test('makine oturumu kaydolur, listede görünür ve yalnız makine işlerini ya
       { headers: { origin: baseURL! }, data: {} },
     );
     expect(revoke.status()).toBe(403);
-    const machinePage = await context.newPage();
-    await machinePage.goto('/settings/machines');
-    await expect(machinePage).toHaveURL(/\/login/);
+    // Sayfa isteği de üye sayılmaz ve çıkışa yönlenir (yönlendirme izlenmez: çıkış ucu
+    // kullanıcının bütün oturumlarını kapatır, bu testin panel oturumu da onlardan biri).
+    const pageResponse = await context.request.get('/settings/machines', {
+      maxRedirects: 0,
+    });
+    const pageBody = await pageResponse.text();
+    expect(pageResponse.headers().location ?? pageBody).toContain(
+      '/auth/signout',
+    );
+    expect(pageBody).not.toContain(MACHINE);
   } finally {
     await context.close();
   }
