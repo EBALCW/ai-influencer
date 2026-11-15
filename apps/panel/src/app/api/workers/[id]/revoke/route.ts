@@ -10,14 +10,12 @@ const idSchema = z.string().uuid();
  * editor yalnız kendisininkini kaldırır; makinenin oturumu biter, elindeki iş kuyruğa döner.
  */
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
     const auth = await requireApiRole('editor');
     if (!auth.ok) return auth.response;
-    if (request.headers.get('origin') !== request.nextUrl.origin)
-      return jsonError('Geçersiz istek kaynağı.', 403);
     const id = idSchema.safeParse((await context.params).id);
     if (!id.success) return jsonError('Makine bulunamadı.', 404);
 

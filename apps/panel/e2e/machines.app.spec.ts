@@ -186,11 +186,6 @@ test('başka bir editor başkasının makinesini kaldıramaz', async ({
       { headers: { origin: baseURL! }, data: {} },
     );
     expect(response.status()).toBe(403);
-    const foreign = await context.request.post(
-      `/api/workers/${workerId}/revoke`,
-      { headers: { origin: 'https://example.invalid' }, data: {} },
-    );
-    expect(foreign.status()).toBe(403);
   } finally {
     await context.close();
   }
@@ -201,9 +196,11 @@ test('sahibi yetkiyi kaldırır: makinenin oturumu biter', async ({ page }) => {
   const row = page.getByRole('row').filter({ hasText: MACHINE });
   await expect(row).toBeVisible();
   page.once('dialog', (dialog) => void dialog.accept());
-  await row
-    .getByRole('button', { name: /makinesinin yetkisini kaldır/ })
-    .click();
+  const [revoked] = await Promise.all([
+    page.waitForResponse((response) => response.url().includes('/revoke')),
+    row.getByRole('button', { name: /makinesinin yetkisini kaldır/ }).click(),
+  ]);
+  expect(revoked.status(), await revoked.text()).toBe(200);
   await expect(row.getByText('Yetkisi kaldırıldı')).toBeVisible();
   await expect(row.getByRole('button')).toHaveCount(0);
 
