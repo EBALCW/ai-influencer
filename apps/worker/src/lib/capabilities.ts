@@ -92,7 +92,8 @@ export const CAPABILITY_REQUIREMENTS: Record<
   WorkerCapability,
   readonly CheckId[]
 > = {
-  'voice.edge-tts': ['venv', 'py.edge-tts'],
+  // edge_takes.py kayıt alır; voice.py kayıtları numpy + ffmpeg ile birleştirir
+  'voice.edge-tts': ['venv', 'py.edge-tts', 'py.numpy', 'ffmpeg'],
   'captions.burn': ['ffmpeg', 'ffmpeg.subtitles'],
   'render.skia': [
     'venv',
@@ -103,7 +104,15 @@ export const CAPABILITY_REQUIREMENTS: Record<
     'ffprobe',
     'ffmpeg.libx264',
   ],
-  'render.hyperframes': ['node', 'hyperframes', 'chrome', 'ffmpeg', 'ffprobe'],
+  // libx264: bitmiş video yükleme sınırına sığdırılırken yeniden kodlanır
+  'render.hyperframes': [
+    'node',
+    'hyperframes',
+    'chrome',
+    'ffmpeg',
+    'ffprobe',
+    'ffmpeg.libx264',
+  ],
   'render.blender': ['blender', 'ffmpeg', 'ffmpeg.libx264'],
   'render.blender.mpfb': [
     'blender',

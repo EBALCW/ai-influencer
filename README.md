@@ -52,6 +52,7 @@ Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 | `pnpm clip:auto` / `clip:live`       | Yayıncı klipleri: biten yayından ya da yayın sürerken (Twitch) klip adayı çıkarır (`docs/clip-guide.md`) |
 | `pnpm worker:doctor`                 | Üretim makinesi denetimi: hangi video yolları üretilebilir, eksikler nasıl kurulur                       |
 | `pnpm worker:login` / `worker:start` | Üretim makinesi programı: giriş, kuyruktan iş alıp bu bilgisayarda çalıştırma (`docs/SETUP.md`)          |
+| `pnpm worker:produce-local <girdi>`  | Anlatım videosunu kuyruk ve oturum olmadan bu bilgisayarda üretir (`docs/explainer-guide.md`)            |
 | `pnpm mcp:login`                     | Panel MCP sunucusu: Claude Code paneli araç olarak kullanır (docs/mcp-panel.md)                          |
 | `pnpm release`                       | `test` → `main` release PR'ını açar/yeniler                                                              |
 
@@ -96,37 +97,38 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 
 **Panelin tüm modülleri `test`'te.** Gerçek veri için kalan kod işi sosyal hesap bağlama (#49) ve Instagram toplayıcısı (#50); gerisi hosted kurulum (sırlar, geliştirici uygulamaları).
 
-| Alan                                                                                               | Durum       | Issue           |
-| -------------------------------------------------------------------------------------------------- | ----------- | --------------- |
-| Altyapı: monorepo, CI/CD, otomatik onay/merge, migration pipeline'ı (test + prod), `pnpm env:pull` | ✅          | #36 #37 #38 #93 |
-| Kimlik doğrulama, ekip ve roller (owner / editor / viewer), RLS                                    | ✅          | #39             |
-| Panel iskeleti, tema, influencer seçici                                                            | ✅          | #40             |
-| Influencer listesi, oluşturma sihirbazı, persona versiyonları                                      | ✅          | #42 #43 #44     |
-| Medya kütüphanesi (Storage)                                                                        | ✅          | #45             |
-| Prompt kütüphanesi, versiyonlama, içe/dışa aktarma                                                 | ✅          | #46             |
-| Panel içi AI asistanı (Claude)                                                                     | ✅          | #48             |
-| Genel bakış dashboard'u (`/influencers/overview`)                                                  | ✅          | #54             |
-| Post detay ve karşılaştırmalı analiz (`/analytics`)                                                | ✅          | #55             |
-| Bildirimler ve uyarı kuralları (zil, push opsiyonel)                                               | ✅          | #56             |
-| İçerik kanbanı ve yayın takvimi                                                                    | ✅          | #57             |
-| Maliyet ve bütçe takibi (üretim maliyeti otomatik)                                                 | ✅          | #59             |
-| Haftalık rapor, CSV dışa aktarma, PDF                                                              | ✅          | #62             |
-| Performans takibi, ilk test dalgası grupları (`/analytics/performance`)                            | ✅          | #24 #25         |
-| AI üretim kuyruğu (Higgsfield worker, `/production`)                                               | ✅          | #47             |
-| Zamanlanmış senkronizasyon + 1s/5s/24s/72s/7g snapshot'ları                                        | ✅          | #53             |
-| Marka CRM'i ve PDF medya kiti                                                                      | ✅          | #60             |
-| Sosyal hesap bağlama (OAuth)                                                                       | 🚧 Emre     | #49             |
-| YouTube ve TikTok toplayıcıları, manuel metrik girişi                                              | ✅          | #51 #52         |
-| Instagram toplayıcısı                                                                              | 🚧 Emre     | #50             |
-| Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅          | #58             |
-| Birleşik yorum gelen kutusu                                                                        | ✅          | #61             |
-| Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | ✅          | #173            |
-| Yayıncı klipleri: canlı izleme (`pnpm clip:live`, Twitch; komut satırı)                            | ✅          | #252            |
-| Çalışma alanları: kiracı başına yalıtım (RLS, Storage, service role), `pnpm workspace:create`      | ✅          | #181            |
-| Ana ekran (`/`): modüller, son üretimler, makine durumu; modüllere göre gruplanmış menü            | ✅          | #200            |
-| Üretim işi modeli ve anlatım veri modeli (iş, aşama, onay; seri, öneri, bölüm, senaryo sürümleri)  | ✅          | #201 #216       |
-| Anlatım videoları ekranları (`/explainers`): seri, tekil video, elle konu önerisi, senaryo ve onay | 🚧 AI kısmı | #217 #218       |
-| Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel) | #41             |
+| Alan                                                                                               | Durum                                                     | Issue           |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | --------------- |
+| Altyapı: monorepo, CI/CD, otomatik onay/merge, migration pipeline'ı (test + prod), `pnpm env:pull` | ✅                                                        | #36 #37 #38 #93 |
+| Kimlik doğrulama, ekip ve roller (owner / editor / viewer), RLS                                    | ✅                                                        | #39             |
+| Panel iskeleti, tema, influencer seçici                                                            | ✅                                                        | #40             |
+| Influencer listesi, oluşturma sihirbazı, persona versiyonları                                      | ✅                                                        | #42 #43 #44     |
+| Medya kütüphanesi (Storage)                                                                        | ✅                                                        | #45             |
+| Prompt kütüphanesi, versiyonlama, içe/dışa aktarma                                                 | ✅                                                        | #46             |
+| Panel içi AI asistanı (Claude)                                                                     | ✅                                                        | #48             |
+| Genel bakış dashboard'u (`/influencers/overview`)                                                  | ✅                                                        | #54             |
+| Post detay ve karşılaştırmalı analiz (`/analytics`)                                                | ✅                                                        | #55             |
+| Bildirimler ve uyarı kuralları (zil, push opsiyonel)                                               | ✅                                                        | #56             |
+| İçerik kanbanı ve yayın takvimi                                                                    | ✅                                                        | #57             |
+| Maliyet ve bütçe takibi (üretim maliyeti otomatik)                                                 | ✅                                                        | #59             |
+| Haftalık rapor, CSV dışa aktarma, PDF                                                              | ✅                                                        | #62             |
+| Performans takibi, ilk test dalgası grupları (`/analytics/performance`)                            | ✅                                                        | #24 #25         |
+| AI üretim kuyruğu (Higgsfield worker, `/production`)                                               | ✅                                                        | #47             |
+| Zamanlanmış senkronizasyon + 1s/5s/24s/72s/7g snapshot'ları                                        | ✅                                                        | #53             |
+| Marka CRM'i ve PDF medya kiti                                                                      | ✅                                                        | #60             |
+| Sosyal hesap bağlama (OAuth)                                                                       | 🚧 Emre                                                   | #49             |
+| YouTube ve TikTok toplayıcıları, manuel metrik girişi                                              | ✅                                                        | #51 #52         |
+| Instagram toplayıcısı                                                                              | 🚧 Emre                                                   | #50             |
+| Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅                                                        | #58             |
+| Birleşik yorum gelen kutusu                                                                        | ✅                                                        | #61             |
+| Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | ✅                                                        | #173            |
+| Yayıncı klipleri: canlı izleme (`pnpm clip:live`, Twitch; komut satırı)                            | ✅                                                        | #252            |
+| Çalışma alanları: kiracı başına yalıtım (RLS, Storage, service role), `pnpm workspace:create`      | ✅                                                        | #181            |
+| Ana ekran (`/`): modüller, son üretimler, makine durumu; modüllere göre gruplanmış menü            | ✅                                                        | #200            |
+| Üretim işi modeli ve anlatım veri modeli (iş, aşama, onay; seri, öneri, bölüm, senaryo sürümleri)  | ✅                                                        | #201 #216       |
+| Anlatım videoları ekranları (`/explainers`): seri, tekil video, elle konu önerisi, senaryo ve onay | 🚧 AI kısmı                                               | #217 #218       |
+| Anlatım üretimi makinede: ses, altyazı, şablonla HyperFrames videosu (`explainer.render`)          | 🚧 panelden gerçek işle denenmedi; tek stil, ara onay yok | #219 #220       |
+| Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel)                                               | #41             |
 
 **Ortamlar:** `test` dalı → AiInfTest Supabase projesi, `main` → AiInfMain (production). Veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0). Son production release: `v2026.10.21-0c1131d`. `test`'teki yenilikler `pnpm release` ile `main`'e geçer.
 

@@ -41,6 +41,8 @@ export function createFakeApi(options: { now?: () => number } = {}) {
     failNext: new Map<string, number>(),
     heartbeats: 0,
   };
+  /** `<bölüm>:<sürüm>` → senaryo sürümü satırı. */
+  const scripts = new Map<string, unknown>();
   let seq = 0;
   const id = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, '0')}`;
 
@@ -220,6 +222,10 @@ export function createFakeApi(options: { now?: () => number } = {}) {
       job.lease_expires_at = null;
       return row(job);
     },
+    async fetchScriptVersion(episodeId, version) {
+      guard('fetch_script_version');
+      return scripts.get(`${episodeId}:${version}`) ?? null;
+    },
     async uploadOutput(input) {
       guard('upload_output');
       const job = held(input.job.id);
@@ -235,6 +241,7 @@ export function createFakeApi(options: { now?: () => number } = {}) {
 
   return {
     api,
+    scripts,
     jobs,
     calls,
     state,
@@ -244,6 +251,8 @@ export function createFakeApi(options: { now?: () => number } = {}) {
       params?: unknown;
       required?: string[];
       maxAttempts?: number;
+      episodeId?: string;
+      scriptVersion?: number;
     }): FakeJob {
       const job: FakeJob = {
         id: id(),
@@ -258,6 +267,8 @@ export function createFakeApi(options: { now?: () => number } = {}) {
         attempts: 0,
         max_attempts: input.maxAttempts ?? 3,
         worker_id: null,
+        episode_id: input.episodeId ?? null,
+        episode_script_version: input.scriptVersion ?? null,
         stages: input.stages.map((stage) => ({ ...stage, status: 'pending' })),
         required: input.required ?? [],
         error: null,

@@ -20,6 +20,8 @@ const config = [
       // Dışarıdan alınan skill'ler ve tarayıcıda çalışan film örnekleri (bkz. .claude/skills/edit-video/KAYNAK.md)
       '.claude/skills/{find-ideas,write-script,edit-video,film-styles,animated-explainer}/**',
       '.claude/skills/anlatim-videosu/ornek/**',
+      // Tarayıcıda (HyperFrames) çalışan şablon; bp.js'in genel adlarını kullanır
+      'apps/worker/src/handlers/explainer/template/**',
     ],
   },
 ];

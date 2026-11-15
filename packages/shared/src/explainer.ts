@@ -43,6 +43,25 @@ export const VISUAL_ROUTE_CAPABILITY: Record<VisualRoute, string | null> = {
 };
 
 /**
+ * Üretim makinesinde `explainer.render` işleyicisi olan yollar (#219, #220). Diğer yolların
+ * yetenek anahtarı tanımlı olsa da görsel ve render aşaması henüz yoktur: panel o yolla tam
+ * üretim işi açmaz. Yeni yolun işleyicisi (`apps/worker/src/handlers/explainer`) eklenince
+ * buraya da eklenir.
+ */
+export const EXPLAINER_RENDER_ROUTES: readonly VisualRoute[] = ['hyperframes'];
+
+/**
+ * Altyazıyı videoya libass ile gömen yollar (`captions.burn` ister). HyperFrames yolunda altyazı
+ * kompozisyonun içinde çizilir; gömme aracı gerekmez.
+ */
+export const CAPTION_BURN_ROUTES: readonly VisualRoute[] = [
+  'skia',
+  'blender',
+  'stock',
+  'meme',
+];
+
+/**
  * Kanıt düzeyi (`find-ideas` kuralı): konunun kısa videoda işlediğine dair örnek.
  * `proven`: örnek, kanalının yakın tarihli ortancasının en az 3 katı izlenmiş.
  * Olguların doğruluğu hakkında bir şey söylemez; iki kaynak kuralı ayrıdır.

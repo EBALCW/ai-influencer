@@ -288,9 +288,10 @@ test('seri → elle öneriler → seçim → senaryo ve kaynak notları → onay
     kind: 'explainer.render',
     status: 'queued',
     episode_script_version: 2,
+    // HyperFrames yolunda altyazı kompozisyonun içinde: captions.burn istenmez (#219, #220)
     required_capabilities: [
+      'kind:explainer.render',
       'voice.edge-tts',
-      'captions.burn',
       'render.hyperframes',
     ],
   });
@@ -456,7 +457,7 @@ test('tekil video: seri olmadan; çakışmada sessizce üstüne yazılmaz; eski 
   // Seriye taşıma: tekil video serinin ilk bölümü olur.
   const seriesName = `E2E Taşıma ${run}`;
   const created = await page.request.post('/api/explainers/series', {
-    data: { name: seriesName, settings: { visual_route: 'skia' } },
+    data: { name: seriesName, settings: { visual_route: 'hyperframes' } },
   });
   expect(created.status()).toBe(201);
   const duplicate = await page.request.post('/api/explainers/series', {
@@ -481,5 +482,5 @@ test('tekil video: seri olmadan; çakışmada sessizce üstüne yazılmaz; eski 
     page
       .getByRole('region', { name: 'Üretim', exact: true })
       .getByRole('list', { name: 'Üretim için gerekenler' }),
-  ).toContainText('Görsel yol: Skia 2B çizim (seriden).');
+  ).toContainText('Görsel yol: Stil paketi (HyperFrames) (seriden).');
 });

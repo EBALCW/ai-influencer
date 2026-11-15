@@ -23,6 +23,9 @@ export interface JobRow {
   attempts: number;
   max_attempts: number;
   worker_id: string | null;
+  /** Anlatım işlerinde sahip bölüm ve işin açıldığı senaryo sürümü (sunucu yazar). */
+  episode_id?: string | null;
+  episode_script_version?: number | null;
 }
 
 export interface WorkerRow {
@@ -72,6 +75,8 @@ export interface WorkerApi {
     retryable: boolean,
   ): Promise<JobRow>;
   acknowledgeCancel(workerId: string, jobId: string): Promise<JobRow>;
+  /** Bölümün belirli senaryo sürümünü okur (RLS: ekip üyesi okur); yoksa `null`. */
+  fetchScriptVersion(episodeId: string, version: number): Promise<unknown>;
   /** Dosyayı `productions/<alan>/<iş>/<ad>` yoluna yükler ve işe bağlar. */
   uploadOutput(input: {
     workerId: string;
@@ -150,6 +155,23 @@ export function createWorkerApi(http: Http, session: Session): WorkerApi {
         p_worker_id: workerId,
         p_job_id: jobId,
       }),
+    async fetchScriptVersion(episodeId, version) {
+      // Değerler sorgu metnine girmeden önce biçimce denetlenir
+      if (
+        !/^[0-9a-f-]{36}$/i.test(episodeId) ||
+        !Number.isInteger(version) ||
+        version < 1
+      )
+        throw new Error('Senaryo sürümü kimliği geçersiz.');
+      const rows = await withToken((token) =>
+        http.select<unknown>(
+          'episode_script_versions',
+          `select=version,kind,language,script_text,script,fact_notes,approved_at&episode_id=eq.${episodeId}&version=eq.${version}&limit=1`,
+          token,
+        ),
+      );
+      return rows[0] ?? null;
+    },
     async uploadOutput(input) {
       await withToken((token) =>
         http.upload(

@@ -1,0 +1,211 @@
+{
+  "_aciklama": "pnpm worker:produce-local girdisi: panelin işe dondurduğu veriyle aynı biçim. Olgular: .claude/skills/anlatim-videosu/ornek/planor-stil/sources.md",
+  "params": {
+    "episode": {
+      "id": "00000000-0000-4000-8000-0000000000e1",
+      "number": 1,
+      "title": "Planör nasıl uçar?",
+      "kind": "how_it_works",
+      "language": "tr",
+      "script_version": 1
+    },
+    "series": {
+      "id": "00000000-0000-4000-8000-0000000000a1",
+      "name": "Gökyüzü Defteri",
+      "theme": "Uçan şeyler nasıl uçar?"
+    },
+    "visual_route": "hyperframes",
+    "style_key": "blueprint",
+    "voice": {
+      "provider": "edge-tts",
+      "name": "tr-TR-AhmetNeural",
+      "rate": "+8%"
+    },
+    "caption_style": {
+      "mode": "word"
+    },
+    "params": {}
+  },
+  "script_version": {
+    "version": 1,
+    "kind": "how_it_works",
+    "language": "tr",
+    "script_text": "Planörün motoru yok. Yine de saatlerce havada kalır, yüzlerce kilometre uçar. Peki nasıl?\n\nÖnce bir uçak ya da vinç, onu halatla havaya çeker. Halat bırakılınca planör hep hafifçe alçalır; hızını da bu alçalıştan alır.\n\nKanat havayı aşağı çevirir, hava da kanadı yukarı iter. Modern bir planör 1.000 metre alçalırken 40, 50 kilometre ileri gidebilir.\n\nSaatlerce havada kalmanın sırrı ise yükselen hava. Güneş yeri ısıtır; ısınan hava sütun halinde yükselir. Buna termik denir. Pilot bu sütunun içinde daireler çizerek tırmanır.\n\nDağların ardında oluşan dalgalar, planörleri 22 kilometrenin üzerine çıkardı.",
+    "script": {
+      "version": 1,
+      "beats": [
+        {
+          "text": "Planörün motoru yok. Yine de saatlerce havada kalır, yüzlerce kilometre uçar. Peki nasıl?",
+          "card": {
+            "type": "phrase",
+            "text": "MOTOR YOK",
+            "note": "yine de saatlerce havada"
+          }
+        },
+        {
+          "text": "Önce bir uçak ya da vinç, onu halatla havaya çeker. Halat bırakılınca planör hep hafifçe alçalır; hızını da bu alçalıştan alır.",
+          "heading": "Kalkış",
+          "card": {
+            "type": "steps",
+            "title": "Kalkış",
+            "items": [
+              "Uçak ya da vinç çeker",
+              "Halat bırakılır",
+              "Planör süzülerek alçalır"
+            ]
+          }
+        },
+        {
+          "text": "Kanat havayı aşağı çevirir, hava da kanadı yukarı iter.",
+          "heading": "Kaldırma"
+        },
+        {
+          "text": "Modern bir planör 1.000 metre alçalırken 40, 50 kilometre ileri gidebilir.",
+          "heading": "Süzülme oranı",
+          "card": {
+            "type": "number",
+            "value": "40-50",
+            "unit": "km ileri",
+            "label": "1.000 metre alçalırken"
+          }
+        },
+        {
+          "text": "Saatlerce havada kalmanın sırrı ise yükselen hava. Güneş yeri ısıtır; ısınan hava sütun halinde yükselir. Buna termik denir. Pilot bu sütunun içinde daireler çizerek tırmanır.",
+          "heading": "Yükselen hava",
+          "card": {
+            "type": "phrase",
+            "text": "TERMİK",
+            "note": "ısınan hava sütunu"
+          }
+        },
+        {
+          "text": "Dağların ardında oluşan dalgalar, planörleri 22 kilometrenin üzerine çıkardı.",
+          "heading": "Dağ dalgası",
+          "card": {
+            "type": "number",
+            "value": "22+",
+            "unit": "km irtifa",
+            "label": "dağ dalgasıyla"
+          }
+        }
+      ]
+    },
+    "fact_notes": [
+      {
+        "claim": "Planörün motoru yok; itki üretmez.",
+        "sources": [
+          {
+            "title": "NASA Glenn: Gliders",
+            "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/gliders/",
+            "primary": true
+          },
+          {
+            "title": "Wikipedia: Glider (sailplane)",
+            "url": "https://en.wikipedia.org/wiki/Glider_(sailplane)"
+          }
+        ],
+        "note": "Motorlu planörler de var; video klasik (motorsuz) planörü anlatıyor."
+      },
+      {
+        "claim": "Saatlerce havada kalır, yüzlerce kilometre uçar.",
+        "sources": [
+          {
+            "title": "FAI IGC rozetleri",
+            "url": "https://www.fai.org/page/igc-badges",
+            "primary": true
+          },
+          {
+            "title": "Wikipedia: Gliding",
+            "url": "https://en.wikipedia.org/wiki/Gliding"
+          }
+        ]
+      },
+      {
+        "claim": "Kalkış: motorlu uçakla çekme ya da yerdeki vinç.",
+        "sources": [
+          {
+            "title": "Wikipedia: Glider (sailplane)",
+            "url": "https://en.wikipedia.org/wiki/Glider_(sailplane)"
+          },
+          {
+            "title": "NASA Glenn: Gliders",
+            "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/gliders/",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "claim": "Bırakıldıktan sonra havaya göre hep alçalır; hızını bu alçalıştan alır.",
+        "sources": [
+          {
+            "title": "NASA Glenn: Gliders",
+            "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/gliders/",
+            "primary": true
+          },
+          {
+            "title": "Wikipedia: Gliding",
+            "url": "https://en.wikipedia.org/wiki/Gliding"
+          }
+        ]
+      },
+      {
+        "claim": "Kanat havayı aşağı çevirir, hava kanadı yukarı iter (kaldırma).",
+        "sources": [
+          {
+            "title": "NASA Glenn: What is Lift?",
+            "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/what-is-lift/",
+            "primary": true
+          },
+          {
+            "title": "Wikipedia: Lift (force)",
+            "url": "https://en.wikipedia.org/wiki/Lift_(force)"
+          }
+        ]
+      },
+      {
+        "claim": "Modern planör 1 km alçalırken 40-50 km ileri gider.",
+        "sources": [
+          {
+            "title": "Wikipedia: Gliding",
+            "url": "https://en.wikipedia.org/wiki/Gliding"
+          },
+          {
+            "title": "Wikipedia: Glider (sailplane)",
+            "url": "https://en.wikipedia.org/wiki/Glider_(sailplane)"
+          }
+        ],
+        "note": "Durgun havada ve en iyi süzülüş hızında."
+      },
+      {
+        "claim": "Güneş yeri ısıtır, ısınan hava sütun halinde yükselir: termik. Pilot içinde daire çizerek tırmanır.",
+        "sources": [
+          {
+            "title": "Wikipedia: Lift (soaring)",
+            "url": "https://en.wikipedia.org/wiki/Lift_(soaring)"
+          },
+          {
+            "title": "NASA Glenn: Gliders",
+            "url": "https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/gliders/",
+            "primary": true
+          }
+        ]
+      },
+      {
+        "claim": "Dağ ardı dalgalar planörleri 22 km'nin üzerine çıkardı (Perlan 2, 2018).",
+        "sources": [
+          {
+            "title": "Perlan Project",
+            "url": "https://perlanproject.org/",
+            "primary": true
+          },
+          {
+            "title": "Wikipedia: Lift (soaring)",
+            "url": "https://en.wikipedia.org/wiki/Lift_(soaring)"
+          }
+        ],
+        "cautious_wording": "22 kilometrenin üzerine"
+      }
+    ],
+    "approved_at": "2026-11-15T12:00:00Z"
+  }
+}

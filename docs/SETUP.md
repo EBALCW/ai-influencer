@@ -241,14 +241,15 @@ CI'da PostgreSQL 17 istemcisiyle gerçek `pg_dump` alınır, yerel demo verisi d
 
 Render, ses ve klip gibi ağır işler panelin sunucusunda değil, ekip üyesinin kendi bilgisayarında çalışır. Program kuyruktan iş alır, aşamaları bu bilgisayarda yürütür, ilerlemeyi yazar ve çıktıyı yükler. macOS ve Windows'ta aynı komutlarla çalışır; kurulum paketi ya da Windows servisi yoktur, terminalde çalışan bir kullanıcı programıdır.
 
-| Komut                  | Ne yapar                                                                                                             |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `pnpm worker:login`    | Ekip üyesi olarak giriş yapar ve bu bilgisayarı makine olarak kaydeder (`--password`: parolayla; `--force`: yeniden) |
-| `pnpm worker:start`    | Kuyruğu izler ve işleri çalıştırır. `Ctrl+C` ile durur (`--exit-when-idle`: sırada iş kalmayınca çıkar; `--json`)    |
-| `pnpm worker:status`   | Giriş, kasa ve oturum durumunu gösterir (`--json`)                                                                   |
-| `pnpm worker:logout`   | Oturumu kapatır ve kasadaki kaydı siler                                                                              |
-| `pnpm worker:selftest` | İşleyicileri kuyruk ve oturum olmadan bu bilgisayarda dener                                                          |
-| `pnpm worker:doctor`   | Hangi üretim yollarının çalışabileceğini söyler (aşağıdaki bölüm)                                                    |
+| Komut                                    | Ne yapar                                                                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `pnpm worker:login`                      | Ekip üyesi olarak giriş yapar ve bu bilgisayarı makine olarak kaydeder (`--password`: parolayla; `--force`: yeniden) |
+| `pnpm worker:start`                      | Kuyruğu izler ve işleri çalıştırır. `Ctrl+C` ile durur (`--exit-when-idle`: sırada iş kalmayınca çıkar; `--json`)    |
+| `pnpm worker:status`                     | Giriş, kasa ve oturum durumunu gösterir (`--json`)                                                                   |
+| `pnpm worker:logout`                     | Oturumu kapatır ve kasadaki kaydı siler                                                                              |
+| `pnpm worker:selftest`                   | İşleyicileri kuyruk ve oturum olmadan bu bilgisayarda dener                                                          |
+| `pnpm worker:produce-local <girdi.json>` | Anlatım videosunu kuyruk ve oturum olmadan bu bilgisayarda üretir (`docs/explainer-guide.md` → "Panelsiz deneme")    |
+| `pnpm worker:doctor`                     | Hangi üretim yollarının çalışabileceğini söyler (aşağıdaki bölüm)                                                    |
 
 ### İlk kurulum (macOS ve Windows aynı)
 
@@ -258,7 +259,9 @@ Render, ses ve klip gibi ağır işler panelin sunucusunda değil, ekip üyesini
 4. `pnpm worker:start`: makine panelde **Ayarlar → Üretim makineleri** listesinde "Çevrimiçi" görünür.
 5. Uçtan uca deneme: aynı sayfada **Deneme işi gönder**. İş ikinci aşamadan sonra onay bekler; **Çıktıyı onayla** dediğinde makine son aşamayı yürütür ve iş "Hazır" olur. Makine oturumu iş açamadığı için deneme işini panelden bir owner/editor açar.
 
-İsteğe bağlı ayarlar (`.env.local` ya da ortam değişkeni): `WORKER_NAME` (panelde görünecek ad; varsayılan bilgisayarın adı), `WORKER_POLL_SECONDS` (kuyruğu yoklama aralığı, varsayılan 5).
+İsteğe bağlı ayarlar (`.env.local` ya da ortam değişkeni): `WORKER_NAME` (panelde görünecek ad; varsayılan bilgisayarın adı), `WORKER_POLL_SECONDS` (kuyruğu yoklama aralığı, varsayılan 5), `WORKER_WORK_DIR` (işlerin geçici çalışma klasörü, tam yol; varsayılan macOS `~/Library/Caches/ai-influencer-worker`, Windows `%LOCALAPPDATA%\ai-influencer-worker\work`, Linux `~/.cache/ai-influencer-worker`).
+
+Anlatım videosu üretmek için (`explainer.render`) makinede `voice.edge-tts` ve `render.hyperframes` yetenekleri olmalıdır (`pnpm worker:doctor`); program repo içindeki `.claude/skills` betiklerini kullandığı için repo klasöründen çalıştırılır. Aşamalar ve çıktılar: `docs/explainer-guide.md` → "Panelden üretim: makine ne yapar".
 
 ### Oturum nerede durur?
 
@@ -314,18 +317,18 @@ node apps/worker/src/doctor.ts --json           # makine tarafından okunur çı
 
 İş kuyruğu bir işi yalnızca gereken yeteneklerin hepsine sahip makineye verir (ADR 0004). Anahtarlar sabittir, `packages/shared/src/capabilities.ts` içinde durur; hangi araçtan türediği `apps/worker/src/lib/capabilities.ts` içindedir.
 
-| Yetenek               | Ne için                                 | Gerekenler                                                          |
-| --------------------- | --------------------------------------- | ------------------------------------------------------------------- |
-| `voice.edge-tts`      | Türkçe seslendirme                      | Film sanal ortamı + `edge-tts` (çalışırken internet ister)          |
-| `captions.burn`       | Altyazı gömme                           | `subtitles` filtresi (libass) ve libx264 olan bir ffmpeg            |
-| `render.skia`         | Skia yolu ile 2B anlatım                | Sanal ortam + `skia-python`, `numpy`, `pillow`; ffmpeg + ffprobe    |
-| `render.hyperframes`  | Stil yolu (HyperFrames)                 | Node, HyperFrames çalışma zamanı, Chrome/Chromium, ffmpeg + ffprobe |
-| `render.blender`      | Blender ile 3B kesit                    | Blender 5.0+, libx264'lü ffmpeg                                     |
-| `render.blender.mpfb` | Blender sahnesinde MPFB insan figürü    | `render.blender` + MPFB eklentisi                                   |
-| `clip.cut`            | Klip kesme, dikeye çevirme              | libx264'lü ffmpeg + ffprobe                                         |
-| `clip.transcribe`     | Altyazısız yayında yerel konuşma tanıma | `whisper-cli` + model dosyası + ffmpeg                              |
-| `clip.audio-tags`     | Ses etiketleme (müzik, gülme, bağırma)  | Ses etiketleyici (sherpa-onnx + CED-tiny) + ffmpeg                  |
-| `fetch.youtube`       | YouTube'dan video ve altyazı indirme    | `yt-dlp` + ffmpeg                                                   |
+| Yetenek               | Ne için                                 | Gerekenler                                                        |
+| --------------------- | --------------------------------------- | ----------------------------------------------------------------- |
+| `voice.edge-tts`      | Türkçe seslendirme                      | Film sanal ortamı + `edge-tts` + `numpy`, ffmpeg (internet ister) |
+| `captions.burn`       | Altyazı gömme                           | `subtitles` filtresi (libass) ve libx264 olan bir ffmpeg          |
+| `render.skia`         | Skia yolu ile 2B anlatım                | Sanal ortam + `skia-python`, `numpy`, `pillow`; ffmpeg + ffprobe  |
+| `render.hyperframes`  | Stil yolu (HyperFrames)                 | Node, HyperFrames, Chrome/Chromium, libx264'lü ffmpeg + ffprobe   |
+| `render.blender`      | Blender ile 3B kesit                    | Blender 5.0+, libx264'lü ffmpeg                                   |
+| `render.blender.mpfb` | Blender sahnesinde MPFB insan figürü    | `render.blender` + MPFB eklentisi                                 |
+| `clip.cut`            | Klip kesme, dikeye çevirme              | libx264'lü ffmpeg + ffprobe                                       |
+| `clip.transcribe`     | Altyazısız yayında yerel konuşma tanıma | `whisper-cli` + model dosyası + ffmpeg                            |
+| `clip.audio-tags`     | Ses etiketleme (müzik, gülme, bağırma)  | Ses etiketleyici (sherpa-onnx + CED-tiny) + ffmpeg                |
+| `fetch.youtube`       | YouTube'dan video ve altyazı indirme    | `yt-dlp` + ffmpeg                                                 |
 
 Üretim yolları (bitmiş video için gereken yetenekler): Skia anlatım = `voice.edge-tts` + `render.skia` + `captions.burn` · stil anlatım = `voice.edge-tts` + `render.hyperframes` · Blender anlatım = `voice.edge-tts` + `render.blender` + `captions.burn` · yayıncı klibi = `fetch.youtube` + `clip.cut`.
 
