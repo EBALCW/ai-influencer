@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Yayıncı videolarından kısa dikey klip (Reels / Shorts / TikTok).
-//   pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40]
+//   pnpm clip:auto <youtube-adresi> [--permission "<izin referansı>"] [--count N] [--length 40]
 //       [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr]
 //       [--preview-only] [--exclude 1,3] [--keep 2] [--keep-all]
 //       Tek adım: indirir, en güçlü anları bulur, kalite kontrolünden geçirir ve <klasör>/clips/
@@ -19,7 +19,7 @@
 //       En çok tekrar izlenen yerler + sohbet patlamaları + ses zirvelerinden en güçlü anları sıralar,
 //       aralığı söz başına/tepkinin sonuna oturtur, her adaya kalite raporu, önizleme şeridi ve
 //       inceleme dosyası yazar. Kesim yapmaz; izin seçeneği istemez.
-//   pnpm clip:cut <video> --start 12:30 --end 13:05 --out <klip.mp4> --permission "<izin referansı>"
+//   pnpm clip:cut <video> --start 12:30 --end 13:05 --out <klip.mp4> [--permission "<izin referansı>" | --open-license "<lisans>" | --own] [--credit "<kanal ve bağlantı>"]
 //       [--layout blur|crop] [--x-offset -1..1] [--subs <altyazı.vtt|srt>] [--caption "<üst yazı>"]
 //   pnpm clip:mark <indirilen-klasör> --published 1,4 [--rejected 2]
 //       Yayınlanan/vazgeçilen adayları karar günlüğüne işler (ileride model eğitmek için veri).
@@ -266,17 +266,22 @@ function probeDuration(file) {
   return r.status === 0 && Number.isFinite(seconds) ? seconds : null;
 }
 
-/** Kaynağın hak durumu: tam olarak bir seçenek verilmeli; yoksa kesim yapılmaz. */
+/**
+ * Kaynağın hak durumu. Seçenek isteğe bağlıdır (docs/compliance.md → Yayıncı klipleri,
+ * 16 Kasım 2026 kararı): hiçbiri verilmezse kaynak üçüncü kişiye aittir ve "izin alınmadı"
+ * olarak kaydedilir; o durumda atıf zorunludur (bkz. requireCredit). Birden çok seçenek hata.
+ */
 function sourceRights(options) {
   const given = ['own', 'permission', 'open-license'].filter(
     (name) => options[name],
   );
-  if (given.length !== 1)
+  if (given.length > 1)
     throw new Error(
-      'Kaynağın durumu tek bir seçenekle belirtilmeli: başkasının videosu için --permission "<izin referansı>", ' +
-        'açık lisanslı video için --open-license "<lisans adı, ör. CC BY>", kendi çekimin için --own. ' +
-        'Yazılı izin ya da uygun lisans yoksa klip kesilmez (docs/compliance.md → Kaynak içerik).',
+      'Kaynağın durumu en çok bir seçenekle belirtilir: yazılı izin varsa --permission "<izin referansı>", ' +
+        'açık lisanslı video için --open-license "<lisans adı, ör. CC BY>", kendi çekimin için --own.',
     );
+  if (given.length === 0)
+    return { sourceType: 'third_party', permission: null };
   const sourceType = {
     own: 'own',
     permission: 'third_party',
@@ -288,6 +293,43 @@ function sourceRights(options) {
   return { sourceType, permission };
 }
 
+/** Hak seçeneğini alt komuta aktarılacak argümanlara çevirir (yoksa boş). */
+function rightsArgs(options) {
+  if (options.own) return ['--own'];
+  if (options.permission) return ['--permission', options.permission];
+  if (options['open-license'])
+    return ['--open-license', options['open-license']];
+  return [];
+}
+
+/**
+ * İzin alınmamış üçüncü kişi kaynağında atıf zorunlu: kanal adı ve bağlantısı ya source.json'dan
+ * ya da --credit ile gelir. Atıfsız klip kesilmez.
+ */
+function requireCredit(source, creditOption) {
+  const credit = (creditOption ?? '').replace(/\s+/g, ' ').trim();
+  if (credit.length > 200)
+    throw new Error('--credit en çok 200 karakter olabilir.');
+  if (credit) return credit;
+  const name = source?.channel;
+  const link = source?.channelUrl ?? source?.url;
+  if (name && link) return `${name} · ${link}`;
+  throw new Error(
+    'Kaynak bilinmiyor: izin alınmamış klipte atıf zorunlu. --credit "<kanal adı ve bağlantısı>" ver ' +
+      '(docs/compliance.md → Yayıncı klipleri).',
+  );
+}
+
+/** Atıf: izinsiz kaynakta zorunlu, diğerlerinde varsa kaydedilir. */
+function creditFor(source, creditOption, required) {
+  if (required) return requireCredit(source, creditOption);
+  try {
+    return requireCredit(source, creditOption);
+  } catch {
+    return null;
+  }
+}
+
 function cut(argv) {
   const { positional, options } = parseCli(argv, {
     values: [
@@ -296,6 +338,7 @@ function cut(argv) {
       'out',
       'permission',
       'open-license',
+      'credit',
       'layout',
       'x-offset',
       'subs',
@@ -305,13 +348,29 @@ function cut(argv) {
   });
   if (positional.length !== 1 || !options.start || !options.end || !options.out)
     throw new Error(
-      'Kullanım: pnpm clip:cut <video> --start 12:30 --end 13:05 --out <klip.mp4> --permission "<izin referansı>" [--layout blur|crop] [--x-offset -1..1] [--subs <altyazı.vtt>] [--caption "<üst yazı>"]',
+      'Kullanım: pnpm clip:cut <video> --start 12:30 --end 13:05 --out <klip.mp4> [--permission "<izin referansı>" | --open-license "<lisans>" | --own] [--credit "<kanal ve bağlantı>"] [--layout blur|crop] [--x-offset -1..1] [--subs <altyazı.vtt>] [--caption "<üst yazı>"]',
     );
   const { sourceType, permission } = sourceRights(options);
 
   const input = resolve(positional[0]);
   if (!existsSync(input) || !statSync(input).isFile())
     throw new Error('Video dosyası bulunamadı.');
+  // Kaynak ve atıf kesimden önce: atıfsız klip için dakikalarca kodlama yapılmaz
+  const sourceFile = join(dirname(input), 'source.json');
+  const source = existsSync(sourceFile)
+    ? JSON.parse(readFileSync(sourceFile, 'utf8'))
+    : null;
+  const unlicensed = sourceType === 'third_party' && !permission;
+  const permissionStatus =
+    sourceType === 'own'
+      ? 'kendi içeriğimiz'
+      : sourceType === 'open_license'
+        ? 'açık lisans'
+        : permission
+          ? 'izin alındı'
+          : 'izin alınmadı';
+  const credit =
+    sourceType === 'own' ? null : creditFor(source, options.credit, unlicensed);
   const output = resolve(options.out);
   if (extname(output).toLowerCase() !== '.mp4')
     throw new Error('Çıktı uzantısı .mp4 olmalı.');
@@ -374,10 +433,6 @@ function cut(argv) {
   }
 
   // Panele (/clips) ve içerik kartına girilecek kaynak bilgisi klibin yanında durur
-  const sourceFile = join(dirname(input), 'source.json');
-  const source = existsSync(sourceFile)
-    ? JSON.parse(readFileSync(sourceFile, 'utf8'))
-    : null;
   writeFileSync(
     output.replace(/\.mp4$/i, '.json'),
     JSON.stringify(
@@ -390,6 +445,8 @@ function cut(argv) {
         caption: options.caption ?? null,
         sourceType,
         permission,
+        permissionStatus,
+        credit,
         source,
       },
       null,
@@ -400,6 +457,11 @@ function cut(argv) {
   console.log(
     "Yayından önce: klibi telefonda izle, kaynağı caption'da belirt, panelde /clips kaydını ve içerik kartındaki kaynak alanlarını doldur.",
   );
+  if (unlicensed)
+    console.log(
+      `  Atıf (caption'a yaz): ${credit}\n` +
+        '  İzin alınmadı: yayıncı ya da platform kaldırma isterse klibi hemen kaldır (docs/compliance.md).',
+    );
 }
 
 /**
@@ -1253,7 +1315,7 @@ async function auto(argv) {
   });
   if (positional.length !== 1)
     throw new Error(
-      'Kullanım: pnpm clip:auto <youtube-adresi> --permission "<izin referansı>" [--count N] [--length 40] [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr] [--preview-only] [--exclude 1,3] [--keep 2] [--keep-all]',
+      'Kullanım: pnpm clip:auto <youtube-adresi> [--permission "<izin referansı>"] [--count N] [--length 40] [--lang tr,en] [--layout blur|crop] [--no-subs] [--translate tr] [--preview-only] [--exclude 1,3] [--keep 2] [--keep-all]',
     );
   const excluded = new Set(rankList(options.exclude, 'exclude'));
   // "ele" kararını yalnız kullanıcının komut satırı aşar; kararlar.json'daki "keep" aşmaz
@@ -1261,13 +1323,9 @@ async function auto(argv) {
   const target = options.translate;
   if (target !== undefined && !/^[a-z]{2,3}$/.test(target))
     throw new Error('--translate bir dil kodu ister. Örnek: --translate tr');
-  // İzin kontrolü en başta: saatlerce indirdikten sonra reddetmek yerine hemen dur
+  // Hak seçeneği isteğe bağlı; birden çok verilmişse saatlerce indirmeden önce burada dur
   sourceRights(options);
-  const rights = options.own
-    ? ['--own']
-    : options.permission
-      ? ['--permission', options.permission]
-      : ['--open-license', options['open-license']];
+  const rights = rightsArgs(options);
   const { videoId, url } = parseYoutubeUrl(positional[0]);
   const dir = resolve(
     options.out ?? join(homedir(), 'ai-influencer-clips', videoId),
@@ -1470,6 +1528,7 @@ export {
   probeDuration,
   rankList,
   requireTool,
+  rightsArgs,
   sourceRights,
   stemOf,
   tool,

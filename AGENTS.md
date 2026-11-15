@@ -167,7 +167,7 @@ apps/mcp/src/                         panel MCP sunucusu (araçlar tools/, kimli
 scripts/                              Node script'leri (cross-platform)
 ```
 
-Yayıncı videosundan klip istenirse `.claude/skills/yayinci-klip/SKILL.md` akışını uygula (Claude Code bunu skill olarak kendiliğinden görür; Codex dosyayı okuyup aynı adımları izler). İzin adımı atlanamaz.
+Yayıncı videosundan klip istenirse `.claude/skills/yayinci-klip/SKILL.md` akışını uygula (Claude Code bunu skill olarak kendiliğinden görür; Codex dosyayı okuyup aynı adımları izler). Atıf (yayıncı adı ve bağlantısı) zorunludur; yazılı izin şart değildir, varsa kaydedilir (`docs/compliance.md` → Yayıncı klipleri).
 
 Olay/bilgi anlatan seslendirmeli video istenirse `.claude/skills/anlatim-videosu/SKILL.md` akışını uygula (motor: `.claude/skills/cinematic-film/`, rehber: `docs/explainer-guide.md`). Doğruluk ve onay adımları atlanamaz.
 

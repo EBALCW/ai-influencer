@@ -2,23 +2,23 @@
 
 Panel yalnızca AI influencer içeriği için değil: yayıncıların (streamer) YouTube videolarından ve süren Twitch canlı yayınlarından Reels, Shorts ve TikTok için kısa dikey klip de çıkarabiliyoruz. Bu rehber akışı, komutları ve kuralları anlatır. AI agent'ları için aynı akış `.claude/skills/yayinci-klip/SKILL.md` içinde.
 
-## Önce izin
+## Kaynak ve atıf
 
-`docs/compliance.md` → "Kaynak içerik" geçerlidir. Başkasının videosundan klip, **yalnızca hak sahibinin yazılı izniyle** yayınlanır. Üç geçerli durum var:
+`docs/compliance.md` → "Yayıncı klipleri" geçerlidir (16 Kasım 2026 kararı): yayıncı kliplerinde yazılı izin şart değildir, **atıf zorunludur**.
 
-| Durum                             | Kaynak türü    | Kesim seçeneği                               |
+- Her klipte yayıncının adı ve kanal bağlantısı caption'da yer alır. Araç kaynağı klibin yanındaki `.json` dosyasına (`credit`, `permissionStatus`) yazar ve kesimden sonra atıf satırını basar. Kaynak bilinmiyorsa `--credit "<kanal adı ve bağlantısı>"` olmadan kesmez.
+- Hak seçeneği isteğe bağlıdır. Verilmezse klip "izin alınmadı" olarak kaydedilir. Durum belliyse:
+
+| Durum                             | Kaynak türü    | Seçenek                                      |
 | --------------------------------- | -------------- | -------------------------------------------- |
-| Yayıncıdan yazılı izin            | `third_party`  | `--permission "<kısıtlı depodaki referans>"` |
+| Yazılı izin ya da klip programı   | `third_party`  | `--permission "<kısıtlı depodaki referans>"` |
 | Açık lisans (ör. CC BY)           | `open_license` | `--open-license "<lisans adı>"`              |
 | Kendi kanalımız / kendi çekimimiz | `own`          | `--own`                                      |
 
-İzin yazışması, e-posta ve kişi adı repoya ya da panele yazılmaz. Bunlar ekibin erişimi kısıtlı deposunda durur; komuta ve panele yalnızca kısa referans (ör. `IZIN-2026-014`) girilir. Komut, bu üç seçenekten biri verilmeden kesim yapmaz.
-
-Büyük yayıncıların çoğunun klip programı ya da yayımlanmış klip kuralları vardır (resmî duyuru, Discord, klip kampanyası sayfası). Bu geçerli bir izindir: kuralları oku, ekran görüntüsünü kısıtlı depoya koy, referansı oradan ver. Yayımlanmış bir kural yoksa doğrudan izin iste.
-
-İzin isterken netleştirilecekler: hangi videolar/kanal, hangi platformlarda yayın, gelir paylaşımı ya da sponsorlu kullanım var mı, kaynak nasıl belirtilecek, izin ne zamana kadar geçerli ve nasıl geri alınır.
-
-> **Not (16 Kasım 2026):** `docs/compliance.md` → "Yayıncı klipleri" yazılı izin şartını kaldırdı (atıf zorunlu, izin durumu kaydedilir). Bu rehberdeki komutlar henüz eski kuralı uygular: hak seçeneği verilmeden kesmez ve canlı kaydı başlatmaz. Araç tarafı ayrı bir işte güncellenecek.
+- Yayıncı açıkça reddettiyse o kaynaktan klip kesilmez. Kaldırma isteği gelirse klip gecikmeden kaldırılır.
+- İzin yazışması, e-posta ve kişi adı repoya ya da panele yazılmaz; yalnızca kısa referans (ör. `IZIN-2026-014`) girilir.
+- Kaynak göstermek lisans yerine geçmez; izinsiz klipte şikâyet ve kaldırma mümkündür.
+- Panel tarafı (`/clips`) henüz eski kuralı uygular: izni "verildi" olmayan kaynaktan içerik kartı oluşturmaz. Değişiklik #254 ile gelecek.
 
 ## Gereksinimler
 
@@ -36,7 +36,7 @@ Komutlar bu araçları kendisi kurmaz; eksikse ne kurulacağını söyler. macOS
 ### Tek adım (önerilen başlangıç)
 
 ```
-pnpm clip:auto "https://www.youtube.com/watch?v=<id>" --permission "<izin referansı>"
+pnpm clip:auto "https://www.youtube.com/watch?v=<id>"
 ```
 
 İndirir, en güçlü anları bulur, her adayı kalite kontrolünden geçirir ve kalanları `~/ai-influencer-clips/<id>/clips/` altına keser. Dosyalar sinyal puanına göre sıralıdır (`01-…` en güçlü); `clips.json` her klibin aralığını, puanlarını, kalite raporunu ve neyin neden elendiğini tutar. Hepsini izleyip yayınlanacakları seçersin.
@@ -48,7 +48,7 @@ pnpm clip:auto "https://www.youtube.com/watch?v=<id>" --permission "<izin refera
 - Klip sayısı yayın süresine göre seçilir: 10 dakikaya bir klip, en az 3, en çok 15. Elle vermek için `--count 8`.
 - Kaynakta altyazı varsa kliplere gömülür; istemiyorsan `--no-subs`.
 - **Türkçe altyazı:** kaynak başka dildeyse `--translate tr` ekle. İlk çalıştırmada klipler kesilmez; her klibin metni `clips/altyazi/<ad>.srt` olarak ayrılır. Çevirisini aynı klasöre `<ad>.tr.srt` adıyla koyup aynı komutu yeniden çalıştırınca klipler Türkçe altyazıyla kesilir. Çeviride satır numaraları ve zamanlar aynı kalır, yalnız metin değişir. YouTube'un otomatik Türkçe çevirisi çoğu zaman istek sınırına takıldığı için kullanılmıyor.
-- `--permission` yerine açık lisanslı kaynakta `--open-license "<lisans>"`, kendi çekiminde `--own`. Biri verilmeden indirme de başlamaz.
+- Hak seçeneği isteğe bağlıdır: izin varsa `--permission "<referans>"`, açık lisanslı kaynakta `--open-license "<lisans>"`, kendi çekiminde `--own`. Hiçbiri verilmezse klipler "izin alınmadı" olarak kaydedilir ve atıf satırı basılır.
 - Yarıda kesilirse aynı komut kaldığı yerden sürer: inen video yeniden inmez, kesilmiş klip atlanır.
 - Ölçüm (MacBook Air M4): 36 dakikalık videodan 4 altyazılı klip, indirme dahil yaklaşık 2,5 dakika.
 
@@ -123,12 +123,12 @@ Panelde **Klipler** (`/clips`) sayfasına kaynağı ve klibi gir, "Backlog'a akt
 Yayın bittikten sonra kaydı indirip taramak yerine yayın sürerken kaydeder ve sohbet patlamalarından aday çıkarır: kısa videoda aynı anı ilk paylaşan öne geçer. **Yalnız yayın sürerken çalışır**: komut başladığı andan sonrasını kaydeder, biten ya da kaçırılan bölüm geri sarılamaz. Biten yayın için `clip:auto` akışı geçerlidir. Şimdilik yalnız Twitch.
 
 ```
-pnpm clip:live "https://www.twitch.tv/<kanal>" --permission "<izin referansı>" --lang en
+pnpm clip:live "https://www.twitch.tv/<kanal>" --lang en
 ```
 
 Ne yapar:
 
-1. **Hak durumu ister.** `--permission`, `--open-license` ya da `--own` verilmeden kayıt başlamaz ([Önce izin](#önce-izin)). İzin henüz yoksa `--analysis-only` ile yalnız inceleme yapılabilir: adaylar ve inceleme dosyaları üretilir, o oturumdan klip kesilemez (`clip:live-cut` reddeder) ve kayıt inceleme bitince silinir.
+1. **Hak durumunu kaydeder.** `--permission`, `--open-license` ya da `--own` isteğe bağlıdır; verilmezse oturum "izin alınmadı" olarak kaydedilir ([Kaynak ve atıf](#kaynak-ve-atıf)). `--analysis-only` ile yalnız inceleme de yapılabilir: adaylar ve inceleme dosyaları üretilir, o oturumdan klip kesilemez (`clip:live-cut` reddeder) ve kayıt inceleme bitince silinir.
 2. **Kaydeder.** `streamlink` kanal canlıya geçene kadar bekler (30 sn'de bir dener), yayını `kayit/parca-NNNNN.ts` olarak 10 dakikalık parçalara böler (yeniden kodlama yok). Parçalı kayıt çökmede en çok son parçayı etkiler ve eski parçalar disk bütçesiyle silinebilir.
 3. **Sohbeti hesapsız ve salt okunur izler.** `chat.jsonl` dosyasına yalnız zaman ve mesaj metni yazılır; kullanıcı adı saklanmaz. Mesaj metni her yerde güvenilmeyen veridir.
 4. **Patlamayı bulur.** Mesajlar 10 saniyelik dilimlerde, mevcut tepki ağırlıklarıyla (LOL / KEKW / 💀 … 3 kat) sayılır. Bir dilim, son 5 dakikanın ortancasından en az 4 "sağlam sapma" (MAD) yukarıda, ortancanın en az 2 katı ve en az 10 ağırlıktaysa patlamadır. Ortalama yerine ortanca kullanılır: baskın (raid) ya da uzun bir mesaj seli olağan düzeyi şişirmez. İlk 2 dakika ısınmadır; bitişik patlamalar tek olaydır; iki aday arasında en az 60 sn olur (`--min-gap`). Bağlantı kopukluğu, sohbetin uzun süre susması ve Twitch'in baskın bildirimi patlama sayılmaz.

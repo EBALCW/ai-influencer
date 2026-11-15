@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Canlı izleme: yayın sürerken kaydet, sohbet patlamalarından klip adayı çıkar.
-//   pnpm clip:live <kanal-adresi> (--permission "<izin referansı>" | --open-license "<lisans>" | --own | --analysis-only)
+//   pnpm clip:live <kanal-adresi> [--permission "<izin referansı>" | --open-license "<lisans>" | --own | --analysis-only]
 //       [--out <klasör>] [--lang tr] [--translate tr] [--quality best] [--min-gap 60] [--threshold 4] [--ratio 2]
 //       [--chat-offset 6] [--length 40] [--max-hours 12] [--max-disk-gb 20] [--segment-minutes 10]
 //       Kanal canlıya geçene kadar bekler; kaydı parçalı tutar (kayit/parca-NNNNN.ts), sohbeti
@@ -77,6 +77,7 @@ import {
   probeDuration,
   rankList,
   requireTool,
+  rightsArgs as rightsArgsFor,
   sourceRights,
   stemOf,
   tool,
@@ -715,7 +716,7 @@ async function live(argv) {
   }
   if (positional.length !== 1)
     throw new Error(
-      'Kullanım: pnpm clip:live <kanal-adresi> (--permission "<izin referansı>" | --open-license "<lisans>" | --own | --analysis-only) [--out <klasör>] [--lang tr] [--translate tr] [--quality best] [--min-gap 60] [--max-hours 12] [--max-disk-gb 20]',
+      'Kullanım: pnpm clip:live <kanal-adresi> [--permission "<izin referansı>" | --open-license "<lisans>" | --own | --analysis-only] [--out <klasör>] [--lang tr] [--translate tr] [--quality best] [--min-gap 60] [--max-hours 12] [--max-disk-gb 20]',
     );
   const { channel, url } = parseChannel(positional[0]);
 
@@ -1313,20 +1314,18 @@ function liveCut(argv) {
   const stored = session.rights;
   const given = options.own || options.permission || options['open-license'];
   const rightsOptions =
-    given || !stored
+    given ||
+    !stored ||
+    (stored.sourceType === 'third_party' && !stored.permission)
       ? options
       : stored.sourceType === 'own'
         ? { own: true }
         : stored.sourceType === 'open_license'
           ? { 'open-license': stored.permission }
           : { permission: stored.permission };
-  // Tam olarak bir seçenek yoksa burada durur (mevcut kural)
+  // Hak seçeneği isteğe bağlı (yoksa "izin alınmadı" + zorunlu atıf); birden çoksa burada durur
   sourceRights(rightsOptions);
-  const rightsArgs = rightsOptions.own
-    ? ['--own']
-    : rightsOptions.permission
-      ? ['--permission', rightsOptions.permission]
-      : ['--open-license', rightsOptions['open-license']];
+  const rightsArgs = rightsArgsFor(rightsOptions);
   const target = options.translate ?? session.translate ?? undefined;
   if (target != null && !/^[a-z]{2,3}$/.test(target))
     throw new Error('--translate bir dil kodu ister. Örnek: --translate tr');
