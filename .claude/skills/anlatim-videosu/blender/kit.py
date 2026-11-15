@@ -61,20 +61,61 @@ def argv():
     return sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
 
-def render(out_dir, mode, frames, stills=None, scale=100):
-    """mode 'still': birkaç kareyi <out_dir>/<kare>.png yazar; 'anim': tüm kareleri f-0001.png… yazar."""
+def render(out_dir, mode, frames, stills=None, scale=100, label_res=(1080, 1920), label_dir=None, split_labels=False):
+    """mode 'still': birkaç kareyi <out_dir>-<kare>.png yazar (görüntü + yazılar birlikte, kadraj kontrolü için).
+    'anim': bütün kareler (f-0001.png…); split_labels=True ise yazılar gizlenir. 'lab': yalnızca etiketli nesneler, saydam zemin,
+    label_res çözünürlükte (l-0001.png…); ffmpeg ile büyütülmüş görüntünün üstüne bindirilir, yazı keskin kalır.
+    Etiketli nesne yoksa 'lab' hiçbir şey yazmaz ve <label_dir>/YOK dosyası bırakır."""
+    import os
     sc = bpy.context.scene
     sc.frame_start, sc.frame_end = 1, frames
     sc.render.resolution_percentage = scale
+    labs = [o for o in sc.objects if o.get("etiket")]
     if mode == "still":
         for f in stills or (max(1, frames // 3), frames - 1):
             sc.frame_set(int(f))
             sc.render.filepath = f"{out_dir}-{int(f):04d}.png"
             sc.render.use_overwrite = True
             bpy.ops.render.render(write_still=True)
+        return
+    if mode == "lab":
+        d = label_dir or out_dir
+        os.makedirs(d, exist_ok=True)
+        if not labs:
+            open(os.path.join(d, "YOK"), "w").close()
+            return
+        keep = set(labs)
+        for o in labs:                      # yazıyı taşıyan üst nesneler (kamera, hud tutucu) kalmalı
+            p = o.parent
+            while p:
+                keep.add(p)
+                p = p.parent
+        for o in sc.objects:
+            if o not in keep and o.type != "CAMERA":
+                o.hide_render = True
+        sc.render.film_transparent = True
+        sc.render.image_settings.color_mode = "RGBA"
+        sc.render.resolution_x, sc.render.resolution_y = label_res
+        sc.render.resolution_percentage = 100
+        try:
+            sc.eevee.taa_render_samples = 6
+            sc.world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.0
+        except Exception:
+            pass
+        sc.render.filepath = f"{d}/l-"
     else:
+        if split_labels:
+            _mute_hide(labs)
         sc.render.filepath = f"{out_dir}/f-"
-        bpy.ops.render.render(animation=True)
+    bpy.ops.render.render(animation=True)
+
+
+def _mute_hide(objs):
+    """Görünürlüğü anahtarlanmış yazılar görüntü geçişinde yeniden açılmasın: animasyon verisini sök, gizle."""
+    for o in objs:
+        if o.animation_data:
+            o.animation_data_clear()
+        o.hide_render = True
 
 
 # ---------------------------------------------------------------- malzemeler
@@ -187,22 +228,43 @@ def cone_mat(name="Koni", color=(1.0, 0.93, 0.75), peak=0.16, length=5.0):
     nt.links.new(sep.outputs["Z"], rng.inputs["Value"])
     pw = nt.nodes.new("ShaderNodeMath")
     pw.operation = "POWER"
-    pw.inputs[1].default_value = 1.6
+    pw.inputs[1].default_value = 2.2
     nt.links.new(rng.outputs[0], pw.inputs[0])
     lw = nt.nodes.new("ShaderNodeLayerWeight")
-    lw.inputs["Blend"].default_value = 0.35
+    lw.inputs["Blend"].default_value = 0.5
     inv = nt.nodes.new("ShaderNodeMath")
     inv.operation = "SUBTRACT"
     inv.inputs[0].default_value = 1.0
     nt.links.new(lw.outputs["Facing"], inv.inputs[1])
+    sq = nt.nodes.new("ShaderNodeMath")              # kenarlar yumuşak sönsün (sert üçgen görünmesin)
+    sq.operation = "POWER"
+    sq.inputs[1].default_value = 2.2
+    nt.links.new(inv.outputs[0], sq.inputs[0])
     mul = nt.nodes.new("ShaderNodeMath")
     mul.operation = "MULTIPLY"
     nt.links.new(pw.outputs[0], mul.inputs[0])
-    nt.links.new(inv.outputs[0], mul.inputs[1])
+    nt.links.new(sq.outputs[0], mul.inputs[1])
+    ns = nt.nodes.new("ShaderNodeTexNoise")          # bulanık suda huzme düzgün değildir: uzunlamasına lekeler
+    ns.inputs["Scale"].default_value = 1.6
+    ns.inputs["Detail"].default_value = 4
+    mpn = nt.nodes.new("ShaderNodeMapping")
+    mpn.inputs["Scale"].default_value = (3.0, 3.0, 0.35)
+    nt.links.new(tc.outputs["Object"], mpn.inputs["Vector"])
+    nt.links.new(mpn.outputs[0], ns.inputs["Vector"])
+    nr = nt.nodes.new("ShaderNodeMapRange")
+    nr.inputs["From Min"].default_value = 0.3
+    nr.inputs["From Max"].default_value = 0.7
+    nr.inputs["To Min"].default_value = 0.45
+    nr.inputs["To Max"].default_value = 1.25
+    nt.links.new(ns.outputs[0], nr.inputs["Value"])
+    mul3 = nt.nodes.new("ShaderNodeMath")
+    mul3.operation = "MULTIPLY"
+    nt.links.new(mul.outputs[0], mul3.inputs[0])
+    nt.links.new(nr.outputs[0], mul3.inputs[1])
     mul2 = nt.nodes.new("ShaderNodeMath")
     mul2.operation = "MULTIPLY"
     mul2.inputs[1].default_value = peak
-    nt.links.new(mul.outputs[0], mul2.inputs[0])
+    nt.links.new(mul3.outputs[0], mul2.inputs[0])
     nt.links.new(mul2.outputs[0], b.inputs["Alpha"])
     _blend(m)
     return m
@@ -252,9 +314,16 @@ def text(body, loc, size, material, align="CENTER", spacing=1.0, rot=(R90, 0, 0)
     t.data.space_line = line
     t.data.materials.append(material)
     t.visible_shadow = False
+    t["etiket"] = 1          # yazılar ayrı, tam çözünürlüklü geçişte render edilir (bkz. render)
     if parent:
         t.parent = parent
     return t
+
+
+def label(o):
+    """Nesneyi (etiket çizgisi, işaret halkası, rota) yazı geçişine dahil eder."""
+    o["etiket"] = 1
+    return o
 
 
 def dashes(x0, x1, z, y, material, step=0.5, fill=0.55, thick=0.05, parent=None):
@@ -582,3 +651,149 @@ def hud(cam, body, x, y, size, material, align="CENTER", spacing=1.0, dist=2.0, 
         holder.location = (0, 0, -dist)
     t = text(body, (x, y, 0), size, material, align=align, spacing=spacing, rot=(0, 0, 0), parent=holder, line=line)
     return t
+
+
+# ---------------------------------------------------------------- v2: hacim, tortu, derinlikli kesit
+def silt(n, box_min, box_max, drift=(0.15, 0, 0.05), frames=240, seed=3, size=(0.006, 0.016), color=(0.8, 0.82, 0.75),
+         emit=0.0):
+    """Suda asılı tortu: TEK ağ (n küçük dörtyüzlü), nesne olarak süzülür. emit=0 iken yalnızca fener huzmesine
+    girince parlar; ışığı 'yakalayan' parçacık hissi buradan gelir."""
+    rnd = random.Random(seed)
+    me = bpy.data.meshes.new("tortu")
+    bm = bmesh.new()
+    for _ in range(n):
+        p = Vector([rnd.uniform(a, b) for a, b in zip(box_min, box_max)])
+        r = rnd.uniform(*size)
+        vs = [bm.verts.new(p + Vector(d) * r) for d in ((1, 1, 1), (-1, -1, 1), (-1, 1, -1), (1, -1, -1))]
+        for a, b, c in ((0, 1, 2), (0, 3, 1), (0, 2, 3), (1, 3, 2)):
+            bm.faces.new((vs[a], vs[b], vs[c]))
+    bm.to_mesh(me)
+    bm.free()
+    o = link(bpy.data.objects.new("tortu", me))
+    me.materials.append(flat("tortuM", color, emit=emit, rough=1.0))
+    o.visible_shadow = False
+    move(o, [(1, (0, 0, 0)), (frames, tuple(d * frames / 24 for d in drift))])
+    return o
+
+
+def ribbon(name, xs, f, y0, y1, material, wobble=0.0, seed=0, ny=4):
+    """z=f(x) eğrisini Y'de y0..y1 arası uzatan yüzey: kesitte mağaranın tavanı/tabanı, dağın üstü, su yüzeyi.
+    Kesit yüzünün arkasına derinlik verir; kamera hafif yukarıdan bakınca görünür."""
+    rnd = random.Random(seed)
+    me = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    prev = None
+    for x in xs:
+        row = []
+        for j in range(ny + 1):
+            y = y0 + (y1 - y0) * j / ny
+            row.append(bm.verts.new((x, y, f(x) + (rnd.uniform(-wobble, wobble) if j else 0.0))))
+        if prev:
+            for j in range(ny):
+                bm.faces.new((prev[j], row[j], row[j + 1], prev[j + 1]))
+        prev = row
+    bm.normal_update()
+    bm.to_mesh(me)
+    bm.free()
+    o = link(bpy.data.objects.new(name, me))
+    me.materials.append(material)
+    for p in me.polygons:
+        p.use_smooth = True
+    return o
+
+
+def strata_mat(name, colors, scale=0.5, bands=0.16, bump=0.7, emit=0.12, dim=1.0, depth=(-30.0, 4.0), floor_k=0.18):
+    """Kesit yüzü için tortul tabaka malzemesi: yatay bantlar (colors listesi sırayla), gürültüyle dalgalanır,
+    kabartmalıdır (ışıkta doku verir) ve derine indikçe kararır (depth=(en karanlık z, tam parlak z))."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = _bsdf(m)
+    N = nt.nodes.new
+    tc = N("ShaderNodeTexCoord")
+    sep = N("ShaderNodeSeparateXYZ")
+    nt.links.new(tc.outputs["Object"], sep.inputs[0])
+    n1 = N("ShaderNodeTexNoise")
+    n1.inputs["Scale"].default_value = 0.11
+    n1.inputs["Detail"].default_value = 3
+    mp = N("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (0.35, 1, 1)
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+    nt.links.new(mp.outputs[0], n1.inputs["Vector"])
+    warp = N("ShaderNodeMath")                 # z + gürültü*k  -> bant koordinatı
+    warp.operation = "MULTIPLY_ADD"
+    warp.inputs[1].default_value = 6.0
+    nt.links.new(n1.outputs[0], warp.inputs[0])
+    nt.links.new(sep.outputs["Z"], warp.inputs[2])
+    sc_ = N("ShaderNodeMath")
+    sc_.operation = "MULTIPLY"
+    sc_.inputs[1].default_value = bands
+    nt.links.new(warp.outputs[0], sc_.inputs[0])
+    fr = N("ShaderNodeMath")
+    fr.operation = "FRACT"
+    nt.links.new(sc_.outputs[0], fr.inputs[0])
+    ramp = N("ShaderNodeValToRGB")
+    ramp.color_ramp.interpolation = "EASE"
+    els = ramp.color_ramp.elements
+    k = len(colors)
+    els[0].position = 0.0
+    els[0].color = (*[v * dim for v in colors[0]], 1)
+    els[1].position = 1.0
+    els[1].color = (*[v * dim for v in colors[0]], 1)
+    for i in range(1, k):
+        e = els.new(i / k)
+        e.color = (*[v * dim for v in colors[i]], 1)
+    nt.links.new(fr.outputs[0], ramp.inputs[0])
+    n2 = N("ShaderNodeTexNoise")               # ince taneli doku
+    n2.inputs["Scale"].default_value = scale * 6
+    n2.inputs["Detail"].default_value = 8
+    mp2 = N("ShaderNodeMapping")
+    mp2.inputs["Scale"].default_value = (0.4, 1, 1.8)
+    nt.links.new(tc.outputs["Object"], mp2.inputs["Vector"])
+    nt.links.new(mp2.outputs[0], n2.inputs["Vector"])
+    mixg = N("ShaderNodeMixRGB")
+    mixg.blend_type = "MULTIPLY"
+    mixg.inputs[0].default_value = 0.55
+    nt.links.new(ramp.outputs[0], mixg.inputs[1])
+    nt.links.new(n2.outputs[0], mixg.inputs[2])
+    dr = N("ShaderNodeMapRange")               # derinlik kararması
+    dr.inputs["From Min"].default_value = depth[0]
+    dr.inputs["From Max"].default_value = depth[1]
+    dr.inputs["To Min"].default_value = floor_k
+    dr.inputs["To Max"].default_value = 1.0
+    nt.links.new(sep.outputs["Z"], dr.inputs["Value"])
+    mixd = N("ShaderNodeMixRGB")
+    mixd.blend_type = "MULTIPLY"
+    mixd.inputs[0].default_value = 1.0
+    nt.links.new(mixg.outputs[0], mixd.inputs[1])
+    nt.links.new(dr.outputs[0], mixd.inputs[2])
+    nt.links.new(mixd.outputs[0], b.inputs["Base Color"])
+    b.inputs["Roughness"].default_value = 0.95
+    if bump:
+        add = N("ShaderNodeMath")
+        add.operation = "ADD"
+        nt.links.new(fr.outputs[0], add.inputs[0])
+        nt.links.new(n2.outputs[0], add.inputs[1])
+        bp = N("ShaderNodeBump")
+        bp.inputs["Strength"].default_value = bump
+        bp.inputs["Distance"].default_value = 0.3
+        nt.links.new(add.outputs[0], bp.inputs["Height"])
+        nt.links.new(bp.outputs[0], b.inputs["Normal"])
+    if emit:
+        nt.links.new(mixd.outputs[0], b.inputs["Emission Color"])
+        b.inputs["Emission Strength"].default_value = emit
+    return m
+
+
+def spot(parent, loc, rot, energy=900, spread=38, blend=0.7, color=(1.0, 0.93, 0.75), soft=0.05):
+    """Koni ağı olmayan spot (hacimli sahnede huzmeyi hacim gösterir). Spot -Z'ye bakar."""
+    bpy.ops.object.light_add(type="SPOT", location=loc, rotation=rot)
+    sp = bpy.context.active_object
+    if parent:
+        sp.parent = parent
+    sp.data.energy = energy
+    sp.data.spot_size = math.radians(spread)
+    sp.data.spot_blend = blend
+    sp.data.color = color
+    sp.data.shadow_soft_size = soft
+    return sp
