@@ -618,11 +618,15 @@ SELECT extensions.throws_ok(
   '42501', NULL, 'a call without a session id cannot approve'
 );
 
--- Makine oturumu: kaydolur, senaryo yazabilir, ama onay veremez.
+-- Makine oturumu onay veremez. Oturum, makine kaydının yazdığı kayıt defterine doğrudan eklenir
+-- (kayıt / eşleme akışı #201 ve #211 testlerinin konusu).
+RESET ROLE;
+INSERT INTO private.worker_sessions (session_id, user_id)
+VALUES ('5e560000-0000-4000-8000-0000000000ee', 'd2160000-0000-4000-8000-000000000004');
+SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', 'd2160000-0000-4000-8000-000000000004', true);
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2160000-0000-4000-8000-000000000004","role":"authenticated","session_id":"5e560000-0000-4000-8000-0000000000ee"}', true);
-INSERT INTO ids SELECT 'w1', (public.register_worker('anlatim-mac', 'darwin')).id;
 SELECT extensions.throws_ok(
   $$SELECT public.approve_episode_script((SELECT id FROM ids WHERE k = 'ep1'), 1, true)$$,
   '42501', NULL, 'a production machine session cannot approve a script'
