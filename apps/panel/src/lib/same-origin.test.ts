@@ -36,7 +36,7 @@ describe('isSameOrigin', () => {
     ['aynı ad, başka port', { origin: 'http://127.0.0.1:4000' }],
     ['alt alan adı', { origin: 'http://kotu.127.0.0.1:3000' }],
     ['null origin', { origin: 'null' }],
-    ['bozuk origin', { origin: 'adres değil' }],
+    ['bozuk origin', { origin: 'adres-degil' }],
     ['başka şema', { origin: 'file://127.0.0.1:3000' }],
   ])('reddeder: %s', (_name, headers) => {
     expect(
