@@ -69,6 +69,7 @@ test('makine oturumu kaydolur, listede görünür ve yalnız makine işlerini ya
   });
   expect(signedIn.error).toBeNull();
   const session = signedIn.data.session!;
+  expect(session.user.id).toBe(editorId);
   machineTokens = {
     access: session.access_token,
     refresh: session.refresh_token,
