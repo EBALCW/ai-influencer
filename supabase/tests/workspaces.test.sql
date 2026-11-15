@@ -130,7 +130,7 @@ SELECT extensions.ok(
   'workspaces: RLS on; clients cannot insert/delete and may only update the name'
 );
 SELECT extensions.is(
-  ARRAY(SELECT id::text FROM storage.buckets WHERE id NOT IN ('assets', 'contracts') ORDER BY 1),
+  ARRAY(SELECT id::text FROM storage.buckets WHERE id NOT IN ('assets', 'contracts', 'productions') ORDER BY 1),
   ARRAY[]::text[],
   'every storage bucket is handled by storage_object_in_workspace (add new buckets there)'
 );

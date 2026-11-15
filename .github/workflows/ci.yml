@@ -57,6 +57,19 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      # Gerçek Auth oturumlarıyla (yerel Supabase) makine kimliği testleri. `pnpm test`ten ÖNCE ve
+      # ayrı çalışır: oradaki geri yükleme testi yerel veriyi siler ve kullanıcı sayısını
+      # karşılaştırır; bu testler kullanıcı ve çalışma alanı açıp siler.
+      - name: Üretim makinesi entegrasyon testleri (yerel Supabase)
+        run: |
+          pnpm exec supabase status -o env > "$RUNNER_TEMP/sb.env"
+          get() { grep "^$1=" "$RUNNER_TEMP/sb.env" | cut -d= -f2- | tr -d '"'; }
+          export LOCAL_SUPABASE_URL="$(get API_URL)"
+          export LOCAL_SUPABASE_ANON_KEY="$(get ANON_KEY)"
+          export LOCAL_SUPABASE_SERVICE_ROLE_KEY="$(get SERVICE_ROLE_KEY)"
+          pnpm test:integration:worker
+        env:
+          WORKER_INTEGRATION: '1'
       - name: PostgreSQL 17 yedekleme istemcisi
         run: |
           sudo apt-get update

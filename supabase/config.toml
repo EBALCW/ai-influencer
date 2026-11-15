@@ -45,6 +45,12 @@ public = false
 file_size_limit = "20MiB"
 allowed_mime_types = ["application/pdf", "image/jpeg", "image/png", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
 
+# Üretim işi çıktıları (#211): <workspace_id>/<job_id>/<dosya>. Policy'ler migration'da.
+[storage.buckets.productions]
+public = false
+file_size_limit = "100MiB"
+allowed_mime_types = ["video/mp4", "video/webm", "audio/mpeg", "audio/mp4", "audio/wav", "image/jpeg", "image/png", "image/webp", "application/json", "text/plain", "text/vtt", "application/x-subrip"]
+
 [inbucket]
 enabled = true
 port = 54324
