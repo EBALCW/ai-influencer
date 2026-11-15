@@ -160,7 +160,7 @@ export function Dashboard({
         </Link>
       </header>
       <form
-        action="/"
+        action="/influencers/overview"
         method="get"
         aria-label="Dashboard filtreleri"
         className={`${card} flex flex-wrap items-end gap-4`}
@@ -225,7 +225,10 @@ export function Dashboard({
           title="Influencer bulunamadı"
           description="Bu seçim için erişilebilir kayıt yok."
           action={
-            <Link className="button button-primary" href="/">
+            <Link
+              className="button button-primary"
+              href="/influencers/overview"
+            >
               Tüm influencer’ları göster
             </Link>
           }

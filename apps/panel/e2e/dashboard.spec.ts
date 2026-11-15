@@ -13,7 +13,10 @@ const kpi = (page: Page, label: string) =>
 test('seed KPI ve grafikler SQL ile aynı; filtreler ve influencer seçimi korunur', async ({
   page,
 }, testInfo) => {
-  const url = `/?inf=demo-creator&${custom}`;
+  // Eski adres (`/?range=…`): ana ekran modül ekranı oldu (#200), filtreli adres özete yönlenir.
+  await page.goto(`/?inf=demo-creator&${custom}`);
+  await expect(page).toHaveURL(/\/influencers\/overview\?/);
+  const url = `/influencers/overview?inf=demo-creator&${custom}`;
   await page.goto(url);
   await expect(kpi(page, 'Dönem izlenmesi')).toHaveText('20.140');
   await expect(kpi(page, 'Paylaşılan video')).toHaveText('10');
@@ -82,7 +85,7 @@ test('boş hesap CTA; canlı fixture karşılaştırma, kapsam, plan ve viewer o
       .single();
     if (inf.error) throw inf.error;
     id = inf.data.id;
-    await page.goto(`/?inf=${slug}&${custom}`);
+    await page.goto(`/influencers/overview?inf=${slug}&${custom}`);
     await expect(
       page.getByRole('heading', { name: 'Bağlı sosyal hesap yok' }),
     ).toBeVisible();
@@ -178,7 +181,7 @@ test('boş hesap CTA; canlı fixture karşılaştırma, kapsam, plan ve viewer o
     const viewer = await browser.newContext({ storageState: VIEWER_STATE });
     try {
       const vp = await viewer.newPage();
-      await vp.goto(`/?inf=${slug}&${custom}`);
+      await vp.goto(`/influencers/overview?inf=${slug}&${custom}`);
       await expect(kpi(vp, 'Dönem izlenmesi')).toHaveText('300');
     } finally {
       await viewer.close();
@@ -199,11 +202,15 @@ test('boş hesap CTA; canlı fixture karşılaştırma, kapsam, plan ve viewer o
       best.getByRole('cell', { name: '200', exact: true }),
     ).toBeVisible();
     await expect(page).toHaveURL(/from=2026-10-01/);
-    await page.goto(`/?inf=${slug}&range=custom&from=2026-02-30&to=2026-03-01`);
+    await page.goto(
+      `/influencers/overview?inf=${slug}&range=custom&from=2026-02-30&to=2026-03-01`,
+    );
     await expect(page.getByRole('main').getByRole('alert')).toContainText(
       'Geçersiz filtre',
     );
-    await page.goto(`/?inf=dashboard-unknown-${crypto.randomUUID()}&${custom}`);
+    await page.goto(
+      `/influencers/overview?inf=dashboard-unknown-${crypto.randomUUID()}&${custom}`,
+    );
     await expect(
       page.getByRole('heading', { name: 'Influencer bulunamadı' }),
     ).toBeVisible();

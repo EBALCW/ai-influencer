@@ -102,6 +102,30 @@ test('ikinci alanın kullanıcısı birinci alanın influencer’ını listede g
   await context.close();
 });
 
+test('ikinci alanın ana ekranı birinci alanın üretimlerini göstermez', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ storageState: OTHER_STATE });
+  const page = await context.newPage();
+  const response = await page.goto('/');
+  expect(response?.status()).toBe(200);
+  await expect(
+    page.getByRole('heading', { name: 'Ana ekran', level: 1 }),
+  ).toBeVisible();
+  // Yeni alan boştur: ilk adımı söyleyen boş durum görünür, birinci alanın seed klipleri değil.
+  await expect(
+    page.getByRole('heading', { name: 'Henüz üretim yok' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Anlatım videosu başlat' }),
+  ).toBeVisible();
+  await expect(page.getByText(/Demo: /)).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: /Yayıncı klipleri: 0 kaynak · 0 klip/ }),
+  ).toBeVisible();
+  await context.close();
+});
+
 test('ikinci alanın owner’ı yalnız kendi alanının adını ve üyelerini görür', async ({
   browser,
 }) => {
