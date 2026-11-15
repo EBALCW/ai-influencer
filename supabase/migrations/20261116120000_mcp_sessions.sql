@@ -473,7 +473,9 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-CREATE TRIGGER jobs_automation_gate BEFORE INSERT ON public.jobs
+-- Ad sırası bilinçli: jobs_guard ve jobs_episode_gate'ten SONRA çalışır (durum ve onay kapısı
+-- hataları eskisi gibi önce gelir).
+CREATE TRIGGER jobs_guard_automation BEFORE INSERT ON public.jobs
   FOR EACH ROW EXECUTE FUNCTION private.jobs_automation_gate();
 
 -- Arşivleme ve taşıma taslak işi değildir: gövdeler aynı, başa insan oturumu denetimi eklendi.
