@@ -757,17 +757,24 @@ test(
       ['insan', humanSession(await signIn(users.outsider))],
       ['mcp', await mcpSession(await signIn(users.outsider))],
     ] as const)
-      await isolated(label, session);
+      await isolated(label, session, label === 'insan' ? [] : ['insan']);
   },
 );
 
-async function isolated(label: string, session: PanelSession): Promise<void> {
+async function isolated(
+  label: string,
+  session: PanelSession,
+  /** Bu alanda önceki turların açtığı seriler (yalnız kendi alanının verisi görünür). */
+  earlier: readonly string[],
+): Promise<void> {
   {
     const mcp = await connect(session);
     try {
       assert.deepEqual(
-        (await mcp.call('list_series', { status: 'all' })).data.seriler,
-        [],
+        (await mcp.call('list_series', { status: 'all' })).data.seriler.map(
+          (row: Row) => row.name,
+        ),
+        earlier.map((name) => `Felaketler ${run} ${name}`),
       );
       assert.deepEqual((await mcp.call('list_episodes')).data.bolumler, []);
       assert.deepEqual(
