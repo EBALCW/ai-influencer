@@ -681,6 +681,102 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"job_assets": {
+                  Row: {
+                    "asset_id": string,"created_at": string,"created_by": string | null,"id": string,"job_id": string,"role": string,"stage_key": string | null,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "asset_id": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"job_id": string,"role": string,"stage_key"?: string | null,"workspace_id"?: string
+                  }
+                  Update: {
+                    "asset_id"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"job_id"?: string,"role"?: string,"stage_key"?: string | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "job_assets_asset_id_fkey"
+      columns: ["asset_id"]
+isOneToOne: false
+      referencedRelation: "assets"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "job_assets_job_id_fkey"
+      columns: ["job_id"]
+isOneToOne: false
+      referencedRelation: "jobs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "job_assets_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"job_stages": {
+                  Row: {
+                    "approved_at": string | null,"approved_by": string | null,"attempts": number,"created_at": string,"detail": string | null,"error": string | null,"finished_at": string | null,"id": string,"job_id": string,"key": string,"output": NonNullable<Json>,"progress": number,"requires_approval": boolean,"seq": number,"started_at": string | null,"status": string,"updated_at": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "approved_at"?: string | null,"approved_by"?: string | null,"attempts"?: number,"created_at"?: string,"detail"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job_id": string,"key": string,"output"?: NonNullable<Json>,"progress"?: number,"requires_approval"?: boolean,"seq": number,"started_at"?: string | null,"status"?: string,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Update: {
+                    "approved_at"?: string | null,"approved_by"?: string | null,"attempts"?: number,"created_at"?: string,"detail"?: string | null,"error"?: string | null,"finished_at"?: string | null,"id"?: string,"job_id"?: string,"key"?: string,"output"?: NonNullable<Json>,"progress"?: number,"requires_approval"?: boolean,"seq"?: number,"started_at"?: string | null,"status"?: string,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "job_stages_job_id_fkey"
+      columns: ["job_id"]
+isOneToOne: false
+      referencedRelation: "jobs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "job_stages_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"jobs": {
+                  Row: {
+                    "attempts": number,"cancel_requested_at": string | null,"clip_source_id": string | null,"created_at": string,"created_by": string | null,"current_stage": string | null,"error": string | null,"failed_stage": string | null,"finished_at": string | null,"id": string,"kind": string,"lease_expires_at": string | null,"max_attempts": number,"module": string,"params": NonNullable<Json>,"progress": number,"required_capabilities": (string)[],"retry_of": string | null,"run_after": string,"started_at": string | null,"status": string,"stop_at": string | null,"updated_at": string,"worker_id": string | null,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"clip_source_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_stage"?: string | null,"error"?: string | null,"failed_stage"?: string | null,"finished_at"?: string | null,"id"?: string,"kind": string,"lease_expires_at"?: string | null,"max_attempts"?: number,"module": string,"params"?: NonNullable<Json>,"progress"?: number,"required_capabilities"?: (string)[],"retry_of"?: string | null,"run_after"?: string,"started_at"?: string | null,"status"?: string,"stop_at"?: string | null,"updated_at"?: string,"worker_id"?: string | null,"workspace_id"?: string
+                  }
+                  Update: {
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"clip_source_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_stage"?: string | null,"error"?: string | null,"failed_stage"?: string | null,"finished_at"?: string | null,"id"?: string,"kind"?: string,"lease_expires_at"?: string | null,"max_attempts"?: number,"module"?: string,"params"?: NonNullable<Json>,"progress"?: number,"required_capabilities"?: (string)[],"retry_of"?: string | null,"run_after"?: string,"started_at"?: string | null,"status"?: string,"stop_at"?: string | null,"updated_at"?: string,"worker_id"?: string | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "jobs_clip_source_id_fkey"
+      columns: ["clip_source_id"]
+isOneToOne: false
+      referencedRelation: "clip_sources"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "jobs_retry_of_fkey"
+      columns: ["retry_of"]
+isOneToOne: false
+      referencedRelation: "jobs"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "jobs_worker_id_fkey"
+      columns: ["worker_id"]
+isOneToOne: false
+      referencedRelation: "production_workers"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "jobs_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"learnings": {
                   Row: {
                     "body": string,"created_at": string,"created_by": string | null,"id": string,"influencer_id": string | null,"post_id": string | null,"tags": (string)[],"updated_at": string,"workspace_id": string
@@ -811,6 +907,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     },{
       foreignKeyName: "posts_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"production_workers": {
+                  Row: {
+                    "capabilities": (string)[],"created_at": string,"id": string,"last_seen_at": string,"name": string,"platform": string,"revoked_at": string | null,"updated_at": string,"user_id": string,"version": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "capabilities"?: (string)[],"created_at"?: string,"id"?: string,"last_seen_at"?: string,"name": string,"platform": string,"revoked_at"?: string | null,"updated_at"?: string,"user_id": string,"version"?: string,"workspace_id"?: string
+                  }
+                  Update: {
+                    "capabilities"?: (string)[],"created_at"?: string,"id"?: string,"last_seen_at"?: string,"name"?: string,"platform"?: string,"revoked_at"?: string | null,"updated_at"?: string,"user_id"?: string,"version"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "production_workers_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["user_id"]
+    },{
+      foreignKeyName: "production_workers_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -1059,12 +1181,97 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "ai_weekly_summary":
+            "acknowledge_cancel":
+{ Args: { "p_job_id": string,"p_worker_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"ai_weekly_summary":
 { Args: { "p_as_of"?: string,"p_influencer_id": string }; Returns: Json
                            },
+"approve_job_stage":
+{ Args: { "p_job_id": string,"p_stage_key": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "asset_object_in_influencer_folder":
 { Args: { "object_name": string }; Returns: boolean
                            },
+"attach_job_asset":
+{ Args: { "p_asset_id": string,"p_job_id": string,"p_role": string,"p_stage_key"?: string }; Returns: {
+              "asset_id": string,
+"created_at": string,
+"created_by": string | null,
+"id": string,
+"job_id": string,
+"role": string,
+"stage_key": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "job_assets"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "brand_deal_revenue":
 { Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
               "converted_fee": number,"currency": string,"fee": number,"id": string,"influencer_id": string,"paid_at": string
@@ -1161,6 +1368,40 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"claim_job":
+{ Args: { "p_lease_seconds"?: number,"p_worker_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "claim_publish_jobs":
 { Args: { "p_lease_seconds"?: number,"p_limit"?: number }; Returns: {
               "account_id": string,
@@ -1236,6 +1477,40 @@ isOneToOne: false
 "complete_publish_job":
 { Args: { "p_duration_s"?: number,"p_external_id": string,"p_id": string,"p_is_short"?: boolean,"p_published_at": string,"p_url": string }; Returns: string
                            },
+"complete_stage":
+{ Args: { "p_job_id": string,"p_output"?: Json,"p_stage_key": string,"p_worker_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "content_checklist_ready":
 { Args: { "p_checklist": Json }; Returns: boolean
                            },
@@ -1383,9 +1658,77 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"enqueue_job":
+{ Args: { "p_clip_source_id"?: string,"p_kind": string,"p_max_attempts"?: number,"p_module": string,"p_params"?: Json,"p_required_capabilities"?: (string)[],"p_stages": Json,"p_stop_at"?: string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "enqueue_publish_job":
 { Args: { "p_caption"?: string,"p_content_id": string,"p_scheduled_for"?: string,"p_tags"?: (string)[],"p_title": string }; Returns: string
                            },
+"fail_stage":
+{ Args: { "p_error": string,"p_job_id": string,"p_retryable"?: boolean,"p_stage_key": string,"p_worker_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "fx_rate":
 { Args: { "p_from": string,"p_on": string,"p_to": string }; Returns: number
                            },
@@ -1497,9 +1840,97 @@ isOneToOne: false
 "record_manual_metrics":
 { Args: { "p_avg_watch_time_s"?: number,"p_comments": number,"p_completion_rate"?: number,"p_likes": number,"p_post_id": string,"p_reach"?: number,"p_saves"?: number,"p_shares": number,"p_target_hours"?: number,"p_views": number }; Returns: Json
                            },
+"register_worker":
+{ Args: { "p_capabilities"?: (string)[],"p_name": string,"p_platform": string,"p_version"?: string }; Returns: {
+              "capabilities": (string)[],
+"created_at": string,
+"id": string,
+"last_seen_at": string,
+"name": string,
+"platform": string,
+"revoked_at": string | null,
+"updated_at": string,
+"user_id": string,
+"version": string,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "production_workers"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"report_progress":
+{ Args: { "p_detail"?: string,"p_job_id": string,"p_lease_seconds"?: number,"p_progress"?: number,"p_worker_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "report_summary":
 { Args: { "p_currency"?: string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: Json
                            },
+"request_cancel_job":
+{ Args: { "p_job_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "request_sync":
 { Args: { "p_account_id"?: string }; Returns: string
                            },
@@ -1566,6 +1997,60 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"retry_job":
+{ Args: { "p_job_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"revoke_worker":
+{ Args: { "p_worker_id": string }; Returns: {
+              "capabilities": (string)[],
+"created_at": string,
+"id": string,
+"last_seen_at": string,
+"name": string,
+"platform": string,
+"revoked_at": string | null,
+"updated_at": string,
+"user_id": string,
+"version": string,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "production_workers"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "save_content_item":
 { Args: { "p_asset_ids"?: (string)[],"p_expected_updated_at"?: string,"p_generation_ids"?: (string)[],"p_id": string,"p_values": Json }; Returns: {
               "adaptation_score": number | null,
@@ -1602,6 +2087,40 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"start_stage":
+{ Args: { "p_job_id": string,"p_lease_seconds"?: number,"p_stage_key": string,"p_worker_id": string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "storage_object_in_workspace":
 { Args: { "p_bucket_id": string,"p_object_name": string }; Returns: boolean
                            },
@@ -1619,7 +2138,27 @@ isOneToOne: false
                            },
 "valid_sample_captions":
 { Args: { "p_values": (string)[] }; Returns: boolean
-                           }
+                           },
+"worker_heartbeat":
+{ Args: { "p_capabilities"?: (string)[],"p_worker_id": string }; Returns: {
+              "capabilities": (string)[],
+"created_at": string,
+"id": string,
+"last_seen_at": string,
+"name": string,
+"platform": string,
+"revoked_at": string | null,
+"updated_at": string,
+"user_id": string,
+"version": string,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "production_workers"
+        isOneToOne: true
+        isSetofReturn: false
+      } }
           }
           Enums: {
             "asset_kind": "reference"|"generated"|"final_video"|"thumbnail","brand_deal_stage": "lead"|"negotiation"|"signed"|"delivered"|"paid"|"lost","clip_permission_status": "pending"|"granted"|"denied","clip_status": "candidate"|"approved"|"rendered"|"rejected","content_source_type": "own"|"stock"|"open_license"|"third_party","content_stage": "idea"|"script"|"production"|"qc"|"edit"|"scheduled"|"published","cost_category": "subscription"|"credits"|"tool"|"other"|"ai_api","generation_status": "queued"|"running"|"succeeded"|"failed"|"cancelled","generation_type": "image"|"video","influencer_status": "draft"|"active"|"paused"|"archived","prompt_category": "character"|"video2video"|"short_film"|"caption"|"research","publish_job_status": "queued"|"processing"|"published"|"failed"|"manual_required"|"cancelled","social_account_status": "pending"|"active"|"expired"|"revoked"|"error","social_platform": "instagram"|"youtube"|"tiktok","team_role": "owner"|"editor"|"viewer"

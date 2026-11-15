@@ -82,6 +82,10 @@ Migration: `20261113100000_workspaces.sql`. Testler: `supabase/tests/workspaces.
 | `clip_sources`             | Yayıncı videosu ve izin kaydı (#173)           | Yalnız YouTube; link kanonik ve benzersiz; izin `pending`/`granted`/`denied`, `granted` için kısa referans zorunlu (e-posta/kişisel bilgi yazılmaz). Ayrıntı: "Yayıncı klipleri".                            |
 | `clips`                    | Kaynaktan klip adayı (#173)                    | Aralık en fazla 180 sn ve video süresi içinde; durum `candidate`/`approved`/`rendered`/`rejected`. Backlog bağlantısı `content_item_id` (kart başına tek klip); izin yoksa bağlanamaz.                       |
 | `trends`                   | Trend ve viral içerik arşivi (#10)             | Link http(s) ve aynı kapsamda (global / influencer) benzersiz; puan 1–5; durum `new`/`shortlisted`/`used`/`rejected`. Backlog bağlantısı `content_item_id` (kart başına tek trend). Ayrıntı: "Trend arşivi". |
+| `jobs`                     | Ortak üretim işi (#201)                        | Modül + tür + dondurulmuş `params`; durum `queued`/`running`/`awaiting_approval`/`succeeded`/`failed`/`cancelled`. İstemci yalnız okur, her yazım RPC ile. Ayrıntı: "Ortak üretim işi modeli".               |
+| `job_stages`               | İşin sıralı aşamaları ve geçmişi (#201)        | Aşama başına durum, ilerleme, hata, onay. Onay kolonlarını yalnız `approve_job_stage()` yazar.                                                                                                               |
+| `job_assets`               | İş ↔ `assets` bağı (#201)                      | Rol: `input`/`audio`/`captions`/`frame`/`preview`/`final`/`other`; iş + dosya + rol tekil.                                                                                                                   |
+| `production_workers`       | Üretim makinesi kaydı (#201)                   | Ekip üyesinin oturumuyla çalışır; ad üye başına tekil; yetenekler, son görülme, iptal.                                                                                                                       |
 
 Uygulama tablolarının tümünde `created_at`, `updated_at` ve `created_by` bulunur. `updated_at` trigger ile değiştirilir; `created_by` istemci isteklerinde `auth.uid()` ile dolar, demo seed kayıtlarında boş kalır.
 
@@ -314,6 +318,78 @@ Google Sheets takip tablosunun yerine `/analytics/performance` sayfası kullanı
 - **Backlog'a aktar:** `push_clip_to_backlog(p_clip_id, p_influencer_id?)` (SECURITY INVOKER) tek transaction'da `idea` aşamasında `content_items` kartı açar: `source_type = third_party`, `source_owner` = kanal adı, `source_license` = `yazılı izin – kısıtlı depoda: <permission_ref>`, `source_url` = video linki + `&t=<başlangıç>s`, başlık = klip başlığı, `hook_type` = kanca. Kartı klibe bağlar, hedef influencer'ı klibe yazar ve `candidate` klibi `approved` yapar. Hatalar: izin `granted` değil → 23514 (HINT `clip_permission_required`, API 422); ikinci aktarım → 23505 (409); elenmiş klip veya başka influencer → 23514; atanmamış klipte hedef verilmedi → 22023; viewer → 42501.
 - **İzin kuralı veritabanındadır:** `clips.content_item_id` doğrudan UPDATE ile de izinsiz kaynağa bağlanamaz (trigger). İzin sonradan geri alınırsa aktarılmış kartlara dokunulmaz, yalnız yeni aktarım reddedilir. Kart silinirse bağlantı NULL olur, klip kalır. RLS standart: ekip okur, owner/editor yazar, viewer salt okur.
 - **Panel:** `/clips` (kaynak listesi, izin rozeti, klip adayları; başlangıç/bitiş `dk:sn` girilir). API: `POST /api/clip-sources`, `PATCH`/`DELETE /api/clip-sources/{id}` (izin işaretleme dahil), `POST /api/clips`, `PATCH`/`DELETE /api/clips/{id}`, `POST /api/clips/{id}/backlog`. Şemalar ve yardımcılar `apps/panel/src/lib/clips/`.
+
+## Ortak üretim işi modeli (#201)
+
+Migration: `20261115100000_production_jobs.sql`. Karar: `docs/adr/0004-moduler-panel.md` (Karar 2 ve 3). Sabitler: `packages/shared/src/jobs.ts` (`JOB_STATUSES`, `JOB_TRANSITIONS`, `JOB_KINDS` …). Bütün modüller (anlatım, klip, influencer) aynı kuyruğu kullanır; `generations` ücretli sağlayıcı çağrılarının defteri olarak ayrı kalır.
+
+- **`jobs`:** `module` (`influencer` · `explainer` · `clip`), `kind` (`<modül>.<iş>`, ör. `explainer.render`, `clip.cut`), sahip kayıt (`clip_source_id`; anlatımın `episode_id`'si #216'da eklenir), `params` (işe alınırken dondurulur, en çok 64 KB, sır yazılmaz), `status`, `current_stage`, `stop_at`, `progress` (0–100), `required_capabilities`, `worker_id` (işi alan ya da en son almış makine), `lease_expires_at` (yalnız `running` iken dolu), `run_after` (geçici hatadan sonra bekleme), `attempts` / `max_attempts` (varsayılan 3, en çok 10), `cancel_requested_at`, `failed_stage`, `error` (en çok 2000 karakter), `retry_of`, `started_at`, `finished_at`. Modül, tür, parametreler, `stop_at`, yetenekler ve `max_attempts` sonradan değişmez.
+- **`job_stages`:** iş başına sıralı aşamalar (`seq` 1–20, `key` iş içinde tekil): `status` (`pending` · `running` · `succeeded` · `failed` · `skipped`), `progress`, `detail` (kısa ilerleme notu, 500 karakter), `attempts`, `error`, `requires_approval`, `approved_by` / `approved_at`, `output` (kısa özet, en çok 8 KB), `started_at`, `finished_at`. Aşama tanımı (sıra, ad, onay gereği) sonradan değişmez.
+- **`job_assets`:** iş ↔ `assets` bağı; `role` ve isteğe bağlı `stage_key`.
+- **`production_workers`:** `user_id` (ekip üyesi; üye çıkarılınca kayıt silinir), `name` (alan + üye içinde tekil), `platform` (`darwin` · `win32` · `linux`), `version`, `capabilities`, `last_seen_at` (90 sn'den eskiyse çevrimdışı), `revoked_at`. Makine olarak kaydedilen oturum kimlikleri `private.worker_sessions`'ta tutulur (API rollerine kapalı, satır silinmez).
+
+**Durum makinesi.** Tek doğruluk kaynağı `private.jobs_guard()` ve `private.job_stages_guard()` trigger'larıdır; geçersiz geçiş service role için de `55000` (HINT `illegal_transition`) ile reddedilir.
+
+```
+queued ──claim_job──▶ running ──onay gerektiren aşama bitti──▶ awaiting_approval
+  ▲                     │  │                                        │
+  ├◀── kira doldu ──────┘  │                                        │
+  ├◀── geçici hata ────────┘                                        │
+  └◀── onay verildi, sonraki aşama var ─────────────────────────────┘
+
+running            ──▶ succeeded    son aşama ya da stop_at aşaması bitti
+awaiting_approval  ──▶ succeeded    onay verildi (son aşama ya da stop_at)
+running            ──▶ failed       kalıcı hata ya da deneme hakkı bitti
+queued | running | awaiting_approval ──▶ cancelled    iptal
+```
+
+| Geçiş                           | Ne zaman                                                                                                  |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `queued → running`              | `claim_job`: yetenekleri yeten makine kirayla alır                                                        |
+| `queued → cancelled`            | `request_cancel_job` (anında)                                                                             |
+| `running → awaiting_approval`   | Onay gerektiren aşama bitti                                                                               |
+| `running → succeeded`           | Son aşama ya da `stop_at` aşaması bitti (onay gerekmiyordu)                                               |
+| `running → queued`              | Kira doldu ya da geçici hata; `attempts` artar                                                            |
+| `running → failed`              | Kalıcı hata ya da `attempts` `max_attempts`'e ulaştı; `failed_stage` + `error` yazılır                    |
+| `running → cancelled`           | İptal istendi ve makine `acknowledge_cancel` / `complete_stage` / `fail_stage` çağırdı ya da kirası doldu |
+| `awaiting_approval → queued`    | Aşama onaylandı, sonraki aşama var                                                                        |
+| `awaiting_approval → succeeded` | Aşama onaylandı; son aşama ya da `stop_at`                                                                |
+| `awaiting_approval → cancelled` | `request_cancel_job` (anında)                                                                             |
+
+`succeeded`, `failed`, `cancelled` son durumdur. Aşama geçişleri: `pending → running | skipped`, `running → pending (yeniden deneme) | succeeded | failed | skipped`. İş biterken açık kalan aşamalar `skipped` olur.
+
+**Onay kapısı** (veritabanında, makineden ve modelden bağımsız):
+
+- Onaylanmamış aşamada bekleyen iş `queued` ya da `succeeded` olamaz; onaysız aşamadan sonraki aşama `running` olamaz; `succeeded` işte onaysız onay aşaması ya da açık aşama kalamaz (`42501` HINT `approval_required`, `55000` HINT `job_incomplete`).
+- `approved_by` / `approved_at` yalnız `approve_job_stage()` ile yazılır: değerler istemciden alınmaz (`auth.uid()` ve `now()`), verilmiş onay değiştirilemez, doğrudan `UPDATE` (service role dahil) reddedilir.
+- Onayı yalnız alanın owner/editor'ü olan, erişim token'ında `session_id` claim'i bulunan ve **makine olarak kaydedilmemiş** bir oturum verebilir. Claim yoksa onay reddedilir. `TODO(#211)`: claim gerçek oturumla doğrulanacak ve makine kaydı eşleme kodlu giriş akışına bağlanacak; o zamana kadar makine `register_worker()`'ı kendi oturumundan çağırır. Aynı üyenin makine dışındaki oturumu (panel) onay verebilir; makine o üyenin kimlik bilgilerine değil yalnız kendi oturumuna sahiptir.
+
+**Kira ve yeniden deneme.** `claim_job` işi `FOR UPDATE SKIP LOCKED` ile alır, `lease_expires_at` yazar (varsayılan 120 sn; 30–900 sn arasına çekilir). `start_stage` ve `report_progress` kirayı uzatır. Kira dolunca (`private.reclaim_expired_jobs`: her `claim_job` çağrısında çağıranın alanı için, ayrıca pg_cron `reclaim-production-jobs` her dakika) iş kuyruğa döner, çalışan aşama `pending` olur ve `attempts` artar; `max_attempts`'e ulaşınca `failed`. Geçici hata (`fail_stage(..., p_retryable => true)`) işi `30 sn × deneme` beklemeyle kuyruğa döndürür. Panelden "yeniden dene" (`retry_job`) mevcut işi değiştirmez; aynı tanımla **yeni** iş açar (`retry_of`), aşamalar baştan başlar ve onaylar devralınmaz.
+
+**İptal.** Çalışmayan iş (`queued`, `awaiting_approval`) anında `cancelled`. Çalışan işte `cancel_requested_at` yazılır; makine bunu `report_progress` yanıtında görür ve `acknowledge_cancel` ile kapatır. Makine yanıt vermezse iş kirası dolunca iptal olur.
+
+**Kim neyi çağırır.** İstemcinin dört tabloda yalnız `SELECT` izni vardır (viewer dahil ekip okur; yalnız kendi çalışma alanı). Her yazım `public` INVOKER sarmalayıcı → `internal` DEFINER çekirdek üzerinden geçer; çekirdek alanı `current_workspace_id()` ile süzer, başka alanın kimliği `P0002` döner. RPC'ler yalnız `authenticated` rolüne açıktır (anon ve service role çağıramaz).
+
+| RPC                                                                                                            | Kim                                                                          | Ne yapar                                                                                                             |
+| -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `enqueue_job(module, kind, stages, params?, required_capabilities?, stop_at?, clip_source_id?, max_attempts?)` | owner, editor                                                                | İşi ve aşamalarını `queued` olarak açar. `stages`: `[{"key": "...", "requires_approval": true}]` (1–20, adlar tekil) |
+| `retry_job(job_id)`                                                                                            | owner, editor                                                                | Yalnız `failed` / `cancelled`: aynı tanımla yeni iş (`retry_of`)                                                     |
+| `request_cancel_job(job_id)`                                                                                   | owner, editor                                                                | Anında iptal ya da çalışan işte iptal isteği                                                                         |
+| `approve_job_stage(job_id, stage_key)`                                                                         | owner, editor (insan oturumu; makine oturumu `42501`)                        | Onay bekleyen aşamayı onaylar; iş sonraki aşama için kuyruğa döner ya da tamamlanır                                  |
+| `attach_job_asset(job_id, asset_id, role, stage_key?)`                                                         | owner, editor                                                                | İşe dosya bağlar (aynı iş + dosya + rol tekrar çağrılabilir)                                                         |
+| `register_worker(name, platform, version?, capabilities?)`                                                     | owner, editor                                                                | Çağıran oturumu makine olarak kaydeder (aynı ad yeniden kaydedilirse satır güncellenir; üye başına en çok 20)        |
+| `revoke_worker(worker_id)`                                                                                     | owner (her makine), editor (yalnız kendi makinesi); makine oturumu çağıramaz | Makinenin yetkisini kaldırır; elindeki işlerin kirası hemen dolar                                                    |
+| `worker_heartbeat(worker_id, capabilities?)`                                                                   | makine                                                                       | `last_seen_at` ve yetenekleri günceller                                                                              |
+| `claim_job(worker_id, lease_seconds?)`                                                                         | makine                                                                       | Alanındaki, `required_capabilities ⊆ capabilities` olan en eski `queued` işi kirayla alır (0 ya da 1 satır)          |
+| `start_stage(worker_id, job_id, stage_key, lease_seconds?)`                                                    | makine                                                                       | Sıradaki aşamayı başlatır; önceki aşamalar bitmiş ve onaylanmış olmalı                                               |
+| `report_progress(worker_id, job_id, progress?, detail?, lease_seconds?)`                                       | makine                                                                       | Aşama ilerlemesini yazar, kirayı uzatır; yanıtta `cancel_requested_at`                                               |
+| `complete_stage(worker_id, job_id, stage_key, output?)`                                                        | makine                                                                       | Aşamayı bitirir: onay bekler, sonraki aşamaya geçer ya da işi tamamlar                                               |
+| `fail_stage(worker_id, job_id, stage_key, error, retryable?)`                                                  | makine                                                                       | Geçici hata: kuyruğa döner; kalıcı hata ya da biten deneme hakkı: `failed`                                           |
+| `acknowledge_cancel(worker_id, job_id)`                                                                        | makine                                                                       | İptal isteğini onaylar: `cancelled`                                                                                  |
+
+"Makine" satırları: çağıran owner/editor olmalı, makine onun olmalı, iptal edilmemiş olmalı ve çağrı o makineye kayıtlı oturumdan gelmeli; iş çağrılarında ayrıca iş o makinede `running` ve kirası geçerli olmalı (değilse `55000` HINT `lease_lost`).
+
+Bu PR'da olmayanlar: `productions` Storage bucket'ı ve `assets.bucket` (sıradaki PR), makine programı ve eşleme girişi (#211, #212), seri/bölüm tabloları ve `episode_id` (#216), `generations.job_id` bağı (AI influencer parktan çıkınca), arayüz (#200, #205).
 
 ## Yetki matrisi
 
