@@ -237,6 +237,107 @@ CI'da PostgreSQL 17 istemcisiyle gerçek `pg_dump` alınır, yerel demo verisi d
 
 ---
 
+## Üretim makinesi: `pnpm worker:doctor`
+
+Video üretimi (anlatım videoları, yayıncı klipleri) panelin sunucusunda değil, ekip üyesinin kendi bilgisayarında çalışır. Bu komut makinede hangi araçların kurulu olduğunu yoklar, hangi üretim yollarının çalışabileceğini söyler ve eksikler için işletim sistemine göre kurulum komutunu yazar. **Hiçbir şey kurmaz**, yalnızca bakar. Panel geliştirmek için gerekmez; `pnpm doctor` ondan bağımsızdır.
+
+```bash
+pnpm worker:doctor                              # Türkçe tablo
+pnpm worker:doctor --require clip.cut,fetch.youtube   # bu yetenekler yoksa 3 ile çıkar
+node apps/worker/src/doctor.ts --json           # makine tarafından okunur çıktı
+```
+
+Çıkış kodu: `0` en az bir üretim yolu tam · `2` hiçbir yol tam değil · `3` `--require` ile istenen yetenek eksik · `1` kullanım hatası. Araç PATH'te olmasa da bilinen kurulum yerlerinde aranır (Homebrew `ffmpeg-full`, `/Applications/Blender.app`, `C:\Program Files\Blender Foundation\Blender *`, winget ve scoop klasörleri). Kurulumdan sonra **yeni bir terminal** aç; winget'in eklediği PATH eski terminale yansımaz.
+
+### Yetenekler
+
+İş kuyruğu bir işi yalnızca gereken yeteneklerin hepsine sahip makineye verir (ADR 0004). Anahtarlar sabittir, `packages/shared/src/capabilities.ts` içinde durur; hangi araçtan türediği `apps/worker/src/lib/capabilities.ts` içindedir.
+
+| Yetenek               | Ne için                                 | Gerekenler                                                          |
+| --------------------- | --------------------------------------- | ------------------------------------------------------------------- |
+| `voice.edge-tts`      | Türkçe seslendirme                      | Film sanal ortamı + `edge-tts` (çalışırken internet ister)          |
+| `captions.burn`       | Altyazı gömme                           | `subtitles` filtresi (libass) ve libx264 olan bir ffmpeg            |
+| `render.skia`         | Skia yolu ile 2B anlatım                | Sanal ortam + `skia-python`, `numpy`, `pillow`; ffmpeg + ffprobe    |
+| `render.hyperframes`  | Stil yolu (HyperFrames)                 | Node, HyperFrames çalışma zamanı, Chrome/Chromium, ffmpeg + ffprobe |
+| `render.blender`      | Blender ile 3B kesit                    | Blender 5.0+, libx264'lü ffmpeg                                     |
+| `render.blender.mpfb` | Blender sahnesinde MPFB insan figürü    | `render.blender` + MPFB eklentisi                                   |
+| `clip.cut`            | Klip kesme, dikeye çevirme              | libx264'lü ffmpeg + ffprobe                                         |
+| `clip.transcribe`     | Altyazısız yayında yerel konuşma tanıma | `whisper-cli` + model dosyası + ffmpeg                              |
+| `clip.audio-tags`     | Ses etiketleme (müzik, gülme, bağırma)  | Ses etiketleyici (sherpa-onnx + CED-tiny) + ffmpeg                  |
+| `fetch.youtube`       | YouTube'dan video ve altyazı indirme    | `yt-dlp` + ffmpeg                                                   |
+
+Üretim yolları (bitmiş video için gereken yetenekler): Skia anlatım = `voice.edge-tts` + `render.skia` + `captions.burn` · stil anlatım = `voice.edge-tts` + `render.hyperframes` · Blender anlatım = `voice.edge-tts` + `render.blender` + `captions.burn` · yayıncı klibi = `fetch.youtube` + `clip.cut`.
+
+### Araçların kurulumu
+
+| Araç                         | macOS                               | Windows (PowerShell)                                                                                              | Linux (Debian/Ubuntu)                          |
+| ---------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| ffmpeg + ffprobe (libass'lı) | `brew install ffmpeg-full`          | `winget install Gyan.FFmpeg` ("full" yapı)                                                                        | `sudo apt install ffmpeg`                      |
+| yt-dlp                       | `brew install yt-dlp`               | `winget install yt-dlp.yt-dlp`                                                                                    | `pipx install yt-dlp`                          |
+| Blender 5.0+                 | `brew install --cask blender`       | `winget install BlenderFoundation.Blender`                                                                        | `sudo snap install blender --classic`          |
+| Chrome                       | `brew install --cask google-chrome` | `winget install Google.Chrome`                                                                                    | `sudo apt install chromium`                    |
+| Python 3.9+                  | `brew install python`               | `winget install Python.Python.3.12`                                                                               | `sudo apt install python3 python3-venv`        |
+| whisper.cpp (`whisper-cli`)  | `brew install whisper-cpp`          | [Sürümler](https://github.com/ggml-org/whisper.cpp/releases) sayfasındaki Windows zip'ini aç, klasörü PATH'e ekle | Kaynak koddan derle, `build/bin`'i PATH'e ekle |
+
+Paket yöneticisiyle gelmeyenler:
+
+- **Film sanal ortamı** (edge-tts, skia-python, numpy, pillow, scipy). macOS / Linux: `python3 -m venv ~/.local/share/ai-influencer-film-venv`, Windows: `py -m venv $HOME\ai-influencer-film-venv`; sonra o ortamın python'ıyla `-m pip install -r .claude/skills/cinematic-film/requirements.txt edge-tts`.
+- **HyperFrames çalışma zamanı** (~410 MB, repo dışına): `node .claude/skills/edit-video/scripts/init-workspace.mjs --workspace ~/ai-influencer-films --install`. Render için kendi başsız Chrome'unu indirir; yoksa makinedeki Chrome kullanılır.
+- **whisper modeli** (574 MB) ve isteğe bağlı VAD modeli: `docs/clip-guide.md` → Yerel transkript. Denetim eksikse indirme komutunu yazar.
+- **Ses etiketleyici** (isteğe bağlı): `docs/clip-guide.md` → Ses etiketleyici.
+- **MPFB** (isteğe bağlı): Blender → Edit → Preferences → Get Extensions → "MPFB".
+
+Varsayılan yerleri değiştiren ortam değişkenleri (kabukta tanımlanır, `.env.local`'den okunmaz): `FFMPEG_PATH`, `BLENDER_PATH`, `HYPERFRAMES_BROWSER_PATH` (Chrome), `FILM_VENV_DIR` (sanal ortam), `FILM_WORKSPACE_DIR` (film klasörü; varsayılan `~/ai-influencer-films`), `WHISPER_MODEL`, `WHISPER_VAD_MODEL`, `AUDIO_TAGGER_DIR`, `AUDIO_TAG_MODEL_DIR`.
+
+### `--json` çıktısı (şema sürümü 1)
+
+```jsonc
+{
+  "schemaVersion": 1,
+  "ok": true, // en az bir üretim yolu tam mı
+  "system": {
+    "platform": "darwin", // darwin | win32 | linux
+    "arch": "arm64",
+    "osRelease": "27.0.0",
+    "cpu": "Apple M4", // bilinmiyorsa null
+    "cores": 10,
+    "memoryGb": 24,
+    "gpu": ["Apple M4"], // bulunamazsa []
+    "diskFreeGb": 160, // film klasörünün olduğu birim; bilinmiyorsa null
+    "diskLow": false, // 10 GB altı
+  },
+  "checks": [
+    {
+      "id": "ffmpeg.subtitles", // sabit kimlik
+      "label": "ffmpeg: altyazı (libass)",
+      "status": "ok", // ok | missing | outdated
+      "version": "9.0.2", // okunamadıysa null
+      "path": "/opt/homebrew/opt/ffmpeg-full/bin/ffmpeg", // ev klasörü ~ olarak yazılır
+      "required": null, // alt sınır, ör. ">=5.0"
+      "optional": false,
+      "detail": null,
+      "hint": null, // durum ok değilse bu işletim sistemi için kurulum yönergesi
+    },
+  ],
+  "capabilities": ["captions.burn", "clip.cut"],
+  "missingCapabilities": [{ "key": "fetch.youtube", "missing": ["yt-dlp"] }],
+  "routes": [
+    {
+      "key": "clip",
+      "label": "Yayıncı klibi",
+      "ready": false,
+      "missing": ["fetch.youtube"],
+    },
+  ],
+}
+```
+
+Denetim kimlikleri: `node`, `pnpm`, `ffmpeg`, `ffprobe`, `ffmpeg.libx264`, `ffmpeg.subtitles`, `yt-dlp`, `blender`, `blender.mpfb`, `chrome`, `hyperframes`, `python`, `venv`, `py.edge-tts`, `py.skia`, `py.numpy`, `py.pillow`, `py.scipy`, `whisper-cli`, `whisper.model`, `whisper.vad`, `audio-tagger`. Çıktıda ev klasörü `~` ile değiştirilir (rapor issue'ya yapıştırılabilir); bilgisayar adı ve kullanıcı adı yazılmaz. JSON'u `pnpm` üzerinden alacaksan `pnpm --silent worker:doctor --json` kullan, yoksa pnpm'in başlık satırı çıktıya karışır.
+
+Yeteneklerin panele bildirilmesi ve işlerin yalnızca yapabilen makineye verilmesi makine programıyla (#211) gelir; bu komut onun yerel, veritabanından bağımsız parçasıdır.
+
+---
+
 ## Sık Sorunlar
 
 **Windows: `winget` tanınmıyor**

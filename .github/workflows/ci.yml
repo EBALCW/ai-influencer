@@ -140,6 +140,14 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # Runner'da araçların çoğu yok: komut asılmadan bitmeli ve dürüst bir rapor vermeli.
+      # 0 = en az bir üretim yolu tam, 2 = hiçbiri tam değil (burada beklenen); başka kod hatadır.
+      - name: Üretim makinesi denetimi (duman testi)
+        shell: bash
+        run: |
+          code=0
+          node apps/worker/src/doctor.ts || code=$?
+          if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then exit "$code"; fi
 
   secrets:
     name: Secret taraması

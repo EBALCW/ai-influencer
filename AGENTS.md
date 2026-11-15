@@ -128,6 +128,7 @@ node scripts/doctor.mjs
 | `pnpm test:e2e`                                                                                  | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)                                                  |
 | `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`)                               | Güncel kod haritası (aşağıya bak)                                                                      |
 | `pnpm clip:auto <adres> …` / `clip:fetch` / `clip:moments <klasör>` / `clip:cut …` / `clip:mark` | Yayından en çok izlenecek anları bul, kalite kontrolünden geçir, dikey klip kes (`docs/clip-guide.md`) |
+| `pnpm worker:doctor` (`--json`, `--require <yetenek,...>`)                                       | Üretim makinesi denetimi: üretilebilen video yolları, eksiklerin kurulumu (`docs/SETUP.md`)            |
 | `pnpm env:pull`                                                                                  | Test Supabase anahtarlarını `.env.local`'e çeker                                                       |
 | `pnpm owner:create <e-posta>` / `pnpm workspace:create <e-posta>`                                | İlk owner (tek alan) / yeni çalışma alanı + owner'ı (`docs/AUTH.md`)                                   |
 | `pnpm release`                                                                                   | `test` → `main` release PR'ı                                                                           |
@@ -152,12 +153,13 @@ apps/panel/src/app/api/**/route.ts    API (requireApiRole + parseJson, docs/DEVE
 apps/panel/src/lib/<alan>/            saf mantık + sorgular (+ *.test.ts yanında)
 apps/panel/src/components/ui.tsx      ortak UI (StatCard, EmptyState, DataTable, Toast …)
 apps/panel/e2e/                       Playwright; projeler playwright.config.ts'de
-packages/shared/src/                  DB tipleri (database.types.ts üretilmiş), ALERT_TYPES
+packages/shared/src/                  DB tipleri (database.types.ts üretilmiş), ALERT_TYPES, WORKER_CAPABILITIES
 supabase/migrations/                  tek doğruluk kaynağı (şema, RLS, fonksiyon, cron)
 supabase/tests/*.test.sql             pgTAP (her migration'ın testi)
 supabase/functions/                   Edge Functions (Deno), ortak kod _shared/
 supabase/seed.sql                     yerel/CI demo verisi
 docs/                                 kurallar (DEVELOPMENT, WORKFLOW, data-model, AI, AUTH …)
+apps/worker/src/                      üretim makinesi programı (Node'un TS desteğiyle derlemesiz çalışır; saf mantık lib/, testler node --test)
 scripts/                              Node script'leri (cross-platform)
 ```
 
