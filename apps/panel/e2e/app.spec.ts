@@ -7,17 +7,19 @@ test.skip(!hasLocalSupabase(), 'Yerel Supabase yok (pnpm supabase:start)');
 // Hepsi aynı oturumu paylaşır; çıkış testi oturumu iptal ettiği için sırayla ve en sonda çalışır
 test.describe.configure({ mode: 'serial' });
 
-test('home page shows the studio shell and overview', async ({ page }) => {
+test('home page shows the studio shell and module home', async ({ page }) => {
   await page.goto('/');
   await expect(
-    page.getByRole('heading', { name: /Genel bakış/i }),
+    page.getByRole('heading', { name: 'Ana ekran', level: 1 }),
   ).toBeVisible();
+  const menu = page.getByRole('navigation', { name: 'Ana menü' });
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('link', { name: /AI influencer/ })).toBeVisible();
+  // Ana ekran karakter istemez: influencer seçici yalnız karakterli sayfalarda görünür (#200).
   await expect(
-    page.getByRole('navigation', { name: 'Ana menü' }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('link', { name: 'Influencer’lar', exact: true }),
-  ).toBeVisible();
+    page.getByRole('combobox', { name: 'Aktif influencer' }),
+  ).toHaveCount(0);
+  await page.goto('/influencers');
   await expect(
     page.getByRole('combobox', { name: 'Aktif influencer' }),
   ).toBeVisible();
@@ -197,7 +199,7 @@ test('arşivlenen influencer etkin listeden çıkar ve arşivden geri alınır',
 });
 
 test('influencer selection is stored in the URL', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/influencers');
   const influencerSelect = page.getByRole('combobox', {
     name: 'Aktif influencer',
   });

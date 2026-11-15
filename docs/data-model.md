@@ -557,6 +557,8 @@ kullanıcıya özet döndürmez. Ayrıntılar ve çağrı/maliyet sözleşmesi: 
 
 ### Genel bakış dashboard’u (#54)
 
+Sayfa: `/influencers/overview` (AI influencer modülünün özeti). #200 ile ana ekran (`/`) modül ekranı oldu; eski filtreli adresler (`/?range=…`) özete yönlenir.
+
 `dashboard_overview(from, to, influencer_slug?, platform?)` yalnız authenticated
 üyelerin çağırabildiği `SECURITY INVOKER` RPC’sidir. RLS bütün alt sorgularda korunur;
 istemciye snapshot listesi indirip toplama yapılmaz. Aralık UTC günleri dahil,

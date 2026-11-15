@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { personaInputSchema, type PersonaInput } from './persona';
 
+const RESERVED_SLUGS = ['new', 'overview'];
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export const influencerDraftSchema = z.object({
@@ -10,7 +11,12 @@ export const influencerDraftSchema = z.object({
     .trim()
     .min(1)
     .max(60)
-    .regex(slugPattern, 'Slug küçük harf, rakam ve tire içerebilir.'),
+    .regex(slugPattern, 'Slug küçük harf, rakam ve tire içerebilir.')
+    // `/influencers/new` ve `/influencers/overview` sayfa adresidir; aynı slug gölgede kalır.
+    .refine(
+      (value) => !RESERVED_SLUGS.includes(value),
+      'Bu slug kullanılamaz.',
+    ),
   niche: z.string().trim().max(100),
   language: z
     .string()

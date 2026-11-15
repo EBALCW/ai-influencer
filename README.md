@@ -102,7 +102,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | Medya kütüphanesi (Storage)                                                                        | ✅          | #45             |
 | Prompt kütüphanesi, versiyonlama, içe/dışa aktarma                                                 | ✅          | #46             |
 | Panel içi AI asistanı (Claude)                                                                     | ✅          | #48             |
-| Genel bakış dashboard'u                                                                            | ✅          | #54             |
+| Genel bakış dashboard'u (`/influencers/overview`)                                                  | ✅          | #54             |
 | Post detay ve karşılaştırmalı analiz (`/analytics`)                                                | ✅          | #55             |
 | Bildirimler ve uyarı kuralları (zil, push opsiyonel)                                               | ✅          | #56             |
 | İçerik kanbanı ve yayın takvimi                                                                    | ✅          | #57             |
@@ -119,6 +119,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | Birleşik yorum gelen kutusu                                                                        | ✅          | #61             |
 | Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | ✅          | #173            |
 | Çalışma alanları: kiracı başına yalıtım (RLS, Storage, service role), `pnpm workspace:create`      | ✅          | #181            |
+| Ana ekran (`/`): modüller, son üretimler, makine durumu; modüllere göre gruplanmış menü            | ✅          | #200            |
 | Ekip bilgisayarlarında doğrulama ve yedek testi                                                    | ⏳ (manuel) | #41             |
 
 **Ortamlar:** `test` dalı → AiInfTest Supabase projesi, `main` → AiInfMain (production). Veritabanına sadece pipeline yazar (`docs/DEVELOPMENT.md` §0). Son production release: `v2026.10.21-0c1131d`. `test`'teki yenilikler `pnpm release` ile `main`'e geçer.

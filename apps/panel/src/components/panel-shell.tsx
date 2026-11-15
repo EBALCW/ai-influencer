@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Activity,
+  BookOpenText,
   CalendarDays,
   ChevronDown,
   Clapperboard,
@@ -29,6 +30,13 @@ import type { TeamRole } from '@ai-influencer/shared';
 import { LogoutButton } from '@/components/logout-button';
 import { NotificationBell } from '@/components/notifications';
 import { Toast } from '@/components/ui';
+import {
+  NAV_GROUPS,
+  isNavActive,
+  pageName as navPageName,
+  showsInfluencerSelector,
+  type NavIcon,
+} from '@/lib/navigation';
 
 export type ShellMember = { email: string; role: TeamRole };
 type InfluencerOption = { slug: string; name: string };
@@ -47,36 +55,22 @@ function initials(email: string) {
   return letters.toUpperCase() || '?';
 }
 
-const navigation: Array<{
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  group: string;
-}> = [
-  { label: 'Genel Bakış', href: '/', icon: LayoutDashboard, group: 'STÜDYO' },
-  {
-    label: 'Influencer’lar',
-    href: '/influencers',
-    icon: UsersRound,
-    group: 'STÜDYO',
-  },
-  { label: "Prompt'lar", href: '/prompts', icon: ScrollText, group: 'STÜDYO' },
-  {
-    label: 'Araştırma',
-    href: '/research',
-    icon: TrendingUp,
-    group: 'YAYIN',
-  },
-  { label: 'Klipler', href: '/clips', icon: Scissors, group: 'YAYIN' },
-  { label: 'İçerik', href: '/content', icon: Clapperboard, group: 'YAYIN' },
-  { label: 'Takvim', href: '/calendar', icon: CalendarDays, group: 'YAYIN' },
-  { label: 'Gelen kutusu', href: '/inbox', icon: Inbox, group: 'YAYIN' },
-  { label: 'Analitik', href: '/analytics', icon: Activity, group: 'BÜYÜME' },
-  { label: 'Üretim', href: '/production', icon: Film, group: 'BÜYÜME' },
-  { label: 'Maliyetler', href: '/costs', icon: Coins, group: 'YÖNETİM' },
-  { label: 'Markalar', href: '/brands', icon: Sparkles, group: 'YÖNETİM' },
-  { label: 'Ayarlar', href: '/settings', icon: Settings2, group: 'YÖNETİM' },
-];
+const icons: Record<NavIcon, LucideIcon> = {
+  home: LayoutDashboard,
+  explainer: BookOpenText,
+  clip: Scissors,
+  influencer: UsersRound,
+  prompts: ScrollText,
+  research: TrendingUp,
+  brands: Sparkles,
+  production: Film,
+  content: Clapperboard,
+  calendar: CalendarDays,
+  inbox: Inbox,
+  analytics: Activity,
+  costs: Coins,
+  settings: Settings2,
+};
 
 function withInfluencer(href: string, slug: string) {
   return slug ? `${href}?inf=${encodeURIComponent(slug)}` : href;
@@ -143,15 +137,8 @@ function ShellContent({
     });
   }
 
-  const groups = [...new Set(navigation.map((item) => item.group))];
-  const pageName =
-    pathname === '/notifications'
-      ? 'Bildirimler'
-      : (navigation.find((item) =>
-          item.href === '/'
-            ? pathname === '/'
-            : pathname === item.href || pathname.startsWith(`${item.href}/`),
-        )?.label ?? 'Genel Bakış');
+  const pageName = navPageName(pathname);
+  const influencerSelector = showsInfluencerSelector(pathname);
 
   return (
     <div className="studio-shell">
@@ -195,28 +182,33 @@ function ShellContent({
           </span>
         </div>
         <nav aria-label="Ana menü" className="main-nav">
-          {groups.map((group) => (
-            <div className="nav-group" key={group}>
-              <p className="nav-group-label">{group}</p>
-              {navigation
-                .filter((item) => item.group === group)
-                .map(({ label, href, icon: Icon }) => {
-                  const active =
-                    href === '/' ? pathname === '/' : pathname.startsWith(href);
-                  return (
-                    <Link
-                      aria-current={active ? 'page' : undefined}
-                      className={`nav-link ${active ? 'nav-link-active' : ''}`}
-                      href={withInfluencer(href, selectedInfluencer)}
-                      key={href}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      <Icon size={17} strokeWidth={1.8} />
-                      <span>{label}</span>
-                      {active && <span className="nav-active-mark" />}
-                    </Link>
-                  );
-                })}
+          {NAV_GROUPS.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <p className="nav-group-label">{group.label}</p>
+              {group.items.map(({ label, href, icon, parked, child }) => {
+                const Icon = icons[icon];
+                const active = isNavActive(href, pathname);
+                return (
+                  <Link
+                    aria-current={active ? 'page' : undefined}
+                    className={`nav-link ${active ? 'nav-link-active' : ''} ${
+                      child ? 'pl-8!' : ''
+                    }`}
+                    href={withInfluencer(href, selectedInfluencer)}
+                    key={href}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <Icon size={child ? 15 : 17} strokeWidth={1.8} />
+                    <span>{label}</span>
+                    {parked && (
+                      <span className="ml-auto rounded-full border border-line px-1.5 py-0.5 text-[9px] font-semibold tracking-wider text-muted uppercase">
+                        Park
+                      </span>
+                    )}
+                    {active && <span className="nav-active-mark" />}
+                  </Link>
+                );
+              })}
             </div>
           ))}
         </nav>
@@ -225,10 +217,10 @@ function ShellContent({
             <span className="help-orb">
               <Command size={16} />
             </span>
-            <strong>Yaratıcı süreç, tek yerde.</strong>
-            <small>İçerik yolculuğunuzun her adımını düzenleyin.</small>
-            <Link href={withInfluencer('/content', selectedInfluencer)}>
-              Çalışma alanına git <span>↗</span>
+            <strong>Bütün üretimler tek yerde.</strong>
+            <small>Modüller arası işleri ve makineleri izleyin.</small>
+            <Link href={withInfluencer('/production', selectedInfluencer)}>
+              Üretime git <span>↗</span>
             </Link>
           </div>
           <div className="profile-row">
@@ -260,22 +252,24 @@ function ShellContent({
             </div>
           </div>
           <div className="topbar-actions">
-            <label className="influencer-select-wrap">
-              <UsersRound size={16} />
-              <select
-                aria-label="Aktif influencer"
-                onChange={(event) => selectInfluencer(event.target.value)}
-                value={selectedInfluencer}
-              >
-                <option value="">Tüm influencer’lar</option>
-                {influencers.map((item) => (
-                  <option key={item.slug} value={item.slug}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown aria-hidden="true" size={14} />
-            </label>
+            {influencerSelector && (
+              <label className="influencer-select-wrap">
+                <UsersRound size={16} />
+                <select
+                  aria-label="Aktif influencer"
+                  onChange={(event) => selectInfluencer(event.target.value)}
+                  value={selectedInfluencer}
+                >
+                  <option value="">Tüm influencer’lar</option>
+                  {influencers.map((item) => (
+                    <option key={item.slug} value={item.slug}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown aria-hidden="true" size={14} />
+              </label>
+            )}
             <button
               aria-label={
                 theme === 'dark' ? 'Açık temaya geç' : 'Koyu temaya geç'

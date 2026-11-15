@@ -91,14 +91,24 @@ export function InfluencerList({
     <div className="page-stack">
       <header className="page-heading">
         <div>
-          <p className="eyebrow">STÜDYO</p>
+          <p className="eyebrow">AI INFLUENCER · PARK EDİLDİ</p>
           <h1>Influencer’lar</h1>
-          <p>Karakterleri, bağlı hesapları ve güncel performansı yönetin.</p>
+          <p>
+            Karakterleri, bağlı hesapları ve güncel performansı yönetin. Modül
+            park edildi: altyapısı çalışır, v1 önceliği anlatım videoları ve
+            yayıncı klipleridir.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <span className="soft-badge">
             <UsersRound size={15} /> {influencers.length} kayıt
           </span>
+          <Link
+            className="button button-quiet"
+            href={`/influencers/overview${infQuery}`}
+          >
+            Performans özeti
+          </Link>
           {canEdit && (
             <Link
               className="button button-primary"
