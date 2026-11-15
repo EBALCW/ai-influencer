@@ -25,6 +25,10 @@ test('viewer ana ekranı salt okunur görür', async ({ page }) => {
       .first(),
   ).toBeVisible();
   // Üretim başlatan eylem yok.
-  await expect(page.getByRole('link', { name: /başlat|ekle/i })).toHaveCount(0);
+  await expect(
+    page.getByRole('link', {
+      name: /Anlatım videosu başlat|Yayın kaynağı ekle/,
+    }),
+  ).toHaveCount(0);
   await expect(page.getByRole('main').getByRole('button')).toHaveCount(0);
 });
