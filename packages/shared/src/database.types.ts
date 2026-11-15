@@ -1585,9 +1585,6 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
-"begin_worker_pairing":
-{ Args: { "p_name": string,"p_platform": string,"p_public_key": string,"p_started_at": string,"p_verifier": string }; Returns: Json
-                           },
 "brand_deal_revenue":
 { Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
               "converted_fee": number,"currency": string,"fee": number,"id": string,"influencer_id": string,"paid_at": string
@@ -1758,9 +1755,6 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
-"claim_worker_pairing":
-{ Args: { "p_secret": string }; Returns: Json
-                           },
 "complete_generation":
 { Args: { "p_credits"?: number,"p_file_size_bytes"?: number,"p_id": string,"p_mime_type": string,"p_storage_path": string }; Returns: {
               "attempts": number,
@@ -1837,9 +1831,6 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
-"complete_worker_pairing":
-{ Args: { "p_pairing_id": string,"p_session_id": string,"p_token_ciphertext": string,"p_user_id": string }; Returns: Json
-                           },
 "content_checklist_ready":
 { Args: { "p_checklist": Json }; Returns: boolean
                            },

@@ -52,7 +52,6 @@ Supabase Authentication → URL Configuration bölümünde yerel panel URL'sini 
 | `src/lib/auth-api.ts`        | API route'ları için `requireApiRole('owner' \| 'editor' \| 'viewer')`, `parseJson(request, zodSchema)`, `apiError()`   |
 | `src/lib/safe-redirect.ts`   | `next` parametresini aynı origin'e indirger (open redirect koruması)                                                   |
 | `src/lib/supabase/admin.ts`  | Service role istemcisi, `server-only`. Sadece RLS'i bilerek aşmak gereken yerlerde (davet, e-posta listesi) kullanılır |
-| `src/lib/workers/`           | Üretim makinesi eşlemesi: kod biçimi, makinenin açık anahtarıyla şifreleme, oturum açma ve bağlama (`server-only`)     |
 | `src/app/auth/signout`       | Çıkış yalnız POST form. GET sadece `?error=not_allowed` ile ve kullanıcı gerçekten üye değilse oturumu kapatır (CSRF)  |
 
 Kurallar:
@@ -70,7 +69,7 @@ Kurallar:
 
 ## Üretim makinesi oturumu (#211)
 
-Üretim makinesi programı (`apps/worker`) bir ekip üyesinin **ayrı** Supabase Auth oturumuyla çalışır; service role anahtarı kullanıcı makinesine konmaz (`docs/adr/0004-moduler-panel.md` → Karar 3). Şema ve RPC'ler: `docs/data-model.md` → "Üretim makinesi kimliği ve eşleme".
+Üretim makinesi programı (`apps/worker`) bir ekip üyesinin **kendi** Supabase Auth oturumuyla çalışır; service role anahtarı kullanıcı makinesine konmaz (`docs/adr/0004-moduler-panel.md` → Karar 3). Şema ve RPC'ler: `docs/data-model.md` → "Üretim makinesi oturumu".
 
 ### `session_id` claim'i (doğrulandı)
 
@@ -78,31 +77,39 @@ Makine oturumunu insan oturumundan ayıran her kural erişim token'ındaki `sess
 
 - Supabase belgesi claim'i **zorunlu** sayar: "These claims are always present in Supabase JWTs and cannot be removed" listesinde `session_id` vardır ([JWT fields](https://supabase.com/docs/guides/auth/jwt-fields), okuma 2026-11-15).
 - Auth kaynağı oturumsuz token üretmez: `GenerateAccessToken` `SessionID` boşsa "Session is required to issue access token" hatası verir ve claim'i oturumun kimliğiyle doldurur ([supabase/auth `internal/tokens/service.go`](https://github.com/supabase/auth/blob/master/internal/tokens/service.go), okuma 2026-11-15).
-- CI kanıtı: `scripts/session-claim.integration.test.mjs` yerel Supabase'te gerçek kullanıcıyla giriş yapar (parola ve sunucuda açılan oturum), token'ı inceler, yenilemede kimliğin değişmediğini ve veritabanının aynı claim'i okuduğunu doğrular. `apps/panel/e2e/machines.app.spec.ts` eşlemeyle alınan token'da da aynı claim'i denetler.
-- **Dikkat:** Auth'ta "custom access token hook" açılırsa hook claim'leri yeniden yazar. Hook `session_id`'yi değiştirmemelidir; claim yoksa onay ve makine RPC'leri reddedilir (güvenli taraf), ama makine oturumu ayırt edilemez hâle gelir.
+- CI kanıtı: `scripts/session-claim.integration.test.mjs` yerel Supabase'te gerçek kullanıcıyla giriş yapar, token'ı inceler, yenilemede kimliğin değişmediğini ve veritabanının aynı claim'i okuduğunu doğrular. `apps/panel/e2e/machines.app.spec.ts` ve `apps/worker` entegrasyon testi aynı claim'i gerçek oturumda denetler.
+- **Dikkat:** Auth'ta "custom access token hook" açılırsa hook claim'leri yeniden yazar. Hook `session_id`'yi değiştirmemelidir; claim yoksa onay ve makine RPC'leri reddedilir (güvenli taraf).
 
-### Eşleme akışı
+### Giriş
 
-1. Makinede `pnpm worker:login`: program yerelde 256 bitlik bir **cihaz sırrı** ve X25519 anahtar çifti üretir (ikisi de yalnız bellekte) ve iki şey gösterir: **eşleme metni** (`aiw1.…`; sırrın yalnız SHA-256 özeti, açık anahtar, makinenin adı, platformu, üretim anı) ve bu metinden türeyen 8 karakterlik **kontrol kodu**. Bu adımda sunucuya hiçbir istek gitmez.
-2. Üye panelde **Ayarlar → Üretim makineleri** sayfasına metni yapıştırır. Panel makinenin adını, platformunu ve aynı kontrol kodunu gösterir; üye kodun makinedekiyle aynı olduğunu görüp onaylar (`POST /api/workers/pairings`; en az editor, aynı origin). Eşleme satırını açan tek çağrı bu oturumlu onaydır.
-3. Panel sunucusu service role ile o üye için tek kullanımlık giriş özeti üretir (`auth.admin.generateLink`, e-posta gitmez) ve hemen doğrular: yeni oturum sunucuda doğar. `complete_worker_pairing` bu oturumu **makineye teslim edilmeden önce** makine oturumu olarak kaydeder. Yenileme token'ı makinenin açık anahtarına mühürlenir (tek kullanımlık X25519 + HKDF-SHA256 + AES-256-GCM).
-4. Makine cihaz sırrını sunarak yoklar (`claim_worker_pairing`); mührü bir kez alır, özel anahtarıyla açar, işletim sistemi kasasına yazar ve oturumu yeniler.
+`pnpm worker:login` makinede üye olarak giriş yapar; panelin kullandığı yöntemin aynısıdır (e-posta bağlantısı), ek bir sunucu ucu yoktur:
 
-Eşleme metni üretildikten sonra 10 dakika onaylanabilir; onaylanan eşleme 5 dakika içinde teslim alınmazsa silinir ve oturumu kapatılır. Metin tek kullanımlıktır. Cihaz sırrı sunucuda saklanmaz ve hiçbir yerde loglanmaz; eşleme metni sır değildir (onu ele geçiren, sırrı bilmeden token'ı alamaz). Sınırlar oturumlu adımdadır ve kimliğe bağlıdır: üye başına 3, çalışma alanı başına 10 bekleyen eşleme. Oturumsuz hiçbir çağrı veritabanına yazmaz. Ayrıntı ve kalan risk: `docs/data-model.md` → "Sınırların tasarımı".
+1. Program e-posta adresini sorar ve Supabase Auth'tan giriş e-postası ister (yalnız mevcut kullanıcılar; kayıt kapalıdır).
+2. Kullanıcı e-postadaki **bağlantının adresini kopyalayıp** programa yapıştırır (bağlantıya tıklanmaz: tıklanırsa tarayıcı giriş yapar ve bağlantı tükenir). E-posta şablonu 6 haneli kod içeriyorsa kod da yazılabilir. Parolası olan hesaplar `--password` ile parolayla girer. Girdi ekranda gösterilmez.
+3. Oturumun yenileme token'ı işletim sistemi kasasına yazılır (macOS Keychain, Windows Credential Manager, Linux Secret Service). Kasa yoksa program token'ı saklamaz ve durur; düz dosyaya düşme yolu yoktur.
+4. Program `register_worker` ile oturumu makine olarak kaydeder. O andan sonra oturum salt okur ve onay veremez.
 
-### Tehdit modeli
+### Tehdit modeli (v1)
 
-| Durum                                                      | Sonuç                                                                                                                                                                                                                                                                                                                                                               |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Makine ele geçti ya da dizüstü çalındı (kasa açılabiliyor) | Saldırgan o üyenin çalışma alanındaki veriyi **okur**, makinenin alabileceği işleri alıp ilerletir ve yalnız kirasındaki işin `productions` klasörüne dosya yazar. İş açamaz, iptal edemez, onay veremez, yayın yapamaz, içerik ya da ayar değiştiremez, ekibi göremez, panele giremez, başka alana erişemez. Vault'taki anahtarlar ve service role makinede yoktur |
-| Yetkiyi kaldırma                                           | Panel → Ayarlar → Üretim makineleri → **Yetkiyi kaldır** (owner her makineyi, editor kendisininkini). Auth oturumu silinir (yenileme token'ı ölür); süresi dolmamış erişim token'ı da artık hiçbir satır göremez; elindeki iş kuyruğa döner. Üyeyi ekipten çıkarmak da aynı sonucu verir                                                                            |
-| Eşleme metni başkasına onaylatıldı (oltalama)              | Saldırgan kendi makinesinin eşleme metnini bir üyeye onaylatırsa o üye adına bir makine oturumu alır: yukarıdaki salt okur + iş yürütme yetkisi. Panel onaydan önce makinenin adını ve kontrol kodunu gösterir; kod üyenin önündeki makinede görünenle aynı değilse onaylanmaz. Makine listede görünür ve kaldırılabilir                                            |
-| Eşleme metni ele geçti (ekran görüntüsü, sohbet)           | Metin sır taşımaz: token'ı almak için makinenin belleğindeki cihaz sırrı, açmak için özel anahtar gerekir. Metni onaylayabilen yalnız oturumu açık bir owner/editor'dür                                                                                                                                                                                             |
-| Oturumsuz istek seli                                       | Oturumsuz hiçbir çağrı satır açmaz, silmez ya da sayaç tutmaz; yanlış sırla yoklama yalnız `pending` döner. Başkasının eşlemesi etkilenmez (pgTAP: 3000 yanlış yoklama hiçbir satırı değiştirmiyor)                                                                                                                                                                 |
-| Veritabanı yedeği ya da satırları sızdı                    | Eşleme satırında cihaz sırrının yalnız özeti (256 bitlik sır özetten bulunamaz), yenileme token'ının yalnız makinenin özel anahtarıyla açılan mühürlü hâli vardır                                                                                                                                                                                                   |
-| Kötü niyetli iş parametreleri                              | `params` veridir: makine programı tür başına şemayla doğrular, kabuk komutuna katmaz, talimat olarak yorumlamaz (`apps/worker`)                                                                                                                                                                                                                                     |
+**v1'de makine üyenin kendi oturumunu taşır.** Ele geçmiş ya da çalınmış bir makine, yetkisi kaldırılana kadar ele geçmiş bir üye oturumudur. Sınırları:
 
-Kalan riskler: makine oturumu alanın verisini okuyabilir (ADR'nin kabul ettiği sınır; daha dar okuma #214/#215 ile ele alınabilir). Makine oturumu, kendi kirasındaki işin aşamalarını "bitti" diye işaretleyebilir ve içine istediği dosyayı koyabilir; bu yüzden onay kapıları ve yayın insan oturumu ister.
+| Durum                                                      | Sonuç                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Makine ele geçti ya da dizüstü çalındı (kasa açılabiliyor) | Saldırgan kayıtlı makine oturumunu ele geçirir: veritabanı tarafında o üyenin çalışma alanındaki veriyi **okur**, makinenin alabileceği işleri alıp ilerletir ve yalnız kirasındaki işin `productions` klasörüne dosya yazar. Veritabanı üzerinden iş açamaz, iptal edemez, onay veremez, yayın yapamaz, içerik ya da ayar değiştiremez, ekibi göremez, panele giremez, başka alana erişemez. **Ama** oturum Auth'un gözünde üyenin kendi oturumudur: Auth uçlarında (hesap e-postası, yeni oturum) üye adına işlem yapılabilir. Vault'taki anahtarlar ve service role makinede yoktur |
+| Yetkiyi kaldırma                                           | Panel → Ayarlar → Üretim makineleri → **Yetkiyi kaldır** (owner her makineyi, editor kendisininkini). Auth oturumu silinir (yenileme token'ı ölür); süresi dolmamış erişim token'ı da artık hiçbir satır göremez; elindeki iş kuyruğa döner. Üyeyi ekipten çıkarmak da aynı sonucu verir. Şüphe varsa üye ayrıca hesabının diğer oturumlarını kapatmalıdır                                                                                                                                                                                                                             |
+| Kayıttan önce                                              | `register_worker` çağrılana kadar oturum sıradan bir üye oturumudur (tarayıcıdaki panel oturumuyla aynı risk). Program girişten hemen sonra kaydeder                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Kötü niyetli iş parametreleri                              | `params` veridir: makine programı tür başına şemayla doğrular, kabuk komutuna katmaz, talimat olarak yorumlamaz (`apps/worker`)                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+
+### Ertelenen sertleştirme
+
+Ürün sahibinin kararıyla v1 ekibin kendi bilgisayarlarında bu modelle çalışır; aşağıdakiler ayrı bir sertleştirme işine bırakıldı:
+
+- Makineye özel kimlik: makine sırrı + kısa ömürlü, yalnız makine RPC'lerinde geçerli token (makine hiçbir zaman üye oturumu taşımaz).
+- Okuma kapsamının makinenin aldığı işlerle sınırlanması.
+- Makinede fiziksel sahiplik kodu isteyen eşleme akışı (oltalamaya karşı) ve editor makineleri için owner onayı.
+- Yeni makine eklendiğinde owner'a panel bildirimi.
+
+İlk tasarımdaki eşleme kodlu giriş güvenlik incelemesinde dört bulgu aldı (istemcinin yazdığı başlığa dayanan hız sınırı, oturumsuz yazımın yol açtığı engelleme, onaylatma yoluyla oltalama, sunucunun üye adına oturum açması). Dördü de eşleme yüzeyi bütünüyle kaldırılarak kapatıldı: oturumsuz hiçbir uç, service role ile oturum açma ve token aktarımı yoktur.
 
 ## Sosyal hesap OAuth geliştirmesi (#49)
 

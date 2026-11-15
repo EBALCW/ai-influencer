@@ -1,25 +1,18 @@
 import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { expect, test } from '@playwright/test';
-import {
-  encodePairingRequest,
-  generatePairingKeys,
-  openSealed,
-  pairingPhrase,
-  type PairingKeys,
-  type PairingRequest,
-} from '@ai-influencer/shared/pairing';
 import { createSession, hasLocalSupabase } from './global-setup';
 
-// Üretim makinesi eşlemesi (#211) uçtan uca. Makine programının yaptığı adımlar (cihaz sırrı ve
-// anahtar çifti, eşleme metni, yoklama, mührü açma, oturumu yenileme) burada aynı ortak kodla
-// yapılır; onay gerçek panel sayfası ve API'siyle verilir. Program ayrıca apps/worker entegrasyon
-// testiyle doğrulanır. Yerel Supabase yoksa atlanır.
+// Üretim makineleri (#211): makine bir üyenin kendi oturumudur (`pnpm worker:login`). Burada
+// programın yaptığı adımlar (üye olarak giriş, register_worker, kalp atışı) aynı RPC'lerle
+// yapılır; liste ve yetki kaldırma gerçek panel sayfasıyla denenir. Program ayrıca apps/worker
+// entegrasyon testiyle doğrulanır. Yerel Supabase yoksa atlanır.
 test.skip(!hasLocalSupabase(), 'Yerel Supabase yok (pnpm supabase:start)');
 test.describe.configure({ mode: 'serial' });
 
 const EDITOR_STATE = 'e2e/.auth/machines-editor.json';
 const OTHER_STATE = 'e2e/.auth/machines-other.json';
+const EDITOR_EMAIL = 'e2e-machines-editor@example.test';
 test.use({ storageState: EDITOR_STATE });
 
 const url = () => process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -36,29 +29,9 @@ const admin = () =>
 const run = Date.now().toString(36);
 const MACHINE = `E2E Makine ${run}`;
 let editorId = '';
-
-type Pairing = { keys: PairingKeys; request: PairingRequest; text: string };
-
-/** Makinenin `pnpm worker:login` ile yaptığı ilk adım: her şey yerelde, sunucuya istek yok. */
-async function startPairing(name: string): Promise<Pairing> {
-  const keys = await generatePairingKeys();
-  const request: PairingRequest = {
-    verifier: keys.verifier,
-    publicKey: keys.publicKey,
-    platform: 'linux',
-    name,
-    startedAt: Math.floor(Date.now() / 1000),
-  };
-  return { keys, request, text: encodePairingRequest(request) };
-}
-
-async function claimPairing(pairing: Pairing) {
-  const { data, error } = await anon().rpc('claim_worker_pairing', {
-    p_secret: pairing.keys.secret,
-  });
-  if (error) throw error;
-  return data as { status: string; token?: string; worker_id?: string };
-}
+let machine: SupabaseClient;
+let machineTokens = { access: '', refresh: '' };
+let workerId = '';
 
 function claims(accessToken: string) {
   return JSON.parse(
@@ -66,16 +39,8 @@ function claims(accessToken: string) {
   ) as Record<string, unknown>;
 }
 
-let machine: SupabaseClient;
-let machineTokens = { access: '', refresh: '' };
-let workerId = '';
-
 test.beforeAll(async () => {
-  editorId = await createSession(
-    'e2e-machines-editor@example.test',
-    'editor',
-    EDITOR_STATE,
-  );
+  editorId = await createSession(EDITOR_EMAIL, 'editor', EDITOR_STATE);
   await createSession('e2e-machines-other@example.test', 'editor', OTHER_STATE);
   // Önceki koşulardan kalan makineler listeyi kalabalıklaştırmasın.
   const cleanup = await admin()
@@ -85,80 +50,23 @@ test.beforeAll(async () => {
   if (cleanup.error) throw cleanup.error;
 });
 
-test('geçersiz, bayat ve kullanılmış eşleme metni reddedilir', async ({
-  page,
-}) => {
-  await page.goto('/settings/machines');
-  await expect(
-    page.getByRole('heading', { name: 'Üretim makineleri' }),
-  ).toBeVisible();
-  await page.getByLabel('Eşleme metni').fill('aiw1.bozuk');
-  await page.getByRole('button', { name: 'Metni kontrol et' }).click();
-  await expect(page.getByText(/Eşleme metni geçersiz/)).toBeVisible();
-
-  const stale = await startPairing(`${MACHINE} bayat`);
-  stale.request.startedAt -= 3600;
-  await page
-    .getByLabel('Eşleme metni')
-    .fill(encodePairingRequest(stale.request));
-  await page.getByRole('button', { name: 'Metni kontrol et' }).click();
-  await expect(page.getByText(/süresi dolmuş/)).toBeVisible();
-  // Tarayıcı denetimi atlansa da sunucu reddeder.
-  const response = await page.request.post('/api/workers/pairings', {
-    headers: { origin: new URL(page.url()).origin },
-    data: { pairing: encodePairingRequest(stale.request) },
-  });
-  expect(response.status()).toBe(410);
-  expect((await claimPairing(stale)).status).toBe('pending');
-});
-
-test('editor metni panelde onaylar; makine kendi oturumunu alır ve yalnız makine işlerini yapabilir', async ({
+test('makine oturumu kaydolur, listede görünür ve yalnız makine işlerini yapabilir', async ({
   page,
   browser,
   baseURL,
 }) => {
-  const pairing = await startPairing(MACHINE);
-  // Onaydan önce sır hiçbir şey getirmez.
-  expect((await claimPairing(pairing)).status).toBe('pending');
-
-  await page.goto('/settings/machines');
-  await page.getByLabel('Eşleme metni').fill(pairing.text);
-  await page.getByRole('button', { name: 'Metni kontrol et' }).click();
-  await expect(page.getByText(MACHINE)).toBeVisible();
-  await expect(page.getByText(/senin hesabınla eşlenecek/)).toBeVisible();
-  // Panel, makinenin kendi hesapladığı kontrol kodunun aynısını gösterir.
-  await expect(
-    page.getByText(await pairingPhrase(pairing.request)),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Kodlar aynı, bu makineyi eşle' })
-    .click();
-  await expect(page.getByText(/eşlendi\. Makinedeki komut/)).toBeVisible();
-  const row = page.getByRole('row').filter({ hasText: MACHINE });
-  await expect(row).toBeVisible();
-  await expect(row.getByText('(senin)')).toBeVisible();
-
-  // Aynı metin ikinci kez onaylanamaz.
-  const again = await page.request.post('/api/workers/pairings', {
-    headers: { origin: baseURL! },
-    data: { pairing: pairing.text },
+  // Makine: üye olarak ayrı bir giriş (panel oturumundan bağımsız bir Auth oturumu).
+  const password = `e2e-${crypto.randomUUID()}`;
+  const updated = await admin().auth.admin.updateUserById(editorId, {
+    password,
   });
-  expect(again.status()).toBe(409);
-
-  // Makine: mühürlü token'ı cihaz sırrıyla bir kez alır, kendi özel anahtarıyla açar.
-  const claimed = await claimPairing(pairing);
-  expect(claimed.status).toBe('confirmed');
-  expect(claimed.token).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
-  expect((await claimPairing(pairing)).status).toBe('pending');
-  workerId = claimed.worker_id!;
-  const refreshToken = await openSealed(pairing.keys, claimed.token!);
-
-  const refreshed = await anon().auth.refreshSession({
-    refresh_token: refreshToken,
+  expect(updated.error).toBeNull();
+  const signedIn = await anon().auth.signInWithPassword({
+    email: EDITOR_EMAIL,
+    password,
   });
-  expect(refreshed.error).toBeNull();
-  const session = refreshed.data.session!;
-  expect(session.user.id).toBe(editorId);
+  expect(signedIn.error).toBeNull();
+  const session = signedIn.data.session!;
   machineTokens = {
     access: session.access_token,
     refresh: session.refresh_token,
@@ -167,27 +75,38 @@ test('editor metni panelde onaylar; makine kendi oturumunu alır ve yalnız maki
   expect(claims(session.access_token).session_id).toMatch(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
   );
-
   machine = createClient(url(), anonKey(), {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${session.access_token}` } },
   });
-  expect((await machine.rpc('is_worker_session')).data).toBe(true);
+  expect((await machine.rpc('is_worker_session')).data).toBe(false);
 
-  // Kayıt eşlenen satırı günceller; ad onaylanan addır.
   const registered = await machine.rpc('register_worker', {
-    p_name: 'baska-bir-ad',
+    p_name: MACHINE,
     p_platform: 'linux',
     p_version: '0.1.0',
-    p_capabilities: ['voice.edge-tts'],
+    p_capabilities: ['voice.edge-tts', 'kind:clip.selftest'],
   });
   expect(registered.error).toBeNull();
-  expect(registered.data).toMatchObject({ id: workerId, name: MACHINE });
+  workerId = (registered.data as { id: string }).id;
+  expect((await machine.rpc('is_worker_session')).data).toBe(true);
   expect(
     (await machine.rpc('worker_heartbeat', { p_worker_id: workerId })).error,
   ).toBeNull();
 
-  // Makine oturumu iş açamaz, ekibi göremez, başka makine eşleyemez.
+  // Panelde listelenir
+  await page.goto('/settings/machines');
+  await expect(
+    page.getByRole('heading', { name: 'Üretim makineleri' }),
+  ).toBeVisible();
+  const row = page.getByRole('row').filter({ hasText: MACHINE });
+  await expect(row).toBeVisible();
+  await expect(row.getByText('(senin)')).toBeVisible();
+  await expect(row.getByText('Çevrimiçi')).toBeVisible();
+  await expect(row.getByText(/Linux · 0\.1\.0/)).toBeVisible();
+  await expect(row.getByText(/voice\.edge-tts/)).toBeVisible();
+
+  // Makine oturumu iş açamaz, ekibi göremez
   const enqueue = await machine.rpc('enqueue_job', {
     p_module: 'clip',
     p_kind: 'clip.selftest',
@@ -197,15 +116,6 @@ test('editor metni panelde onaylar; makine kendi oturumunu alır ve yalnız maki
   const team = await machine.from('team_members').select('user_id');
   expect(team.error).toBeNull();
   expect(team.data).toEqual([]);
-  const other = await startPairing(`${MACHINE} ikinci`);
-  const begin = await machine.rpc('begin_worker_pairing', {
-    p_verifier: other.request.verifier,
-    p_public_key: other.request.publicKey,
-    p_name: other.request.name,
-    p_platform: other.request.platform,
-    p_started_at: new Date().toISOString(),
-  });
-  expect(begin.error?.code).toBe('42501');
 
   // Makine oturumu panelin kendisine de giremez: API 403, sayfa oturumu kapatır.
   const jar = new Map<string, string>();
@@ -237,11 +147,6 @@ test('editor metni panelde onaylar; makine kendi oturumunu alır ve yalnız maki
     },
   });
   try {
-    const api = await context.request.post('/api/workers/pairings', {
-      headers: { origin: baseURL! },
-      data: { pairing: other.text },
-    });
-    expect(api.status()).toBe(403);
     const revoke = await context.request.post(
       `/api/workers/${workerId}/revoke`,
       { headers: { origin: baseURL! }, data: {} },
@@ -284,7 +189,7 @@ test('başka bir editor başkasının makinesini kaldıramaz', async ({
 test('sahibi yetkiyi kaldırır: makinenin oturumu biter', async ({ page }) => {
   await page.goto('/settings/machines');
   const row = page.getByRole('row').filter({ hasText: MACHINE });
-  await expect(row.getByText('Çevrimiçi')).toBeVisible();
+  await expect(row).toBeVisible();
   page.once('dialog', (dialog) => void dialog.accept());
   await row
     .getByRole('button', { name: /makinesinin yetkisini kaldır/ })

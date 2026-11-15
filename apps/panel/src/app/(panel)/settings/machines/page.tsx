@@ -2,7 +2,6 @@ import { WORKER_OFFLINE_AFTER_SECONDS } from '@ai-influencer/shared';
 import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { PairMachineForm } from './pair-machine-form';
 import { RevokeMachineButton } from './revoke-machine-button';
 
 const dateTime = new Intl.DateTimeFormat('tr-TR', {
@@ -42,7 +41,6 @@ export default async function MachinesSettingsPage() {
     .limit(100);
   if (error) throw new Error(`Makineler okunamadı: ${error.message}`);
   const machines = data ?? [];
-  const canPair = role !== 'viewer';
   const now = new Date().getTime();
 
   return (
@@ -58,24 +56,21 @@ export default async function MachinesSettingsPage() {
           </p>
         </div>
       </header>
-      {canPair && (
-        <section className="section-card" aria-label="Makine eşle">
-          <h2 className="text-lg font-semibold">Makine eşle</h2>
-          <p className="mt-1 text-sm text-muted">
-            Bilgisayarında <code>pnpm worker:login</code> komutunu çalıştır ve
-            ekranda görünen eşleme metnini buraya yapıştır. Yalnız kendi
-            başlattığın komutun metnini onayla; başkasının gönderdiği metni
-            yapıştırma.
-          </p>
-          <PairMachineForm />
-        </section>
-      )}
-      <section className="section-card" aria-label="Eşlenmiş makineler">
-        <h2 className="text-lg font-semibold">Eşlenmiş makineler</h2>
+      <section className="section-card" aria-label="Makine ekleme">
+        <h2 className="text-lg font-semibold">Makine ekleme</h2>
+        <p className="mt-1 text-sm text-muted">
+          Kendi bilgisayarında <code>pnpm worker:login</code> ile giriş yap,
+          sonra <code>pnpm worker:start</code> ile programı başlat. Makine bu
+          listede görünür. Kullanmadığın ya da kaybolan bir bilgisayarın
+          yetkisini buradan kaldır: oturumu hemen kapanır.
+        </p>
+      </section>
+      <section className="section-card" aria-label="Makineler">
+        <h2 className="text-lg font-semibold">Makineler</h2>
         {machines.length === 0 ? (
           <EmptyState
-            title="Henüz makine eşlenmedi"
-            description="Eşlenen üretim makineleri, durumları ve son görülme zamanlarıyla burada listelenir."
+            title="Henüz makine yok"
+            description="Giriş yapan üretim makineleri, durumları ve son görülme zamanlarıyla burada listelenir."
           />
         ) : (
           <div className="mt-3 overflow-x-auto">
@@ -116,7 +111,11 @@ export default async function MachinesSettingsPage() {
                       <td className="p-2">
                         {dateTime.format(new Date(machine.last_seen_at))}
                       </td>
-                      <td className="p-2">{machine.capabilities.length}</td>
+                      <td className="p-2">
+                        {machine.capabilities.length > 0
+                          ? machine.capabilities.join(', ')
+                          : '—'}
+                      </td>
                       <td className="p-2 text-right">
                         {canRevoke && (
                           <RevokeMachineButton

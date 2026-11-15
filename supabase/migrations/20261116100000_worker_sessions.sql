@@ -1,35 +1,33 @@
--- Üretim makinesi kimliği: eşleme kodlu giriş, makine oturumunun yetkisi, `productions`
--- bucket'ı (#211, docs/adr/0004-moduler-panel.md → Karar 1 ve 3).
+-- Üretim makinesi oturumu: en az yetki, oturumu bitiren yetki kaldırma, `productions` bucket'ı
+-- (#211, docs/adr/0004-moduler-panel.md → Karar 1 ve 3).
 --
--- #201'in bıraktığı iki TODO burada kapanır:
---   (a) `session_id` claim'i: Supabase Auth her erişim token'ına yazar (zorunlu claim; kaynak ve
---       CI kanıtı docs/AUTH.md → "Üretim makinesi oturumu"). Oturum işaretleme bu claim'e dayanır.
---   (b) Giriş: makine yerelde bir cihaz sırrı üretir ve yalnız özetini taşıyan bir eşleme metni
---       gösterir; oturumu açık bir owner/editor panelde onaylar; panel sunucusu o üye için AYRI
---       bir oturum açar ve onu makineye teslim edilmeden ÖNCE `private.worker_sessions`'a yazar.
---       Makinenin eline geçen oturum hiçbir an insan oturumu değildir.
+-- Makine bir ekip üyesinin kendi Supabase Auth oturumudur (ADR Karar 3): `pnpm worker:login`
+-- üye olarak giriş yapar ve `register_worker()` o oturumu makine olarak kaydeder (#201).
+-- #201'in bıraktığı soru kapandı: `session_id` claim'i her erişim token'ında vardır (zorunlu
+-- claim; kaynak ve CI kanıtı docs/AUTH.md → "Üretim makinesi oturumu").
 --
--- Kararlar:
--- * Makine oturumu en az yetkiyle çalışır: `current_team_role()` makine oturumunda `viewer`
---   döner (yetkisi kaldırılmışsa NULL). Böylece `can_write_data()` isteyen her RPC ve her tablo
---   policy'si (iş açma, yeniden deneme, iptal, onay, yayın, içerik, ekip, ayarlar) makine
---   oturumunu kendiliğinden reddeder; RPC'leri tek tek işaretlemeye gerek kalmaz. Makine
---   RPC'leri (`claim_job`, `report_progress` …) üyenin GERÇEK rolüne bakar.
+-- Bu migration'ın getirdikleri:
+-- * Makine olarak kaydedilen oturum en az yetkiyle çalışır: `current_team_role()` o oturumda
+--   `viewer` döner (yetkisi kaldırılmışsa NULL). Böylece `can_write_data()` isteyen her RPC ve
+--   tablo policy'si (iş açma, bölüm işi açma, yeniden deneme, iptal, onay, yayın, içerik, ekip,
+--   ayarlar) makine oturumunu kendiliğinden reddeder. Makine RPC'leri (`claim_job`,
+--   `report_progress` …) üyenin GERÇEK rolüne bakar.
 -- * Makine oturumu `team_members`'ı okuyamaz: panel sunucusu (rolü bu tablodan okur) makine
---   oturumuyla gelen isteği üye saymaz, service role yollarına ulaşılamaz.
--- * Yetki kaldırma (`revoke_worker`) oturumu da bitirir: `worker_sessions.revoked_at` yazılır,
---   Auth oturumu silinir; süresi dolmamış erişim token'ı bile artık hiçbir satır göremez.
+--   oturumuyla gelen isteği üye saymaz.
+-- * Yetki kaldırma (`revoke_worker`) oturumu da bitirir: `worker_sessions.revoked_at` yazılır ve
+--   Auth oturumu silinir (yenileme token'ı ölür); süresi dolmamış erişim token'ı da artık hiçbir
+--   satır göremez. Bir adım başarısızsa işlem bütünüyle geri alınır.
 -- * Makinenin dosya yazabildiği tek yer `productions/<alan>/<iş>/…` ve yalnız kirası kendisinde
 --   olan iş içindir. `assets` satırını makine değil `attach_job_output()` çekirdeği yazar.
--- * Oturumsuz hiçbir çağrı paylaşılan durum yazmaz: eşleme satırını yalnız oturumlu onay açar,
---   sınırlar üye ve alan başınadır. Oturumsuz tek çağrı (yoklama) sır eşleşene kadar salt okurdur.
--- * Cihaz sırrı sunucuda saklanmaz (yalnız SHA-256 özeti). Yenileme token'ı makinenin açık
---   anahtarına mühürlü durur; veritabanını okuyan biri onu kullanamaz.
+--
+-- v1'in sınırı (bilinçli): makine üyenin kendi oturumunu taşır; kaydedilmeden önce o oturum
+-- sıradan bir üye oturumudur. Makineye özel kimlik, kısa ömürlü token ve eşleme akışı
+-- sertleştirme işine bırakıldı (docs/AUTH.md → "Ertelenen sertleştirme").
 
 -- ── 1) Makine oturumunun durumu ─────────────────────────────────────────────
 ALTER TABLE private.worker_sessions ADD COLUMN revoked_at timestamptz;
 COMMENT ON COLUMN private.worker_sessions.revoked_at IS
-  'Oturumun makine yetkisi kaldırıldı (revoke_worker, yeniden eşleme ya da teslim alınmayan eşleme).';
+  'Oturumun makine yetkisi kaldırıldı (revoke_worker).';
 
 -- 'none': insan oturumu · 'active': makine oturumu · 'revoked': yetkisi kaldırılmış makine oturumu.
 CREATE FUNCTION private.worker_session_state()
@@ -110,8 +108,8 @@ CREATE POLICY team_members_no_worker_session ON public.team_members
   USING (NOT public.is_worker_session())
   WITH CHECK (NOT public.is_worker_session());
 
--- Auth oturumlarını bitirir (yenileme token'ları da silinir). Yetki yoksa uyarıyla geçer:
--- asıl engel worker_sessions.revoked_at'tir, bu ek bir kattır.
+-- Auth oturumlarını bitirir (yenileme token'ları da silinir). Hata yutulmaz: silinemezse çağıran
+-- işlem (yetki kaldırma) bütünüyle geri alınır.
 CREATE FUNCTION private.end_auth_sessions(p_session_ids uuid[])
 RETURNS void
 LANGUAGE plpgsql
@@ -120,8 +118,6 @@ SET search_path = ''
 AS $$
 BEGIN
   DELETE FROM auth.sessions WHERE id = ANY (p_session_ids);
-EXCEPTION WHEN insufficient_privilege THEN
-  RAISE WARNING 'auth.sessions silinemedi; oturum yalnız worker_sessions üzerinden engellendi.';
 END;
 $$;
 
@@ -189,10 +185,13 @@ BEGIN
 END;
 $$;
 
--- Eşlemeyle açılmış oturum zaten bir makineye bağlıdır: kayıt yalnız o satırın platform, sürüm
--- ve yeteneklerini günceller (ad eşlemede onaylanan addır; oturum başka makineye geçemez).
--- Bağlı olmayan bir owner/editor oturumu kendini makine olarak kaydedebilir (#201 davranışı);
--- bu yalnız yetki düşürür: oturum o andan sonra salt okur ve onay veremez.
+-- Owner/editor oturumu kendini makine olarak kaydeder (#201). Kayıt yalnız yetki düşürür: oturum
+-- o andan sonra salt okur ve onay veremez.
+-- * Zaten bir makineye bağlı oturum yalnız o satırın platform, sürüm ve yeteneklerini günceller
+--   (ad ilk kayıttaki addır; oturum başka makineye geçemez, ikinci makine açamaz).
+-- * Yeni bir giriş (henüz makine olmayan oturum) aynı adı yeniden kaydederse satır korunur,
+--   makinenin önceki oturumları biter ve kaldırılmış yetki yeniden verilir: bunu yapabilmek
+--   üyenin kendi girişini gerektirir, yetkisi kaldırılmış oturum yapamaz.
 CREATE OR REPLACE FUNCTION internal.register_worker(
   p_name text, p_platform text, p_version text, p_capabilities text[]
 )
@@ -225,7 +224,7 @@ BEGIN
       RAISE EXCEPTION 'Bu oturum makineye kayıtlı değil.' USING ERRCODE = '42501';
     END IF;
     IF s.revoked_at IS NOT NULL THEN
-      RAISE EXCEPTION 'Bu makinenin yetkisi kaldırıldı; yeniden eşleyin.'
+      RAISE EXCEPTION 'Bu makinenin yetkisi kaldırıldı; yeniden giriş yapın (pnpm worker:login).'
         USING ERRCODE = '42501', HINT = 'worker_revoked';
     END IF;
   END IF;
@@ -238,7 +237,7 @@ BEGIN
       RAISE EXCEPTION 'Üretim makinesi bulunamadı.' USING ERRCODE = 'P0002';
     END IF;
     IF w.revoked_at IS NOT NULL THEN
-      RAISE EXCEPTION 'Bu makinenin yetkisi kaldırıldı; yeniden eşleyin.'
+      RAISE EXCEPTION 'Bu makinenin yetkisi kaldırıldı; yeniden giriş yapın (pnpm worker:login).'
         USING ERRCODE = '42501', HINT = 'worker_revoked';
     END IF;
     UPDATE public.production_workers
@@ -260,12 +259,10 @@ BEGIN
   VALUES (v_ws, v_uid, v_name, p_platform, COALESCE(p_version, ''), COALESCE(p_capabilities, '{}'))
   ON CONFLICT (workspace_id, user_id, name) DO UPDATE
     SET platform = EXCLUDED.platform, version = EXCLUDED.version,
-        capabilities = EXCLUDED.capabilities, last_seen_at = now()
+        capabilities = EXCLUDED.capabilities, last_seen_at = now(), revoked_at = NULL
   RETURNING * INTO w;
-  IF w.revoked_at IS NOT NULL THEN
-    RAISE EXCEPTION 'Bu makinenin yetkisi kaldırıldı; yeniden eşleyin.'
-      USING ERRCODE = '42501', HINT = 'worker_revoked';
-  END IF;
+  -- Aynı makine için yeni giriş: önceki oturumlar kapanır.
+  PERFORM private.end_worker_sessions(w.id);
 
   INSERT INTO private.worker_sessions AS ws (session_id, user_id, worker_id)
   VALUES (v_session, v_uid, w.id)
@@ -482,323 +479,31 @@ BEGIN
 END;
 $$;
 
--- ── 4) Eşleme ───────────────────────────────────────────────────────────────
--- Oturumsuz hiçbir çağrı satır oluşturmaz, silmez ya da değiştirmez. Akış:
---   1. Makine yerelde 256 bitlik bir cihaz sırrı ve X25519 anahtar çifti üretir; kullanıcıya
---      sırrın yalnız özetini (doğrulayıcı) ve açık anahtarı taşıyan bir eşleme metni gösterir.
---   2. Oturumu açık owner/editor metni panelde onaylar: eşleme satırını YALNIZ bu oturumlu çağrı
---      açar (`begin_worker_pairing`); sınırlar üye ve çalışma alanı başınadır, taklit edilemez.
---   3. Panel sunucusu (service role) o üye için açtığı yeni oturumu makineye bağlar ve yenileme
---      token'ını makinenin açık anahtarına mühürlenmiş olarak bırakır.
---   4. Makine sırrını sunarak yoklar. Yoklama, sır onaylanmış ve süresi dolmamış bir satırla
---      eşleşene kadar salt okurdur; eşleşince mühür bir kez teslim edilir ve satır silinir.
--- Sır 256 bit olduğu için tahmin edilemez; yoklamanın paylaşılan bir sayaca ihtiyacı yoktur.
-CREATE TABLE private.worker_pairings (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  -- Cihaz sırrının SHA-256 özeti. Sırrın kendisi sunucuya yalnız teslim anında gelir, saklanmaz.
-  verifier text NOT NULL UNIQUE CHECK (verifier ~ '^[0-9a-f]{64}$'),
-  -- Makinenin X25519 açık anahtarı (base64url).
-  public_key text NOT NULL CHECK (public_key ~ '^[A-Za-z0-9_-]{43}$'),
-  name text NOT NULL CHECK (length(btrim(name)) BETWEEN 1 AND 80 AND length(name) <= 80),
-  platform text NOT NULL CHECK (platform IN ('darwin', 'win32', 'linux')),
-  -- Onaylayan üye ve alanı (satırı yalnız oturumlu çağrı açar).
-  user_id uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  workspace_id uuid NOT NULL REFERENCES public.workspaces (id) ON DELETE CASCADE,
-  session_id uuid,
-  worker_id uuid REFERENCES public.production_workers (id) ON DELETE CASCADE,
-  -- Yenileme token'ı, makinenin açık anahtarına mühürlü (X25519 + HKDF + AES-256-GCM).
-  token_ciphertext text CHECK (
-    length(token_ciphertext) BETWEEN 80 AND 1100 AND token_ciphertext ~ '^[A-Za-z0-9+/]+={0,2}$'
-  ),
-  created_at timestamptz NOT NULL DEFAULT now(),
-  expires_at timestamptz NOT NULL DEFAULT now() + interval '5 minutes'
-);
-CREATE INDEX worker_pairings_expiry_idx ON private.worker_pairings (expires_at);
-CREATE INDEX worker_pairings_user_idx ON private.worker_pairings (user_id);
-CREATE INDEX worker_pairings_workspace_idx ON private.worker_pairings (workspace_id);
-ALTER TABLE private.worker_pairings ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON private.worker_pairings FROM PUBLIC, anon, authenticated, service_role;
-
-CREATE FUNCTION private.pairing_hash(p_value text)
-RETURNS text
-LANGUAGE sql
-IMMUTABLE
-SET search_path = ''
-AS $$
-  SELECT encode(sha256(convert_to(p_value, 'UTF8')), 'hex')
-$$;
-
--- İki SHA-256 özetini (64 hex) erken çıkmadan karşılaştırır.
-CREATE FUNCTION private.pairing_hash_equal(p_a text, p_b text)
-RETURNS boolean
-LANGUAGE plpgsql
-IMMUTABLE
-SET search_path = ''
-AS $$
-DECLARE
-  v_a bytea;
-  v_b bytea;
-  v_diff integer := 0;
-BEGIN
-  IF p_a IS NULL OR p_b IS NULL OR p_a !~ '^[0-9a-f]{64}$' OR p_b !~ '^[0-9a-f]{64}$' THEN
-    RETURN false;
-  END IF;
-  v_a := decode(p_a, 'hex');
-  v_b := decode(p_b, 'hex');
-  FOR i IN 0 .. 31 LOOP
-    v_diff := v_diff | (get_byte(v_a, i) # get_byte(v_b, i));
-  END LOOP;
-  RETURN v_diff = 0;
-END;
-$$;
-
--- Eşlemeleri siler. Onaylanmış ama teslim alınmamışsa oturumu da kapatır (yenileme token'ı
--- kimsenin elinde değildir; oturum açık kalmasın).
-CREATE FUNCTION private.discard_worker_pairings(p_ids uuid[])
-RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_sessions uuid[];
-  v_count integer;
-BEGIN
-  WITH gone AS (
-    DELETE FROM private.worker_pairings WHERE id = ANY (p_ids)
-    RETURNING session_id
-  )
-  SELECT count(*)::integer, array_agg(session_id) FILTER (WHERE session_id IS NOT NULL)
-  INTO v_count, v_sessions FROM gone;
-  IF v_sessions IS NOT NULL THEN
-    UPDATE private.worker_sessions SET revoked_at = COALESCE(revoked_at, now())
-    WHERE session_id = ANY (v_sessions);
-    PERFORM private.end_auth_sessions(v_sessions);
-  END IF;
-  RETURN v_count;
-END;
-$$;
-
--- Süresi dolan eşlemeler silinir (oturumlu her başlatmada ve cron ile).
-CREATE FUNCTION private.cleanup_worker_pairings()
-RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-BEGIN
-  RETURN private.discard_worker_pairings(ARRAY(
-    SELECT p.id FROM private.worker_pairings p WHERE p.expires_at <= clock_timestamp()
-  ));
-END;
-$$;
-
--- 4a) Panel: oturumu açık owner/editor eşleme metnini onaylar. Eşleme satırını açan tek çağrı
--- budur. Sınırlar kimliğe bağlıdır: üye başına 3, çalışma alanı başına 10 bekleyen eşleme.
--- Sonuç: {status: pending, pairing_id} | too_many_pending | already_used | stale.
-CREATE FUNCTION internal.begin_worker_pairing(
-  p_verifier text, p_public_key text, p_name text, p_platform text, p_started_at timestamptz
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_uid uuid := auth.uid();
-  v_ws uuid := public.current_workspace_id();
-  v_name text := btrim(COALESCE(p_name, ''));
-  r private.worker_pairings;
-BEGIN
-  IF NOT public.can_write_data() OR v_ws IS NULL OR v_uid IS NULL THEN
-    RAISE EXCEPTION 'Makine eşlemek için düzenleme yetkisi gerekir.' USING ERRCODE = '42501';
-  END IF;
-  IF private.current_session_id() IS NULL OR private.is_worker_session() THEN
-    RAISE EXCEPTION 'Üretim makinesi oturumu makine eşleyemez.'
-      USING ERRCODE = '42501', HINT = 'worker_session';
-  END IF;
-  IF p_verifier IS NULL OR p_verifier !~ '^[0-9a-f]{64}$'
-    OR p_public_key IS NULL OR p_public_key !~ '^[A-Za-z0-9_-]{43}$'
-    OR length(v_name) NOT BETWEEN 1 AND 80
-    OR p_platform IS NULL OR p_platform NOT IN ('darwin', 'win32', 'linux')
-    OR p_started_at IS NULL THEN
-    RAISE EXCEPTION 'Eşleme metni geçersiz.' USING ERRCODE = '22023';
-  END IF;
-  -- Eşleme metni makinede üretildikten sonra 10 dakika onaylanabilir.
-  IF p_started_at > clock_timestamp() + interval '2 minutes'
-    OR p_started_at <= clock_timestamp() - interval '10 minutes' THEN
-    RETURN jsonb_build_object('status', 'stale');
-  END IF;
-
-  -- Aynı üyenin ve aynı alanın eşzamanlı istekleri sırayla işlensin (sınırlar tutsun).
-  PERFORM 1 FROM public.workspaces WHERE id = v_ws FOR UPDATE;
-  PERFORM private.cleanup_worker_pairings();
-  IF EXISTS (SELECT 1 FROM private.worker_pairings p WHERE p.verifier = p_verifier) THEN
-    RETURN jsonb_build_object('status', 'already_used');
-  END IF;
-  IF (SELECT count(*) FROM private.worker_pairings p WHERE p.user_id = v_uid) >= 3
-    OR (SELECT count(*) FROM private.worker_pairings p WHERE p.workspace_id = v_ws) >= 10 THEN
-    RETURN jsonb_build_object('status', 'too_many_pending');
-  END IF;
-
-  INSERT INTO private.worker_pairings (verifier, public_key, name, platform, user_id, workspace_id)
-  VALUES (p_verifier, p_public_key, v_name, p_platform, v_uid, v_ws)
-  RETURNING * INTO r;
-  RETURN jsonb_build_object('status', 'pending', 'pairing_id', r.id, 'expires_at', r.expires_at);
-END;
-$$;
-
-CREATE FUNCTION public.begin_worker_pairing(
-  p_verifier text, p_public_key text, p_name text, p_platform text, p_started_at timestamptz
-)
-RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
-BEGIN
-  RETURN internal.begin_worker_pairing(p_verifier, p_public_key, p_name, p_platform, p_started_at);
-END;
-$$;
-
--- 4b) Panel sunucusu (service role) onayı tamamlar: o üye için açtığı YENİ oturumu makineye
--- bağlar ve mühürlü yenileme token'ını teslim için bırakır. Oturum bu çağrıyla makine oturumu
--- olur; token makineye bundan sonra ulaşır.
-CREATE FUNCTION private.complete_worker_pairing(
-  p_pairing_id uuid, p_user_id uuid, p_session_id uuid, p_token_ciphertext text
-)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  r private.worker_pairings;
-  v_ws uuid;
-  w public.production_workers;
-BEGIN
-  IF p_token_ciphertext IS NULL OR length(p_token_ciphertext) NOT BETWEEN 80 AND 1100
-    OR p_token_ciphertext !~ '^[A-Za-z0-9+/]+={0,2}$' THEN
-    RAISE EXCEPTION 'Mühürlü token geçersiz.' USING ERRCODE = '22023';
-  END IF;
-  SELECT * INTO r FROM private.worker_pairings WHERE id = p_pairing_id FOR UPDATE;
-  IF NOT FOUND OR r.expires_at <= clock_timestamp() OR r.session_id IS NOT NULL
-    OR r.user_id IS DISTINCT FROM p_user_id THEN
-    RAISE EXCEPTION 'Eşleme bulunamadı ya da süresi doldu.' USING ERRCODE = 'P0002';
-  END IF;
-  SELECT m.workspace_id INTO v_ws FROM public.team_members m
-  WHERE m.user_id = p_user_id AND m.role IN ('owner', 'editor');
-  IF v_ws IS NULL OR v_ws IS DISTINCT FROM r.workspace_id THEN
-    RAISE EXCEPTION 'Makine eşlemek için düzenleme yetkisi gerekir.' USING ERRCODE = '42501';
-  END IF;
-  IF p_session_id IS NULL
-    OR NOT EXISTS (SELECT 1 FROM auth.sessions s WHERE s.id = p_session_id AND s.user_id = p_user_id)
-    OR EXISTS (SELECT 1 FROM private.worker_sessions s WHERE s.session_id = p_session_id) THEN
-    RAISE EXCEPTION 'Oturum bu kullanıcıya ait yeni bir oturum olmalı.' USING ERRCODE = '22023';
-  END IF;
-  IF (
-    SELECT count(*) FROM public.production_workers p
-    WHERE p.workspace_id = v_ws AND p.user_id = p_user_id AND p.name <> r.name
-  ) >= 20 THEN
-    RAISE EXCEPTION 'Kullanıcı başına en çok 20 makine kaydedilebilir.' USING ERRCODE = '54000';
-  END IF;
-
-  -- Aynı adla yeniden eşleme: satır korunur, eski oturumları kapanır, yetki yeniden verilir.
-  INSERT INTO public.production_workers (workspace_id, user_id, name, platform)
-  VALUES (v_ws, p_user_id, r.name, r.platform)
-  ON CONFLICT (workspace_id, user_id, name) DO UPDATE
-    SET platform = EXCLUDED.platform, revoked_at = NULL
-  RETURNING * INTO w;
-  PERFORM private.end_worker_sessions(w.id);
-  INSERT INTO private.worker_sessions (session_id, user_id, worker_id)
-  VALUES (p_session_id, p_user_id, w.id);
-
-  UPDATE private.worker_pairings
-  SET session_id = p_session_id, worker_id = w.id, token_ciphertext = p_token_ciphertext
-  WHERE id = r.id;
-  RETURN jsonb_build_object('worker_id', w.id, 'name', w.name, 'platform', w.platform);
-END;
-$$;
-
-CREATE FUNCTION public.complete_worker_pairing(
-  p_pairing_id uuid, p_user_id uuid, p_session_id uuid, p_token_ciphertext text
-)
-RETURNS jsonb LANGUAGE sql SECURITY INVOKER SET search_path = '' AS $$
-  SELECT private.complete_worker_pairing(p_pairing_id, p_user_id, p_session_id, p_token_ciphertext);
-$$;
-
--- 4c) Makine cihaz sırrıyla yoklar (oturumsuz). Sır onaylanmış, süresi dolmamış ve teslim
--- edilmemiş bir eşlemeyle eşleşmedikçe hiçbir şey yazmaz ve yalnız "pending" der (yanlış,
--- süresi dolmuş ve kullanılmış sır ayırt edilemez). Eşleşince mühür bir kez döner ve satır
--- silinir. SECURITY DEFINER ve public'te: anon rolünün internal şemasına erişimi yoktur.
-CREATE FUNCTION public.claim_worker_pairing(p_secret text)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-DECLARE
-  v_hash text;
-  r private.worker_pairings;
-BEGIN
-  IF p_secret IS NULL OR p_secret !~ '^[A-Za-z0-9_-]{43}$' THEN
-    RETURN jsonb_build_object('status', 'pending');
-  END IF;
-  v_hash := private.pairing_hash(p_secret);
-  SELECT * INTO r FROM private.worker_pairings p
-  WHERE p.verifier = v_hash
-    AND p.token_ciphertext IS NOT NULL
-    AND p.expires_at > clock_timestamp();
-  IF NOT FOUND OR NOT private.pairing_hash_equal(r.verifier, v_hash) THEN
-    RETURN jsonb_build_object('status', 'pending');
-  END IF;
-  -- Tek kullanım: eşzamanlı iki yoklamadan yalnız biri satırı silebilir.
-  DELETE FROM private.worker_pairings d WHERE d.id = r.id RETURNING * INTO r;
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object('status', 'pending');
-  END IF;
-  RETURN jsonb_build_object(
-    'status', 'confirmed', 'token', r.token_ciphertext, 'worker_id', r.worker_id
-  );
-END;
-$$;
-
--- ── 5) EXECUTE izinleri: açıkça ─────────────────────────────────────────────
+-- ── 4) EXECUTE izinleri: açıkça ─────────────────────────────────────────────
 DO $$
 DECLARE
   f record;
 BEGIN
   FOR f IN
-    SELECT p.oid::regprocedure AS signature, n.nspname AS schema_name, p.proname AS name
+    SELECT p.oid::regprocedure AS signature, n.nspname AS schema_name
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE (
       n.nspname IN ('public', 'internal') AND p.proname IN (
-        'is_worker_session', 'can_write_production_object', 'attach_job_output',
-        'begin_worker_pairing', 'complete_worker_pairing', 'claim_worker_pairing'
+        'is_worker_session', 'can_write_production_object', 'attach_job_output'
       )
     ) OR (
       n.nspname = 'private' AND p.proname IN (
-        'worker_session_state', 'end_auth_sessions', 'end_worker_sessions', 'pairing_hash',
-        'pairing_hash_equal', 'discard_worker_pairings', 'cleanup_worker_pairings',
-        'complete_worker_pairing'
+        'worker_session_state', 'end_auth_sessions', 'end_worker_sessions'
       )
     )
   LOOP
     EXECUTE format(
       'REVOKE ALL ON FUNCTION %s FROM PUBLIC, anon, authenticated, service_role', f.signature
     );
-    IF f.name = 'complete_worker_pairing' THEN
-      EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO service_role', f.signature);
-    ELSIF f.name = 'claim_worker_pairing' THEN
-      -- Makine henüz oturum açmamıştır; oturumu olan bir istemci de çağırabilir.
-      EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO anon, authenticated', f.signature);
-    ELSIF f.schema_name <> 'private' THEN
+    IF f.schema_name <> 'private' THEN
       EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated', f.signature);
     END IF;
   END LOOP;
 END;
 $$;
-
--- ── 6) Zamanlama: süresi dolan eşlemeleri temizle ───────────────────────────
-SELECT cron.schedule(
-  'worker-pairing-cleanup',
-  '*/5 * * * *',
-  $$SELECT private.cleanup_worker_pairings()$$
-);
