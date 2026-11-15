@@ -5,7 +5,8 @@ import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { getExplainerOverview } from '@/lib/explainer/queries';
 import { EpisodeTable, RequestList, kindLabel } from './lists';
-import { Badge, card, formatDate } from './shared';
+import { card, formatDate } from './format';
+import { Badge } from './shared';
 
 /**
  * Anlatım modülü (#216 modeli üzerinde, #217 / #218 arayüzü): seriler, tekil videolar ve konu

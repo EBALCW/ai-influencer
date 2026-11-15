@@ -5,7 +5,8 @@ import {
   isExplainerKind,
 } from '@ai-influencer/shared';
 import type { EpisodeListItem, RequestListItem } from '@/lib/explainer/queries';
-import { Badge, FactGapBadge, StatusBadge, formatDate } from './shared';
+import { formatDate } from './format';
+import { Badge, FactGapBadge, StatusBadge } from './shared';
 
 export function kindLabel(kind: string | null): string {
   return kind && isExplainerKind(kind)

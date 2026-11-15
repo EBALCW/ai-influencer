@@ -15,12 +15,10 @@ import {
   safeHttpUrl,
   type Tone,
 } from '@/lib/explainer/model';
+import { card, field, formatDate, hint, label } from './format';
 
-export const field =
-  'mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text';
-export const label = 'block text-xs font-medium text-muted';
-export const hint = 'mt-1 block text-xs font-normal text-muted';
-export const card = 'rounded-xl border border-line bg-surface-raised p-4';
+// İstemci bileşenleri aynı yerden alabilsin diye; sunucu bileşenleri doğrudan `./format` kullanır.
+export { card, field, formatDate, hint, label };
 
 const tones: Record<Tone, string> = {
   neutral: 'border-line text-text',
@@ -73,15 +71,6 @@ export function FactGapBadge({
   if (hasScript && !hasNotes)
     return <Badge tone="attention">⚠ Kaynak notu yok</Badge>;
   return null;
-}
-
-const dateFormat = new Intl.DateTimeFormat('tr-TR', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'Europe/Istanbul',
-});
-export function formatDate(value: string) {
-  return dateFormat.format(new Date(value));
 }
 
 export class ApiError extends Error {

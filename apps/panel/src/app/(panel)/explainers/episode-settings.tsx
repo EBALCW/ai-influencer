@@ -12,13 +12,13 @@ import { Toast } from '@/components/ui';
 import type { Episode, Series } from '@/lib/explainer/queries';
 import { episodePatchSchema } from '@/lib/explainer/schemas';
 import { MoveEpisode } from './controls';
+import { ProductionFields } from './production-fields';
 import {
-  ProductionFields,
   captionMode,
   productionPatch,
   withCaptionMode,
   type ProductionValues,
-} from './production-fields';
+} from './production-values';
 import {
   ErrorText,
   api,

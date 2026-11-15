@@ -4,7 +4,7 @@ import { requireTeamMember } from '@/lib/auth';
 import { getTopicRequest } from '@/lib/explainer/queries';
 import { kindLabel } from '../../lists';
 import { ReadOnlyNote, SubHeader } from '../../page-header';
-import { formatDate } from '../../shared';
+import { formatDate } from '../../format';
 import { Suggestions } from '../../suggestions';
 
 /** Konu isteği ve önerileri (#217'nin AI'sız kısmı): elle ekle, karşılaştır, seç ya da ele. */

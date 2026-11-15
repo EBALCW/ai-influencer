@@ -10,14 +10,14 @@ import {
 } from '@ai-influencer/shared';
 import type { Series } from '@/lib/explainer/queries';
 import { seriesCreateSchema, seriesPatchSchema } from '@/lib/explainer/schemas';
+import { ProductionFields } from './production-fields';
 import {
-  ProductionFields,
   VOICES,
   captionMode,
   productionPatch,
   withCaptionMode,
   type ProductionValues,
-} from './production-fields';
+} from './production-values';
 import { ErrorText, api, field, hint, label, useAction } from './shared';
 
 export const LANGUAGES = [

@@ -14,7 +14,7 @@ import {
 import { ArchiveButton, MoveEpisode } from '../../controls';
 import { EpisodeTable, RequestList, kindLabel } from '../../lists';
 import { ReadOnlyNote, SubHeader } from '../../page-header';
-import { captionMode, CAPTION_MODES } from '../../production-fields';
+import { CAPTION_MODES, captionMode } from '../../production-values';
 import { Badge } from '../../shared';
 
 /** Seri ayrıntısı: varsayılanlar, sırayla bölümler, bölüm ekleme ve taşıma, serinin konu istekleri. */
