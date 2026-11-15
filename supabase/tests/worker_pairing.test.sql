@@ -147,11 +147,11 @@ SELECT set_config('request.jwt.claim.sub', 'f2110000-0000-4000-8000-000000000002
 SELECT set_config('request.jwt.claims',
   '{"sub":"f2110000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e560000-0000-4000-8000-0000000000e2"}', true);
 INSERT INTO ids SELECT 'jx', (public.enqueue_job(
-  'explainer', 'explainer.selftest',
+  'clip', 'clip.selftest',
   '[{"key":"prepare"},{"key":"review","requires_approval":true},{"key":"finish"}]'::jsonb
 )).id;
 INSERT INTO ids SELECT 'jy', (public.enqueue_job(
-  'explainer', 'explainer.selftest', '[{"key":"prepare"}]'::jsonb, '{}'::jsonb, ARRAY['render.blender']
+  'clip', 'clip.selftest', '[{"key":"prepare"}]'::jsonb, '{}'::jsonb, ARRAY['render.blender']
 )).id;
 RESET ROLE;
 
@@ -360,8 +360,16 @@ SELECT extensions.is(
   (SELECT count(*)::integer FROM public.jobs), 2, 'a machine session reads the jobs of its workspace'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.selftest', '[{"key":"a"}]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.selftest', '[{"key":"a"}]'::jsonb)$$,
   '42501', NULL, 'a machine session cannot enqueue jobs'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.enqueue_episode_job(gen_random_uuid(), 'explainer.research')$$,
+  '42501', NULL, 'a machine session cannot enqueue episode jobs'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.create_series('Makine serisi')$$,
+  '42501', NULL, 'a machine session cannot write explainer data'
 );
 SELECT extensions.throws_ok(
   $$SELECT public.retry_job((SELECT id FROM ids WHERE k = 'jx'))$$,

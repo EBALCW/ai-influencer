@@ -192,8 +192,8 @@ test(
 
     // Makine oturumu iş açamaz; aynı kullanıcının insan oturumu açabilir.
     const stages = {
-      p_module: 'explainer',
-      p_kind: 'explainer.selftest',
+      p_module: 'clip',
+      p_kind: 'clip.selftest',
       p_stages: [{ key: 'a' }],
     };
     const refused = await rpc(

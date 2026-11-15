@@ -189,8 +189,8 @@ test('editor metni panelde onaylar; makine kendi oturumunu alır ve yalnız maki
 
   // Makine oturumu iş açamaz, ekibi göremez, başka makine eşleyemez.
   const enqueue = await machine.rpc('enqueue_job', {
-    p_module: 'explainer',
-    p_kind: 'explainer.selftest',
+    p_module: 'clip',
+    p_kind: 'clip.selftest',
     p_stages: [{ key: 'a' }],
   });
   expect(enqueue.error?.code).toBe('42501');
