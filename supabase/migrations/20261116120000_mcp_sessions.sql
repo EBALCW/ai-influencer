@@ -12,7 +12,8 @@
 --   bu oturumu üye saymaz).
 -- * MCP oturumu yalnız TASLAK çekirdeklerinde üyenin gerçek rolüyle (owner/editor) çalışır:
 --   seri, konu isteği / önerisi, bölüm, senaryo kaydı, ön hazırlık işi (`explainer.topics`,
---   `explainer.script`) ve iptal isteği.
+--   `explainer.script`) ve yalnız ön hazırlık işinin iptali. Senaryosu onaylanmış ya da üretimi
+--   süren bölümü ve onun serisini güncelleyemez (üretim ayarları onayı silmeden render'ı değiştirir).
 -- * Hiçbir otomasyon oturumu onay veremez (mevcut `private.is_worker_session()` denetimleri her
 --   türü kapsar), üretim işi açamaz (yeni `jobs_automation_gate` trigger'ı), arşivleyemez,
 --   bölüm taşıyamaz. MCP oturumu makine olamaz, makine RPC'lerini çağıramaz; makine oturumu MCP
@@ -298,7 +299,117 @@ BEGIN
 END;
 $$;
 
--- İptal isteği taslak işidir (güvenli yön): MCP oturumu da isteyebilir.
+-- Onaylanmış iş otomasyon oturumuna kilitlidir. Bölümün ve serinin üretim ayarları (görsel yol,
+-- stil, ses, altyazı, parametreler) senaryo onayını SİLMEDEN render'ı değiştirir; bu yüzden
+-- otomasyon oturumu senaryosu onaylı ya da üretim işi açık bölümü, ve böyle bir bölümü olan
+-- seriyi güncelleyemez. İnsan oturumu etkilenmez. (Senaryo kaydı serbesttir: onayı siler.)
+CREATE FUNCTION private.require_unlocked_for_automation(p_episode_id uuid, p_series_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  IF NOT private.is_worker_session() THEN
+    RETURN;
+  END IF;
+  -- Kilit: onay ile güncelleme aynı anda yarışamaz.
+  PERFORM 1 FROM public.episodes e
+  WHERE e.id = p_episode_id AND e.workspace_id = public.current_workspace_id()
+  FOR UPDATE;
+  IF EXISTS (
+    SELECT 1 FROM public.episodes e
+    WHERE (e.id = p_episode_id OR e.series_id = p_series_id)
+      AND e.workspace_id = public.current_workspace_id()
+      AND (e.script_approved_at IS NOT NULL OR private.episode_has_open_job(e.id))
+  ) THEN
+    RAISE EXCEPTION 'Senaryosu onaylanmış ya da üretimi süren bölümü (ve serisini) otomasyon oturumu değiştiremez; panelden bir insan yapar.'
+      USING ERRCODE = '42501', HINT = 'approved_locked';
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION internal.update_series(p_series_id uuid, p_patch jsonb)
+RETURNS public.series
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_ws uuid := private.require_explainer_writer();
+  r public.series;
+BEGIN
+  PERFORM private.require_unlocked_for_automation(NULL, p_series_id);
+  PERFORM private.assert_patch(p_patch, ARRAY[
+    'name', 'theme', 'kind', 'visual_route', 'style_key', 'voice_provider', 'voice_name',
+    'voice_rate', 'caption_style', 'language', 'default_params'
+  ]);
+  UPDATE public.series s
+  SET
+    name = CASE WHEN p_patch ? 'name' THEN btrim(p_patch ->> 'name') ELSE s.name END,
+    theme = CASE WHEN p_patch ? 'theme' THEN COALESCE(p_patch ->> 'theme', '') ELSE s.theme END,
+    kind = CASE WHEN p_patch ? 'kind' THEN p_patch ->> 'kind' ELSE s.kind END,
+    visual_route = CASE WHEN p_patch ? 'visual_route' THEN p_patch ->> 'visual_route' ELSE s.visual_route END,
+    style_key = CASE WHEN p_patch ? 'style_key' THEN p_patch ->> 'style_key' ELSE s.style_key END,
+    voice_provider = CASE WHEN p_patch ? 'voice_provider' THEN p_patch ->> 'voice_provider' ELSE s.voice_provider END,
+    voice_name = CASE WHEN p_patch ? 'voice_name' THEN p_patch ->> 'voice_name' ELSE s.voice_name END,
+    voice_rate = CASE WHEN p_patch ? 'voice_rate' THEN p_patch ->> 'voice_rate' ELSE s.voice_rate END,
+    caption_style = CASE WHEN p_patch ? 'caption_style'
+      THEN COALESCE(NULLIF(p_patch -> 'caption_style', 'null'::jsonb), '{}'::jsonb) ELSE s.caption_style END,
+    language = CASE WHEN p_patch ? 'language' THEN COALESCE(p_patch ->> 'language', 'tr') ELSE s.language END,
+    default_params = CASE WHEN p_patch ? 'default_params'
+      THEN COALESCE(NULLIF(p_patch -> 'default_params', 'null'::jsonb), '{}'::jsonb) ELSE s.default_params END
+  WHERE s.id = p_series_id AND s.workspace_id = v_ws
+  RETURNING * INTO r;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Seri bulunamadı.' USING ERRCODE = 'P0002';
+  END IF;
+  RETURN r;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION internal.update_episode(p_episode_id uuid, p_patch jsonb)
+RETURNS public.episodes
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_ws uuid := private.require_explainer_writer();
+  r public.episodes;
+BEGIN
+  PERFORM private.require_unlocked_for_automation(p_episode_id, NULL);
+  PERFORM private.assert_patch(p_patch, ARRAY[
+    'title', 'summary', 'hook', 'visual_idea', 'kind', 'language', 'visual_route', 'style_key',
+    'voice_provider', 'voice_name', 'voice_rate', 'caption_style', 'params'
+  ]);
+  UPDATE public.episodes e
+  SET
+    title = CASE WHEN p_patch ? 'title' THEN btrim(p_patch ->> 'title') ELSE e.title END,
+    summary = CASE WHEN p_patch ? 'summary' THEN COALESCE(p_patch ->> 'summary', '') ELSE e.summary END,
+    hook = CASE WHEN p_patch ? 'hook' THEN COALESCE(p_patch ->> 'hook', '') ELSE e.hook END,
+    visual_idea = CASE WHEN p_patch ? 'visual_idea' THEN COALESCE(p_patch ->> 'visual_idea', '') ELSE e.visual_idea END,
+    kind = CASE WHEN p_patch ? 'kind' THEN p_patch ->> 'kind' ELSE e.kind END,
+    language = CASE WHEN p_patch ? 'language' THEN p_patch ->> 'language' ELSE e.language END,
+    visual_route = CASE WHEN p_patch ? 'visual_route' THEN p_patch ->> 'visual_route' ELSE e.visual_route END,
+    style_key = CASE WHEN p_patch ? 'style_key' THEN p_patch ->> 'style_key' ELSE e.style_key END,
+    voice_provider = CASE WHEN p_patch ? 'voice_provider' THEN p_patch ->> 'voice_provider' ELSE e.voice_provider END,
+    voice_name = CASE WHEN p_patch ? 'voice_name' THEN p_patch ->> 'voice_name' ELSE e.voice_name END,
+    voice_rate = CASE WHEN p_patch ? 'voice_rate' THEN p_patch ->> 'voice_rate' ELSE e.voice_rate END,
+    caption_style = CASE WHEN p_patch ? 'caption_style'
+      THEN NULLIF(p_patch -> 'caption_style', 'null'::jsonb) ELSE e.caption_style END,
+    params = CASE WHEN p_patch ? 'params'
+      THEN COALESCE(NULLIF(p_patch -> 'params', 'null'::jsonb), '{}'::jsonb) ELSE e.params END
+  WHERE e.id = p_episode_id AND e.workspace_id = v_ws
+  RETURNING * INTO r;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Bölüm bulunamadı.' USING ERRCODE = 'P0002';
+  END IF;
+  RETURN r;
+END;
+$$;
+
+-- İptal isteği taslak işidir, ama otomasyon oturumu yalnız anlatım ön hazırlık işini iptal
+-- edebilir; bir insanın başlattığı üretim (render) işini ve başka modülün işini edemez.
 CREATE OR REPLACE FUNCTION internal.request_cancel_job(p_job_id uuid)
 RETURNS public.jobs
 LANGUAGE plpgsql
@@ -315,6 +426,12 @@ BEGIN
   SELECT * INTO j FROM public.jobs WHERE id = p_job_id AND workspace_id = v_ws FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'İş bulunamadı.' USING ERRCODE = 'P0002';
+  END IF;
+  IF private.is_worker_session() AND NOT COALESCE(
+    j.module = 'explainer' AND j.kind = ANY (private.explainer_pre_approval_kinds()), false
+  ) THEN
+    RAISE EXCEPTION 'Otomasyon oturumu yalnız ön hazırlık işini iptal edebilir; üretim işini panelden bir insan iptal eder.'
+      USING ERRCODE = '42501', HINT = 'automation_session';
   END IF;
   IF j.status IN ('succeeded', 'failed', 'cancelled') THEN
     RAISE EXCEPTION 'Biten iş iptal edilemez.' USING ERRCODE = '55000';
@@ -577,7 +694,8 @@ BEGIN
       )
     ) OR (
       n.nspname = 'private' AND p.proname IN (
-        'worker_sessions_guard', 'session_kind', 'require_human_session', 'jobs_automation_gate'
+        'worker_sessions_guard', 'session_kind', 'require_human_session', 'jobs_automation_gate',
+        'require_unlocked_for_automation'
       )
     )
   LOOP

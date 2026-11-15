@@ -44,7 +44,7 @@ SELECT extensions.is(
     SELECT p.oid::regprocedure::text FROM pg_proc p
     WHERE (
       p.pronamespace = 'private'::regnamespace
-      AND p.proname IN ('worker_sessions_guard', 'session_kind', 'require_human_session', 'jobs_automation_gate')
+      AND p.proname IN ('worker_sessions_guard', 'session_kind', 'require_human_session', 'jobs_automation_gate', 'require_unlocked_for_automation')
       AND (
         has_function_privilege('authenticated', p.oid, 'EXECUTE')
         OR has_function_privilege('anon', p.oid, 'EXECUTE')
@@ -54,7 +54,7 @@ SELECT extensions.is(
       p.pronamespace IN ('public'::regnamespace, 'internal'::regnamespace, 'private'::regnamespace)
       AND p.proname IN (
         'worker_sessions_guard', 'session_kind', 'require_human_session', 'jobs_automation_gate',
-        'can_draft', 'register_mcp_session', 'list_mcp_sessions', 'revoke_mcp_session',
+        'require_unlocked_for_automation', 'can_draft', 'register_mcp_session', 'list_mcp_sessions', 'revoke_mcp_session',
         'save_episode_script', 'release_job'
       )
       AND (
@@ -222,6 +222,20 @@ SELECT extensions.is(
   'an MCP session requests cancellation'
 );
 
+SELECT extensions.throws_ok(
+  $$SELECT public.request_cancel_job((SELECT id FROM ids WHERE k = 'jr'))$$,
+  '42501', 'Otomasyon oturumu yalnız ön hazırlık işini iptal edebilir; üretim işini panelden bir insan iptal eder.',
+  'an MCP session cannot cancel a job that is not an explainer pre-approval job'
+);
+SELECT extensions.is(
+  (SELECT status FROM public.jobs WHERE id = (SELECT id FROM ids WHERE k = 'jr')), 'queued',
+  'the refused cancellation left the job queued'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.request_cancel_job(gen_random_uuid())$$,
+  'P0002', NULL, 'an unknown job is still reported as not found'
+);
+
 -- Onay: RPC ve doğrudan tablo yazımı reddedilir.
 SELECT extensions.throws_ok(
   $$SELECT public.approve_episode_script((SELECT id FROM ids WHERE k = 'ep1'), 1, true)$$,
@@ -332,6 +346,57 @@ SELECT extensions.results_eq(
       (SELECT script_approved_at IS NOT NULL FROM public.episodes WHERE id = (SELECT id FROM ids WHERE k = 'ep1'))$$,
   $$VALUES (1, true)$$,
   'the refused calls left no machine behind and did not touch the human approval'
+);
+
+
+-- ── Onaylanmış iş otomasyon oturumuna kilitlidir ────────────────────────────
+-- ep1 (seri s1) artık onaylı. İnsan üretim işi açar (jp).
+SELECT set_config('request.jwt.claims',
+  '{"sub":"f2410000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e570000-0000-4000-8000-0000000000e2"}', true);
+INSERT INTO ids SELECT 'jp', (public.enqueue_episode_job(
+  (SELECT id FROM ids WHERE k = 'ep1'), 'explainer.render', ARRAY['render.hyperframes']
+)).id;
+SELECT set_config('request.jwt.claims',
+  '{"sub":"f2410000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e570000-0000-4000-8000-0000000000c1"}', true);
+SELECT extensions.throws_ok(
+  $$SELECT public.request_cancel_job((SELECT id FROM ids WHERE k = 'jp'))$$,
+  '42501', NULL, 'an MCP session cannot cancel a production job a human started'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.update_episode((SELECT id FROM ids WHERE k = 'ep1'), '{"params":{"duration":5}}'::jsonb)$$,
+  '42501', 'Senaryosu onaylanmış ya da üretimi süren bölümü (ve serisini) otomasyon oturumu değiştiremez; panelden bir insan yapar.',
+  'an MCP session cannot change production settings of an approved episode'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.update_episode((SELECT id FROM ids WHERE k = 'ep1'), '{"hook":"sonradan"}'::jsonb)$$,
+  '42501', NULL, 'nor any other field of an approved episode'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.update_series((SELECT id FROM ids WHERE k = 's1'), '{"voice_name":"tr-TR-EmelNeural"}'::jsonb)$$,
+  '42501', NULL, 'an MCP session cannot change the defaults of a series that has an approved episode'
+);
+SELECT extensions.is(
+  (public.update_episode((SELECT id FROM ids WHERE k = 'mep2'), '{"hook":"taslak kanca"}'::jsonb)).hook,
+  'taslak kanca', 'an MCP session still updates an unapproved episode'
+);
+SELECT extensions.is(
+  (public.update_series((SELECT id FROM ids WHERE k = 'ms'), '{"theme":"yine MCP"}'::jsonb)).theme,
+  'yine MCP', 'and a series without approved episodes'
+);
+-- İnsan oturumu etkilenmez; üretim işini de insan iptal eder.
+SELECT set_config('request.jwt.claims',
+  '{"sub":"f2410000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e570000-0000-4000-8000-0000000000e2"}', true);
+SELECT extensions.is(
+  (public.update_episode((SELECT id FROM ids WHERE k = 'ep1'), '{"hook":"insan kancası"}'::jsonb)).hook,
+  'insan kancası', 'a human session still updates an approved episode'
+);
+SELECT extensions.lives_ok(
+  $$SELECT public.update_series((SELECT id FROM ids WHERE k = 's1'), '{"theme":"insan teması"}'::jsonb)$$,
+  'a human session still updates the series'
+);
+SELECT extensions.is(
+  (public.request_cancel_job((SELECT id FROM ids WHERE k = 'jp'))).status, 'cancelled',
+  'a human session cancels the production job'
 );
 
 -- ── Makine oturumu ve viewer ────────────────────────────────────────────────

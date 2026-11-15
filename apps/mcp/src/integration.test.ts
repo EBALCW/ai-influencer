@@ -636,6 +636,45 @@ test(
       });
       assert.equal(renderApproved.json.code, '42501');
       assert.equal(renderApproved.json.hint, 'automation_session');
+
+      // (i) Onaylanmış bölüm ve serisi MCP oturumuna kilitlidir (üretim ayarları onayı silmeden
+      // render'ı değiştirirdi); insanın başlattığı üretim işini de iptal edemez. İnsan yapabilir.
+      const locked = await mcp.call('update_episode', {
+        episode_id: ids.episode,
+        visual_route: 'skia',
+      });
+      assert.match(locked.text, /^Hata \[insan_onayi_gerekli\]/);
+      const lockedSeries = await mcp.call('update_series', {
+        series_id: ids.series,
+        theme: 'kilitli',
+      });
+      assert.match(lockedSeries.text, /^Hata \[insan_onayi_gerekli\]/);
+      const production = await rpcAs(
+        human.access_token,
+        'enqueue_episode_job',
+        {
+          p_episode_id: ids.episode,
+          p_kind: 'explainer.render',
+          p_required_capabilities: ['render.skia'],
+        },
+      );
+      assert.equal(production.status, 200, JSON.stringify(production.json));
+      const cancelProduction = await mcp.call('request_cancel_job', {
+        job_id: production.json.id,
+      });
+      assert.match(cancelProduction.text, /^Hata \[insan_onayi_gerekli\]/);
+      const humanEdit = await rpcAs(human.access_token, 'update_episode', {
+        p_episode_id: ids.episode,
+        p_patch: { hook: 'İnsan kancası' },
+      });
+      assert.equal(humanEdit.status, 200, JSON.stringify(humanEdit.json));
+      const humanCancel = await rpcAs(
+        human.access_token,
+        'request_cancel_job',
+        { p_job_id: production.json.id },
+      );
+      assert.equal(humanCancel.status, 200, JSON.stringify(humanCancel.json));
+      assert.equal(humanCancel.json.status, 'cancelled');
     } finally {
       await mcp.close();
     }

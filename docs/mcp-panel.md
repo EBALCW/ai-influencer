@@ -112,6 +112,8 @@ MCP oturumu veritabanında şöyle görünür (`docs/data-model.md` → "Otomasy
 | Makine kaydı, yetki kaldırma, makine RPC'leri (`claim_job` …)                                     | Reddedilir; MCP oturumu makineye dönüşemez                               |
 | `team_members` (panel sunucusu üye sayar mı)                                                      | Okuyamaz; panel bu oturumu üye saymaz (API 403)                          |
 
+**Onaylanmış iş kilitlidir.** MCP oturumu, senaryosu onaylanmış ya da üretim işi açık bir bölümü (`update_episode`) ve böyle bir bölümü olan seriyi (`update_series`) değiştiremez (`42501`, HINT `approved_locked`): görsel yol, stil, ses, altyazı ve parametreler senaryo onayını silmeden render'ı değiştirir. Senaryo kaydı serbesttir (onayı siler; üretim sürerken zaten reddedilir). İptal isteği de yalnız ön hazırlık işleri içindir; bir insanın başlattığı üretim işini MCP oturumu iptal edemez (HINT `automation_session`). İnsan oturumu etkilenmez. Daha sıkı seçenek (üretim ayarlarının onaya dahil edilmesi ya da onay anında dondurulması) #245'te.
+
 Üye sonradan viewer yapılırsa `can_draft()` `false` döner: okuma araçları çalışır, yazma araçları `yetki_yok` verir.
 
 **#241 öncesinde açılmış MCP girişleri** makine olarak işaretlidir ve artık kabul edilmez (sunucu "oturum artık geçerli değil" der ve kasadaki kaydı siler): `pnpm mcp:logout`, sonra `pnpm mcp:login`. O girişlerin bıraktığı "MCP istemcisi (…)" satırları panelde Ayarlar → Üretim makineleri'nden kaldırılabilir.
