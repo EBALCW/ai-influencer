@@ -4,11 +4,13 @@
 // Kanıtlananlar:
 //   1. Araçlar gerçek RPC sözleşmesiyle çalışır: seri → istek + öneri → seçim → senaryo kaydı →
 //      sürüm çakışması → ön hazırlık işi → iptal (insan oturumu üzerinden, araç katmanıyla).
-//   2. MCP oturumu (gerçek Auth oturumu, gerçek güvenlik denetimi) onay VEREMEZ: araç yok, ve
-//      token'ı ele geçiren biri RPC'yi ya da tabloyu doğrudan çağırsa da veritabanı reddeder;
-//      yenilenmiş token için de. Aynı kullanıcının insan oturumu aynı çağrıyla onaylayabilir
-//      (ret, oturumun işaretinden kaynaklanır).
-//   3. Viewer hesabı desteklenmez (oturumu işaretlenemez; kullanılmaz ve saklanmaz). İkinci çalışma alanı birincinin verisini göremez, değiştiremez.
+//   2. MCP oturumu (gerçek Auth oturumu, gerçek güvenlik denetimi) TASLAK YAZAR ama onay
+//      VEREMEZ: araç yok, ve token'ı ele geçiren biri RPC'yi ya da tabloyu doğrudan çağırsa da
+//      veritabanı reddeder; yenilenmiş token için de. Üretim işi, arşiv, makine kaydı da kapalıdır
+//      ve MCP oturumu makineler listesinde görünmez. Aynı kullanıcının insan oturumu aynı
+//      çağrıyla onaylayabilir (ret, oturumun türünden kaynaklanır).
+//   3. Viewer hesabı desteklenmez (oturumu işaretlenemez; kullanılmaz ve saklanmaz). İkinci
+//      çalışma alanı (insan ve MCP oturumuyla) birincinin verisini göremez, değiştiremez.
 //   4. Tarayıcıyla giriş akışı (e-posta bağlantısı + PKCE + 127.0.0.1 geri dönüşü) gerçek Auth'a
 //      karşı oturum üretir.
 //   5. İçine talimat gömülü metin gerçek veritabanından da etkisiz veri olarak döner.
@@ -172,9 +174,6 @@ async function connect(session: PanelSession): Promise<Mcp> {
   };
 }
 
-/** #243 (makine oturumu = salt okur) uygulanmış mı? O zaman işaretli oturum yazamaz. */
-let markedSessionsAreReadOnly = false;
-
 before(async () => {
   if (!enabled) return;
   assert.match(
@@ -223,11 +222,6 @@ before(async () => {
       `üye eklenemedi: ${JSON.stringify(member.json)}`,
     );
   }
-  const probe = await rpcAs(
-    (await signIn(users.viewer)).access_token,
-    'is_worker_session',
-  );
-  markedSessionsAreReadOnly = probe.status === 200;
 });
 
 after(async () => {
@@ -463,7 +457,8 @@ test(
       assert.equal(who.data.otomasyon_oturumu, true);
       assert.equal(who.data.onay_verebilir, false);
       assert.equal(who.data.calisma_alani.id, workspaces[0]);
-      assert.equal(who.data.yazma_araclari_acik, !markedSessionsAreReadOnly);
+      assert.equal(who.data.etkin_rol, 'viewer', 'tablolarda viewer sayılır');
+      assert.equal(who.data.yazma_araclari_acik, true, 'taslak yazabilir');
 
       // (a) Araç yok.
       assert.equal(
@@ -541,21 +536,75 @@ test(
       });
       assert.equal(render.json.code, '42501');
 
-      // (f) Yazma araçları: #243 öncesinde çalışır; sonrasında işaretli oturum salt okurdur.
+      // (f) Taslak araçları MCP oturumuyla çalışır (üyenin gerçek rolü: editor).
       const write = await mcp.call('update_episode', {
         episode_id: ids.episode,
         hook: 'MCP kancası',
       });
-      if (markedSessionsAreReadOnly) {
-        assert.match(write.text, /^Hata \[yetki_yok\]/);
-      } else {
-        assert.equal(write.isError, false, write.text);
+      assert.equal(write.isError, false, write.text);
+      assert.equal(write.data.bolum.hook, 'MCP kancası');
+      const ownSeries = await mcp.call('create_series', {
+        name: `MCP serisi ${run}`,
+        kind: 'event',
+      });
+      assert.equal(ownSeries.isError, false, ownSeries.text);
+      const topic = await mcp.call('create_topic_request', {
+        prompt: 'MCP isteği',
+        series_id: ownSeries.data.seri.id,
+        suggestions: [{ title: `MCP önerisi ${run}` }],
+      });
+      assert.equal(topic.isError, false, topic.text);
+      const draft = await mcp.call('save_episode_script', {
+        episode_id: ids.episode,
+        expected_version: episode.script_version,
+        script_text: 'MCP oturumunun yazdığı taslak.',
+      });
+      assert.equal(draft.isError, false, draft.text);
+      assert.equal(draft.data.bolum.script_version, episode.script_version + 1);
+      const prep = await mcp.call('enqueue_episode_job', {
+        episode_id: ids.episode,
+        kind: 'explainer.script',
+      });
+      assert.equal(prep.isError, false, prep.text);
+      const prepCancelled = await mcp.call('request_cancel_job', {
+        job_id: prep.data.is.id,
+      });
+      assert.equal(prepCancelled.isError, false, prepCancelled.text);
+      assert.equal(prepCancelled.data.is.status, 'cancelled');
+      assert.equal((await mcp.call('list_series')).isError, false);
+
+      // (f2) Taslak dışındaki her şey kapalı: genel yazma yetkisi yok, arşiv / makine / yeniden
+      // deneme / genel iş açma RPC'leri doğrudan çağrılsa da reddedilir.
+      assert.equal((await rpcAs(access, 'can_write_data')).json, false);
+      assert.equal((await rpcAs(access, 'can_draft')).json, true);
+      for (const [name, body] of [
+        ['archive_episode', { p_episode_id: ids.episode }],
+        ['archive_series', { p_series_id: ids.series }],
+        ['move_episode', { p_episode_id: ids.episode }],
+        ['retry_job', { p_job_id: ids.job }],
+        [
+          'enqueue_job',
+          {
+            p_module: 'clip',
+            p_kind: 'clip.selftest',
+            p_stages: [{ key: 'a' }],
+          },
+        ],
+        ['register_worker', { p_name: `mcp-${run}`, p_platform: 'linux' }],
+        ['revoke_mcp_session', { p_session_id: randomUUID() }],
+      ] as const) {
+        const response = await rpcAs(access, name, body);
+        assert.equal(response.json?.code, '42501', name);
       }
-      assert.equal(
-        (await mcp.call('list_series')).isError,
-        false,
-        'okuma her iki durumda çalışır',
-      );
+      const team = await rest('/rest/v1/team_members?select=user_id', {
+        token: access,
+        method: 'GET',
+      });
+      assert.deepEqual(team.json, [], 'MCP oturumu ekibi göremez');
+      // MCP oturumu makine değildir: makineler listesinde görünmez.
+      const machines = await mcp.call('list_production_machines');
+      assert.equal(machines.isError, false, machines.text);
+      assert.doesNotMatch(JSON.stringify(machines.data), /MCP istemcisi/);
 
       // (g) Kontrol: AYNI kullanıcının insan oturumu aynı çağrıyla onaylar. Ret, oturumun
       // işaretinden kaynaklanıyor; rolden ya da veriden değil.
@@ -578,6 +627,15 @@ test(
       );
       assert.equal(approved.status, 200, JSON.stringify(approved.json));
       assert.equal(approved.json.status, 'script_approved');
+
+      // (h) Senaryo onaylıyken bile üretim işini MCP oturumu açamaz; ret onay kapısından değil,
+      // oturum türünden gelir.
+      const renderApproved = await rpcAs(access, 'enqueue_episode_job', {
+        p_episode_id: ids.episode,
+        p_kind: 'explainer.render',
+      });
+      assert.equal(renderApproved.json.code, '42501');
+      assert.equal(renderApproved.json.hint, 'automation_session');
     } finally {
       await mcp.close();
     }
@@ -655,8 +713,18 @@ test(
   'ikinci çalışma alanı birincinin verisini göremez ve değiştiremez',
   { skip: !enabled },
   async () => {
-    // İnsan oturumu (en yetkili durum: owner, işaretsiz) bile başka alanı göremez.
-    const mcp = await connect(humanSession(await signIn(users.outsider)));
+    // İnsan oturumu (en yetkili durum: owner, işaretsiz) da MCP oturumu da başka alanı göremez.
+    for (const [label, session] of [
+      ['insan', humanSession(await signIn(users.outsider))],
+      ['mcp', await mcpSession(await signIn(users.outsider))],
+    ] as const)
+      await isolated(label, session);
+  },
+);
+
+async function isolated(label: string, session: PanelSession): Promise<void> {
+  {
+    const mcp = await connect(session);
     try {
       assert.deepEqual(
         (await mcp.call('list_series', { status: 'all' })).data.seriler,
@@ -703,19 +771,19 @@ test(
         assert.match(
           (await mcp.call(name, args)).text,
           /^Hata \[bulunamadi\]/,
-          name,
+          `${label}: ${name}`,
         );
       }
       // Kendi alanında çalışabiliyor (ret, yalıtımdan; genel bir arızadan değil).
       const own = await mcp.call('create_series', {
-        name: `Felaketler ${run}`,
+        name: `Felaketler ${run} ${label}`,
       });
       assert.equal(own.isError, false, own.text);
     } finally {
       await mcp.close();
     }
-  },
-);
+  }
+}
 
 async function magicLinkFor(email: string): Promise<string> {
   for (let attempt = 0; attempt < 40; attempt += 1) {

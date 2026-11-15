@@ -59,6 +59,13 @@ const HINT_MESSAGES: Readonly<
     advice:
       'Kullanıcıya panelde onay vermesi gerektiğini söyle; başka bir yol deneme.',
   },
+  automation_session: {
+    code: 'insan_onayi_gerekli',
+    message:
+      'Bu işlem otomasyon oturumuna kapalı. Üretimi başlatma, arşivleme ve taşıma panelde, insan tarafından yapılır.',
+    advice:
+      'Kullanıcıya bu adımı panelden yapması gerektiğini söyle; başka bir yol deneme.',
+  },
   session_required: {
     code: 'oturum_gecersiz',
     message: 'Oturum kimliği okunamadı.',

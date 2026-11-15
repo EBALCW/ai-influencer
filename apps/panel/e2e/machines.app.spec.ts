@@ -155,8 +155,8 @@ test('makine oturumu kaydolur, listede görünür ve yalnız makine işlerini ya
       { headers: { origin: baseURL! }, data: {} },
     );
     expect(revoke.status()).toBe(403);
-    // Sayfa isteği de üye sayılmaz ve çıkışa yönlenir (yönlendirme izlenmez: çıkış ucu
-    // kullanıcının bütün oturumlarını kapatır, bu testin panel oturumu da onlardan biri).
+    // Sayfa isteği de üye sayılmaz ve çıkışa yönlenir (yönlendirme izlenmez: çıkış ucu bu
+    // oturumu kapatır, sonraki testler makine oturumunu kullanıyor; izlenen hâli en sondaki testte).
     const pageResponse = await context.request.get('/settings/machines', {
       maxRedirects: 0,
     });
@@ -301,4 +301,87 @@ test('sahibi yetkiyi kaldırır: makinenin oturumu biter', async ({ page }) => {
   });
   expect(refreshed.error).not.toBeNull();
   expect(refreshed.data.session).toBeNull();
+});
+
+test('otomasyon oturumu panele gelirse yalnız o oturum kapanır; üyenin paneli açık kalır', async ({
+  page,
+  browser,
+}) => {
+  // Üyenin ayrı bir girişi MCP oturumu olarak işaretlenir (`pnpm mcp:login`'in yaptığı).
+  const link = await admin().auth.admin.generateLink({
+    type: 'magiclink',
+    email: EDITOR_EMAIL,
+  });
+  expect(link.error).toBeNull();
+  const signedIn = await anon().auth.verifyOtp({
+    token_hash: link.data.properties!.hashed_token,
+    type: 'magiclink',
+  });
+  expect(signedIn.error).toBeNull();
+  const session = signedIn.data.session!;
+  const mcp = createClient(url(), anonKey(), {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${session.access_token}` } },
+  });
+  expect(
+    (await mcp.rpc('register_mcp_session', { p_client_name: 'E2E MCP' })).error,
+  ).toBeNull();
+  expect((await mcp.rpc('is_worker_session')).data).toBe(true);
+  expect((await mcp.rpc('can_draft')).data).toBe(true);
+  expect((await mcp.rpc('can_write_data')).data).toBe(false);
+
+  // MCP oturumu makine değildir: makineler listesinde görünmez.
+  await page.goto('/settings/machines');
+  await expect(
+    page.getByRole('heading', { name: 'Üretim makineleri' }),
+  ).toBeVisible();
+  await expect(page.getByText('E2E MCP')).toHaveCount(0);
+
+  // Token bir panel sayfasına gelirse üye sayılmaz ve çıkışa yönlenir.
+  const jar = new Map<string, string>();
+  const ssr = createServerClient(url(), anonKey(), {
+    cookies: {
+      getAll: () => [...jar].map(([name, value]) => ({ name, value })),
+      setAll: (cookies) =>
+        cookies.forEach(({ name, value }) => jar.set(name, value)),
+    },
+  });
+  const set = await ssr.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  expect(set.error).toBeNull();
+  const context = await browser.newContext({
+    storageState: {
+      cookies: [...jar].map(([name, value]) => ({
+        name,
+        value,
+        domain: '127.0.0.1',
+        path: '/',
+        expires: -1,
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax' as const,
+      })),
+      origins: [],
+    },
+  });
+  try {
+    const response = await context.request.get('/settings/machines');
+    expect(response.url()).toContain('/login');
+  } finally {
+    await context.close();
+  }
+
+  // Kapanan yalnız MCP oturumudur: yenileme token'ı ölü…
+  const refreshed = await anon().auth.refreshSession({
+    refresh_token: session.refresh_token,
+  });
+  expect(refreshed.error).not.toBeNull();
+  // …üyenin tarayıcıdaki panel oturumu ise açık (genel kapsamla çıkış onu da kapatırdı).
+  await page.goto('/settings/machines');
+  await expect(
+    page.getByRole('heading', { name: 'Üretim makineleri' }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/settings\/machines/);
 });

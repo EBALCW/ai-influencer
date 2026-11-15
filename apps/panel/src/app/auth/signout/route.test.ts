@@ -49,6 +49,8 @@ describe('/auth/signout', () => {
     expect(r.status).toBe(303);
     expect(r.headers.get('location')).toBe('http://localhost:3000/login');
     expect(state.signOut).toHaveBeenCalledTimes(1);
+    // Çıkış butonu kullanıcının kendi isteğidir: varsayılan (genel) kapsam korunur.
+    expect(state.signOut).toHaveBeenCalledWith();
   });
 
   it('POST yalnız bilinen hata kodunu taşır', async () => {
@@ -79,11 +81,14 @@ describe('/auth/signout', () => {
       'http://localhost:3000/login?error=not_allowed',
     );
     expect(state.signOut).toHaveBeenCalledTimes(1);
+    // Yalnız bu oturum: otomasyon oturumu buraya düşerse üyenin diğer oturumları kapanmaz.
+    expect(state.signOut).toHaveBeenCalledWith({ scope: 'local' });
   });
 
   it('üyelik okunamazsa (requireTeamMember ile aynı) oturum kapatılır', async () => {
     state.memberError = true;
     await GET(req('/auth/signout?error=not_allowed'));
     expect(state.signOut).toHaveBeenCalledTimes(1);
+    expect(state.signOut).toHaveBeenCalledWith({ scope: 'local' });
   });
 });

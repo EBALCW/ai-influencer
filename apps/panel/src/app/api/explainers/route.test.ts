@@ -260,6 +260,34 @@ describe('RPC çağrıları', () => {
     });
   });
 
+  it('script: null yapılandırılmış senaryoyu açık bayrakla temizler; nesne ise yazar', async () => {
+    await script.PUT(
+      json({ script_text: 'Metin', script: null, expected_version: 4 }, 'PUT'),
+      ctx,
+    );
+    expect(state.rpc[0]).toEqual({
+      name: 'save_episode_script',
+      args: {
+        p_episode_id: id,
+        p_script_text: 'Metin',
+        p_clear_script: true,
+        p_expected_version: 4,
+      },
+    });
+    await script.PUT(
+      json({ script_text: 'Metin', script: { scenes: [] } }, 'PUT'),
+      ctx,
+    );
+    expect(state.rpc[1]).toEqual({
+      name: 'save_episode_script',
+      args: {
+        p_episode_id: id,
+        p_script_text: 'Metin',
+        p_script: { scenes: [] },
+      },
+    });
+  });
+
   it('çakışma 409 ve istemci koduyla döner; ham mesaj gitmez', async () => {
     state.rpcError = {
       code: '55000',

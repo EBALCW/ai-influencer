@@ -2676,7 +2676,7 @@ isOneToOne: false
         isSetofReturn: false
       } },
 "save_episode_script":
-{ Args: { "p_episode_id": string,"p_expected_version"?: number,"p_fact_notes"?: Json,"p_script"?: Json,"p_script_text": string,"p_sensitivity_flags"?: (string)[],"p_sensitivity_note"?: string }; Returns: {
+{ Args: { "p_clear_script"?: boolean,"p_episode_id": string,"p_expected_version"?: number,"p_fact_notes"?: Json,"p_script"?: Json,"p_script_text": string,"p_sensitivity_flags"?: (string)[],"p_sensitivity_note"?: string }; Returns: {
               "archived_at": string | null,
 "caption_style": Json | null,
 "created_at": string,

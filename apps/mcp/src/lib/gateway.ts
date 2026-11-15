@@ -54,6 +54,10 @@ export const FORBIDDEN_RPCS = [
   'archive_episode',
   'move_episode',
   'push_clip_to_backlog',
+  'release_job',
+  'register_mcp_session',
+  'list_mcp_sessions',
+  'revoke_mcp_session',
 ] as const;
 
 export const READABLE_TABLES = [

@@ -182,8 +182,11 @@ export function EpisodeWorkspace({
     expectedVersion: number,
     message: string,
   ) {
-    let script: Record<string, unknown> | undefined;
-    if (
+    // undefined: dokunma · null: temizle (alan boşaltıldı ya da geri yüklenen sürümde yok).
+    let script: Record<string, unknown> | null | undefined;
+    if (!content.scriptJson.trim() && base.scriptJson.trim()) {
+      script = null;
+    } else if (
       content.scriptJson.trim() &&
       content.scriptJson.trim() !== base.scriptJson.trim()
     ) {
@@ -204,7 +207,7 @@ export function EpisodeWorkspace({
       sensitivity_flags: content.flags,
       sensitivity_note: content.sensitivityNote,
       expected_version: expectedVersion,
-      ...(script ? { script } : {}),
+      ...(script !== undefined ? { script } : {}),
     });
     if (!parsed.success) {
       const issue = parsed.error.issues[0];

@@ -58,7 +58,7 @@ async function harness(
 const REFUSED = { code: '42501', hint: 'worker_session' };
 
 test('viewer hesabı (işaretlenemeyen oturum) reddedilir; token kasadan silinir, oturum kapatılır', async () => {
-  const h = await harness({ register_worker: { code: '42501' } });
+  const h = await harness({ register_mcp_session: { code: '42501' } });
   assert.equal(h.store.entries.size, 1);
   for (const kind of ['read', 'write'] as const) {
     await assert.rejects(h.session.gateway(kind), (error: ToolError) => {
@@ -80,7 +80,7 @@ test('viewer hesabı (işaretlenemeyen oturum) reddedilir; token kasadan silinir
 });
 
 test('viewer reddi anlaşılır bir Türkçe ileti verir', async () => {
-  const h = await harness({ register_worker: { code: '42501' } });
+  const h = await harness({ register_mcp_session: { code: '42501' } });
   await assert.rejects(h.session.gateway('read'), (error: ToolError) => {
     assert.equal(error.message, VIEWER_NOT_SUPPORTED);
     assert.match(error.message, /editor ya da owner/);
@@ -92,7 +92,7 @@ test('viewer reddi anlaşılır bir Türkçe ileti verir', async () => {
 
 test('onay reddedilmiyorsa (yoklama geçilirse) araçlar süreç boyunca kapalı kalır', async () => {
   const h = await harness({
-    register_worker: null,
+    register_mcp_session: null,
     approve_episode_script: { code: 'P0002' },
     approve_job_stage: REFUSED,
   });
@@ -108,7 +108,7 @@ test('onay reddedilmiyorsa (yoklama geçilirse) araçlar süreç boyunca kapalı
 
 test('yetkisi panelden kaldırılmış oturum kullanılmaz ve silinir', async () => {
   const h = await harness({
-    register_worker: { code: '42501', hint: 'worker_revoked' },
+    register_mcp_session: { code: '42501', hint: 'session_revoked' },
   });
   await assert.rejects(
     h.session.gateway('read'),
@@ -119,24 +119,24 @@ test('yetkisi panelden kaldırılmış oturum kullanılmaz ve silinir', async ()
 
 test('işaretli ve onayı reddedilen oturum: okuma açık; yazma veritabanı izin veriyorsa açık', async () => {
   const guard = {
-    register_worker: null,
+    register_mcp_session: null,
     approve_episode_script: REFUSED,
     approve_job_stage: REFUSED,
-    can_write_data: null,
+    can_draft: null,
   };
-  const writable = await harness(guard, { can_write_data: true });
+  const writable = await harness(guard, { can_draft: true });
   await writable.session.gateway('read');
   await writable.session.gateway('write');
   assert.deepEqual(writable.rpcCalls, [
-    'register_worker',
+    'register_mcp_session',
     'approve_episode_script',
     'approve_job_stage',
-    'can_write_data',
+    'can_draft',
   ]);
   assert.equal(writable.store.entries.size, 1);
 
-  // #243 sonrası: işaretli oturum veritabanında salt okurdur.
-  const readOnly = await harness(guard, { can_write_data: false });
+  // Veritabanı taslak yetkisi vermiyorsa (ör. üye sonradan viewer yapıldı) oturum salt okurdur.
+  const readOnly = await harness(guard, { can_draft: false });
   await readOnly.session.gateway('read');
   await assert.rejects(
     readOnly.session.gateway('write'),
