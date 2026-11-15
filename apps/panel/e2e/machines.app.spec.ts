@@ -55,15 +55,17 @@ test('makine oturumu kaydolur, listede görünür ve yalnız makine işlerini ya
   browser,
   baseURL,
 }) => {
-  // Makine: üye olarak ayrı bir giriş (panel oturumundan bağımsız bir Auth oturumu).
-  const password = `e2e-${crypto.randomUUID()}`;
-  const updated = await admin().auth.admin.updateUserById(editorId, {
-    password,
-  });
-  expect(updated.error).toBeNull();
-  const signedIn = await anon().auth.signInWithPassword({
+  // Makine: üye olarak ayrı bir giriş (panel oturumundan bağımsız bir Auth oturumu). Testte
+  // parolaya dokunulmaz (parola değişimi panel oturumunu da kapatır): giriş e-postasındaki
+  // özetin aynısı yönetici API'sinden alınır ve `pnpm worker:login`'in yaptığı gibi doğrulanır.
+  const link = await admin().auth.admin.generateLink({
+    type: 'magiclink',
     email: EDITOR_EMAIL,
-    password,
+  });
+  expect(link.error).toBeNull();
+  const signedIn = await anon().auth.verifyOtp({
+    token_hash: link.data.properties!.hashed_token,
+    type: 'magiclink',
   });
   expect(signedIn.error).toBeNull();
   const session = signedIn.data.session!;
