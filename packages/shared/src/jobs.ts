@@ -112,6 +112,9 @@ export type JobStageDefinition = {
  * (`approve_episode_script`). `explainer.topics` ve `explainer.script` ön hazırlık işleridir;
  * diğer her `explainer.*` türü üretim işidir, yalnız `enqueue_episode_job` ile ve onaylı
  * senaryoyla açılır, son aşaması video onayıdır (bkz. `explainer.ts`).
+ * `explainer.*` aşamaları veritabanında SABİTTİR (`private.explainer_job_stages`): istemci
+ * aşama listesi veremez, tanımsız tür açılamaz. Buradaki tanım o fonksiyonla birebir aynı olmalı
+ * (explainer-model.test.ts denetler); değişiklik yeni migration + bu liste birlikte yapılır.
  */
 export const JOB_KINDS = {
   'explainer.topics': {

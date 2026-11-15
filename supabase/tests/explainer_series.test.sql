@@ -103,7 +103,8 @@ SELECT extensions.is(
     SELECT p.oid::regprocedure::text FROM pg_proc p
     WHERE p.pronamespace = 'private'::regnamespace
       AND p.proname IN (
-        'explainer_pre_approval_kinds', 'require_explainer_writer', 'assert_patch', 'sources_valid',
+        'explainer_pre_approval_kinds', 'explainer_job_stages',
+        'explainer_pre_approval_capabilities_ok', 'job_stages_explainer_rules', 'require_explainer_writer', 'assert_patch', 'sources_valid',
         'fact_notes_unsourced', 'episode_status', 'episode_has_open_job', 'episodes_guard',
         'episodes_record_version', 'episode_script_versions_guard', 'topic_suggestions_sync_series',
         'jobs_episode_gate', 'refresh_episode_status', 'jobs_sync_episode', 'create_job',
@@ -477,7 +478,7 @@ SELECT extensions.is(
       ('archive_episode', $$SELECT public.archive_episode((SELECT id FROM ids WHERE k = 'ep1'))$$),
       ('save_episode_script', $$SELECT public.save_episode_script((SELECT id FROM ids WHERE k = 'ep1'), 'viewer metni')$$),
       ('approve_episode_script', $$SELECT public.approve_episode_script((SELECT id FROM ids WHERE k = 'ep1'), 0, true)$$),
-      ('enqueue_episode_job', $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.script', '[{"key":"draft"}]'::jsonb)$$)
+      ('enqueue_episode_job', $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.script')$$)
     ) AS c (label, sql)
     WHERE pg_temp.sqlstate_of(c.sql) <> '42501'
     ORDER BY 1
@@ -795,13 +796,11 @@ SELECT extensions.is(
   'script_ready', 'overrides do not touch the script status'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.render',
-      '[{"key":"voice"},{"key":"render","requires_approval":true}]'::jsonb)$$,
+  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.render')$$,
   '42501', NULL, 'production cannot start while the script is unapproved'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep3'), 'explainer.render',
-      '[{"key":"render","requires_approval":true}]'::jsonb)$$,
+  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep3'), 'explainer.render')$$,
   '42501', NULL, 'production cannot start for an episode without a script'
 );
 SELECT extensions.throws_ok(
@@ -813,16 +812,51 @@ SELECT extensions.throws_ok(
   '23514', NULL, 'any explainer kind outside the pre-approval list needs an episode'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'clip.cut', '[{"key":"cut"}]'::jsonb)$$,
+  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'clip.cut')$$,
   '22023', NULL, 'an episode job must be an explainer kind'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_episode_job(gen_random_uuid(), 'explainer.render', '[{"key":"render","requires_approval":true}]'::jsonb)$$,
+  $$SELECT public.enqueue_episode_job(gen_random_uuid(), 'explainer.render')$$,
   'P0002', NULL, 'a job for an unknown episode is not found'
+);
+-- Tür etiketiyle kapı aşılamaz: aşamalar türün sunucudaki sabit tanımıdır, istemciden alınmaz.
+SELECT extensions.throws_ok(
+  $$SELECT public.enqueue_job('explainer', 'explainer.script',
+      '[{"key":"research"},{"key":"voice"},{"key":"render"}]'::jsonb)$$,
+  '23514', NULL, 'a pre-approval kind cannot carry production stages (voice, render)'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.enqueue_job('explainer', 'explainer.script', '[{"key":"research"},{"key":"draft"},{"key":"render"}]'::jsonb)$$,
+  '23514', NULL, 'a pre-approval kind cannot get an extra stage appended'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.enqueue_job('explainer', 'explainer.topics', '[{"key":"render"}]'::jsonb)$$,
+  '23514', NULL, 'a research job cannot be a render job in disguise'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.enqueue_job('explainer', 'explainer.script', '[{"key":"research"},{"key":"draft"}]'::jsonb,
+      '{}'::jsonb, ARRAY['render.hyperframes'])$$,
+  '23514', NULL, 'a pre-approval kind cannot require a render capability'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.script', ARRAY['voice.edge-tts'])$$,
+  '23514', NULL, 'a drafting job for an episode cannot require a voice capability'
+);
+SELECT extensions.throws_ok(
+  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.voice')$$,
+  '22023', NULL, 'an undefined explainer kind cannot be enqueued for an episode'
+);
+INSERT INTO ids
+SELECT 'jgen', (public.enqueue_job('explainer', 'explainer.script', '[{"key":"research"},{"key":"draft"}]'::jsonb)).id;
+SELECT extensions.results_eq(
+  $$SELECT s.seq::integer, s.key, s.requires_approval
+    FROM public.job_stages s WHERE s.job_id = (SELECT id FROM ids WHERE k = 'jgen') ORDER BY s.seq$$,
+  $$VALUES (1, 'research'::text, false), (2, 'draft'::text, false)$$,
+  'the generic enqueue still opens a drafting job when the stages are exactly the fixed definition'
 );
 -- Ön hazırlık işi (araştırma / taslak) onaysız bölümle açılabilir ve bölümün durumunu değiştirmez.
 INSERT INTO ids
-SELECT 'jdraft', (public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.script', '[{"key":"draft"}]'::jsonb)).id;
+SELECT 'jdraft', (public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.script')).id;
 SELECT extensions.results_eq(
   $$SELECT j.status, j.episode_id, j.episode_script_version, e.status, e.params_snapshot IS NULL
     FROM public.jobs j JOIN public.episodes e ON e.id = j.episode_id
@@ -838,11 +872,6 @@ SELECT extensions.is(
   (SELECT status FROM public.approve_episode_script((SELECT id FROM ids WHERE k = 'ep1'), 5, true)),
   'script_approved', 'approved with the gap acknowledged'
 );
-SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'ep1'), 'explainer.render',
-      '[{"key":"voice"},{"key":"render"}]'::jsonb)$$,
-  '22023', NULL, 'the final stage of a production job must require approval (video review)'
-);
 
 -- Editor üretimi başlatır.
 SELECT set_config('request.jwt.claim.sub', 'd2160000-0000-4000-8000-000000000002', true);
@@ -851,7 +880,6 @@ SELECT set_config('request.jwt.claims',
 INSERT INTO ids
 SELECT 'j1', (public.enqueue_episode_job(
   (SELECT id FROM ids WHERE k = 'ep1'), 'explainer.render',
-  '[{"key":"voice"},{"key":"render","requires_approval":true}]'::jsonb,
   ARRAY['render.hyperframes'], NULL, 3, '{"preview":true}'::jsonb
 )).id;
 SELECT extensions.results_eq(
@@ -861,6 +889,12 @@ SELECT extensions.results_eq(
   $$SELECT 'explainer'::text, 'explainer.render'::text, 'queued'::text, (SELECT id FROM ids WHERE k = 'ep1'), 5,
       true, a, ARRAY['render.hyperframes'], 'd2160000-0000-4000-8000-000000000002'::uuid FROM ws$$,
   'with an approved script the production job is queued and tied to the episode and its script version'
+);
+SELECT extensions.results_eq(
+  $$SELECT seq::integer, key, requires_approval FROM public.job_stages
+    WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') ORDER BY seq$$,
+  $$VALUES (1, 'voice'::text, false), (2, 'captions'::text, false), (3, 'visuals'::text, false), (4, 'render'::text, true)$$,
+  'the production stages come from the server: the last one is the video approval'
 );
 SELECT extensions.results_eq(
   $$SELECT params -> 'episode' ->> 'title', (params -> 'episode' ->> 'number')::integer,
@@ -928,6 +962,27 @@ SELECT extensions.throws_ok(
   '55000', NULL, 'a job cannot be re-pointed at another episode'
 );
 SELECT extensions.throws_ok(
+  $$UPDATE public.jobs SET kind = 'explainer.script' WHERE id = (SELECT id FROM ids WHERE k = 'j1')$$,
+  '55000', NULL, 'a job''s kind cannot be changed after it was opened'
+);
+SELECT extensions.throws_ok(
+  $$UPDATE public.jobs SET module = 'clip', kind = 'clip.cut' WHERE id = (SELECT id FROM ids WHERE k = 'j1')$$,
+  '55000', NULL, 'a job''s module cannot be changed after it was opened'
+);
+SELECT extensions.throws_ok(
+  $$UPDATE public.job_stages SET requires_approval = false
+    WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'render'$$,
+  '55000', NULL, 'the video approval cannot be removed from a production job'
+);
+SELECT extensions.throws_ok(
+  $$INSERT INTO public.job_stages (job_id, seq, key) SELECT id, 5, 'publish' FROM ids WHERE k = 'j1'$$,
+  '23514', NULL, 'a stage cannot be added to an explainer job'
+);
+SELECT extensions.throws_ok(
+  $$INSERT INTO public.job_stages (job_id, seq, key) SELECT id, 3, 'render' FROM ids WHERE k = 'jdraft'$$,
+  '23514', NULL, 'a render stage cannot be added to a drafting job, even by the service role'
+);
+SELECT extensions.throws_ok(
   $$UPDATE public.jobs SET episode_script_version = 1 WHERE id = (SELECT id FROM ids WHERE k = 'j1')$$,
   '55000', NULL, 'the script version a job was opened with cannot be rewritten'
 );
@@ -941,6 +996,10 @@ UPDATE public.jobs SET status = 'running', lease_expires_at = now() + interval '
 WHERE id = (SELECT id FROM ids WHERE k = 'j1');
 UPDATE public.job_stages SET status = 'running' WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'voice';
 UPDATE public.job_stages SET status = 'succeeded' WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'voice';
+UPDATE public.job_stages SET status = 'running' WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'captions';
+UPDATE public.job_stages SET status = 'succeeded' WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'captions';
+UPDATE public.job_stages SET status = 'running' WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'visuals';
+UPDATE public.job_stages SET status = 'succeeded' WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'visuals';
 UPDATE public.jobs SET current_stage = 'render' WHERE id = (SELECT id FROM ids WHERE k = 'j1');
 UPDATE public.job_stages SET status = 'running' WHERE job_id = (SELECT id FROM ids WHERE k = 'j1') AND key = 'render';
 SELECT extensions.is(
@@ -996,7 +1055,7 @@ SELECT extensions.is(
 );
 INSERT INTO ids
 SELECT 'j2', (public.enqueue_episode_job(
-  (SELECT id FROM ids WHERE k = 'single'), 'explainer.render', '[{"key":"render","requires_approval":true}]'::jsonb
+  (SELECT id FROM ids WHERE k = 'single'), 'explainer.render'
 )).id;
 SELECT extensions.results_eq(
   $$SELECT params -> 'series', params -> 'episode' -> 'number', params ->> 'visual_route', params -> 'voice',
@@ -1035,25 +1094,24 @@ SELECT extensions.throws_ok(
   '55000', NULL, 'a job frozen against an older script cannot be retried'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'single'), 'explainer.render',
-      '[{"key":"render","requires_approval":true}]'::jsonb)$$,
+  $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'single'), 'explainer.render')$$,
   '42501', NULL, 'after the change production needs a new approval'
 );
 SELECT extensions.is(
   (SELECT status FROM public.approve_episode_script((SELECT id FROM ids WHERE k = 'single'), 2)),
   'script_approved', 'the new version is approved'
 );
--- stop_at ile kısmi iş: son aşama onayı aranmaz, bitince bölüm "approved" olmaz.
+-- stop_at ile kısmi iş (yalnız ses): onaylı senaryo yine şarttır; bitince bölüm "approved" olmaz.
 INSERT INTO ids
 SELECT 'j4', (public.enqueue_episode_job(
-  (SELECT id FROM ids WHERE k = 'single'), 'explainer.render', '[{"key":"voice"},{"key":"render"}]'::jsonb, '{}', 'voice'
+  (SELECT id FROM ids WHERE k = 'single'), 'explainer.render', '{}', 'voice'
 )).id;
 RESET ROLE;
 UPDATE public.jobs SET status = 'running', lease_expires_at = now() + interval '2 minutes'
 WHERE id = (SELECT id FROM ids WHERE k = 'j4');
 UPDATE public.job_stages SET status = 'running' WHERE job_id = (SELECT id FROM ids WHERE k = 'j4') AND key = 'voice';
 UPDATE public.job_stages SET status = 'succeeded' WHERE job_id = (SELECT id FROM ids WHERE k = 'j4') AND key = 'voice';
-UPDATE public.job_stages SET status = 'skipped' WHERE job_id = (SELECT id FROM ids WHERE k = 'j4') AND key = 'render';
+UPDATE public.job_stages SET status = 'skipped' WHERE job_id = (SELECT id FROM ids WHERE k = 'j4') AND key <> 'voice';
 UPDATE public.jobs SET status = 'succeeded' WHERE id = (SELECT id FROM ids WHERE k = 'j4');
 SELECT extensions.is(
   (SELECT status FROM public.episodes WHERE id = (SELECT id FROM ids WHERE k = 'single')),
@@ -1171,7 +1229,7 @@ SELECT extensions.is(
       ('archive_episode', $$SELECT public.archive_episode((SELECT id FROM ids WHERE k = 'ep2'))$$),
       ('save_episode_script', $$SELECT public.save_episode_script((SELECT id FROM ids WHERE k = 'ep2'), 'B metni')$$),
       ('approve_episode_script', $$SELECT public.approve_episode_script((SELECT id FROM ids WHERE k = 'single'), 2, true)$$),
-      ('enqueue_episode_job', $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'single'), 'explainer.render', '[{"key":"render","requires_approval":true}]'::jsonb)$$),
+      ('enqueue_episode_job', $$SELECT public.enqueue_episode_job((SELECT id FROM ids WHERE k = 'single'), 'explainer.render')$$),
       ('retry_job', $$SELECT public.retry_job((SELECT id FROM ids WHERE k = 'j3'))$$)
     ) AS c (label, sql)
     WHERE pg_temp.sqlstate_of(c.sql) <> 'P0002'

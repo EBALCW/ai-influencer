@@ -24,7 +24,11 @@
 -- * Üretim kapısı veritabanındadır: `private.jobs_episode_gate()` anlatım modülünün üretim işini
 --   (ön hazırlık türleri dışındaki her `explainer.*`) bölümsüz ya da onaysız / onaydan sonra
 --   değişmiş senaryoyla AÇTIRMAZ. `enqueue_job()` bu yüzden anlatım üretim işi açamaz; yol
---   `enqueue_episode_job()`'dır.
+--   `enqueue_episode_job()`'dır. Üretim açıkken senaryo ve onay kilitlidir; iş, açıldığı senaryo
+--   sürümünü taşır (`jobs.episode_script_version`).
+-- * Anlatım işlerinin aşamaları SUNUCUDA tanımlıdır (`private.explainer_job_stages`): istemci tür
+--   seçer, aşama listesini seçemez. Böylece ön hazırlık türü (araştırma, taslak) ses / render
+--   aşaması ya da üretim yeteneği taşıyamaz; tanımsız `explainer.*` türü açılamaz.
 -- * Bölüm durumu (`episodes.status`) yazılmaz, hesaplanır: senaryo, onay, bölümün üretim işleri,
 --   yayın ve arşiv alanlarından `private.episode_status()` türetir. Geçersiz geçiş diye bir şey
 --   kalmaz; iş durumu değişince `jobs` trigger'ı bölümü yeniler.
@@ -59,6 +63,36 @@ IMMUTABLE
 SET search_path = ''
 AS $$
   SELECT ARRAY['explainer.topics', 'explainer.script']
+$$;
+
+-- Anlatım iş türlerinin SABİT aşama tanımı (sıra, ad, onay gereği). İstemci aşama listesi
+-- veremez: tür ne ise aşamalar odur. Tanımsız tür NULL döner ve iş açılamaz. Liste
+-- packages/shared → JOB_KINDS ile aynıdır (test denetler); yeni tür ya da aşama yeni migration'da
+-- bu fonksiyon yeniden tanımlanarak eklenir.
+CREATE FUNCTION private.explainer_job_stages(p_kind text)
+RETURNS jsonb
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $$
+  SELECT CASE p_kind
+    WHEN 'explainer.topics' THEN '[{"key":"research","requires_approval":false}]'::jsonb
+    WHEN 'explainer.script' THEN '[{"key":"research","requires_approval":false},{"key":"draft","requires_approval":false}]'::jsonb
+    WHEN 'explainer.render' THEN '[{"key":"voice","requires_approval":false},{"key":"captions","requires_approval":false},{"key":"visuals","requires_approval":false},{"key":"render","requires_approval":true}]'::jsonb
+  END
+$$;
+
+-- Ön hazırlık işi üretim yeteneği isteyemez (ses, altyazı, render, klip, yayın).
+CREATE FUNCTION private.explainer_pre_approval_capabilities_ok(p_capabilities text[])
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $$
+  SELECT NOT EXISTS (
+    SELECT 1 FROM unnest(COALESCE(p_capabilities, '{}')) AS c (capability)
+    WHERE c.capability ~ '^(voice|captions|render|clip|publish)\.'
+  )
 $$;
 
 -- Çekirdeklerin ortak yetki denetimi: çağıranın alanı; owner/editor değilse 42501.
@@ -817,7 +851,15 @@ BEGIN
     NEW.episode_script_version := NULL;
     RETURN NEW;
   END IF;
+  IF private.explainer_job_stages(NEW.kind) IS NULL THEN
+    RAISE EXCEPTION 'Tanımsız anlatım iş türü: %.', NEW.kind
+      USING ERRCODE = '23514', HINT = 'unknown_explainer_kind';
+  END IF;
   v_pre := NEW.kind = ANY (private.explainer_pre_approval_kinds());
+  IF v_pre AND NOT private.explainer_pre_approval_capabilities_ok(NEW.required_capabilities) THEN
+    RAISE EXCEPTION 'Ön hazırlık işi üretim yeteneği (ses, altyazı, render, klip, yayın) isteyemez.'
+      USING ERRCODE = '23514', HINT = 'production_capability_not_allowed';
+  END IF;
 
   IF NEW.episode_id IS NULL THEN
     NEW.episode_script_version := NULL;
@@ -881,6 +923,42 @@ BEGIN
   RETURN NULL;
 END;
 $$;
+
+-- Anlatım işinin aşamaları türün sabit tanımıyla BİREBİR aynı olmalı (sıra, ad, onay gereği, sayı).
+-- Deyim düzeyinde çalışır: aşamalar tek INSERT ile yazılır (private.create_job). Aşama tanımı
+-- sonradan değişmez (job_stages_guard), işin türü de değişmez (jobs_guard); yani ön hazırlık
+-- türüne ses / render aşaması eklenemez, üretim türünden video onayı çıkarılamaz.
+CREATE FUNCTION private.job_stages_explainer_rules()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_kind text;
+BEGIN
+  SELECT j.kind INTO v_kind
+  FROM public.jobs j
+  WHERE j.id IN (SELECT n.job_id FROM new_stages n)
+    AND j.module = 'explainer'
+    AND (
+      SELECT jsonb_agg(
+        jsonb_build_object('key', s.key, 'requires_approval', s.requires_approval) ORDER BY s.seq
+      )
+      FROM public.job_stages s WHERE s.job_id = j.id
+    ) IS DISTINCT FROM private.explainer_job_stages(j.kind)
+  LIMIT 1;
+  IF FOUND THEN
+    RAISE EXCEPTION 'Anlatım işinin aşamaları türün sabit tanımıyla aynı olmalı (%).', v_kind
+      USING ERRCODE = '23514', HINT = 'explainer_stages_fixed';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER job_stages_explainer_rules AFTER INSERT ON public.job_stages
+  REFERENCING NEW TABLE AS new_stages
+  FOR EACH STATEMENT EXECUTE FUNCTION private.job_stages_explainer_rules();
 
 CREATE TRIGGER jobs_episode_gate BEFORE INSERT OR UPDATE ON public.jobs
   FOR EACH ROW EXECUTE FUNCTION private.jobs_episode_gate();
@@ -1598,12 +1676,11 @@ $$;
 
 -- Bölüm için iş açar. Parametreler seri varsayılanı → bölümde üstüne yazılan → çağrıdaki ek
 -- parametre sırasıyla birleştirilir ve DONDURULUR (jobs.params + episodes.params_snapshot).
--- Onay kapısını private.jobs_episode_gate() uygular. Üretim işinin (stop_at verilmediyse) son
--- aşaması onay gerektirmelidir: video onaysız "approved" olamaz.
+-- Onay kapısını private.jobs_episode_gate() uygular. Aşamalar istemciden alınmaz: türün sabit
+-- tanımından gelir (private.explainer_job_stages); üretim türünün son aşaması video onayıdır.
 CREATE FUNCTION internal.enqueue_episode_job(
   p_episode_id uuid,
   p_kind text,
-  p_stages jsonb,
   p_required_capabilities text[],
   p_stop_at text,
   p_max_attempts integer,
@@ -1621,11 +1698,12 @@ DECLARE
   v_extra jsonb := COALESCE(p_params, '{}'::jsonb);
   v_params jsonb;
   v_pre boolean;
+  v_stages jsonb := private.explainer_job_stages(p_kind);
   j public.jobs;
 BEGIN
-  IF p_kind IS NULL OR split_part(p_kind, '.', 1) <> 'explainer' THEN
-    RAISE EXCEPTION 'Bölüm işi anlatım modülünün türlerinden biri olmalı (explainer.*).'
-      USING ERRCODE = '22023';
+  IF v_stages IS NULL THEN
+    RAISE EXCEPTION 'Bölüm işi anlatım modülünün tanımlı türlerinden biri olmalı.'
+      USING ERRCODE = '22023', HINT = 'unknown_explainer_kind';
   END IF;
   IF jsonb_typeof(v_extra) <> 'object' THEN
     RAISE EXCEPTION 'Ek parametreler bir JSON nesnesi olmalı.' USING ERRCODE = '22023';
@@ -1637,12 +1715,6 @@ BEGIN
     RAISE EXCEPTION 'Bölüm bulunamadı.' USING ERRCODE = 'P0002';
   END IF;
   v_pre := p_kind = ANY (private.explainer_pre_approval_kinds());
-  IF NOT v_pre AND p_stop_at IS NULL AND jsonb_typeof(p_stages) = 'array'
-    AND jsonb_array_length(p_stages) > 0
-    AND (p_stages -> -1 -> 'requires_approval') IS DISTINCT FROM 'true'::jsonb THEN
-    RAISE EXCEPTION 'Üretim işinin son aşaması onay gerektirmeli (video onayı).'
-      USING ERRCODE = '22023', HINT = 'final_approval_required';
-  END IF;
   IF e.series_id IS NOT NULL THEN
     SELECT * INTO sr FROM public.series s WHERE s.id = e.series_id;
   END IF;
@@ -1666,7 +1738,7 @@ BEGIN
   );
 
   j := private.create_job(
-    v_ws, 'explainer', p_kind, p_stages, v_params, p_required_capabilities, p_stop_at, NULL,
+    v_ws, 'explainer', p_kind, v_stages, v_params, p_required_capabilities, p_stop_at, NULL,
     p_max_attempts, NULL, e.id
   );
   IF NOT v_pre THEN
@@ -1797,7 +1869,6 @@ $$;
 CREATE FUNCTION public.enqueue_episode_job(
   p_episode_id uuid,
   p_kind text,
-  p_stages jsonb,
   p_required_capabilities text[] DEFAULT '{}',
   p_stop_at text DEFAULT NULL,
   p_max_attempts integer DEFAULT 3,
@@ -1806,7 +1877,7 @@ CREATE FUNCTION public.enqueue_episode_job(
 RETURNS public.jobs LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
 BEGIN
   RETURN internal.enqueue_episode_job(
-    p_episode_id, p_kind, p_stages, p_required_capabilities, p_stop_at, p_max_attempts, p_params
+    p_episode_id, p_kind, p_required_capabilities, p_stop_at, p_max_attempts, p_params
   );
 END;
 $$;
@@ -1892,7 +1963,8 @@ BEGIN
       )
     ) OR (
       n.nspname = 'private' AND p.proname IN (
-        'explainer_pre_approval_kinds', 'require_explainer_writer', 'assert_patch', 'sources_valid',
+        'explainer_pre_approval_kinds', 'explainer_job_stages',
+        'explainer_pre_approval_capabilities_ok', 'job_stages_explainer_rules', 'require_explainer_writer', 'assert_patch', 'sources_valid',
         'fact_notes_unsourced', 'episode_status', 'episode_has_open_job', 'episodes_guard',
         'episodes_record_version', 'episode_script_versions_guard', 'topic_suggestions_sync_series',
         'jobs_episode_gate', 'refresh_episode_status', 'jobs_sync_episode', 'create_job',

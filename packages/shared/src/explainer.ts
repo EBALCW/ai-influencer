@@ -120,10 +120,31 @@ export const SENSITIVITY_FLAG_LABELS: Record<SensitivityFlag, string> = {
  * Bunların dışındaki her `explainer.*` türü üretim işidir; veritabanı (`private.jobs_episode_gate`)
  * bölümsüz ya da onaysız senaryoyla açılmasını reddeder.
  */
+// Anlatım işlerinin aşamaları istemciden alınmaz: tür ne ise aşamalar odur
+// (`private.explainer_job_stages`; `JOB_KINDS` içindeki `explainer.*` tanımlarıyla aynıdır).
 export const EXPLAINER_PRE_APPROVAL_JOB_KINDS = [
   'explainer.topics',
   'explainer.script',
 ] as const;
+
+/**
+ * Ön hazırlık işinin isteyemeyeceği yetenek önekleri (ses, altyazı, render, klip, yayın).
+ * Veritabanı (`private.explainer_pre_approval_capabilities_ok`) aynı kuralı uygular.
+ */
+export const EXPLAINER_PRODUCTION_CAPABILITY_PREFIXES = [
+  'voice',
+  'captions',
+  'render',
+  'clip',
+  'publish',
+] as const;
+
+/** Bu yetenek bir ön hazırlık işinde istenebilir mi? */
+export function isPreApprovalCapability(capability: string): boolean {
+  return !EXPLAINER_PRODUCTION_CAPABILITY_PREFIXES.some((prefix) =>
+    capability.startsWith(`${prefix}.`),
+  );
+}
 
 /** Bu iş türü onaylı senaryo ister mi? Anlatım modülü dışındaki türler için `false`. */
 export function requiresApprovedScript(kind: string): boolean {

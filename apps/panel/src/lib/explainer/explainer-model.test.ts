@@ -10,6 +10,7 @@ import {
   EXPLAINER_KINDS,
   EXPLAINER_LIMITS,
   EXPLAINER_PRE_APPROVAL_JOB_KINDS,
+  EXPLAINER_PRODUCTION_CAPABILITY_PREFIXES,
   JOB_KINDS,
   SENSITIVITY_FLAGS,
   SERIES_STATUSES,
@@ -26,6 +27,7 @@ import {
   isEpisodeStatus,
   isEvidenceLevel,
   isExplainerKind,
+  isPreApprovalCapability,
   isVisualRoute,
   requiresApprovedScript,
   topicKey,
@@ -220,6 +222,50 @@ describe('görsel yollar ve iş türleri', () => {
     }
     expect(VISUAL_ROUTE_CAPABILITY.skia).toBe('render.skia');
     expect(VISUAL_ROUTE_CAPABILITY.stock).toBeNull();
+  });
+
+  it('explainer.* aşamaları veritabanındaki sabit tanımla birebir aynı', () => {
+    const body = lastMatch(
+      /FUNCTION private\.explainer_job_stages\(p_kind text\)([\s\S]*?)\n\$\$;/,
+    );
+    const fromSql = Object.fromEntries(
+      [
+        ...body.matchAll(
+          /WHEN '(explainer\.[a-z_]+)' THEN '(\[[^']*\])'::jsonb/g,
+        ),
+      ].map((m) => [m[1]!, JSON.parse(m[2]!) as unknown]),
+    );
+    const fromTs = Object.fromEntries(
+      (Object.keys(JOB_KINDS) as JobKind[])
+        .filter((kind) => JOB_KINDS[kind].module === 'explainer')
+        .map((kind) => [
+          kind,
+          JOB_KINDS[kind].stages.map((stage) => ({
+            key: stage.key,
+            requires_approval:
+              'requires_approval' in stage ? stage.requires_approval : false,
+          })),
+        ]),
+    );
+    expect(Object.keys(fromSql).length).toBeGreaterThan(0);
+    expect(fromSql).toEqual(fromTs);
+  });
+
+  it('ön hazırlık işi üretim yeteneği isteyemez (veritabanıyla aynı önekler)', () => {
+    const pattern = lastMatch(
+      /FUNCTION private\.explainer_pre_approval_capabilities_ok[\s\S]*?~ '\^\(([a-z|]+)\)/,
+    );
+    expect(pattern.split('|')).toEqual([
+      ...EXPLAINER_PRODUCTION_CAPABILITY_PREFIXES,
+    ]);
+    const allowed = WORKER_CAPABILITIES.filter(isPreApprovalCapability);
+    expect(allowed).toEqual(['fetch.youtube']);
+    for (const kind of EXPLAINER_PRE_APPROVAL_JOB_KINDS) {
+      for (const stage of JOB_KINDS[kind].stages) {
+        expect(['research', 'draft']).toContain(stage.key);
+        expect('requires_approval' in stage).toBe(false);
+      }
+    }
   });
 
   it('onay istemeyen türler tanımlı iş türleridir; üretim türünün son aşaması video onayıdır', () => {
