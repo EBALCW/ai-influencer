@@ -66,7 +66,7 @@ SELECT extensions.ok(
   NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname LIKE '%pairing%')
   AND NOT has_schema_privilege('anon', 'internal', 'USAGE')
   AND NOT has_schema_privilege('anon', 'private', 'USAGE')
-  AND NOT has_function_privilege('anon', 'public.register_worker(text, text, text, text)', 'EXECUTE')
+  AND NOT has_function_privilege('anon', 'public.register_worker(text, text, text, text[])', 'EXECUTE')
   AND NOT has_function_privilege('anon', 'public.claim_job(uuid, integer)', 'EXECUTE'),
   'there is no unauthenticated machine surface: no pairing functions, machine RPCs need a member session'
 );
