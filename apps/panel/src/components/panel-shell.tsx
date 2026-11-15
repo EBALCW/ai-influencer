@@ -10,7 +10,6 @@ import {
   ChevronDown,
   Clapperboard,
   Coins,
-  Command,
   Film,
   Inbox,
   LayoutDashboard,
@@ -213,16 +212,6 @@ function ShellContent({
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="help-card">
-            <span className="help-orb">
-              <Command size={16} />
-            </span>
-            <strong>Bütün üretimler tek yerde.</strong>
-            <small>Modüller arası işleri ve makineleri izleyin.</small>
-            <Link href={withInfluencer('/production', selectedInfluencer)}>
-              Üretime git <span>↗</span>
-            </Link>
-          </div>
           <div className="profile-row">
             <span className="profile-avatar">{initials(member.email)}</span>
             <span>
