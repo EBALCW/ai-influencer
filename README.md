@@ -39,20 +39,21 @@ Kurulumdan sonra kontrol için: `pnpm doctor`
 
 Kurulum (yukarıdaki agent metni veya `docs/SETUP.md`) bittikten sonra:
 
-| Komut                                | Ne yapar                                                                                        |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `pnpm dev`                           | Paneli başlatır → http://localhost:3000                                                         |
-| `pnpm check`                         | Format + lint + typecheck + unit test (PR açmadan önce çalıştır)                                |
-| `pnpm build`                         | Production build                                                                                |
-| `pnpm test:e2e`                      | Playwright uçtan uca testleri (ilk seferde `pnpm exec playwright install chromium`)             |
-| `pnpm supabase:start` / `:stop`      | Yerel Supabase (opsiyonel, Docker Desktop gerekir)                                              |
-| `pnpm env:pull`                      | Test Supabase anahtarlarını şifreli olarak `.env.local`'e çeker                                 |
-| `pnpm panel`                         | Paneli build edip başlatır, tarayıcıyı açar (günlük kullanım)                                   |
-| `pnpm codemap`                       | Güncel kod haritası: sayfalar, API, modüller, migration'lar, testler                            |
-| `pnpm worker:doctor`                 | Üretim makinesi denetimi: hangi video yolları üretilebilir, eksikler nasıl kurulur              |
-| `pnpm worker:login` / `worker:start` | Üretim makinesi programı: giriş, kuyruktan iş alıp bu bilgisayarda çalıştırma (`docs/SETUP.md`) |
-| `pnpm mcp:login`                     | Panel MCP sunucusu: Claude Code paneli araç olarak kullanır (docs/mcp-panel.md)                 |
-| `pnpm release`                       | `test` → `main` release PR'ını açar/yeniler                                                     |
+| Komut                                | Ne yapar                                                                                                 |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                           | Paneli başlatır → http://localhost:3000                                                                  |
+| `pnpm check`                         | Format + lint + typecheck + unit test (PR açmadan önce çalıştır)                                         |
+| `pnpm build`                         | Production build                                                                                         |
+| `pnpm test:e2e`                      | Playwright uçtan uca testleri (ilk seferde `pnpm exec playwright install chromium`)                      |
+| `pnpm supabase:start` / `:stop`      | Yerel Supabase (opsiyonel, Docker Desktop gerekir)                                                       |
+| `pnpm env:pull`                      | Test Supabase anahtarlarını şifreli olarak `.env.local`'e çeker                                          |
+| `pnpm panel`                         | Paneli build edip başlatır, tarayıcıyı açar (günlük kullanım)                                            |
+| `pnpm codemap`                       | Güncel kod haritası: sayfalar, API, modüller, migration'lar, testler                                     |
+| `pnpm clip:auto` / `clip:live`       | Yayıncı klipleri: biten yayından ya da yayın sürerken (Twitch) klip adayı çıkarır (`docs/clip-guide.md`) |
+| `pnpm worker:doctor`                 | Üretim makinesi denetimi: hangi video yolları üretilebilir, eksikler nasıl kurulur                       |
+| `pnpm worker:login` / `worker:start` | Üretim makinesi programı: giriş, kuyruktan iş alıp bu bilgisayarda çalıştırma (`docs/SETUP.md`)          |
+| `pnpm mcp:login`                     | Panel MCP sunucusu: Claude Code paneli araç olarak kullanır (docs/mcp-panel.md)                          |
+| `pnpm release`                       | `test` → `main` release PR'ını açar/yeniler                                                              |
 
 Geliştirme kuralları: **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** · Branch, PR ve CI/CD akışı: **[docs/WORKFLOW.md](docs/WORKFLOW.md)** (`feature → test → main`, CI geçince otomatik onay + merge)
 
@@ -120,6 +121,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅          | #58             |
 | Birleşik yorum gelen kutusu                                                                        | ✅          | #61             |
 | Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | ✅          | #173            |
+| Yayıncı klipleri: canlı izleme (`pnpm clip:live`, Twitch; komut satırı)                            | ✅          | #252            |
 | Çalışma alanları: kiracı başına yalıtım (RLS, Storage, service role), `pnpm workspace:create`      | ✅          | #181            |
 | Ana ekran (`/`): modüller, son üretimler, makine durumu; modüllere göre gruplanmış menü            | ✅          | #200            |
 | Üretim işi modeli ve anlatım veri modeli (iş, aşama, onay; seri, öneri, bölüm, senaryo sürümleri)  | ✅          | #201 #216       |
