@@ -539,6 +539,64 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"episode_script_versions": {
+                  Row: {
+                    "approved_at": string | null,"approved_by": string | null,"approved_with_gaps": boolean,"created_at": string,"created_by": string | null,"episode_id": string,"fact_notes": NonNullable<Json>,"id": string,"kind": string,"language": string,"script": Json | null,"script_text": string,"sensitivity_flags": (string)[],"sensitivity_note": string | null,"unsourced_claim_count": number,"version": number,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "approved_at"?: string | null,"approved_by"?: string | null,"approved_with_gaps"?: boolean,"created_at"?: string,"created_by"?: string | null,"episode_id": string,"fact_notes": NonNullable<Json>,"id"?: string,"kind": string,"language": string,"script"?: Json | null,"script_text": string,"sensitivity_flags": (string)[],"sensitivity_note"?: string | null,"unsourced_claim_count": number,"version": number,"workspace_id"?: string
+                  }
+                  Update: {
+                    "approved_at"?: string | null,"approved_by"?: string | null,"approved_with_gaps"?: boolean,"created_at"?: string,"created_by"?: string | null,"episode_id"?: string,"fact_notes"?: NonNullable<Json>,"id"?: string,"kind"?: string,"language"?: string,"script"?: Json | null,"script_text"?: string,"sensitivity_flags"?: (string)[],"sensitivity_note"?: string | null,"unsourced_claim_count"?: number,"version"?: number,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "episode_script_versions_episode_id_fkey"
+      columns: ["episode_id"]
+isOneToOne: false
+      referencedRelation: "episodes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "episode_script_versions_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"episodes": {
+                  Row: {
+                    "archived_at": string | null,"caption_style": Json | null,"created_at": string,"created_by": string | null,"episode_number": number | null,"fact_notes": NonNullable<Json>,"hook": string,"id": string,"kind": string,"language": string,"params": NonNullable<Json>,"params_snapshot": Json | null,"published_at": string | null,"script": Json | null,"script_approved_at": string | null,"script_approved_by": string | null,"script_approved_version": number | null,"script_approved_with_gaps": boolean,"script_text": string,"script_version": number,"sensitivity_flags": (string)[],"sensitivity_note": string | null,"series_id": string | null,"status": string,"style_key": string | null,"suggestion_id": string | null,"summary": string,"title": string,"title_key": string | null,"unsourced_claim_count": number,"updated_at": string,"visual_idea": string,"visual_route": string | null,"voice_name": string | null,"voice_provider": string | null,"voice_rate": string | null,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "archived_at"?: string | null,"caption_style"?: Json | null,"created_at"?: string,"created_by"?: string | null,"episode_number"?: number | null,"fact_notes"?: NonNullable<Json>,"hook"?: string,"id"?: string,"kind": string,"language"?: string,"params"?: NonNullable<Json>,"params_snapshot"?: Json | null,"published_at"?: string | null,"script"?: Json | null,"script_approved_at"?: string | null,"script_approved_by"?: string | null,"script_approved_version"?: number | null,"script_approved_with_gaps"?: boolean,"script_text"?: string,"script_version"?: number,"sensitivity_flags"?: (string)[],"sensitivity_note"?: string | null,"series_id"?: string | null,"status"?: string,"style_key"?: string | null,"suggestion_id"?: string | null,"summary"?: string,"title": string,"title_key"?: never,"unsourced_claim_count"?: number,"updated_at"?: string,"visual_idea"?: string,"visual_route"?: string | null,"voice_name"?: string | null,"voice_provider"?: string | null,"voice_rate"?: string | null,"workspace_id"?: string
+                  }
+                  Update: {
+                    "archived_at"?: string | null,"caption_style"?: Json | null,"created_at"?: string,"created_by"?: string | null,"episode_number"?: number | null,"fact_notes"?: NonNullable<Json>,"hook"?: string,"id"?: string,"kind"?: string,"language"?: string,"params"?: NonNullable<Json>,"params_snapshot"?: Json | null,"published_at"?: string | null,"script"?: Json | null,"script_approved_at"?: string | null,"script_approved_by"?: string | null,"script_approved_version"?: number | null,"script_approved_with_gaps"?: boolean,"script_text"?: string,"script_version"?: number,"sensitivity_flags"?: (string)[],"sensitivity_note"?: string | null,"series_id"?: string | null,"status"?: string,"style_key"?: string | null,"suggestion_id"?: string | null,"summary"?: string,"title"?: string,"title_key"?: never,"unsourced_claim_count"?: number,"updated_at"?: string,"visual_idea"?: string,"visual_route"?: string | null,"voice_name"?: string | null,"voice_provider"?: string | null,"voice_rate"?: string | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "episodes_series_id_fkey"
+      columns: ["series_id"]
+isOneToOne: false
+      referencedRelation: "series"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "episodes_suggestion_id_fkey"
+      columns: ["suggestion_id"]
+isOneToOne: true
+      referencedRelation: "topic_suggestions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "episodes_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"exchange_rates": {
                   Row: {
                     "base_currency": string,"created_at": string,"created_by": string | null,"currency": string,"id": string,"rate": number,"updated_at": string,"valid_on": string,"workspace_id": string
@@ -741,14 +799,14 @@ isOneToOne: false
                   ]
                 },"jobs": {
                   Row: {
-                    "attempts": number,"cancel_requested_at": string | null,"clip_source_id": string | null,"created_at": string,"created_by": string | null,"current_stage": string | null,"error": string | null,"failed_stage": string | null,"finished_at": string | null,"id": string,"kind": string,"lease_expires_at": string | null,"max_attempts": number,"module": string,"params": NonNullable<Json>,"progress": number,"required_capabilities": (string)[],"retry_of": string | null,"run_after": string,"started_at": string | null,"status": string,"stop_at": string | null,"updated_at": string,"worker_id": string | null,"workspace_id": string
+                    "attempts": number,"cancel_requested_at": string | null,"clip_source_id": string | null,"created_at": string,"created_by": string | null,"current_stage": string | null,"episode_id": string | null,"episode_script_version": number | null,"error": string | null,"failed_stage": string | null,"finished_at": string | null,"id": string,"kind": string,"lease_expires_at": string | null,"max_attempts": number,"module": string,"params": NonNullable<Json>,"progress": number,"required_capabilities": (string)[],"retry_of": string | null,"run_after": string,"started_at": string | null,"status": string,"stop_at": string | null,"updated_at": string,"worker_id": string | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attempts"?: number,"cancel_requested_at"?: string | null,"clip_source_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_stage"?: string | null,"error"?: string | null,"failed_stage"?: string | null,"finished_at"?: string | null,"id"?: string,"kind": string,"lease_expires_at"?: string | null,"max_attempts"?: number,"module": string,"params"?: NonNullable<Json>,"progress"?: number,"required_capabilities"?: (string)[],"retry_of"?: string | null,"run_after"?: string,"started_at"?: string | null,"status"?: string,"stop_at"?: string | null,"updated_at"?: string,"worker_id"?: string | null,"workspace_id"?: string
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"clip_source_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_stage"?: string | null,"episode_id"?: string | null,"episode_script_version"?: number | null,"error"?: string | null,"failed_stage"?: string | null,"finished_at"?: string | null,"id"?: string,"kind": string,"lease_expires_at"?: string | null,"max_attempts"?: number,"module": string,"params"?: NonNullable<Json>,"progress"?: number,"required_capabilities"?: (string)[],"retry_of"?: string | null,"run_after"?: string,"started_at"?: string | null,"status"?: string,"stop_at"?: string | null,"updated_at"?: string,"worker_id"?: string | null,"workspace_id"?: string
                   }
                   Update: {
-                    "attempts"?: number,"cancel_requested_at"?: string | null,"clip_source_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_stage"?: string | null,"error"?: string | null,"failed_stage"?: string | null,"finished_at"?: string | null,"id"?: string,"kind"?: string,"lease_expires_at"?: string | null,"max_attempts"?: number,"module"?: string,"params"?: NonNullable<Json>,"progress"?: number,"required_capabilities"?: (string)[],"retry_of"?: string | null,"run_after"?: string,"started_at"?: string | null,"status"?: string,"stop_at"?: string | null,"updated_at"?: string,"worker_id"?: string | null,"workspace_id"?: string
+                    "attempts"?: number,"cancel_requested_at"?: string | null,"clip_source_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"current_stage"?: string | null,"episode_id"?: string | null,"episode_script_version"?: number | null,"error"?: string | null,"failed_stage"?: string | null,"finished_at"?: string | null,"id"?: string,"kind"?: string,"lease_expires_at"?: string | null,"max_attempts"?: number,"module"?: string,"params"?: NonNullable<Json>,"progress"?: number,"required_capabilities"?: (string)[],"retry_of"?: string | null,"run_after"?: string,"started_at"?: string | null,"status"?: string,"stop_at"?: string | null,"updated_at"?: string,"worker_id"?: string | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -756,6 +814,12 @@ isOneToOne: false
       columns: ["clip_source_id"]
 isOneToOne: false
       referencedRelation: "clip_sources"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "jobs_episode_id_fkey"
+      columns: ["episode_id"]
+isOneToOne: false
+      referencedRelation: "episodes"
       referencedColumns: ["id"]
     },{
       foreignKeyName: "jobs_retry_of_fkey"
@@ -1035,6 +1099,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"series": {
+                  Row: {
+                    "caption_style": NonNullable<Json>,"created_at": string,"created_by": string | null,"default_params": NonNullable<Json>,"id": string,"kind": string | null,"language": string,"name": string,"next_episode_number": number,"status": string,"style_key": string | null,"theme": string,"updated_at": string,"visual_route": string | null,"voice_name": string | null,"voice_provider": string | null,"voice_rate": string | null,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "caption_style"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"default_params"?: NonNullable<Json>,"id"?: string,"kind"?: string | null,"language"?: string,"name": string,"next_episode_number"?: number,"status"?: string,"style_key"?: string | null,"theme"?: string,"updated_at"?: string,"visual_route"?: string | null,"voice_name"?: string | null,"voice_provider"?: string | null,"voice_rate"?: string | null,"workspace_id"?: string
+                  }
+                  Update: {
+                    "caption_style"?: NonNullable<Json>,"created_at"?: string,"created_by"?: string | null,"default_params"?: NonNullable<Json>,"id"?: string,"kind"?: string | null,"language"?: string,"name"?: string,"next_episode_number"?: number,"status"?: string,"style_key"?: string | null,"theme"?: string,"updated_at"?: string,"visual_route"?: string | null,"voice_name"?: string | null,"voice_provider"?: string | null,"voice_rate"?: string | null,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "series_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"social_accounts": {
                   Row: {
                     "created_at": string,"created_by": string | null,"external_id": string | null,"handle": string,"id": string,"influencer_id": string,"platform": Database["public"]['Enums']["social_platform"],"status": Database["public"]['Enums']["social_account_status"],"token_expires_at": string | null,"token_ref": string | null,"updated_at": string,"workspace_id": string
@@ -1101,6 +1185,64 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "team_members_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"topic_requests": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"kind": string | null,"language": string,"prompt": string,"series_id": string | null,"updated_at": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string | null,"language"?: string,"prompt": string,"series_id"?: string | null,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string | null,"language"?: string,"prompt"?: string,"series_id"?: string | null,"updated_at"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "topic_requests_series_id_fkey"
+      columns: ["series_id"]
+isOneToOne: false
+      referencedRelation: "series"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "topic_requests_workspace_id_fkey"
+      columns: ["workspace_id"]
+isOneToOne: false
+      referencedRelation: "workspaces"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"topic_suggestions": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"decided_at": string | null,"decided_by": string | null,"evidence_detail": NonNullable<Json>,"evidence_level": string,"hook": string,"id": string,"kind": string,"position": number,"rejection_reason": string | null,"request_id": string,"sensitivity_note": string | null,"series_id": string | null,"source_candidates": NonNullable<Json>,"status": string,"summary": string,"title": string,"title_key": string | null,"updated_at": string,"visual_idea": string,"workspace_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"decided_at"?: string | null,"decided_by"?: string | null,"evidence_detail"?: NonNullable<Json>,"evidence_level"?: string,"hook"?: string,"id"?: string,"kind": string,"position": number,"rejection_reason"?: string | null,"request_id": string,"sensitivity_note"?: string | null,"series_id"?: string | null,"source_candidates"?: NonNullable<Json>,"status"?: string,"summary"?: string,"title": string,"title_key"?: never,"updated_at"?: string,"visual_idea"?: string,"workspace_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"decided_at"?: string | null,"decided_by"?: string | null,"evidence_detail"?: NonNullable<Json>,"evidence_level"?: string,"hook"?: string,"id"?: string,"kind"?: string,"position"?: number,"rejection_reason"?: string | null,"request_id"?: string,"sensitivity_note"?: string | null,"series_id"?: string | null,"source_candidates"?: NonNullable<Json>,"status"?: string,"summary"?: string,"title"?: string,"title_key"?: never,"updated_at"?: string,"visual_idea"?: string,"workspace_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "topic_suggestions_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "topic_requests"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "topic_suggestions_series_id_fkey"
+      columns: ["series_id"]
+isOneToOne: false
+      referencedRelation: "series"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "topic_suggestions_workspace_id_fkey"
       columns: ["workspace_id"]
 isOneToOne: false
       referencedRelation: "workspaces"
@@ -1189,6 +1331,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -1215,9 +1359,86 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"add_topic_suggestions":
+{ Args: { "p_request_id": string,"p_suggestions": Json }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"decided_at": string | null,
+"decided_by": string | null,
+"evidence_detail": NonNullable<Json>,
+"evidence_level": string,
+"hook": string,
+"id": string,
+"kind": string,
+"position": number,
+"rejection_reason": string | null,
+"request_id": string,
+"sensitivity_note": string | null,
+"series_id": string | null,
+"source_candidates": NonNullable<Json>,
+"status": string,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"updated_at": string,
+"visual_idea": string,
+"workspace_id": string
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "topic_suggestions"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "ai_weekly_summary":
 { Args: { "p_as_of"?: string,"p_influencer_id": string }; Returns: Json
                            },
+"approve_episode_script":
+{ Args: { "p_acknowledge_fact_gaps"?: boolean,"p_episode_id": string,"p_script_version": number }; Returns: {
+              "archived_at": string | null,
+"caption_style": Json | null,
+"created_at": string,
+"created_by": string | null,
+"episode_number": number | null,
+"fact_notes": NonNullable<Json>,
+"hook": string,
+"id": string,
+"kind": string,
+"language": string,
+"params": NonNullable<Json>,
+"params_snapshot": Json | null,
+"published_at": string | null,
+"script": Json | null,
+"script_approved_at": string | null,
+"script_approved_by": string | null,
+"script_approved_version": number | null,
+"script_approved_with_gaps": boolean,
+"script_text": string,
+"script_version": number,
+"sensitivity_flags": (string)[],
+"sensitivity_note": string | null,
+"series_id": string | null,
+"status": string,
+"style_key": string | null,
+"suggestion_id": string | null,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"unsourced_claim_count": number,
+"updated_at": string,
+"visual_idea": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "episodes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "approve_job_stage":
 { Args: { "p_job_id": string,"p_stage_key": string }; Returns: {
               "attempts": number,
@@ -1226,6 +1447,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -1249,6 +1472,79 @@ isOneToOne: false
                           SetofOptions: {
         from: "*"
         to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"archive_episode":
+{ Args: { "p_archived"?: boolean,"p_episode_id": string }; Returns: {
+              "archived_at": string | null,
+"caption_style": Json | null,
+"created_at": string,
+"created_by": string | null,
+"episode_number": number | null,
+"fact_notes": NonNullable<Json>,
+"hook": string,
+"id": string,
+"kind": string,
+"language": string,
+"params": NonNullable<Json>,
+"params_snapshot": Json | null,
+"published_at": string | null,
+"script": Json | null,
+"script_approved_at": string | null,
+"script_approved_by": string | null,
+"script_approved_version": number | null,
+"script_approved_with_gaps": boolean,
+"script_text": string,
+"script_version": number,
+"sensitivity_flags": (string)[],
+"sensitivity_note": string | null,
+"series_id": string | null,
+"status": string,
+"style_key": string | null,
+"suggestion_id": string | null,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"unsourced_claim_count": number,
+"updated_at": string,
+"visual_idea": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "episodes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"archive_series":
+{ Args: { "p_archived"?: boolean,"p_series_id": string }; Returns: {
+              "caption_style": NonNullable<Json>,
+"created_at": string,
+"created_by": string | null,
+"default_params": NonNullable<Json>,
+"id": string,
+"kind": string | null,
+"language": string,
+"name": string,
+"next_episode_number": number,
+"status": string,
+"style_key": string | null,
+"theme": string,
+"updated_at": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "series"
         isOneToOne: true
         isSetofReturn: false
       } },
@@ -1376,6 +1672,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -1485,6 +1783,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -1546,6 +1846,52 @@ isOneToOne: false
               "cost_per_1000_views": number,"cost_per_video": number,"entry_count": number,"failed_cost": number,"failed_credits": number,"failed_generation_count": number,"failed_ratio": number,"generation_count": number,"missing_rate_count": number,"total": number,"video_count": number,"views": number
             }[]
                            },
+"create_episode":
+{ Args: { "p_hook"?: string,"p_kind"?: string,"p_language"?: string,"p_series_id"?: string,"p_summary"?: string,"p_title": string }; Returns: {
+              "archived_at": string | null,
+"caption_style": Json | null,
+"created_at": string,
+"created_by": string | null,
+"episode_number": number | null,
+"fact_notes": NonNullable<Json>,
+"hook": string,
+"id": string,
+"kind": string,
+"language": string,
+"params": NonNullable<Json>,
+"params_snapshot": Json | null,
+"published_at": string | null,
+"script": Json | null,
+"script_approved_at": string | null,
+"script_approved_by": string | null,
+"script_approved_version": number | null,
+"script_approved_with_gaps": boolean,
+"script_text": string,
+"script_version": number,
+"sensitivity_flags": (string)[],
+"sensitivity_note": string | null,
+"series_id": string | null,
+"status": string,
+"style_key": string | null,
+"suggestion_id": string | null,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"unsourced_claim_count": number,
+"updated_at": string,
+"visual_idea": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "episodes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "create_persona_version":
 { Args: { "p_appearance": Json,"p_audience": Json,"p_bio": string,"p_change_note"?: string,"p_hook_traits": (string)[],"p_influencer_id": string,"p_personality": Json,"p_restored_from_version"?: number,"p_sample_captions"?: (string)[],"p_tone": string }; Returns: {
               "appearance": NonNullable<Json>,
@@ -1596,6 +1942,51 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"create_series":
+{ Args: { "p_name": string,"p_settings"?: Json }; Returns: {
+              "caption_style": NonNullable<Json>,
+"created_at": string,
+"created_by": string | null,
+"default_params": NonNullable<Json>,
+"id": string,
+"kind": string | null,
+"language": string,
+"name": string,
+"next_episode_number": number,
+"status": string,
+"style_key": string | null,
+"theme": string,
+"updated_at": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "series"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"create_topic_request":
+{ Args: { "p_kind"?: string,"p_language"?: string,"p_prompt": string,"p_series_id"?: string,"p_suggestions"?: Json }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"id": string,
+"kind": string | null,
+"language": string,
+"prompt": string,
+"series_id": string | null,
+"updated_at": string,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "topic_requests"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "create_workspace_for_user":
 { Args: { "p_name": string,"p_user_id": string }; Returns: string
                            },
@@ -1621,6 +2012,42 @@ isOneToOne: false
               "account_id": string,"due_at": string,"external_id": string,"platform": Database["public"]['Enums']["social_platform"],"post_id": string,"published_at": string,"target_hours": number
             }[]
                            },
+"enqueue_episode_job":
+{ Args: { "p_episode_id": string,"p_kind": string,"p_max_attempts"?: number,"p_params"?: Json,"p_required_capabilities"?: (string)[],"p_stop_at"?: string }; Returns: {
+              "attempts": number,
+"cancel_requested_at": string | null,
+"clip_source_id": string | null,
+"created_at": string,
+"created_by": string | null,
+"current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
+"error": string | null,
+"failed_stage": string | null,
+"finished_at": string | null,
+"id": string,
+"kind": string,
+"lease_expires_at": string | null,
+"max_attempts": number,
+"module": string,
+"params": NonNullable<Json>,
+"progress": number,
+"required_capabilities": (string)[],
+"retry_of": string | null,
+"run_after": string,
+"started_at": string | null,
+"status": string,
+"stop_at": string | null,
+"updated_at": string,
+"worker_id": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "enqueue_generation":
 { Args: { "p_influencer_id": string,"p_input_asset_ids"?: (string)[],"p_mode"?: string,"p_override_budget"?: boolean,"p_params"?: Json,"p_prompt_id"?: string,"p_retry_of"?: string,"p_tool": string,"p_type": Database["public"]['Enums']["generation_type"] }; Returns: {
               "attempts": number,
@@ -1666,6 +2093,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -1703,6 +2132,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -1729,6 +2160,11 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"find_similar_topics":
+{ Args: { "p_exclude_episode_id"?: string,"p_limit"?: number,"p_title": string }; Returns: {
+              "created_at": string,"episode_number": number,"id": string,"match": string,"series_id": string,"source": string,"status": string,"title": string
+            }[]
+                           },
 "fx_rate":
 { Args: { "p_from": string,"p_on": string,"p_to": string }; Returns: number
                            },
@@ -1788,6 +2224,52 @@ isOneToOne: false
 "mark_alerts_read":
 { Args: { "p_alert_ids"?: (string)[] }; Returns: number
                            },
+"move_episode":
+{ Args: { "p_episode_id": string,"p_series_id"?: string }; Returns: {
+              "archived_at": string | null,
+"caption_style": Json | null,
+"created_at": string,
+"created_by": string | null,
+"episode_number": number | null,
+"fact_notes": NonNullable<Json>,
+"hook": string,
+"id": string,
+"kind": string,
+"language": string,
+"params": NonNullable<Json>,
+"params_snapshot": Json | null,
+"published_at": string | null,
+"script": Json | null,
+"script_approved_at": string | null,
+"script_approved_by": string | null,
+"script_approved_version": number | null,
+"script_approved_with_gaps": boolean,
+"script_text": string,
+"script_version": number,
+"sensitivity_flags": (string)[],
+"sensitivity_note": string | null,
+"series_id": string | null,
+"status": string,
+"style_key": string | null,
+"suggestion_id": string | null,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"unsourced_claim_count": number,
+"updated_at": string,
+"visual_idea": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "episodes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "oauth_connect_token":
 { Args: { "p_account_id": string,"p_expires_at": string,"p_external_id": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_token": Json,"p_user_id": string }; Returns: undefined
                            },
@@ -1809,6 +2291,52 @@ isOneToOne: false
 "oauth_state_save":
 { Args: { "p_expires_at": string,"p_hash": string,"p_influencer_id": string,"p_platform": Database["public"]['Enums']["social_platform"],"p_user_id": string,"p_verifier": string }; Returns: undefined
                            },
+"pick_topic_suggestion":
+{ Args: { "p_suggestion_id": string }; Returns: {
+              "archived_at": string | null,
+"caption_style": Json | null,
+"created_at": string,
+"created_by": string | null,
+"episode_number": number | null,
+"fact_notes": NonNullable<Json>,
+"hook": string,
+"id": string,
+"kind": string,
+"language": string,
+"params": NonNullable<Json>,
+"params_snapshot": Json | null,
+"published_at": string | null,
+"script": Json | null,
+"script_approved_at": string | null,
+"script_approved_by": string | null,
+"script_approved_version": number | null,
+"script_approved_with_gaps": boolean,
+"script_text": string,
+"script_version": number,
+"sensitivity_flags": (string)[],
+"sensitivity_note": string | null,
+"series_id": string | null,
+"status": string,
+"style_key": string | null,
+"suggestion_id": string | null,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"unsourced_claim_count": number,
+"updated_at": string,
+"visual_idea": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "episodes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "post_analytics":
 { Args: { "p_baseline_posts"?: number,"p_post_id": string }; Returns: Json
                            },
@@ -1860,6 +2388,37 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"reject_topic_suggestion":
+{ Args: { "p_reason"?: string,"p_suggestion_id": string }; Returns: {
+              "created_at": string,
+"created_by": string | null,
+"decided_at": string | null,
+"decided_by": string | null,
+"evidence_detail": NonNullable<Json>,
+"evidence_level": string,
+"hook": string,
+"id": string,
+"kind": string,
+"position": number,
+"rejection_reason": string | null,
+"request_id": string,
+"sensitivity_note": string | null,
+"series_id": string | null,
+"source_candidates": NonNullable<Json>,
+"status": string,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"updated_at": string,
+"visual_idea": string,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "topic_suggestions"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "report_progress":
 { Args: { "p_detail"?: string,"p_job_id": string,"p_lease_seconds"?: number,"p_progress"?: number,"p_worker_id": string }; Returns: {
               "attempts": number,
@@ -1868,6 +2427,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -1905,6 +2466,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -2005,6 +2568,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -2087,6 +2652,52 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"save_episode_script":
+{ Args: { "p_episode_id": string,"p_expected_version"?: number,"p_fact_notes"?: Json,"p_script"?: Json,"p_script_text": string,"p_sensitivity_flags"?: (string)[],"p_sensitivity_note"?: string }; Returns: {
+              "archived_at": string | null,
+"caption_style": Json | null,
+"created_at": string,
+"created_by": string | null,
+"episode_number": number | null,
+"fact_notes": NonNullable<Json>,
+"hook": string,
+"id": string,
+"kind": string,
+"language": string,
+"params": NonNullable<Json>,
+"params_snapshot": Json | null,
+"published_at": string | null,
+"script": Json | null,
+"script_approved_at": string | null,
+"script_approved_by": string | null,
+"script_approved_version": number | null,
+"script_approved_with_gaps": boolean,
+"script_text": string,
+"script_version": number,
+"sensitivity_flags": (string)[],
+"sensitivity_note": string | null,
+"series_id": string | null,
+"status": string,
+"style_key": string | null,
+"suggestion_id": string | null,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"unsourced_claim_count": number,
+"updated_at": string,
+"visual_idea": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "episodes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "start_stage":
 { Args: { "p_job_id": string,"p_lease_seconds"?: number,"p_stage_key": string,"p_worker_id": string }; Returns: {
               "attempts": number,
@@ -2095,6 +2706,8 @@ isOneToOne: false
 "created_at": string,
 "created_by": string | null,
 "current_stage": string | null,
+"episode_id": string | null,
+"episode_script_version": number | null,
 "error": string | null,
 "failed_stage": string | null,
 "finished_at": string | null,
@@ -2130,6 +2743,79 @@ isOneToOne: false
 "unread_alert_count":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"update_episode":
+{ Args: { "p_episode_id": string,"p_patch": Json }; Returns: {
+              "archived_at": string | null,
+"caption_style": Json | null,
+"created_at": string,
+"created_by": string | null,
+"episode_number": number | null,
+"fact_notes": NonNullable<Json>,
+"hook": string,
+"id": string,
+"kind": string,
+"language": string,
+"params": NonNullable<Json>,
+"params_snapshot": Json | null,
+"published_at": string | null,
+"script": Json | null,
+"script_approved_at": string | null,
+"script_approved_by": string | null,
+"script_approved_version": number | null,
+"script_approved_with_gaps": boolean,
+"script_text": string,
+"script_version": number,
+"sensitivity_flags": (string)[],
+"sensitivity_note": string | null,
+"series_id": string | null,
+"status": string,
+"style_key": string | null,
+"suggestion_id": string | null,
+"summary": string,
+"title": string,
+"title_key": string | null,
+"unsourced_claim_count": number,
+"updated_at": string,
+"visual_idea": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "episodes"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"update_series":
+{ Args: { "p_patch": Json,"p_series_id": string }; Returns: {
+              "caption_style": NonNullable<Json>,
+"created_at": string,
+"created_by": string | null,
+"default_params": NonNullable<Json>,
+"id": string,
+"kind": string | null,
+"language": string,
+"name": string,
+"next_episode_number": number,
+"status": string,
+"style_key": string | null,
+"theme": string,
+"updated_at": string,
+"visual_route": string | null,
+"voice_name": string | null,
+"voice_provider": string | null,
+"voice_rate": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "series"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
 "valid_analytics_settings":
 { Args: { "p_value": Json }; Returns: boolean
                            },
