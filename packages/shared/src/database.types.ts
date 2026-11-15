@@ -123,14 +123,14 @@ isOneToOne: false
                   ]
                 },"assets": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"thumbnail_path": string | null,"updated_at": string,"version_tag": string | null,"width": number | null,"workspace_id": string
+                    "bucket": string,"created_at": string,"created_by": string | null,"duration_ms": number | null,"file_size_bytes": number | null,"height": number | null,"id": string,"influencer_id": string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type": string | null,"qc_checklist": NonNullable<Json>,"qc_status": string,"storage_path": string,"tags": (string)[],"thumbnail_path": string | null,"updated_at": string,"version_tag": string | null,"width": number | null,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null,"workspace_id"?: string
+                    "bucket"?: string,"created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind": Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path": string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null,"workspace_id"?: string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null,"workspace_id"?: string
+                    "bucket"?: string,"created_at"?: string,"created_by"?: string | null,"duration_ms"?: number | null,"file_size_bytes"?: number | null,"height"?: number | null,"id"?: string,"influencer_id"?: string | null,"kind"?: Database["public"]['Enums']["asset_kind"],"mime_type"?: string | null,"qc_checklist"?: NonNullable<Json>,"qc_status"?: string,"storage_path"?: string,"tags"?: (string)[],"thumbnail_path"?: string | null,"updated_at"?: string,"version_tag"?: string | null,"width"?: number | null,"workspace_id"?: string
                   }
                   Relationships: [
                     {
@@ -1568,6 +1568,26 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"attach_job_output":
+{ Args: { "p_file_name": string,"p_job_id": string,"p_role": string,"p_stage_key"?: string,"p_worker_id": string }; Returns: {
+              "asset_id": string,
+"created_at": string,
+"created_by": string | null,
+"id": string,
+"job_id": string,
+"role": string,
+"stage_key": string | null,
+"workspace_id": string
+            }
+                          SetofOptions: {
+        from: "*"
+        to: "job_assets"
+        isOneToOne: true
+        isSetofReturn: false
+      } },
+"begin_worker_pairing":
+{ Args: { "p_name": string,"p_platform": string,"p_public_key": string,"p_started_at": string,"p_verifier": string }; Returns: Json
+                           },
 "brand_deal_revenue":
 { Args: { "p_currency": string,"p_from": string,"p_influencer_id"?: string,"p_to": string }; Returns: {
               "converted_fee": number,"currency": string,"fee": number,"id": string,"influencer_id": string,"paid_at": string
@@ -1586,6 +1606,9 @@ isOneToOne: false
                            },
 "can_write_data":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"can_write_production_object":
+{ Args: { "p_object_name": string }; Returns: boolean
                            },
 "cancel_generation":
 { Args: { "p_id": string }; Returns: {
@@ -1735,6 +1758,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"claim_worker_pairing":
+{ Args: { "p_secret": string }; Returns: Json
+                           },
 "complete_generation":
 { Args: { "p_credits"?: number,"p_file_size_bytes"?: number,"p_id": string,"p_mime_type": string,"p_storage_path": string }; Returns: {
               "attempts": number,
@@ -1811,6 +1837,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"complete_worker_pairing":
+{ Args: { "p_pairing_id": string,"p_session_id": string,"p_token_ciphertext": string,"p_user_id": string }; Returns: Json
+                           },
 "content_checklist_ready":
 { Args: { "p_checklist": Json }; Returns: boolean
                            },
@@ -2183,6 +2212,9 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "is_team_member":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_worker_session":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
 "link_content_post":

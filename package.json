@@ -35,6 +35,7 @@
     "owner:create": "pnpm --filter @ai-influencer/panel run owner:create",
     "workspace:create": "pnpm --filter @ai-influencer/panel run workspace:create",
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
+    "test:integration:worker": "node --test --test-concurrency=1 scripts/session-claim.integration.test.mjs",
     "panel": "node scripts/panel.mjs",
     "backup": "node scripts/backup.mjs",
     "backup:storage": "node scripts/backup-storage.mjs",

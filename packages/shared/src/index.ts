@@ -89,3 +89,21 @@ export {
   topicKey,
   unsourcedClaimCount,
 } from './explainer';
+export type {
+  PairingKeys,
+  PairingPlatform,
+  PairingRequest,
+} from './pairing.js';
+export {
+  PAIRING_REQUEST_TTL_SECONDS,
+  encodePairingRequest,
+  generatePairingKeys,
+  isPairingRequestFresh,
+  isPairingSecret,
+  normalizeMachineName,
+  openSealed,
+  pairingPhrase,
+  pairingVerifier,
+  parsePairingRequest,
+  sealForMachine,
+} from './pairing';

@@ -16,6 +16,7 @@ export default async function SettingsPage({
   const aiHref = `/settings/ai${query}`;
   const notificationsHref = `/settings/notifications${query}`;
   const syncHref = `/settings/sync${query}`;
+  const machinesHref = `/settings/machines${query}`;
   const { role, workspaceId } = await requireTeamMember();
   // RLS yalnız üyenin kendi alanını gösterir; id filtresi niyeti açık kılar.
   const supabase = await createSupabaseServerClient();
@@ -70,6 +71,9 @@ export default async function SettingsPage({
         </Link>
         <Link className="button" href={syncHref}>
           Senkronizasyon
+        </Link>
+        <Link className="button" href={machinesHref}>
+          Üretim makineleri
         </Link>
       </section>
       <section className="section-card section-empty-card">

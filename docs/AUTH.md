@@ -52,6 +52,7 @@ Supabase Authentication → URL Configuration bölümünde yerel panel URL'sini 
 | `src/lib/auth-api.ts`        | API route'ları için `requireApiRole('owner' \| 'editor' \| 'viewer')`, `parseJson(request, zodSchema)`, `apiError()`   |
 | `src/lib/safe-redirect.ts`   | `next` parametresini aynı origin'e indirger (open redirect koruması)                                                   |
 | `src/lib/supabase/admin.ts`  | Service role istemcisi, `server-only`. Sadece RLS'i bilerek aşmak gereken yerlerde (davet, e-posta listesi) kullanılır |
+| `src/lib/workers/`           | Üretim makinesi eşlemesi: kod biçimi, makinenin açık anahtarıyla şifreleme, oturum açma ve bağlama (`server-only`)     |
 | `src/app/auth/signout`       | Çıkış yalnız POST form. GET sadece `?error=not_allowed` ile ve kullanıcı gerçekten üye değilse oturumu kapatır (CSRF)  |
 
 Kurallar:
@@ -66,6 +67,42 @@ Kurallar:
 - `e2e/guest.spec.ts`: Oturumsuz senaryolar. Her ortamda çalışır.
 - `e2e/isolation.spec.ts`: Çalışma alanı yalıtımı (#181). İkinci alanı ve kullanıcısını kendisi açıp siler; diğer projeler bittikten sonra çalışır (ikinci alan varken oturumsuz yazımlar alan vermek zorundadır, diğer testlerin kurulumları bunu yapmaz).
 - `e2e/app.spec.ts`: Oturumlu senaryolar. Sadece **yerel** Supabase'e karşı çalışır (`pnpm supabase:start`, ardından `supabase status` değerlerini env olarak ver). Global setup ortak dev projesine asla test kullanıcısı yazmaz. CI bu testleri yerel Supabase ile her PR'da çalıştırır.
+
+## Üretim makinesi oturumu (#211)
+
+Üretim makinesi programı (`apps/worker`) bir ekip üyesinin **ayrı** Supabase Auth oturumuyla çalışır; service role anahtarı kullanıcı makinesine konmaz (`docs/adr/0004-moduler-panel.md` → Karar 3). Şema ve RPC'ler: `docs/data-model.md` → "Üretim makinesi kimliği ve eşleme".
+
+### `session_id` claim'i (doğrulandı)
+
+Makine oturumunu insan oturumundan ayıran her kural erişim token'ındaki `session_id` claim'ine dayanır (`private.current_session_id()`).
+
+- Supabase belgesi claim'i **zorunlu** sayar: "These claims are always present in Supabase JWTs and cannot be removed" listesinde `session_id` vardır ([JWT fields](https://supabase.com/docs/guides/auth/jwt-fields), okuma 2026-11-15).
+- Auth kaynağı oturumsuz token üretmez: `GenerateAccessToken` `SessionID` boşsa "Session is required to issue access token" hatası verir ve claim'i oturumun kimliğiyle doldurur ([supabase/auth `internal/tokens/service.go`](https://github.com/supabase/auth/blob/master/internal/tokens/service.go), okuma 2026-11-15).
+- CI kanıtı: `scripts/session-claim.integration.test.mjs` yerel Supabase'te gerçek kullanıcıyla giriş yapar (parola ve sunucuda açılan oturum), token'ı inceler, yenilemede kimliğin değişmediğini ve veritabanının aynı claim'i okuduğunu doğrular. `apps/panel/e2e/machines.app.spec.ts` eşlemeyle alınan token'da da aynı claim'i denetler.
+- **Dikkat:** Auth'ta "custom access token hook" açılırsa hook claim'leri yeniden yazar. Hook `session_id`'yi değiştirmemelidir; claim yoksa onay ve makine RPC'leri reddedilir (güvenli taraf), ama makine oturumu ayırt edilemez hâle gelir.
+
+### Eşleme akışı
+
+1. Makinede `pnpm worker:login`: program yerelde 256 bitlik bir **cihaz sırrı** ve X25519 anahtar çifti üretir (ikisi de yalnız bellekte) ve iki şey gösterir: **eşleme metni** (`aiw1.…`; sırrın yalnız SHA-256 özeti, açık anahtar, makinenin adı, platformu, üretim anı) ve bu metinden türeyen 8 karakterlik **kontrol kodu**. Bu adımda sunucuya hiçbir istek gitmez.
+2. Üye panelde **Ayarlar → Üretim makineleri** sayfasına metni yapıştırır. Panel makinenin adını, platformunu ve aynı kontrol kodunu gösterir; üye kodun makinedekiyle aynı olduğunu görüp onaylar (`POST /api/workers/pairings`; en az editor, aynı origin). Eşleme satırını açan tek çağrı bu oturumlu onaydır.
+3. Panel sunucusu service role ile o üye için tek kullanımlık giriş özeti üretir (`auth.admin.generateLink`, e-posta gitmez) ve hemen doğrular: yeni oturum sunucuda doğar. `complete_worker_pairing` bu oturumu **makineye teslim edilmeden önce** makine oturumu olarak kaydeder. Yenileme token'ı makinenin açık anahtarına mühürlenir (tek kullanımlık X25519 + HKDF-SHA256 + AES-256-GCM).
+4. Makine cihaz sırrını sunarak yoklar (`claim_worker_pairing`); mührü bir kez alır, özel anahtarıyla açar, işletim sistemi kasasına yazar ve oturumu yeniler.
+
+Eşleme metni üretildikten sonra 10 dakika onaylanabilir; onaylanan eşleme 5 dakika içinde teslim alınmazsa silinir ve oturumu kapatılır. Metin tek kullanımlıktır. Cihaz sırrı sunucuda saklanmaz ve hiçbir yerde loglanmaz; eşleme metni sır değildir (onu ele geçiren, sırrı bilmeden token'ı alamaz). Sınırlar oturumlu adımdadır ve kimliğe bağlıdır: üye başına 3, çalışma alanı başına 10 bekleyen eşleme. Oturumsuz hiçbir çağrı veritabanına yazmaz. Ayrıntı ve kalan risk: `docs/data-model.md` → "Sınırların tasarımı".
+
+### Tehdit modeli
+
+| Durum                                                      | Sonuç                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Makine ele geçti ya da dizüstü çalındı (kasa açılabiliyor) | Saldırgan o üyenin çalışma alanındaki veriyi **okur**, makinenin alabileceği işleri alıp ilerletir ve yalnız kirasındaki işin `productions` klasörüne dosya yazar. İş açamaz, iptal edemez, onay veremez, yayın yapamaz, içerik ya da ayar değiştiremez, ekibi göremez, panele giremez, başka alana erişemez. Vault'taki anahtarlar ve service role makinede yoktur |
+| Yetkiyi kaldırma                                           | Panel → Ayarlar → Üretim makineleri → **Yetkiyi kaldır** (owner her makineyi, editor kendisininkini). Auth oturumu silinir (yenileme token'ı ölür); süresi dolmamış erişim token'ı da artık hiçbir satır göremez; elindeki iş kuyruğa döner. Üyeyi ekipten çıkarmak da aynı sonucu verir                                                                            |
+| Eşleme metni başkasına onaylatıldı (oltalama)              | Saldırgan kendi makinesinin eşleme metnini bir üyeye onaylatırsa o üye adına bir makine oturumu alır: yukarıdaki salt okur + iş yürütme yetkisi. Panel onaydan önce makinenin adını ve kontrol kodunu gösterir; kod üyenin önündeki makinede görünenle aynı değilse onaylanmaz. Makine listede görünür ve kaldırılabilir                                            |
+| Eşleme metni ele geçti (ekran görüntüsü, sohbet)           | Metin sır taşımaz: token'ı almak için makinenin belleğindeki cihaz sırrı, açmak için özel anahtar gerekir. Metni onaylayabilen yalnız oturumu açık bir owner/editor'dür                                                                                                                                                                                             |
+| Oturumsuz istek seli                                       | Oturumsuz hiçbir çağrı satır açmaz, silmez ya da sayaç tutmaz; yanlış sırla yoklama yalnız `pending` döner. Başkasının eşlemesi etkilenmez (pgTAP: 3000 yanlış yoklama hiçbir satırı değiştirmiyor)                                                                                                                                                                 |
+| Veritabanı yedeği ya da satırları sızdı                    | Eşleme satırında cihaz sırrının yalnız özeti (256 bitlik sır özetten bulunamaz), yenileme token'ının yalnız makinenin özel anahtarıyla açılan mühürlü hâli vardır                                                                                                                                                                                                   |
+| Kötü niyetli iş parametreleri                              | `params` veridir: makine programı tür başına şemayla doğrular, kabuk komutuna katmaz, talimat olarak yorumlamaz (`apps/worker`)                                                                                                                                                                                                                                     |
+
+Kalan riskler: makine oturumu alanın verisini okuyabilir (ADR'nin kabul ettiği sınır; daha dar okuma #214/#215 ile ele alınabilir). Makine oturumu, kendi kirasındaki işin aşamalarını "bitti" diye işaretleyebilir ve içine istediği dosyayı koyabilir; bu yüzden onay kapıları ve yayın insan oturumu ister.
 
 ## Sosyal hesap OAuth geliştirmesi (#49)
 
