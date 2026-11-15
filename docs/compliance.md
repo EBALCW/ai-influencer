@@ -88,12 +88,12 @@ Video-to-video (#15, panelde `generations.mode = video_to_video`, Higgsfield mot
 
 ### Kaynak tercih sırası
 
-| Sıra | Kaynak türü (kayıt kodu)                     | Kullanım koşulu                                                                                                                                                                                              |
-| ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1    | Kendi çektiğimiz hareket referansı (`kendi`) | Varsayılan tercih. Ekipten biri hareketi telefonla çeker. Çekilen kişinin yazılı onayı ekip içinde saklanır.                                                                                                 |
-| 2    | Lisanslı/stok video (`stok`)                 | Lisans ticari kullanıma ve AI ile dönüştürmeye izin vermeli. Sponsorlu içerikte reklam kullanımı da kapsanmalı. Lisans belgesi kısıtlı depoda saklanır.                                                      |
-| 3    | Açık izinli içerik (`acik-lisans`)           | Lisans türü (ör. CC BY) ticari kullanıma ve türev esere izin vermeli. Atıf gerekiyorsa caption'a eklenir.                                                                                                    |
-| 4    | Üçüncü kişi videosu (`ucuncu-kisi`)          | Yalnızca hak sahibinden yazılı izin varsa, kısa ve dönüştürücü kullanımda, risk notuyla. İzin yoksa kullanılmaz. “Dönüştürücü kullanım” ülkeden ülkeye farklıdır; emin değilseniz kendi referansınızı çekin. |
+| Sıra | Kaynak türü (kayıt kodu)                     | Kullanım koşulu                                                                                                                                                                                                                                                                                                            |
+| ---- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | Kendi çektiğimiz hareket referansı (`kendi`) | Varsayılan tercih. Ekipten biri hareketi telefonla çeker. Çekilen kişinin yazılı onayı ekip içinde saklanır.                                                                                                                                                                                                               |
+| 2    | Lisanslı/stok video (`stok`)                 | Lisans ticari kullanıma ve AI ile dönüştürmeye izin vermeli. Sponsorlu içerikte reklam kullanımı da kapsanmalı. Lisans belgesi kısıtlı depoda saklanır.                                                                                                                                                                    |
+| 3    | Açık izinli içerik (`acik-lisans`)           | Lisans türü (ör. CC BY) ticari kullanıma ve türev esere izin vermeli. Atıf gerekiyorsa caption'a eklenir.                                                                                                                                                                                                                  |
+| 4    | Üçüncü kişi videosu (`ucuncu-kisi`)          | Yazılı izin varsa kaydedilir. Yayıncı klipleri izin beklenmeden de kullanılabilir (aşağıda “Yayıncı klipleri”): kısa, kaynak belirtilerek ve itirazda hemen kaldırılarak. Diğer üçüncü kişi videoları için yazılı izin aranır. “Dönüştürücü kullanım” ülkeden ülkeye farklıdır; emin değilseniz kendi referansınızı çekin. |
 
 ### #15 akışına eklenen “kaynak uygunluğu” adımı
 
@@ -135,7 +135,18 @@ Lisans belgeleri, izin yazışmaları ve kişisel bilgiler (izin verenin adı, e
 
 ### Yayıncı klipleri
 
-Yayıncıların YouTube videolarından kesilen klipler de bu bölümün kurallarına tabidir: kaynak türü çoğunlukla `third_party` olur ve yazılı izin şarttır. Kesim komutu (`pnpm clip:cut`) izin referansı, açık lisans adı ya da `--own` verilmeden çalışmaz; panel de izni "verildi" olmayan kaynaktan içerik kartı oluşturmaz. Yayıncının izni, yayında arkada çalan müziği kapsamaz. Akış: `docs/clip-guide.md`.
+> **Karar (ürün sahibi, 16 Kasım 2026):** Yayıncı kliplerinde yazılı izin şartı kaldırıldı. Gerekçe: yeni açılan, takipçisi olmayan hesaplara yayıncılar yanıt vermiyor; ekip riski kabul ediyor ve itirazları yayından sonra ele alıyor.
+
+Yayıncıların yayınlarından kesilen kliplerde kaynak türü çoğunlukla `third_party` olur. Kurallar:
+
+- **Atıf zorunlu:** Her klipte yayıncının adı ve kanal bağlantısı caption'da yer alır. Araç kaynağı klibin yanına kaydeder; kaynak bilinmiyorsa kesmez.
+- **İzin durumu kaydedilir:** İzin alındıysa referansı girilir; alınmadıysa "izin alınmadı" olarak kalır. Yayıncı açıkça **reddettiyse** o kaynaktan klip kullanılmaz.
+- **İtirazda hemen kaldır:** Yayıncı ya da platform kaldırma isterse klip gecikmeden kaldırılır; aşağıdaki "Telif bildirimi gelirse" adımları uygulanır. İzin belgesi olmayan klip için itiraz (counter notification) yapılmaz.
+- **Kısa ve dönüştürülmüş:** Klip kısa tutulur; dikey kadraj, altyazı ve bağlam yazısı eklenir. Yayının uzun bölümleri ya da tamamı paylaşılmaz.
+- **Müzik:** Yayında arkada çalan müzik ayrı bir haktır; müzik baskın adaylar araçta zaten elenir.
+- **Bilinen risk:** Kaynak göstermek lisans yerine geçmez. İzinsiz kliplerde telif şikâyeti, içerik kaldırma ve tekrarında hesap kısıtlaması mümkündür.
+
+Akış: `docs/clip-guide.md`.
 
 ### Hareket referansları
 
