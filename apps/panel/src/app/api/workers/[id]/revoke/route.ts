@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiError, jsonError, requireApiRole } from '@/lib/auth-api';
+import { isSameOrigin } from '@/lib/same-origin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const idSchema = z.string().uuid();
@@ -10,12 +11,14 @@ const idSchema = z.string().uuid();
  * editor yalnız kendisininkini kaldırır; makinenin oturumu biter, elindeki iş kuyruğa döner.
  */
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   try {
     const auth = await requireApiRole('editor');
     if (!auth.ok) return auth.response;
+    if (!isSameOrigin(request))
+      return jsonError('Geçersiz istek kaynağı.', 403);
     const id = idSchema.safeParse((await context.params).id);
     if (!id.success) return jsonError('Makine bulunamadı.', 404);
 

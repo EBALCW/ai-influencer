@@ -195,6 +195,19 @@ test('sahibi yetkiyi kaldırır: makinenin oturumu biter', async ({ page }) => {
   await page.goto('/settings/machines');
   const row = page.getByRole('row').filter({ hasText: MACHINE });
   await expect(row).toBeVisible();
+  // Başka bir siteden (ya da Origin'siz) gelen istek, makinenin sahibinin oturumuyla bile
+  // reddedilir (CSRF); makine yetkili kalır.
+  for (const headers of [{ origin: 'https://example.invalid' }, {}]) {
+    const forged = await page.request.post(`/api/workers/${workerId}/revoke`, {
+      headers,
+      data: {},
+    });
+    expect(forged.status()).toBe(403);
+  }
+  await page.reload();
+  await expect(
+    row.getByRole('button', { name: /makinesinin yetkisini kaldır/ }),
+  ).toBeVisible();
   page.once('dialog', (dialog) => void dialog.accept());
   const [revoked] = await Promise.all([
     page.waitForResponse((response) => response.url().includes('/revoke')),
