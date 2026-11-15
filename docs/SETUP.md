@@ -237,6 +237,67 @@ CI'da PostgreSQL 17 istemcisiyle gerçek `pg_dump` alınır, yerel demo verisi d
 
 ---
 
+## Üretim makinesi programı: `pnpm worker:start`
+
+Render, ses ve klip gibi ağır işler panelin sunucusunda değil, ekip üyesinin kendi bilgisayarında çalışır. Program kuyruktan iş alır, aşamaları bu bilgisayarda yürütür, ilerlemeyi yazar ve çıktıyı yükler. macOS ve Windows'ta aynı komutlarla çalışır; kurulum paketi ya da Windows servisi yoktur, terminalde çalışan bir kullanıcı programıdır.
+
+| Komut                  | Ne yapar                                                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `pnpm worker:login`    | Ekip üyesi olarak giriş yapar ve bu bilgisayarı makine olarak kaydeder (`--password`: parolayla; `--force`: yeniden) |
+| `pnpm worker:start`    | Kuyruğu izler ve işleri çalıştırır. `Ctrl+C` ile durur (`--exit-when-idle`: sırada iş kalmayınca çıkar; `--json`)    |
+| `pnpm worker:status`   | Giriş, kasa ve oturum durumunu gösterir (`--json`)                                                                   |
+| `pnpm worker:logout`   | Oturumu kapatır ve kasadaki kaydı siler                                                                              |
+| `pnpm worker:selftest` | İşleyicileri kuyruk ve oturum olmadan bu bilgisayarda dener                                                          |
+| `pnpm worker:doctor`   | Hangi üretim yollarının çalışabileceğini söyler (aşağıdaki bölüm)                                                    |
+
+### İlk kurulum (macOS ve Windows aynı)
+
+1. Repo kurulumu yapılmış olsun (`pnpm setup:mac` / `pnpm setup:win`) ve kökteki `.env.local` içinde `NEXT_PUBLIC_SUPABASE_URL` ile `NEXT_PUBLIC_SUPABASE_ANON_KEY` dolu olsun (`pnpm env:pull`). Program yalnız bu ikisini okur; aynı dosyadaki service role anahtarını ve diğer sırları **okumaz**. Adres `https` olmalıdır (`http` yalnız `localhost` için).
+2. `pnpm worker:selftest`: işleyicilerin bu bilgisayarda çalıştığını gösterir (internet ve giriş gerekmez).
+3. `pnpm worker:login`: e-posta adresini sorar ve panelin kullandığı giriş e-postasını gönderir. E-postadaki bağlantıya **tıklama**: bağlantıya sağ tıkla → "Bağlantı adresini kopyala" de ve terminale yapıştır (yapıştırdığın metin görünmez). E-postada 6 haneli kod varsa onu da yazabilirsin. Hesabının parolası varsa `pnpm worker:login --password`. Giriş bitince program oturumu makine olarak kaydeder; o oturum artık yalnız okur ve iş yürütür, onay veremez.
+4. `pnpm worker:start`: makine panelde **Ayarlar → Üretim makineleri** listesinde "Çevrimiçi" görünür.
+5. Uçtan uca deneme: aynı sayfada **Deneme işi gönder**. İş ikinci aşamadan sonra onay bekler; **Çıktıyı onayla** dediğinde makine son aşamayı yürütür ve iş "Hazır" olur. Makine oturumu iş açamadığı için deneme işini panelden bir owner/editor açar.
+
+İsteğe bağlı ayarlar (`.env.local` ya da ortam değişkeni): `WORKER_NAME` (panelde görünecek ad; varsayılan bilgisayarın adı), `WORKER_POLL_SECONDS` (kuyruğu yoklama aralığı, varsayılan 5).
+
+### Oturum nerede durur?
+
+Oturumun yenileme token'ı yalnız işletim sisteminin kimlik kasasında durur; repoda, `.env.local`'de ya da düz bir dosyada **durmaz**:
+
+| İşletim sistemi | Kasa                                                                           | Nereden görülür / silinir                                                                                 |
+| --------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| macOS           | Keychain (giriş anahtar zinciri), `/usr/bin/security` ile                      | Anahtar Zinciri Erişimi → `ai-influencer-worker`                                                          |
+| Windows         | Credential Manager (genel kimlik bilgisi), Windows PowerShell + `advapi32` ile | Denetim Masası → Kimlik Bilgileri Yöneticisi → Windows Kimlik Bilgileri → `ai-influencer-worker:<sunucu>` |
+| Linux           | Secret Service (`secret-tool`; GNOME Keyring / KWallet)                        | Parolalar ve Anahtarlar (Seahorse)                                                                        |
+
+Ek paket kurulmaz; program yalnız işletim sisteminin kendi araçlarını tam yoluyla ve kabuksuz çağırır, token'ı komut satırı argümanı olarak değil standart girdiden verir. **Kasa kullanılamıyorsa** (kilitli anahtar zinciri, kısıtlı PowerShell, anahtarlık servisi olmayan Linux) program oturumu saklamaz ve nedenini söyleyip durur (çıkış kodu `6`). Sır içermeyen küçük bir durum dosyası (makine kimliği, ad) ve "çalışıyor" kilidi şurada tutulur: macOS `~/Library/Application Support/ai-influencer-worker`, Windows `%LOCALAPPDATA%\ai-influencer-worker`, Linux `~/.local/state/ai-influencer-worker`.
+
+Çıkış kodları: `0` tamam · `1` hata · `2` kullanım ya da ayar hatası · `3` giriş yapılmamış · `4` oturum geçersiz ya da makinenin yetkisi kaldırılmış · `5` program zaten çalışıyor · `6` güvenli kimlik kasası yok.
+
+### Bir makinenin yetkisini kaldırma
+
+- **Panelden (kayıp ya da çalınmış bilgisayar):** Ayarlar → Üretim makineleri → **Yetkiyi kaldır**. Owner her makineyi, editor yalnız kendisininkini kaldırır. Makinenin oturumu hemen kapanır, elindeki iş kuyruğa döner; çalışan program birkaç saniye içinde "yetki kaldırılmış" diyerek durur ve kasadaki kaydı siler.
+- **Makinenin kendisinden:** `pnpm worker:logout`.
+- Aynı bilgisayarı yeniden eklemek için `pnpm worker:login` yeterlidir (aynı adla kayıt geri gelir).
+
+v1'de makine üyenin kendi oturumunu taşır: ele geçmiş bir makine, yetkisi kaldırılana kadar ele geçmiş bir üye oturumudur. Sınırları ve ertelenen sertleştirme: `docs/AUTH.md` → "Üretim makinesi oturumu".
+
+### Davranış
+
+- **Tek iş:** makine aynı anda bir iş yürütür. Kuyruk 5 saniyede bir yoklanır, 30 saniyede bir kalp atışı gönderilir; 90 saniye sessiz kalan makine panelde "Çevrimdışı" görünür.
+- **Kira:** alınan iş 120 saniyelik kirayla tutulur ve aşama sürerken uzatılır. Program çökerse ya da ağ kesilirse kira dolar, iş kuyruğa döner ve yeniden denenir (en çok `max_attempts`).
+- **İptal:** panelden iptal istenince çalışan aşama durdurulur (alt süreçler süreç ağacıyla birlikte öldürülür) ve iptal onaylanır.
+- **Durdurma:** `Ctrl+C` (Windows'ta `Ctrl+Break` de) yeni iş almayı bırakır, süren aşamayı durdurur ve işi kuyruğa bırakır. İkinci `Ctrl+C` zorla çıkar; o durumda iş kirası dolunca kuyruğa döner.
+- **Hatalar:** geçici hata (ağ, zaman aşımı, beklenmeyen hata) işi kuyruğa döndürür; kalıcı hata (geçersiz parametre, desteklenmeyen girdi) işi "Hata" yapar.
+- **İş parametreleri veridir:** tür başına şemayla doğrulanır, komut satırına katılmaz, talimat olarak yorumlanmaz. Alt süreçler kabuksuz, argüman dizisiyle, kapalı standart girdiyle, süre sınırıyla ve sırlardan arındırılmış ortamla çalışır.
+- **Kayıtlar:** konsola Türkçe, satır başına bir olay yazılır (`--json` ile satır başına bir JSON). Token, anahtar ve ev klasörü kayıtlara yazılmaz.
+
+Bu sürümde makine yalnız deneme işini (`clip.selftest`) çalıştırır; gerçek üretim işleyicileri (ses, altyazı, render, klip) kendi issue'larıyla eklenir. Makine bir iş türünü çalıştırabildiğini `kind:<tür>` yeteneğiyle bildirir; işi açan taraf bu anahtarı `required_capabilities`'e ekler.
+
+**Windows'ta doğrulanan ve doğrulanmayan:** CI'ın Windows işi birim testlerini, gerçek Credential Manager'da yaz-oku-sil testini, süreç ağacını öldürmeyi (`taskkill /T`) ve programın sahte bir sunucuya karşı başlat → iş yürüt → dur akışını çalıştırır. Gerçek bir Windows bilgisayarda elle uçtan uca deneme (giriş e-postası, gerçek `Ctrl+C`, kilitli oturumda kasa) henüz yapılmadı (#213).
+
+---
+
 ## Üretim makinesi: `pnpm worker:doctor`
 
 Video üretimi (anlatım videoları, yayıncı klipleri) panelin sunucusunda değil, ekip üyesinin kendi bilgisayarında çalışır. Bu komut makinede hangi araçların kurulu olduğunu yoklar, hangi üretim yollarının çalışabileceğini söyler ve eksikler için işletim sistemine göre kurulum komutunu yazar. **Hiçbir şey kurmaz**, yalnızca bakar. Panel geliştirmek için gerekmez; `pnpm doctor` ondan bağımsızdır.

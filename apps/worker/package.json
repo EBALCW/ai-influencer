@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "doctor": "node src/doctor.ts",
+    "start": "node src/cli.ts start",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"src/**/*.test.ts\""
   },
   "dependencies": {
-    "@ai-influencer/shared": "workspace:*"
+    "@ai-influencer/shared": "workspace:*",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "24.10.1"

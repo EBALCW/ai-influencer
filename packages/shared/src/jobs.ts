@@ -146,6 +146,16 @@ export const JOB_KINDS = {
       { key: 'render', requires_approval: true },
     ],
   },
+  // Sahte iş (#211): üretim makinesinin iş döngüsünü uçtan uca dener; gerçek render yapmaz.
+  // Klip modülünde: anlatım türlerinin aşamaları sunucuda sabittir (#216), bu türünki serbesttir.
+  'clip.selftest': {
+    module: 'clip',
+    stages: [
+      { key: 'prepare' },
+      { key: 'review', requires_approval: true },
+      { key: 'finish' },
+    ],
+  },
 } as const satisfies Record<
   string,
   { module: ModuleId; stages: readonly JobStageDefinition[] }
@@ -159,4 +169,16 @@ export function isJobKind(value: string): value is JobKind {
 /** Türün aşama anahtarları, sırasıyla. */
 export function jobStageKeys(kind: JobKind): string[] {
   return JOB_KINDS[kind].stages.map((stage) => stage.key);
+}
+
+/**
+ * Bir iş türünü çalıştırabilen makinenin bildirdiği yetenek (`kind:<tür>`). `claim_job` yalnız
+ * yeteneklere bakar; işi açan taraf bu anahtarı `required_capabilities`'e ekler ki iş, o türün
+ * işleyicisi olmayan bir makineye verilmesin.
+ */
+export function jobKindCapability(kind: JobKind): string {
+  const capability = `kind:${kind}`;
+  if (!/^[a-z0-9][a-z0-9_.:-]{0,39}$/.test(capability))
+    throw new Error(`Yetenek anahtarı çok uzun: ${capability}`);
+  return capability;
 }
