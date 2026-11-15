@@ -44,15 +44,15 @@ Supabase Authentication → URL Configuration bölümünde yerel panel URL'sini 
 
 ## Kod yapısı
 
-| Dosya                        | Görev                                                                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `src/proxy.ts`               | Her istekte oturumu yeniler; oturum yoksa sayfaları `/login?next=...`'e yönlendirir (API'ler kendi kontrolünü yapar)   |
-| `src/app/(panel)/layout.tsx` | Korumalı tüm sayfaların kapısı: `requireTeamMember()`. Yeni sayfa bu klasöre eklenir                                   |
-| `src/lib/auth.ts`            | Server Component'ler için `requireTeamMember()` / `requireOwner()` (rol + `workspaceId`)                               |
-| `src/lib/auth-api.ts`        | API route'ları için `requireApiRole('owner' \| 'editor' \| 'viewer')`, `parseJson(request, zodSchema)`, `apiError()`   |
-| `src/lib/safe-redirect.ts`   | `next` parametresini aynı origin'e indirger (open redirect koruması)                                                   |
-| `src/lib/supabase/admin.ts`  | Service role istemcisi, `server-only`. Sadece RLS'i bilerek aşmak gereken yerlerde (davet, e-posta listesi) kullanılır |
-| `src/app/auth/signout`       | Çıkış yalnız POST form. GET sadece `?error=not_allowed` ile ve kullanıcı gerçekten üye değilse oturumu kapatır (CSRF)  |
+| Dosya                        | Görev                                                                                                                                                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/proxy.ts`               | Her istekte oturumu yeniler; oturum yoksa sayfaları `/login?next=...`'e yönlendirir (API'ler kendi kontrolünü yapar)                                                                                                |
+| `src/app/(panel)/layout.tsx` | Korumalı tüm sayfaların kapısı: `requireTeamMember()`. Yeni sayfa bu klasöre eklenir                                                                                                                                |
+| `src/lib/auth.ts`            | Server Component'ler için `requireTeamMember()` / `requireOwner()` (rol + `workspaceId`)                                                                                                                            |
+| `src/lib/auth-api.ts`        | API route'ları için `requireApiRole('owner' \| 'editor' \| 'viewer')`, `parseJson(request, zodSchema)`, `apiError()`                                                                                                |
+| `src/lib/safe-redirect.ts`   | `next` parametresini aynı origin'e indirger (open redirect koruması)                                                                                                                                                |
+| `src/lib/supabase/admin.ts`  | Service role istemcisi, `server-only`. Sadece RLS'i bilerek aşmak gereken yerlerde (davet, e-posta listesi) kullanılır                                                                                              |
+| `src/app/auth/signout`       | Çıkış yalnız POST form. GET sadece `?error=not_allowed` ile ve kullanıcı gerçekten üye değilse oturumu kapatır (CSRF); bu yol yalnız geçerli oturumu kapatır (`scope: 'local'`), üyenin diğer oturumlarına dokunmaz |
 
 Kurallar:
 
@@ -108,9 +108,21 @@ Makine oturumunu insan oturumundan ayıran her kural erişim token'ındaki `sess
 - Okuma kapsamının makinenin aldığı işlerle sınırlanması.
 - Makinede fiziksel sahiplik kodu isteyen eşleme akışı (oltalamaya karşı) ve editor makineleri için owner onayı.
 - Yeni makine eklendiğinde owner'a panel bildirimi.
-- Makine oturumunun Auth uçlarındaki etkisinin sınırlanması: bugün makine oturumu üyenin bütün oturumlarını kapatabilir (panelin `/auth/signout` ucu üye sayılmayan oturumu genel kapsamla kapatır) ve Auth'ta üye adına işlem yapabilir.
+- Otomasyon oturumunun (makine, MCP) Auth uçlarındaki etkisinin sınırlanması: oturum Auth'un gözünde üyenin kendi oturumudur; token'ı elinde tutan Auth'u doğrudan çağırarak üye adına işlem yapabilir (ör. genel kapsamla çıkış). Panel yolu kapatıldı: `/auth/signout?error=not_allowed` üye sayılmayan oturumu yalnız yerel kapsamla kapatır, yani bir panel sayfasına gelen otomasyon oturumu üyenin tarayıcıdaki oturumunu artık kapatmaz (`apps/panel/e2e/machines.app.spec.ts`).
+- MCP oturumları için panel ekranı (liste, yetki kaldırma; RPC'ler hazır: `list_mcp_sessions`, `revoke_mcp_session`), viewer üyeler için salt okur MCP oturumu ve ekip düzeyinde MCP denetim tablosu (`docs/mcp-panel.md` → "Sonraya kalanlar").
 
 İlk tasarımdaki eşleme kodlu giriş güvenlik incelemesinde dört bulgu aldı (istemcinin yazdığı başlığa dayanan hız sınırı, oturumsuz yazımın yol açtığı engelleme, onaylatma yoluyla oltalama, sunucunun üye adına oturum açması). Dördü de eşleme yüzeyi bütünüyle kaldırılarak kapatıldı: oturumsuz hiçbir uç, service role ile oturum açma ve token aktarımı yoktur.
+
+## MCP oturumu (#241)
+
+Panel MCP sunucusu (`apps/mcp`, `docs/mcp-panel.md`) da bir ekip üyesinin kendi Auth oturumuyla çalışır. `pnpm mcp:login` girişten hemen sonra, token kasaya yazılmadan önce `register_mcp_session()` çağırır; oturum o andan sonra kalıcı olarak **MCP oturumu**dur (`private.worker_sessions.kind = 'mcp'`; şema: `docs/data-model.md` → "Otomasyon oturumu türleri").
+
+- Tablolarda ve genel RPC'lerde `viewer` sayılır; `team_members`'ı okuyamaz, bu yüzden panel sunucusu onu üye saymaz (API 403, sayfa çıkışa yönlenir ve yalnız o oturum kapanır).
+- Yalnız taslak RPC'lerinde üyenin gerçek rolüyle (owner/editor) çalışır: seri, konu isteği / önerisi, bölüm, senaryo kaydı, ön hazırlık işi, iptal isteği.
+- Onay veremez, üretim işi açamaz, arşivleyemez, taşıyamaz, ekip / ayar / anahtar değiştiremez, makine olamaz, makine RPC'lerini çağıramaz. "Hiçbir otomasyon oturumu onay veremez ve yayın yapamaz" kuralı pgTAP (`supabase/tests/mcp_sessions.test.sql`) ve gerçek Auth oturumlarıyla MCP entegrasyon testinde (`apps/mcp/src/integration.test.ts`) kanıtlanır.
+- Makine oturumu ile MCP oturumu birbirine dönüşemez; makine oturumunun kuralları (#211) değişmedi.
+- Sınırlamak: `pnpm mcp:logout` (o bilgisayardaki oturumu kapatır) ya da bir insan oturumundan `revoke_mcp_session()` (Auth oturumu silinir; panel ekranı #245'te). Kayıttan önceki an ve çalınan token için makine oturumundaki notlar aynen geçerlidir: MCP oturumu ele geçerse saldırgan o üyenin alanındaki veriyi okur ve **taslak** yazar; onay, üretim ve yayın kapalıdır.
+- Viewer hesabı v1'de MCP oturumu açamaz.
 
 ## Sosyal hesap OAuth geliştirmesi (#49)
 
