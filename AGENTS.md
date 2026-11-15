@@ -116,24 +116,25 @@ node scripts/doctor.mjs
 
 ## Komutlar
 
-| Komut                                                                                            | Ne yapar                                                                                               |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `pnpm doctor`                                                                                    | Ortam sağlık kontrolü                                                                                  |
-| `pnpm setup:mac` / `pnpm setup:win`                                                              | Kurulum script'leri                                                                                    |
-| `pnpm install`                                                                                   | Bağımlılıklar                                                                                          |
-| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`)                                      | Paneli build edip başlatır, tarayıcıyı açar                                                            |
-| `pnpm backup` / `pnpm backup:restore <klasör>`                                                   | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`)                                      |
-| `pnpm dev` / `pnpm build`                                                                        | Geliştirme sunucusu / production build                                                                 |
-| `pnpm check`                                                                                     | Format + lint + typecheck + unit test (PR öncesi zorunlu)                                              |
-| `pnpm test:e2e`                                                                                  | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)                                                  |
-| `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`)                               | Güncel kod haritası (aşağıya bak)                                                                      |
-| `pnpm clip:auto <adres> …` / `clip:fetch` / `clip:moments <klasör>` / `clip:cut …` / `clip:mark` | Yayından en çok izlenecek anları bul, kalite kontrolünden geçir, dikey klip kes (`docs/clip-guide.md`) |
-| `pnpm worker:doctor` (`--json`, `--require <yetenek,...>`)                                       | Üretim makinesi denetimi: üretilebilen video yolları, eksiklerin kurulumu (`docs/SETUP.md`)            |
-| `pnpm mcp:login` (`--email <adres>` \| `--google`) / `mcp:status` / `mcp:logout` / `mcp:start`   | Panel MCP sunucusu: giriş, durum, çıkış, stdio sunucusu (`docs/mcp-panel.md`)                          |
-| `pnpm env:pull`                                                                                  | Test Supabase anahtarlarını `.env.local`'e çeker                                                       |
-| `pnpm owner:create <e-posta>` / `pnpm workspace:create <e-posta>`                                | İlk owner (tek alan) / yeni çalışma alanı + owner'ı (`docs/AUTH.md`)                                   |
-| `pnpm release`                                                                                   | `test` → `main` release PR'ı                                                                           |
-| `cd supabase/functions && deno test --allow-env`                                                 | Edge Function testleri (`deno lint`, `deno check` de CI'da)                                            |
+| Komut                                                                                            | Ne yapar                                                                                                   |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `pnpm doctor`                                                                                    | Ortam sağlık kontrolü                                                                                      |
+| `pnpm setup:mac` / `pnpm setup:win`                                                              | Kurulum script'leri                                                                                        |
+| `pnpm install`                                                                                   | Bağımlılıklar                                                                                              |
+| `pnpm panel` (`--update`, `--port`, `--no-open`, `--check`)                                      | Paneli build edip başlatır, tarayıcıyı açar                                                                |
+| `pnpm backup` / `pnpm backup:restore <klasör>`                                                   | Supabase yedeği / yerel Supabase'e geri yükleme (`docs/SETUP.md`)                                          |
+| `pnpm dev` / `pnpm build`                                                                        | Geliştirme sunucusu / production build                                                                     |
+| `pnpm check`                                                                                     | Format + lint + typecheck + unit test (PR öncesi zorunlu)                                                  |
+| `pnpm test:e2e`                                                                                  | Playwright (yerel Supabase gerekir; yoksa CI'a bırak)                                                      |
+| `pnpm codemap` (`--section pages\|api\|lib\|db\|functions\|tests`)                               | Güncel kod haritası (aşağıya bak)                                                                          |
+| `pnpm clip:auto <adres> …` / `clip:fetch` / `clip:moments <klasör>` / `clip:cut …` / `clip:mark` | Yayından en çok izlenecek anları bul, kalite kontrolünden geçir, dikey klip kes (`docs/clip-guide.md`)     |
+| `pnpm worker:doctor` (`--json`, `--require <yetenek,...>`)                                       | Üretim makinesi denetimi: üretilebilen video yolları, eksiklerin kurulumu (`docs/SETUP.md`)                |
+| `pnpm worker:login` / `worker:start` / `worker:status` / `worker:logout` / `worker:selftest`     | Üretim makinesi programı: üye girişi, kuyruktan iş alma, durum, çıkış, çevrimdışı deneme (`docs/SETUP.md`) |
+| `pnpm mcp:login` (`--email <adres>` \| `--google`) / `mcp:status` / `mcp:logout` / `mcp:start`   | Panel MCP sunucusu: giriş, durum, çıkış, stdio sunucusu (`docs/mcp-panel.md`)                              |
+| `pnpm env:pull`                                                                                  | Test Supabase anahtarlarını `.env.local`'e çeker                                                           |
+| `pnpm owner:create <e-posta>` / `pnpm workspace:create <e-posta>`                                | İlk owner (tek alan) / yeni çalışma alanı + owner'ı (`docs/AUTH.md`)                                       |
+| `pnpm release`                                                                                   | `test` → `main` release PR'ı                                                                               |
+| `cd supabase/functions && deno test --allow-env`                                                 | Edge Function testleri (`deno lint`, `deno check` de CI'da)                                                |
 
 Ortam değişkeni ipucu: agent ortamında kurulum/komut takılırsa başına `CI=1 COREPACK_ENABLE_DOWNLOAD_PROMPT=0` ekle.
 
@@ -160,7 +161,7 @@ supabase/tests/*.test.sql             pgTAP (her migration'ın testi)
 supabase/functions/                   Edge Functions (Deno), ortak kod _shared/
 supabase/seed.sql                     yerel/CI demo verisi
 docs/                                 kurallar (DEVELOPMENT, WORKFLOW, data-model, AI, AUTH …)
-apps/worker/src/                      üretim makinesi programı (Node'un TS desteğiyle derlemesiz çalışır; saf mantık lib/, testler node --test)
+apps/worker/src/                      üretim makinesi programı (Node'un TS desteğiyle derlemesiz çalışır; giriş noktası cli.ts, saf mantık lib/, işleyiciler handlers/, testler node --test)
 apps/mcp/src/                         panel MCP sunucusu (araçlar tools/, kimlik auth/, saf mantık lib/; testler node --test; docs/mcp-panel.md)
 scripts/                              Node script'leri (cross-platform)
 ```

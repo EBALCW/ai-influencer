@@ -170,6 +170,77 @@ test('makine oturumu kaydolur, listede görünür ve yalnız makine işlerini ya
   }
 });
 
+test('deneme işi: panelden gönderilir, makine yürütür, onayı panel verir', async ({
+  page,
+}) => {
+  await page.goto('/settings/machines');
+  // Başka siteden ya da Origin'siz istek deneme işi açamaz (CSRF)
+  for (const headers of [{ origin: 'https://example.invalid' }, {}]) {
+    const forged = await page.request.post('/api/workers/selftest', {
+      headers,
+      data: {},
+    });
+    expect(forged.status()).toBe(403);
+  }
+  await page.getByRole('button', { name: 'Deneme işi gönder' }).click();
+  await expect(page.getByText(/Deneme işi kuyruğa alındı/)).toBeVisible();
+  const list = page.getByRole('list', { name: 'Deneme işleri' });
+  await expect(list.getByText('Sırada').first()).toBeVisible();
+
+  // Makine programının yaptığı: işi al, ilk iki aşamayı yürüt.
+  const claimed = await machine.rpc('claim_job', { p_worker_id: workerId });
+  expect(claimed.error).toBeNull();
+  const job = (claimed.data as { id: string; kind: string }[])[0]!;
+  expect(job.kind).toBe('clip.selftest');
+  let status = '';
+  for (const stage of ['prepare', 'review']) {
+    const started = await machine.rpc('start_stage', {
+      p_worker_id: workerId,
+      p_job_id: job.id,
+      p_stage_key: stage,
+    });
+    expect(started.error).toBeNull();
+    const completed = await machine.rpc('complete_stage', {
+      p_worker_id: workerId,
+      p_job_id: job.id,
+      p_stage_key: stage,
+    });
+    expect(completed.error).toBeNull();
+    status = (completed.data as { status: string }).status;
+  }
+  expect(status).toBe('awaiting_approval');
+  // Makine oturumu onay veremez
+  const refused = await machine.rpc('approve_job_stage', {
+    p_job_id: job.id,
+    p_stage_key: 'review',
+  });
+  expect(refused.error?.code).toBe('42501');
+
+  // Liste kendiliğinden yenilenir; onayı insan verir
+  await expect(list.getByText('Onay bekliyor')).toBeVisible({
+    timeout: 15_000,
+  });
+  const forgedApproval = await page.request.post(
+    `/api/workers/selftest/${job.id}/approve`,
+    { headers: { origin: 'https://example.invalid' }, data: {} },
+  );
+  expect(forgedApproval.status()).toBe(403);
+  await list.getByRole('button', { name: 'Çıktıyı onayla' }).click();
+  await expect(page.getByText(/Onaylandı\./)).toBeVisible();
+
+  const again = await machine.rpc('claim_job', { p_worker_id: workerId });
+  expect((again.data as { id: string }[])[0]?.id).toBe(job.id);
+  for (const call of ['start_stage', 'complete_stage'] as const) {
+    const result = await machine.rpc(call, {
+      p_worker_id: workerId,
+      p_job_id: job.id,
+      p_stage_key: 'finish',
+    });
+    expect(result.error).toBeNull();
+  }
+  await expect(list.getByText('Hazır')).toBeVisible({ timeout: 15_000 });
+});
+
 test('başka bir editor başkasının makinesini kaldıramaz', async ({
   browser,
   baseURL,

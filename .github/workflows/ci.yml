@@ -178,6 +178,17 @@ jobs:
           code=0
           node apps/worker/src/doctor.ts || code=$?
           if [ "$code" -ne 0 ] && [ "$code" -ne 2 ]; then exit "$code"; fi
+      # Program Docker'sız çalışmalı: işleyiciler çevrimdışı denenir (güvenli alt süreç dahil).
+      # Başlat-durdur, gerçek Windows Credential Manager ve süreç ağacı öldürme `pnpm test`
+      # içindeki apps/worker testlerinde (cli.test.ts, credential-store.test.ts, spawn.test.ts).
+      - name: Üretim makinesi programı (duman testi)
+        shell: bash
+        run: |
+          node apps/worker/src/cli.ts selftest
+          code=0
+          node apps/worker/src/cli.ts status || code=$?
+          # .env.local yok: ayar hatası (2) beklenir
+          if [ "$code" -ne 2 ]; then echo "beklenmeyen çıkış kodu: $code"; exit 1; fi
 
   secrets:
     name: Secret taraması

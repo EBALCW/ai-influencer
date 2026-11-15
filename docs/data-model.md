@@ -411,6 +411,8 @@ Migration: `20261116100000_worker_sessions.sql`. Karar: `docs/adr/0004-moduler-p
 
 **`productions` bucket'ı.** Özel, 100 MB; video, ses, görsel, JSON, düz metin ve altyazı kabul eder. Yol `<workspace_id>/<job_id>/<dosya>`. Okuma: ekip. Yazma (`can_write_production_object`): insan owner/editor alanın her işine; makine oturumu yalnız kirası kendisinde olan çalışan işe. Silme: yalnız insan owner/editor. `attach_job_output(worker_id, job_id, file_name, role, stage_key?)` yüklenen nesneyi `assets` satırı olarak kaydeder (yol sunucuda kurulur, boyut ve tür Storage kaydından okunur) ve işe bağlar. `assets.bucket = 'productions'` satırında `influencer_id` boştur ve yol alanın kimliğiyle başlar (`assets_productions_path`).
 
+**İş türü yeteneği ve deneme işi.** `claim_job` yalnız yeteneklere bakar; bir iş türünü çalıştırabilen makine `kind:<tür>` yeteneğini bildirir (`jobKindCapability()`), işi açan taraf bu anahtarı `required_capabilities`'e ekler. `clip.selftest` gerçek render yapmayan deneme işidir (`prepare` → `review` (onay) → `finish`); panelde Ayarlar → Üretim makineleri sayfasından açılır ve onaylanır (`POST /api/workers/selftest`, `/api/workers/selftest/[id]/approve`). Makine programı: `docs/SETUP.md` → "Üretim makinesi programı".
+
 ## Anlatım modülü: seri ve tekil video (#216)
 
 Migration: `20261115120000_explainer_series.sql`. Karar: `docs/adr/0004-moduler-panel.md` (Karar 1). Sabitler ve tipler: `packages/shared/src/explainer.ts` (`EPISODE_STATUSES`, `EXPLAINER_KINDS`, `VISUAL_ROUTES`, `EVIDENCE_LEVELS`, `EpisodeJobParams` …); istek şemaları `apps/panel/src/lib/explainer/schemas.ts`. Skill adımlarıyla eşleşme: `docs/explainer-guide.md` → "Panel modeli".

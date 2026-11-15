@@ -102,12 +102,13 @@ Makine oturumunu insan oturumundan ayıran her kural erişim token'ındaki `sess
 
 ### Ertelenen sertleştirme
 
-Ürün sahibinin kararıyla v1 ekibin kendi bilgisayarlarında bu modelle çalışır; aşağıdakiler ayrı bir sertleştirme işine bırakıldı:
+Ürün sahibinin kararıyla v1 ekibin kendi bilgisayarlarında bu modelle çalışır; aşağıdakiler ayrı bir sertleştirme işine bırakıldı (#245):
 
 - Makineye özel kimlik: makine sırrı + kısa ömürlü, yalnız makine RPC'lerinde geçerli token (makine hiçbir zaman üye oturumu taşımaz).
 - Okuma kapsamının makinenin aldığı işlerle sınırlanması.
 - Makinede fiziksel sahiplik kodu isteyen eşleme akışı (oltalamaya karşı) ve editor makineleri için owner onayı.
 - Yeni makine eklendiğinde owner'a panel bildirimi.
+- Makine oturumunun Auth uçlarındaki etkisinin sınırlanması: bugün makine oturumu üyenin bütün oturumlarını kapatabilir (panelin `/auth/signout` ucu üye sayılmayan oturumu genel kapsamla kapatır) ve Auth'ta üye adına işlem yapabilir.
 
 İlk tasarımdaki eşleme kodlu giriş güvenlik incelemesinde dört bulgu aldı (istemcinin yazdığı başlığa dayanan hız sınırı, oturumsuz yazımın yol açtığı engelleme, onaylatma yoluyla oltalama, sunucunun üye adına oturum açması). Dördü de eşleme yüzeyi bütünüyle kaldırılarak kapatıldı: oturumsuz hiçbir uç, service role ile oturum açma ve token aktarımı yoktur.
 

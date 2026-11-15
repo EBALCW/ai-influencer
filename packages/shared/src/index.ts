@@ -39,6 +39,7 @@ export {
   isJobStatus,
   isModuleId,
   isTerminalJobStatus,
+  jobKindCapability,
   jobStageKeys,
 } from './jobs';
 export type {

@@ -3,6 +3,7 @@ import { EmptyState } from '@/components/ui';
 import { requireTeamMember } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { RevokeMachineButton } from './revoke-machine-button';
+import { SelftestPanel } from './selftest-panel';
 
 const dateTime = new Intl.DateTimeFormat('tr-TR', {
   dateStyle: 'short',
@@ -41,6 +42,14 @@ export default async function MachinesSettingsPage() {
     .limit(100);
   if (error) throw new Error(`Makineler okunamadı: ${error.message}`);
   const machines = data ?? [];
+  const { data: selftests, error: selftestError } = await db
+    .from('jobs')
+    .select('id, status, current_stage, progress, created_at, error')
+    .eq('kind', 'clip.selftest')
+    .order('created_at', { ascending: false })
+    .limit(5);
+  if (selftestError)
+    throw new Error(`Deneme işleri okunamadı: ${selftestError.message}`);
   const now = new Date().getTime();
 
   return (
@@ -64,6 +73,25 @@ export default async function MachinesSettingsPage() {
           listede görünür. Kullanmadığın ya da kaybolan bir bilgisayarın
           yetkisini buradan kaldır: oturumu hemen kapanır.
         </p>
+      </section>
+      <section className="section-card" aria-label="Deneme işi">
+        <h2 className="text-lg font-semibold">Deneme işi</h2>
+        <p className="mt-1 text-sm text-muted">
+          Makinenin kuyruktan iş alıp yürüttüğünü görmek için gerçek render
+          yapmayan üç aşamalı bir iş gönder. İkinci aşamadan sonra iş onayını
+          bekler; onayı makine değil sen verirsin.
+        </p>
+        <SelftestPanel
+          canRun={role !== 'viewer'}
+          jobs={(selftests ?? []).map((job) => ({
+            id: job.id,
+            status: job.status,
+            currentStage: job.current_stage,
+            progress: job.progress,
+            createdAt: dateTime.format(new Date(job.created_at)),
+            error: job.error,
+          }))}
+        />
       </section>
       <section className="section-card" aria-label="Makineler">
         <h2 className="text-lg font-semibold">Makineler</h2>
