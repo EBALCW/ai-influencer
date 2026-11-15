@@ -136,13 +136,14 @@ SELECT extensions.results_eq(
 -- ── Roller: viewer ve ekip dışı ─────────────────────────────────────────────
 SET LOCAL ROLE authenticated;
 
--- Editor (insan oturumu) bir iş açar: script (onaylı) → voice → render, ffmpeg ister.
+-- Editor (insan oturumu) bir iş açar: script (onaylı) → voice → render, ffmpeg ister. Örnek iş klip
+-- modülündedir: anlatım işlerinin aşamaları sunucuda sabittir (#216, explainer_series.test.sql).
 SELECT set_config('request.jwt.claim.sub', 'd2010000-0000-4000-8000-000000000002', true);
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2010000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e550000-0000-4000-8000-0000000000e2"}', true);
 INSERT INTO ids
 SELECT 'j1', (public.enqueue_job(
-  'explainer', 'explainer.render',
+  'clip', 'clip.cut',
   '[{"key":"script","requires_approval":true},{"key":"voice"},{"key":"render"}]'::jsonb,
   '{"topic":"planör"}'::jsonb, ARRAY['ffmpeg']
 )).id;
@@ -165,32 +166,32 @@ SELECT extensions.results_eq(
 -- Yalnız hyperframes'i olan makinenin alabileceği ikinci iş.
 INSERT INTO ids
 SELECT 'jcap', (public.enqueue_job(
-  'explainer', 'explainer.render', '[{"key":"render"}]'::jsonb, '{}'::jsonb, ARRAY['hyperframes']
+  'clip', 'clip.cut', '[{"key":"render"}]'::jsonb, '{}'::jsonb, ARRAY['hyperframes']
 )).id;
 
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '{"key":"a"}'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '{"key":"a"}'::jsonb)$$,
   '22023', NULL, 'stages must be an array'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[]'::jsonb)$$,
   '22023', NULL, 'at least one stage is required'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render',
+  $$SELECT public.enqueue_job('clip', 'clip.cut',
       (SELECT jsonb_agg(jsonb_build_object('key', 's' || g)) FROM generate_series(1, 21) g))$$,
   '22023', NULL, 'at most 20 stages'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"},{"key":"a"}]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"},{"key":"a"}]'::jsonb)$$,
   '22023', NULL, 'stage keys must be unique'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a","requires_approval":"yes"}]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a","requires_approval":"yes"}]'::jsonb)$$,
   '22023', NULL, 'requires_approval must be a boolean'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"}]'::jsonb, '{}'::jsonb, '{}', 'yok')$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"}]'::jsonb, '{}'::jsonb, '{}', 'yok')$$,
   '22023', NULL, 'stop_at must name one of the stages'
 );
 SELECT extensions.throws_ok(
@@ -202,24 +203,24 @@ SELECT extensions.throws_ok(
   '23514', NULL, 'unknown module is rejected'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"Bad Key"}]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"Bad Key"}]'::jsonb)$$,
   '23514', NULL, 'stage key format is enforced'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"}]'::jsonb,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"}]'::jsonb,
       jsonb_build_object('x', repeat('a', 70000)))$$,
   '23514', NULL, 'params are bounded (64 KB)'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"}]'::jsonb, '[1]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"}]'::jsonb, '[1]'::jsonb)$$,
   '23514', NULL, 'params must be a JSON object'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"}]'::jsonb, '{}'::jsonb, ARRAY['Bad Cap'])$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"}]'::jsonb, '{}'::jsonb, ARRAY['Bad Cap'])$$,
   '23514', NULL, 'capability names are validated'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"}]'::jsonb, '{}'::jsonb, '{}', NULL, NULL, 99)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"}]'::jsonb, '{}'::jsonb, '{}', NULL, NULL, 99)$$,
   '23514', NULL, 'max_attempts is bounded'
 );
 SELECT extensions.throws_ok(
@@ -231,7 +232,7 @@ SELECT extensions.throws_ok(
   '42501', NULL, 'editor cannot write approval columns directly'
 );
 SELECT extensions.throws_ok(
-  $$INSERT INTO public.jobs (module, kind) VALUES ('explainer', 'explainer.render')$$,
+  $$INSERT INTO public.jobs (module, kind) VALUES ('clip', 'clip.cut')$$,
   '42501', NULL, 'editor cannot insert jobs directly'
 );
 SELECT extensions.throws_ok(
@@ -249,7 +250,7 @@ SELECT extensions.is(
   (SELECT count(*)::integer FROM public.job_stages), 4, 'viewer reads the stages'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"}]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"}]'::jsonb)$$,
   '42501', NULL, 'viewer cannot enqueue'
 );
 SELECT extensions.throws_ok(
@@ -261,7 +262,7 @@ SELECT extensions.throws_ok(
   '42501', NULL, 'viewer cannot register a machine'
 );
 SELECT extensions.throws_ok(
-  $$INSERT INTO public.jobs (module, kind) VALUES ('explainer', 'explainer.render')$$,
+  $$INSERT INTO public.jobs (module, kind) VALUES ('clip', 'clip.cut')$$,
   '42501', NULL, 'viewer cannot insert jobs directly'
 );
 
@@ -274,7 +275,7 @@ SELECT extensions.is(
   'a non-member sees no jobs'
 );
 SELECT extensions.throws_ok(
-  $$SELECT public.enqueue_job('explainer', 'explainer.render', '[{"key":"a"}]'::jsonb)$$,
+  $$SELECT public.enqueue_job('clip', 'clip.cut', '[{"key":"a"}]'::jsonb)$$,
   '42501', NULL, 'a non-member cannot enqueue'
 );
 
@@ -606,7 +607,7 @@ SELECT extensions.throws_ok(
 );
 SELECT extensions.throws_ok(
   $$INSERT INTO public.jobs (module, kind, status, workspace_id)
-    SELECT 'explainer', 'explainer.render', 'succeeded', a FROM ws$$,
+    SELECT 'clip', 'clip.cut', 'succeeded', a FROM ws$$,
   '55000', NULL, 'a job cannot be inserted in a non-queued state'
 );
 SELECT extensions.throws_ok(
@@ -665,7 +666,7 @@ INSERT INTO ids SELECT 'j1r', (public.retry_job((SELECT id FROM ids WHERE k = 'j
 SELECT extensions.results_eq(
   $$SELECT status, retry_of, kind, params ->> 'topic', required_capabilities, attempts::integer, current_stage
     FROM public.jobs WHERE id = (SELECT id FROM ids WHERE k = 'j1r')$$,
-  $$SELECT 'queued'::text, (SELECT id FROM ids WHERE k = 'j1'), 'explainer.render'::text, 'planör'::text,
+  $$SELECT 'queued'::text, (SELECT id FROM ids WHERE k = 'j1'), 'clip.cut'::text, 'planör'::text,
       ARRAY['ffmpeg'], 0, 'script'::text$$,
   'retry opens a NEW queued job linked with retry_of and the same frozen definition'
 );
@@ -759,7 +760,7 @@ SELECT set_config('request.jwt.claim.sub', 'd2010000-0000-4000-8000-000000000002
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2010000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e550000-0000-4000-8000-0000000000e2"}', true);
 INSERT INTO ids
-SELECT 'j5', (public.enqueue_job('explainer', 'explainer.script', '[{"key":"s","requires_approval":true},{"key":"t"}]'::jsonb)).id;
+SELECT 'j5', (public.enqueue_job('clip', 'clip.cut', '[{"key":"s","requires_approval":true},{"key":"t"}]'::jsonb)).id;
 SELECT set_config('request.jwt.claim.sub', 'd2010000-0000-4000-8000-000000000004', true);
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2010000-0000-4000-8000-000000000004","role":"authenticated","session_id":"5e550000-0000-4000-8000-0000000000a1"}', true);
@@ -787,7 +788,7 @@ SELECT extensions.throws_ok(
   '55000', NULL, 'a cancelled job can no longer be approved'
 );
 
-INSERT INTO ids SELECT 'j6', (public.enqueue_job('explainer', 'explainer.script', '[{"key":"s"},{"key":"t"}]'::jsonb)).id;
+INSERT INTO ids SELECT 'j6', (public.enqueue_job('clip', 'clip.cut', '[{"key":"s"},{"key":"t"}]'::jsonb)).id;
 SELECT set_config('request.jwt.claim.sub', 'd2010000-0000-4000-8000-000000000004', true);
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2010000-0000-4000-8000-000000000004","role":"authenticated","session_id":"5e550000-0000-4000-8000-0000000000a1"}', true);
@@ -820,7 +821,7 @@ SELECT extensions.is(
 SELECT set_config('request.jwt.claim.sub', 'd2010000-0000-4000-8000-000000000002', true);
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2010000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e550000-0000-4000-8000-0000000000e2"}', true);
-INSERT INTO ids SELECT 'j7', (public.enqueue_job('explainer', 'explainer.script', '[{"key":"s"}]'::jsonb)).id;
+INSERT INTO ids SELECT 'j7', (public.enqueue_job('clip', 'clip.cut', '[{"key":"s"}]'::jsonb)).id;
 SELECT set_config('request.jwt.claim.sub', 'd2010000-0000-4000-8000-000000000004', true);
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2010000-0000-4000-8000-000000000004","role":"authenticated","session_id":"5e550000-0000-4000-8000-0000000000a1"}', true);
@@ -845,7 +846,7 @@ SELECT extensions.is(
 SET LOCAL ROLE authenticated;
 INSERT INTO ids
 SELECT 'j2', (public.enqueue_job(
-  'explainer', 'explainer.script',
+  'clip', 'clip.cut',
   '[{"key":"research"},{"key":"script","requires_approval":true},{"key":"render"}]'::jsonb,
   '{}'::jsonb, '{}', 'script'
 )).id;
@@ -1013,7 +1014,7 @@ SELECT extensions.is(
 SELECT set_config('request.jwt.claim.sub', 'd2010000-0000-4000-8000-000000000002', true);
 SELECT set_config('request.jwt.claims',
   '{"sub":"d2010000-0000-4000-8000-000000000002","role":"authenticated","session_id":"5e550000-0000-4000-8000-0000000000e2"}', true);
-INSERT INTO ids SELECT 'ja', (public.enqueue_job('explainer', 'explainer.script', '[{"key":"s","requires_approval":true}]'::jsonb)).id;
+INSERT INTO ids SELECT 'ja', (public.enqueue_job('clip', 'clip.cut', '[{"key":"s","requires_approval":true}]'::jsonb)).id;
 
 SELECT set_config('request.jwt.claim.sub', 'e2010000-0000-4000-8000-000000000001', true);
 SELECT set_config('request.jwt.claims',

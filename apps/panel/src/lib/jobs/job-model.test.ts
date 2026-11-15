@@ -189,11 +189,14 @@ describe('iş türleri', () => {
     }
   });
 
-  it('anlatım videosunda senaryo ve final video onay kapısıdır', () => {
-    const gates = JOB_KINDS['explainer.render'].stages
+  it('anlatım videosunda işin onay kapısı final videodur (senaryo onayı bölümdedir)', () => {
+    const stages = JOB_KINDS['explainer.render'].stages;
+    const gates = stages
       .filter((stage) => 'requires_approval' in stage)
       .map((stage) => stage.key);
-    expect(gates).toEqual(['script', 'render']);
+    expect(gates).toEqual(['render']);
+    // enqueue_episode_job üretim işinin son aşamasında onay ister.
+    expect(stages.at(-1)).toEqual({ key: 'render', requires_approval: true });
   });
 
   it('park edilen modül için iş türü tanımlı değil', () => {
