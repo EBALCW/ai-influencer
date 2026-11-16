@@ -23,7 +23,9 @@ export function HashSession({ nextPath, fromLink }: HashSessionProps) {
 
   useEffect(() => {
     let cancelled = false;
-    const parsed = parseAuthHash(window.location.hash);
+    // Yalnız /auth/callback'ten dönülmüşse işlenir: başka bir sayfadan gelen `#access_token=…`
+    // ile oturum kurulmaz.
+    const parsed = fromLink ? parseAuthHash(window.location.hash) : null;
     // Token adres çubuğunda ve geçmişte kalmasın
     if (parsed)
       window.history.replaceState(
@@ -49,6 +51,14 @@ export function HashSession({ nextPath, fromLink }: HashSessionProps) {
       setState({ kind: 'working' });
       try {
         const supabase = createSupabaseBrowserClient();
+        // Açık bir oturum varken bağlantıdaki oturuma sessizce geçilmez (başkasının hesabına
+        // sokma girişimi olabilir): mevcut oturum korunur, kullanıcı panele döner.
+        const { data: existing } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (existing.session) {
+          window.location.replace(safeNextPath(nextPath));
+          return;
+        }
         const { error } = await supabase.auth.setSession({
           access_token: parsed.accessToken,
           refresh_token: parsed.refreshToken,
