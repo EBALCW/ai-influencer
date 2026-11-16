@@ -207,8 +207,14 @@ export async function loginWithBrowser(
         options: { shouldCreateUser: false, emailRedirectTo: redirectTo },
       });
       if (error) {
+        // Hız sınırı ile "kayıtlı değil" ayrı söylenir: kullanıcı beklemesi gerektiğini bilsin
+        if (error.status === 429 || error.code === 'over_email_send_rate_limit')
+          throw new LoginError(
+            'E-posta gönderim sınırı doldu (panel, MCP ve makine girişleri aynı saatlik sınırı paylaşır). ' +
+              'Yaklaşık bir saat sonra yeniden deneyin ya da --google ile girin.',
+          );
         throw new LoginError(
-          'Giriş bağlantısı gönderilemedi (e-posta kayıtlı bir ekip üyesine ait olmalı; çok sık denemeler sınırlanır).',
+          'Giriş bağlantısı gönderilemedi: e-posta kayıtlı bir ekip üyesine ait olmalı.',
         );
       }
       io.say(

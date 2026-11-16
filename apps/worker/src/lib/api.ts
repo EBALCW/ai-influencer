@@ -190,7 +190,8 @@ export function createHttp(options: HttpOptions): Http {
       });
       if (status === 429)
         throw new LoginError(
-          'Çok sık e-posta istendi. Bir dakika sonra yeniden dene.',
+          'E-posta gönderim sınırı doldu (panel, MCP ve makine girişleri aynı saatlik sınırı paylaşır). ' +
+            'Yaklaşık bir saat sonra yeniden dene; parolan varsa --password ile girebilirsin.',
         );
       if (status >= 400 && status < 500)
         throw new LoginError(
