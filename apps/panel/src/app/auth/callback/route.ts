@@ -9,7 +9,16 @@ export async function GET(request: NextRequest) {
 
   const code = request.nextUrl.searchParams.get('code');
   if (!getSupabasePublicEnv()) return redirectTo('/login?error=not_configured');
-  if (!code) return redirectTo('/login?error=not_allowed');
+  if (!code) {
+    // Davet bağlantısı oturumu adresin `#…` kısmında taşır; sunucu göremez. Tarayıcı yönlendirmede
+    // bu kısmı korur, giriş sayfası okuyup oturumu kurar (login/hash-session.tsx). "Ekip üyesi
+    // değil" demek burada yanlış olur: henüz kimin geldiği bilinmiyor.
+    const target = new URL('/login', request.nextUrl.origin);
+    target.searchParams.set('link', '1');
+    const next = request.nextUrl.searchParams.get('next');
+    if (next) target.searchParams.set('next', safeNextPath(next));
+    return NextResponse.redirect(target);
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error: exchangeError } =

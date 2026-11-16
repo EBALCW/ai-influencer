@@ -1,12 +1,13 @@
 import { getSupabasePublicEnv } from '@/lib/supabase/env';
+import { HashSession } from './hash-session';
 import { LoginForm } from './login-form';
 
 type LoginPageProps = {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; next?: string; link?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { error, next } = await searchParams;
+  const { error, next, link } = await searchParams;
   const configured = Boolean(getSupabasePublicEnv());
 
   return (
@@ -28,7 +29,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             ekle.
           </p>
         ) : (
-          <LoginForm nextPath={next} />
+          <>
+            <HashSession nextPath={next} fromLink={link === '1'} />
+            <LoginForm nextPath={next} />
+          </>
         )}
 
         <p className="mt-6 text-center text-xs leading-5 text-slate-500">

@@ -71,3 +71,22 @@ test('misafir sosyal hesap bağlantısını kaldıramaz', async ({ request }) =>
     ).status(),
   );
 });
+
+test('kodsuz dönüş bağlantısı "ekip üyesi değil" demez, yeni bağlantı ister', async ({
+  page,
+}) => {
+  await page.goto('/auth/callback');
+  await expect(page).toHaveURL(/\/login\?link=1/);
+  await expect(page.getByText(/yeni giriş bağlantısı iste/i)).toBeVisible();
+  await expect(page.getByText(/ekip üyesi değil/i)).toHaveCount(0);
+});
+
+test('süresi dolmuş davet bağlantısı açıklanır ve adres temizlenir', async ({
+  page,
+}) => {
+  await page.goto(
+    '/auth/callback#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid',
+  );
+  await expect(page.getByText(/süresi dolmuş/i)).toBeVisible();
+  await expect(page).not.toHaveURL(/error_code/);
+});
