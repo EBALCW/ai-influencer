@@ -1,6 +1,8 @@
 // Giriş (docs/AUTH.md → "Üretim makinesi oturumu"): makine, ekip üyesinin kendi girişiyle
 // oturum açar. Panelin kullandığı yöntemin aynısı: Supabase Auth giriş e-postası. Parolası olan
 // hesaplar parolayla da girebilir. Parola, bağlantı ve token ekrana ya da loga yazılmaz.
+// `--code`: e-posta istenmez; panelde (Ayarlar → Üretim makineleri → Araç girişi) üretilen tek
+// kullanımlık kod sorulur. Kod, giriş e-postasındaki bağlantının taşıdığı özetin aynısıdır.
 import type { Http, LoginProof } from './api.ts';
 import {
   CredentialStoreError,
@@ -25,7 +27,7 @@ export interface LoginOptions {
   log: Logger;
   prompter: Prompter;
   say(line: string): void;
-  method: 'email' | 'password';
+  method: 'email' | 'password' | 'code';
   signal?: AbortSignal;
 }
 
@@ -68,6 +70,12 @@ export function parseLoginInput(
   return null;
 }
 
+/** Panelde üretilen giriş kodu (yalnız özet; bağlantı ya da 6 haneli kod değil). */
+export function parseLoginCode(input: string): string | null {
+  const value = input.trim();
+  return TOKEN.test(value) ? value : null;
+}
+
 export async function login(options: LoginOptions): Promise<Session> {
   const { http, prompter, say } = options;
   const aborted = () => {
@@ -81,11 +89,32 @@ export async function login(options: LoginOptions): Promise<Session> {
       `Güvenli kimlik kasası kullanılamıyor: ${usable.reason} Oturum düz dosyaya yazılmaz; giriş başlatılmadı.`,
     );
 
+  let refreshToken: string;
+  if (options.method === 'code') {
+    // E-posta sorulmaz ve istenmez: kod hesabı kendisi belirler.
+    const tokenHash = parseLoginCode(
+      await prompter.askHidden('Giriş kodu (yapıştırınca görünmez): '),
+    );
+    aborted();
+    if (!tokenHash)
+      throw new LoginError(
+        "Bu bir giriş koduna benzemiyor. Panelde Ayarlar → Üretim makineleri → Araç girişi'nden yeni bir kod üretip yeniden dene.",
+      );
+    options.log.addSecret(tokenHash);
+    refreshToken = (
+      await http.verifyLogin({
+        kind: 'token_hash',
+        tokenHash,
+        type: 'magiclink',
+      })
+    ).refreshToken;
+    return finishLogin(options, refreshToken, aborted);
+  }
+
   const email = (await prompter.ask('E-posta: ')).trim().toLowerCase();
   aborted();
   if (!EMAIL.test(email)) throw new LoginError('E-posta adresi geçersiz.');
 
-  let refreshToken: string;
   if (options.method === 'password') {
     const password = await prompter.askHidden('Parola (yazarken görünmez): ');
     aborted();
@@ -126,11 +155,19 @@ export async function login(options: LoginOptions): Promise<Session> {
     }
     refreshToken = tokens.refreshToken;
   }
+  return finishLogin(options, refreshToken, aborted);
+}
+
+async function finishLogin(
+  options: LoginOptions,
+  refreshToken: string,
+  aborted: () => void,
+): Promise<Session> {
   aborted();
 
   options.log.addSecret(refreshToken);
   const session = createSession({
-    http,
+    http: options.http,
     store: options.store,
     account: options.account,
     log: options.log,

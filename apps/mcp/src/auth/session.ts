@@ -119,7 +119,8 @@ const NOT_LOGGED_IN = () =>
     'Panele giriş yapılmamış ya da oturum sona ermiş.',
     {
       advice:
-        'Kullanıcı repo kökünde `pnpm mcp:login` çalıştırmalı (tarayıcıda giriş yapılır). Sonra aracı yeniden dene.',
+        'Kullanıcı repo kökünde `pnpm mcp:login --code` (panelde Ayarlar → Araç girişi kodu) ya da ' +
+        '`pnpm mcp:login --email <adres>` / `--google` çalıştırmalı. Sonra aracı yeniden dene.',
     },
   );
 

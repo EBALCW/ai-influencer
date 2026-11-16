@@ -173,7 +173,7 @@ export function createHttp(options: HttpOptions): Http {
       );
     if (status >= 400 && status < 500)
       throw new LoginError(
-        'Giriş reddedildi: bilgiler yanlış ya da bağlantının süresi dolmuş.',
+        'Giriş reddedildi: bilgiler yanlış, bağlantının ya da kodun süresi dolmuş ya da kod daha önce kullanılmış.',
       );
     if (status !== 200) fail(status, json, 'Giriş yapılamadı.');
     return tokensFrom(json, issuedAtMs);
@@ -191,7 +191,8 @@ export function createHttp(options: HttpOptions): Http {
       if (status === 429)
         throw new LoginError(
           'E-posta gönderim sınırı doldu (panel, MCP ve makine girişleri aynı saatlik sınırı paylaşır). ' +
-            'Yaklaşık bir saat sonra yeniden dene; parolan varsa --password ile girebilirsin.',
+            "E-posta beklemeden girmek için panelde Ayarlar → Araç girişi'nden kod üretip `--code` ile gir " +
+            '(ya da yaklaşık bir saat sonra yeniden dene; parolan varsa --password).',
         );
       if (status >= 400 && status < 500)
         throw new LoginError(

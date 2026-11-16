@@ -241,21 +241,21 @@ CI'da PostgreSQL 17 istemcisiyle gerçek `pg_dump` alınır, yerel demo verisi d
 
 Render, ses ve klip gibi ağır işler panelin sunucusunda değil, ekip üyesinin kendi bilgisayarında çalışır. Program kuyruktan iş alır, aşamaları bu bilgisayarda yürütür, ilerlemeyi yazar ve çıktıyı yükler. macOS ve Windows'ta aynı komutlarla çalışır; kurulum paketi ya da Windows servisi yoktur, terminalde çalışan bir kullanıcı programıdır.
 
-| Komut                                    | Ne yapar                                                                                                             |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `pnpm worker:login`                      | Ekip üyesi olarak giriş yapar ve bu bilgisayarı makine olarak kaydeder (`--password`: parolayla; `--force`: yeniden) |
-| `pnpm worker:start`                      | Kuyruğu izler ve işleri çalıştırır. `Ctrl+C` ile durur (`--exit-when-idle`: sırada iş kalmayınca çıkar; `--json`)    |
-| `pnpm worker:status`                     | Giriş, kasa ve oturum durumunu gösterir (`--json`)                                                                   |
-| `pnpm worker:logout`                     | Oturumu kapatır ve kasadaki kaydı siler                                                                              |
-| `pnpm worker:selftest`                   | İşleyicileri kuyruk ve oturum olmadan bu bilgisayarda dener                                                          |
-| `pnpm worker:produce-local <girdi.json>` | Anlatım videosunu kuyruk ve oturum olmadan bu bilgisayarda üretir (`docs/explainer-guide.md` → "Panelsiz deneme")    |
-| `pnpm worker:doctor`                     | Hangi üretim yollarının çalışabileceğini söyler (aşağıdaki bölüm)                                                    |
+| Komut                                    | Ne yapar                                                                                                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm worker:login`                      | Ekip üyesi olarak giriş yapar ve bu bilgisayarı makine olarak kaydeder (`--code`: panelde üretilen kodla, e-posta beklemeden; `--password`: parolayla; `--force`: yeniden) |
+| `pnpm worker:start`                      | Kuyruğu izler ve işleri çalıştırır. `Ctrl+C` ile durur (`--exit-when-idle`: sırada iş kalmayınca çıkar; `--json`)                                                          |
+| `pnpm worker:status`                     | Giriş, kasa ve oturum durumunu gösterir (`--json`)                                                                                                                         |
+| `pnpm worker:logout`                     | Oturumu kapatır ve kasadaki kaydı siler                                                                                                                                    |
+| `pnpm worker:selftest`                   | İşleyicileri kuyruk ve oturum olmadan bu bilgisayarda dener                                                                                                                |
+| `pnpm worker:produce-local <girdi.json>` | Anlatım videosunu kuyruk ve oturum olmadan bu bilgisayarda üretir (`docs/explainer-guide.md` → "Panelsiz deneme")                                                          |
+| `pnpm worker:doctor`                     | Hangi üretim yollarının çalışabileceğini söyler (aşağıdaki bölüm)                                                                                                          |
 
 ### İlk kurulum (macOS ve Windows aynı)
 
 1. Repo kurulumu yapılmış olsun (`pnpm setup:mac` / `pnpm setup:win`) ve kökteki `.env.local` içinde `NEXT_PUBLIC_SUPABASE_URL` ile `NEXT_PUBLIC_SUPABASE_ANON_KEY` dolu olsun (`pnpm env:pull`). Program yalnız bu ikisini okur; aynı dosyadaki service role anahtarını ve diğer sırları **okumaz**. Adres `https` olmalıdır (`http` yalnız `localhost` için).
 2. `pnpm worker:selftest`: işleyicilerin bu bilgisayarda çalıştığını gösterir (internet ve giriş gerekmez).
-3. `pnpm worker:login`: e-posta adresini sorar ve panelin kullandığı giriş e-postasını gönderir. E-postadaki bağlantıya **tıklama**: bağlantıya sağ tıkla → "Bağlantı adresini kopyala" de ve terminale yapıştır (yapıştırdığın metin görünmez). E-postada 6 haneli kod varsa onu da yazabilirsin. Hesabının parolası varsa `pnpm worker:login --password`. Giriş bitince program oturumu makine olarak kaydeder; o oturum artık yalnız okur ve iş yürütür, onay veremez.
+3. `pnpm worker:login --code` (önerilen, e-posta beklemez): panelde **Ayarlar → Üretim makineleri → Araç girişi → Giriş kodu üret** ile kendi hesabın için tek kullanımlık bir kod üret, kopyala ve terminalde sorulan yere yapıştır (yapıştırdığın metin görünmez). Kodu komutun yanına argüman olarak yazma; program bunu reddeder. Kod tek kullanımlıktır ve kısa sürede geçersiz olur; kimseyle paylaşma (`docs/AUTH.md` → "Araç girişi"). E-postayla girmek istersen `pnpm worker:login`: e-posta adresini sorar ve panelin kullandığı giriş e-postasını gönderir. E-postadaki bağlantıya **tıklama**: bağlantıya sağ tıkla → "Bağlantı adresini kopyala" de ve terminale yapıştır (yapıştırdığın metin görünmez). E-postada 6 haneli kod varsa onu da yazabilirsin. Hesabının parolası varsa `pnpm worker:login --password`. Giriş bitince program oturumu makine olarak kaydeder; o oturum artık yalnız okur ve iş yürütür, onay veremez.
 4. `pnpm worker:start`: makine panelde **Ayarlar → Üretim makineleri** listesinde "Çevrimiçi" görünür.
 5. Uçtan uca deneme: aynı sayfada **Deneme işi gönder**. İş ikinci aşamadan sonra onay bekler; **Çıktıyı onayla** dediğinde makine son aşamayı yürütür ve iş "Hazır" olur. Makine oturumu iş açamadığı için deneme işini panelden bir owner/editor açar.
 
