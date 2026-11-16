@@ -1,0 +1,22 @@
+Planör Nasıl Uçar? (3D, stüdyo) — çekim listesi (Türkçe seslendirme zamanları, 1:44,9)
+zaman        çekim  karede ne var
+0:00-0:05    s01    Kanca. Noktalı dünya küresi döner, Arjantin'de atan işaret; etiket: 3.009 km, tek uçuş, 2003
+0:05-0:11    s02    Stüdyoda süzülen planör, yavaş tur; etiket: planör, motorsuz uçak
+0:11-0:14    s03a   Benzetme: giden araba, camdan uzanan el, elin çevresinden akan hava
+0:14-0:18    s03b   Ele yakın plan: avuç yukarı eğilir, hava arkada aşağı döner, yukarı ok: kaldırma
+0:18-0:24    s04    Kanat kesilir, kesit görünür; akım çizgileri aşağı çevrilir; oklar: kaldırma / aşağı çevrilen hava
+0:24-0:30    s05    Eğimli yol üstünde hızlanan planör; aşağı ok: yükseklik azalır; ileri ok: hız
+0:30-0:37    s06a   Karşılaştırma pistleri: 1 km yükseklikten planör 45 km'lik pistin sonuna süzülür
+0:37-0:41    s06b   Aynı pistler, öbür açı: yolcu uçağı 16 km'de yere değer; iki etiket yan yana
+0:41-0:46    s07    Alttan planör, güçlü ışık kaması, yükselen sıcak parçacıklar
+0:46-0:52    s08    Termik: ısınan zemin lekesi, yükselen ışıklı sütun, tepesinde bulut
+0:52-0:57    s09    Planör sütunun içinde sarmal çizerek tırmanır, arkasında iz
+0:57-1:01    s10    Variometre kadranı: ibre aşağıdan yukarıya döner
+1:01-1:07    s11    Yamaç kesiti: rüzgâr çizgileri yamaçtan yukarı döner, planör sırt boyunca uçar
+1:07-1:14    s12a   Dağın ardında dalgalanan akım çizgileri, mercek bulutu, dalgada yükselen planör
+1:14-1:17    s12b   İki sütun: yolcu uçağı yaklaşık 11 km, planör 22 km üzeri (Perlan 2, 2018)
+1:17-1:24    s13a   Kanat ucuna yakın plan: geriye uzanan sarmal girdap
+1:24-1:27    s13b   Alanı eşit iki kanat: kısa geniş (büyük girdap), uzun ince (küçük girdap)
+1:27-1:31    s14a   Sönük sütun, alçalan planör, aşağı ok: yükselen hava yok
+1:31-1:36    s14b   Yukarıdan: ulaşılabilen alan çemberi, içinde iniş pisti, planörden piste süzülme çizgisi
+1:36-1:45    s15    Kapanış: sıcak ışıkta planör, rüzgâr parçacıkları, başlık ve "şematiktir" notu

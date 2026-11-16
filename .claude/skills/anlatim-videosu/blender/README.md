@@ -12,11 +12,14 @@ kısımdır. Çalışan örnekler: `../ornek/tham-luang-3d/` (v1) ve `../ornek/t
 
 ## Dosyalar
 
-| Dosya            | Ne işe yarar                                                                |
-| ---------------- | --------------------------------------------------------------------------- |
-| `kit.py`         | Yapı taşları: malzeme, etiket, kesit şeridi, rota çizgisi, figürler, kamera |
-| `figures.py`     | MPFB insan figürleri: dalgıç, formalı çocuk, taşınan çocuk, kurtarıcı; poz  |
-| `ornek_cekim.py` | En küçük çalışan çekim: tünelde dalgıç + tarih başlığı                      |
+| Dosya             | Ne işe yarar                                                                |
+| ----------------- | --------------------------------------------------------------------------- |
+| `kit.py`          | Yapı taşları: malzeme, etiket, kesit şeridi, rota çizgisi, figürler, kamera |
+| `figures.py`      | MPFB insan figürleri: dalgıç, formalı çocuk, taşınan çocuk, kurtarıcı; poz  |
+| `ornek_cekim.py`  | En küçük çalışan çekim: tünelde dalgıç + tarih başlığı                      |
+| `studyo.py`       | Stüdyo kalıbı: karanlık fon, ışık kaması, etiket, akış, karşılaştırma, küre |
+| `studyo_post.py`  | Stüdyo kalıbının Blender dışı yarısı: yazı verisi, büyük altyazı, ışıma     |
+| `studyo_ornek.py` | Stüdyo yapı taşlarının durağan kare örnekleri (makine, kıyas, pist, küre)   |
 
 `kit.py` sahne kurmaz. Sahneyi (dağ kesiti, tünel, oda) filmin kendi betiği kurar; kit ona
 `strip()`, `polyline()`, `diver()`, `sitter()`, `hud()` gibi parçaları verir.
@@ -253,3 +256,84 @@ MacBook Air M4 (24 GB, fansız), EEVEE, 720x1280, 16 örnek, üç süreç yan ya
 - **Ses yatağı.** Mekâna göre değişir: her katman (mağara havası ve damla, su altı gürlemesi, yağmur) film
   boyunca üretilir, `volume=…:eval=frame` ile çekim aralıklarında açılıp 0,7 sn'de geçiş yapar
   (`assemble.py`, `env()`).
+
+## Stüdyo kalıbı ("nasıl çalışır" videoları)
+
+Kesit kalıbı olay hikâyelerine uyar. Mekanik ve bilimsel konular için ikinci kalıp: karanlık stüdyo, sağ üstten gelen
+mavi ışık kaması, parlak koyu zemin, sade ve stilize nesneler, ışıyan "fizik" (sıcak hava, akım, girdap), küçük
+etiket kutuları, benzetme ve karşılaştırma sahneleri, alt-ortada 2-3 kelimelik büyük altyazı. İlk film: "Planör Nasıl
+Uçar?" (1:45, 20 çekim), örnek: `../ornek/planor-3d-studyo/`.
+
+```python
+import kit as K, studyo as S
+T = S.load_texts(HERE, LANG)                    # texts.tr.json / texts.en.json
+S.studio()                                      # fon, zemin, ışıklar, huzme
+c = S.cam(target=(0, 0, 1.5), dist=9, az=-28, el=10, to=dict(az=-18), frames=N)   # hedefe kilitli kamera + fondaki kama
+S.flow(lambda u, i, t: (-1.4 + 4.2 * u, 0, 1.5), n=70, spread=0.16, material=S.glow("gaz", (1.0, 0.5, 0.12), 1.8))
+S.tag(c, T("govde"), (-0.6, -0.8, 2.1), (-0.5, 0, 1.3), sub=T("govde2"))          # etiket kutusu + kılavuz çizgisi
+S.note(c, T("not"))                             # en altta küçük uyarı / künye
+```
+
+| Yapı taşı                                            | Ne verir                                                                                      |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `studio()`, `cam()`, `light()`                       | Karanlık dünya, parlak zemin, mavi anahtar ve kenar ışığı, görünür huzme; fondaki ışık kaması |
+| `glossy()`, `glow()`, `soft_glow()`, `spot_glow()`   | Parlak gövde; ışıyan malzeme; hacim gibi duran yumuşak sütun/huzme; zeminde ışık lekesi       |
+| `tag()`, `note()`                                    | Yuvarlak köşeli koyu etiket kutusu, serif yazı, ince çizgi, alt satır; karenin altında künye  |
+| `flow()`, `lanes()`, `on_frame()`                    | Yol boyunca akan parçacıklar (tek ağ), altlarında akım çizgileri, kare başına Python hareketi |
+| `arrow()`, `cyl()`, `rbox()`, `ring()`, `mesh_obj()` | Büyüyen ok, boru/direk, yuvarlak kenarlı kutu, halka, ham ağ                                  |
+| `cutaway()`                                          | Nesneyi düzlemle kesip içini gösterir; kesici hareket ettirilirse kesit ilerler               |
+| `columns()`, `tracks()`, `barrels()`, `gauge()`      | Farklı boyda sütunlar, paralel pistler, varil grubu, kadranlı gösterge                        |
+| `globe()`, `dot_map()`, `marker()`                   | Noktalı dünya küresi ve düz harita (elle çizilmiş kaba kıtalar, şematik), atan işaret         |
+| `framed_photo()`                                     | Kaide üstünde çerçeveli fotoğraf (lisanslı görsel + karede künye gerekir)                     |
+| `studyo_post.load_texts()`                           | Ekran yazıları dile göre veriden; eksik anahtar hata verir                                    |
+| `studyo_post.caption_rows()`, `write_big_captions()` | Kelime zamanlarından 2-3 kelimelik büyük altyazı (ASS), Türkçe büyük harf (i→İ)               |
+| `studyo_post.glow_filter()`, `bed_args()`            | ffmpeg ile ışıma halesi; sentez ses yatağı ve kesme "vuuş"ları                                |
+
+### İki dil, tek sahne
+
+Sahne kodunda dile bağlı kelime yoktur. Etiket, not ve başlık `texts.<dil>.json` dosyasından, süreler
+`shots.<dil>.json` dosyasından, altyazı `timing.<dil>.json` dosyasından gelir. Çekim çapaları (çekimin başladığı
+kelime) senaryonun içindedir, çünkü kelime dile göre değişir. İngilizce sürüm için: `script.en.json` gözden geçirilir,
+`FILM_LANG=en` ile `tts.py`, `make_shots.py`, `render_all.sh`, `captions.py`, `assemble.py` sırayla çalışır. Hareketler
+çekim süresinin oranı olarak yazıldığı için süre değişince kendiliğinden uyar; saniyeyle yazılan birkaç yer
+(ör. `int(1.7 * FPS)`) yeni sürelerde durağan kareyle kontrol edilmelidir.
+
+### Stüdyo: ölçülen hızlar
+
+MacBook Air M4 (24 GB, fansız), EEVEE, 720x1280, 16 örnek, ekran-uzayı yansıma açık, üç süreç yan yana.
+
+| Durum                                            | Süre                                     |
+| ------------------------------------------------ | ---------------------------------------- |
+| Bütün film, görüntü geçişi: 2.518 kare, 20 çekim | 51 dakika (toplam verim 1,2 sn / kare)   |
+| Aynı ölçüm, süreç başına                         | ortalama 3,4 sn / kare (çekime göre 3-4) |
+| Yazı geçişi (1080x1920, saydam), 18 çekim        | 6 dakika                                 |
+| Durağan kare, yarı çözünürlük, 20 çekim x 2 kare | 35 saniye                                |
+
+Kare başına süre çekimden çekime az değişti: parçacık sayısı ya da nesne sayısı değil, parlak zemin ve ışıklar
+belirleyici. Bütçe darsa önce `studio(ray=False)` (zemin yansıması gider), sonra örnek sayısı.
+
+### Stüdyo: düşülen tuzaklar
+
+- **Zeminde beyaz leke.** Arkadaki kenar ışığı parlak zeminde kameraya doğru yansır ve ön planda patlar. `studio()`
+  kenar ışığını ışık bağlamayla (light linking) zeminden ayırır, dolgu ışığının yansımasını kapatır. Sahneye kendi
+  arka ışığını eklersen aynısını yap ya da `specular_factor = 0` ver.
+- **Hacim ışığı yok.** Kama, kameraya bağlı bir düzlemdeki ışımalı gradyandır; huzme `cone_mat()` konisidir. Kama
+  kamerayla birlikte döner: geniş kamera turunda "ışık hep sağ üstte" kalır. Zemin ufku kamayı keser, bu yüzden
+  kama karenin yalnızca üst bölümünde görünür; alçak kamera açısı (3-8°) daha çok kama gösterir.
+- **Bloom yok.** EEVEE'de 4.2'den beri bloom ayarı yok. Hale, birleştirirken `glow_filter()` ile eklenir (720p
+  görüntüde, büyütmeden önce). Durağan karelerde hale görünmez; ışıma gücünü 1-2 arasında tut, doygun renk seç.
+- **Parçacıklar tek başına okunmuyor.** Seyrek noktalar "kar" gibi durur. Aynı yol fonksiyonunu `lanes()` ile soluk
+  çizgi olarak da çiz, parçacığı küçült (0,015-0,02) ve şerit başına 25-30 tane koy: kesik çizgi gibi akar.
+- **`flow()` anahtar kare yazmaz.** Köşeler her karede `frame_change_pre` içinde güncellenir. `studio()` her
+  çağrıda işleyiciyi yeniden kurar; sahneyi `K.reset()` ile sıfırlayıp `studio()` çağırmazsan akış donar.
+- **Etiket zeminin altına düşerse** durağan karede görünmez ama yazı geçişinde (nesneler gizli) görünür ve altyazı
+  bandına biner. Etiketin kutusu z > 0'da ve karenin %62'sinden yukarıda kalsın.
+- **Etiket belirme anında küçük görünür.** `appear` karesinden hemen sonra alınan durağan karede kutu daha
+  büyümemiştir; kontrol karesini 6 kare sonraya al.
+- **Dönen üst nesneye etiket.** `tag(parent=…)` ofseti kurulduğu andaki dönüşe göre çevirir. Küre gibi dönen bir
+  nesnede önce son duruşu ver, etiketi kur, sonra dönüşü anahtarla (örnek: `s_s01`).
+- **Kesit dolu çıkar.** `cutaway()` dolu bir gövdede düz bir kapak gösterir. İçini göstermek için gövdeyi kabuk
+  olarak kur (kapaksız silindir + Solidify) ve içine parçaları ayrı koy.
+- **Küredeki kıtalar gerçek veri değildir.** `LAND` elle çizilmiş kaba çokgenlerdir; karede "şematik" notu olsun.
+- **Büyük altyazı uzunluğu.** 104 punto Avenir Next Condensed Heavy ile 1080 pikselde yaklaşık 22 harf sığar;
+  `caption_rows(max_chars=17)` üç kısa kelimeyi geçirmez, tek uzun kelime çifti yine de taşabilir: son filme bak.

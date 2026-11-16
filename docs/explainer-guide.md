@@ -165,6 +165,8 @@ Stil yolu açık kaynak `alisadiq-ai/favstash-ai-video-editing-skills` paketinde
 
 Stil yolunun bir kez yapılan kurulumu: Node 22+ ve `node .claude/skills/edit-video/scripts/init-workspace.mjs --workspace ~/ai-influencer-films --install` (HyperFrames 0.8.32 + GSAP, ~410 MB, repo dışında; render için makinedeki Google Chrome kullanılır).
 
+Üçüncü bir yol da Blender ile 3D'dir (`.claude/skills/anlatim-videosu/blender/README.md`): olay hikâyeleri için kesit kalıbı, "nasıl çalışır" konuları için karanlık stüdyo kalıbı (ışıyan parçacıklar, etiket kutuları, karşılaştırma sahneleri, büyük altyazı). Stüdyo kalıbında ekran yazıları dile göre veri dosyasından gelir; 1:45'lik örnek film MacBook Air M4'te yaklaşık 57 dakikada render edildi (`ornek/planor-3d-studyo/`).
+
 ## Kurallar
 
 | Kural                  | Açıklama                                                                                                                          |

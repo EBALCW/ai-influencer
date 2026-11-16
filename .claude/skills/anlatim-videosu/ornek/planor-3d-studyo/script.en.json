@@ -1,0 +1,99 @@
+{
+  "title": "How Do Gliders Fly? (3D, studio)",
+  "lang": "en",
+  "status": "DRAFT: not voiced, not reviewed by a native speaker. Same facts and same shot order as script.json.",
+  "voice": "en-US-AndrewNeural",
+  "rate": "+0%",
+  "segments": [
+    {
+      "id": "01",
+      "gap": 0.3,
+      "shots": ["s01"],
+      "text": "A glider once flew more than three thousand kilometres in a single flight."
+    },
+    {
+      "id": "02",
+      "gap": 0.3,
+      "shots": ["s02"],
+      "text": "Yet a glider has no engine and no fuel. So how does it stay up?"
+    },
+    {
+      "id": "03",
+      "gap": 0.3,
+      "shots": ["s03a", ["s03b", "Tilt", 1]],
+      "text": "Put your hand out of a moving car's window. Tilt your palm up a little: the air lifts your hand."
+    },
+    {
+      "id": "04",
+      "gap": 0.3,
+      "shots": ["s04"],
+      "text": "A wing does the same job. It turns the air downward, and the air pushes the wing up."
+    },
+    {
+      "id": "05",
+      "gap": 0.3,
+      "shots": ["s05"],
+      "text": "Its speed comes from height: like a sled on a gentle slope, it is always sinking slightly."
+    },
+    {
+      "id": "06",
+      "gap": 0.3,
+      "shots": ["s06a", ["s06b", "An", 1]],
+      "text": "But only slightly. For every kilometre it sinks, it travels forty to fifty kilometres forward. An airliner with its engines out cannot reach even half of that."
+    },
+    {
+      "id": "07",
+      "gap": 0.3,
+      "shots": ["s07"],
+      "text": "And when the height runs out? A glider's real engine is the sky."
+    },
+    {
+      "id": "08",
+      "gap": 0.3,
+      "shots": ["s08"],
+      "text": "The sun heats the ground. Warm air rises like a column: a thermal."
+    },
+    {
+      "id": "09",
+      "gap": 0.3,
+      "shots": ["s09"],
+      "text": "The pilot circles inside that column and climbs as if riding a lift."
+    },
+    {
+      "id": "10",
+      "gap": 0.3,
+      "shots": ["s10"],
+      "text": "If the needle points up, the glider is gaining free height."
+    },
+    {
+      "id": "11",
+      "gap": 0.3,
+      "shots": ["s11"],
+      "text": "Wind that hits a slope turns upward too. The glider soars in that flow along the ridge."
+    },
+    {
+      "id": "12",
+      "gap": 0.3,
+      "shots": ["s12a", ["s12b", "About", 1]],
+      "text": "And giant waves of air behind mountains have carried gliders above twenty-two kilometres. About twice as high as airliners fly."
+    },
+    {
+      "id": "13",
+      "gap": 0.3,
+      "shots": ["s13a", ["s13b", "Longer,", 1]],
+      "text": "Why are the wings so long and thin? Because the vortex at the wingtip slows the glider down. Longer, thinner wings make that loss smaller."
+    },
+    {
+      "id": "14",
+      "gap": 0.4,
+      "shots": ["s14a", ["s14b", "So", 1]],
+      "text": "One condition: if you find no rising air, you land. So the pilot always keeps a landing field within reach."
+    },
+    {
+      "id": "15",
+      "gap": 0.3,
+      "shots": ["s15"],
+      "text": "No engine. No fuel. Just the sun, the wind, and a pilot who can read them."
+    }
+  ]
+}
