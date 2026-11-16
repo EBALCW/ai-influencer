@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { hasLocalSupabase } from './global-setup';
 
 // Viewer rolü: okuyabilir, değiştiremez. Yerel Supabase yoksa atlanır.
@@ -48,6 +49,7 @@ test('viewer persona API çağrılarında 403 alır', async ({ page }) => {
   await page.goto('/influencers/demo-creator?tab=persona');
   const id = '10000000-0000-4000-8000-000000000001';
   const save = await page.request.post(`/api/influencers/${id}/persona`, {
+    headers: sameOrigin,
     data: {
       bio: 'viewer denemesi',
       tone: '',
@@ -68,9 +70,7 @@ test('viewer persona API çağrılarında 403 alır', async ({ page }) => {
   expect(save.status()).toBe(403);
   const restore = await page.request.post(
     `/api/influencers/${id}/persona/restore`,
-    {
-      data: { version: 1 },
-    },
+    { headers: sameOrigin, data: { version: 1 } },
   );
   expect(restore.status()).toBe(403);
 });
@@ -88,6 +88,7 @@ test('viewer maliyetleri görür ama ekleyemez', async ({ page }) => {
 
   // Sunucu da reddeder: UI'da gizlemek yetki kontrolü değildir
   const api = await page.request.post('/api/costs', {
+    headers: sameOrigin,
     data: {
       influencerId: '10000000-0000-4000-8000-000000000001',
       category: 'other',
@@ -98,6 +99,7 @@ test('viewer maliyetleri görür ama ekleyemez', async ({ page }) => {
   });
   expect(api.status()).toBe(403);
   const budget = await page.request.put('/api/budgets', {
+    headers: sameOrigin,
     data: {
       influencerId: null,
       month: '2026-10',
@@ -117,6 +119,7 @@ test('viewer influencer sihirbazını açamaz ve taslak oluşturamaz', async ({
     0,
   );
   const create = await page.request.post('/api/influencers', {
+    headers: sameOrigin,
     data: {
       name: 'Viewer',
       slug: 'viewer-denemesi',
@@ -127,7 +130,7 @@ test('viewer influencer sihirbazını açamaz ve taslak oluşturamaz', async ({
   expect(create.status()).toBe(403);
   const prompt = await page.request.post(
     '/api/influencers/10000000-0000-4000-8000-000000000001/character-prompt',
-    { data: { body: 'viewer denemesi' } },
+    { headers: sameOrigin, data: { body: 'viewer denemesi' } },
   );
   expect(prompt.status()).toBe(403);
 });
@@ -140,8 +143,16 @@ test('viewer sosyal hesap bağlama yetkisine sahip değil', async ({
   await expect(
     page.getByRole('button', { name: 'YouTube hesabı bağla' }),
   ).toHaveCount(0);
-  expect((await request.post('/api/oauth/youtube/start')).status()).toBe(403);
-  expect((await request.post('/api/oauth/instagram/start')).status()).toBe(403);
+  expect(
+    (
+      await request.post('/api/oauth/youtube/start', { headers: sameOrigin })
+    ).status(),
+  ).toBe(403);
+  expect(
+    (
+      await request.post('/api/oauth/instagram/start', { headers: sameOrigin })
+    ).status(),
+  ).toBe(403);
   await expect(
     page.getByRole('button', { name: 'Instagram hesabı bağla' }),
   ).toHaveCount(0);
@@ -157,6 +168,7 @@ test('viewer sosyal hesap bağlantısını kaldıramaz', async ({ request }) => 
     (
       await request.post(
         '/api/social-accounts/33333333-3333-4333-8333-333333333333/disconnect',
+        { headers: sameOrigin },
       )
     ).status(),
   ).toBe(403);

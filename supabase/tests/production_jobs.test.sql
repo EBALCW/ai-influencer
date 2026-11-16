@@ -32,17 +32,17 @@ INSERT INTO public.team_members (user_id, role) VALUES
   ('d2010000-0000-4000-8000-000000000002', 'editor'),
   ('d2010000-0000-4000-8000-000000000003', 'viewer'),
   ('d2010000-0000-4000-8000-000000000004', 'editor');
-INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, title, duration_seconds, permission_status, permission_ref)
+INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, channel_url, title, duration_seconds, permission_status, permission_ref)
 VALUES ('d2020000-0000-4000-8000-000000000001', 'jobAAAAAAA1', 'https://www.youtube.com/watch?v=jobAAAAAAA1',
-  'İş Kanalı', 'A yayını', 600, 'granted', 'IZIN-JOB-A');
+  'İş Kanalı', 'https://www.youtube.com/@test-kanal', 'A yayını', 600, 'granted', 'IZIN-JOB-A');
 INSERT INTO public.assets (id, kind, storage_path, mime_type)
 VALUES ('d2030000-0000-4000-8000-000000000001', 'final_video', 'job-test/a-final.mp4', 'video/mp4');
 
 CREATE TEMP TABLE ws ON COMMIT DROP AS SELECT id AS a, NULL::uuid AS b FROM public.workspaces;
 UPDATE ws SET b = private.create_workspace_for_user('e2010000-0000-4000-8000-000000000001', 'İş alanı B');
-INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, title, permission_status, permission_ref, workspace_id)
+INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, channel_url, title, permission_status, permission_ref, workspace_id)
 SELECT 'e2020000-0000-4000-8000-000000000001', 'jobBBBBBBB1', 'https://www.youtube.com/watch?v=jobBBBBBBB1',
-  'B Kanalı', 'B yayını', 'granted', 'IZIN-JOB-B', b FROM ws;
+  'B Kanalı', 'https://www.youtube.com/@test-kanal', 'B yayını', 'granted', 'IZIN-JOB-B', b FROM ws;
 INSERT INTO public.assets (id, kind, storage_path, mime_type, workspace_id)
 SELECT 'e2030000-0000-4000-8000-000000000001', 'final_video', 'job-test/b-final.mp4', 'video/mp4', b FROM ws;
 

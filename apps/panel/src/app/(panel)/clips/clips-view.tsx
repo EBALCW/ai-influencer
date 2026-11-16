@@ -12,6 +12,7 @@ import type {
   ClipsWorkspace,
 } from '@/lib/clips/queries';
 import {
+  clipAttribution,
   clipSchema,
   clipSourcePatchSchema,
   clipSourceSchema,
@@ -20,6 +21,7 @@ import {
   MAX_CLIP_SECONDS,
   permissionLabels,
   permissionStatuses,
+  takedownNoteSchema,
 } from '@/lib/clips/schemas';
 import {
   clipUrl,
@@ -34,11 +36,15 @@ const label = 'block text-xs font-medium text-muted';
 const badge =
   'inline-flex items-center rounded-full border border-line px-2 py-1 text-xs font-medium text-text';
 
+/** Kaldırma isteğinde izlenecek adımlar (repo herkese açık; bağlantı belgeyi gösterir). */
+const TAKEDOWN_DOC_URL =
+  'https://github.com/EBALCW/ai-influencer/blob/main/docs/compliance.md#yay%C4%B1nc%C4%B1-klipleri';
+
 type Done = (message: string) => void;
 type Open =
   | { kind: 'source' }
   | { kind: 'permission' | 'clip' | 'delete-source'; sourceId: string }
-  | { kind: 'backlog' | 'delete-clip'; clipId: string }
+  | { kind: 'backlog' | 'delete-clip' | 'takedown'; clipId: string }
   | null;
 
 /** API çağrısı; hata durumunda sunucunun mesajıyla `Error` fırlatır. */
@@ -140,7 +146,7 @@ function SourceForm({ onDone }: { onDone: Done }) {
       return setError(parsed.error.issues[0]?.message ?? 'Form geçersiz.');
     void run(
       () => send('/api/clip-sources', 'POST', input),
-      'Kaynak eklendi. Klip aktarmak için izin durumunu işaretleyin.',
+      'Kaynak eklendi. İzin alındıysa ya da yayıncı reddettiyse izin durumunu işaretleyin.',
     );
   }
 
@@ -187,13 +193,18 @@ function SourceForm({ onDone }: { onDone: Done }) {
         <input className={field} maxLength={200} name="channel_name" required />
       </label>
       <label className={`${label} sm:col-span-2`}>
-        Kanal linki (isteğe bağlı)
+        Kanal linki
         <input
           className={field}
           maxLength={300}
           name="channel_url"
           placeholder="https://www.youtube.com/@…"
+          required
+          type="url"
         />
+        <span className="mt-1 block">
+          Atıf zorunlu: kanal adı ve linki klibin açıklamasına yazılır.
+        </span>
       </label>
       <label className={`${label} sm:col-span-2 lg:col-span-3`}>
         Not
@@ -222,9 +233,14 @@ function PermissionForm({
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const channelUrl = String(data.get('channel_url') ?? '').trim();
     const input = {
       permission_status: status,
       permission_ref: String(data.get('permission_ref') ?? ''),
+      // Kanal linki yalnız değiştiyse gönderilir (eski kayıtta boş olabilir).
+      ...(channelUrl !== (source.channel_url ?? '')
+        ? { channel_url: channelUrl }
+        : {}),
     };
     const parsed = clipSourcePatchSchema.safeParse(input);
     if (!parsed.success)
@@ -234,6 +250,13 @@ function PermissionForm({
       'İzin durumu kaydedildi.',
     );
   }
+  const hint: Record<typeof status, string> = {
+    pending:
+      'İzin alınmadı: klip atıfla kullanılabilir. Yayıncı ya da platform isterse hemen kaldırılır.',
+    granted: 'İzin alındı: belgenin kısa referansı kaydedilir.',
+    denied:
+      'Yayıncı reddetti: bu kaynağa klip eklenemez ve klipleri aktarılamaz.',
+  };
 
   return (
     <form
@@ -272,6 +295,19 @@ function PermissionForm({
           yazışma yazmayın.
         </span>
       </label>
+      <label className={`${label} sm:col-span-2`}>
+        Kanal linki (atıf)
+        <input
+          className={field}
+          defaultValue={source.channel_url ?? ''}
+          maxLength={300}
+          name="channel_url"
+          placeholder="https://www.youtube.com/@…"
+          required={!!source.channel_url}
+          type="url"
+        />
+      </label>
+      <p className="self-end text-sm text-muted">{hint[status]}</p>
       <FormActions
         error={error}
         onCancel={() => onDone('')}
@@ -451,8 +487,8 @@ function BacklogPanel({
         )}
       </label>
       <p className="self-end text-sm text-muted sm:col-span-1 lg:col-span-2">
-        Kart “üçüncü kişi” kaynak türüyle, kanal adı ve izin referansıyla
-        açılır.
+        Kart “üçüncü kişi” kaynak türüyle açılır; izin durumu ve atıf (kanal
+        adı, kanal linki) karta yazılır.
       </p>
       <FormActions
         disabled={!fixed && !influencers.length}
@@ -462,6 +498,98 @@ function BacklogPanel({
         submitLabel="Fikir kartı oluştur"
       />
     </form>
+  );
+}
+
+/** "Kaldırma isteği geldi": onay + isteğe bağlı kısa not; klibi işaretler. */
+function TakedownPanel({ clip, onDone }: { clip: ClipItem; onDone: Done }) {
+  const { pending, error, setError, run } = useSubmit(onDone);
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const note = takedownNoteSchema.safeParse(
+      String(data.get('takedown_note') ?? ''),
+    );
+    if (!note.success)
+      return setError(note.error.issues[0]?.message ?? 'Form geçersiz.');
+    void run(
+      () =>
+        send(`/api/clips/${clip.id}`, 'PATCH', {
+          takedown: true,
+          takedown_note: note.data,
+        }),
+      'Kaldırma isteği işaretlendi. Sonraki adımlar klibin altında.',
+    );
+  }
+
+  return (
+    <form
+      aria-label="Kaldırma isteği"
+      className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+      onSubmit={onSubmit}
+    >
+      <p className="text-sm text-text sm:col-span-2 lg:col-span-3">
+        Bu klip için kaldırma isteği işaretlenecek. İşaretli klip backlog’a
+        aktarılamaz ve içerik kartına yeni yayın işi açılamaz. Yayındaki klibi
+        platformlardan ayrıca sizin kaldırmanız gerekir.
+      </p>
+      <label className={`${label} sm:col-span-2`}>
+        Not (isteğe bağlı)
+        <input
+          className={field}
+          maxLength={1000}
+          name="takedown_note"
+          placeholder="ör. Platform bildirimi, 16 Kasım"
+        />
+        <span className="mt-1 block">
+          E-posta, ad veya yazışma yazmayın; kayıtlar kısıtlı depoda tutulur.
+        </span>
+      </label>
+      <FormActions
+        error={error}
+        onCancel={() => onDone('')}
+        pending={pending}
+        submitLabel="Kaldırma isteğini işaretle"
+      />
+    </form>
+  );
+}
+
+/** İşaretli klibin altında görünen sonraki adımlar (her rol okur). */
+function TakedownNotice({ clip }: { clip: ClipItem }) {
+  return (
+    <div className="rounded-lg border border-line bg-surface p-3 text-sm text-text">
+      <p className="font-medium">
+        Kaldırma isteği geldi ({clip.takedown_requested_at?.slice(0, 10)})
+        {clip.takedown_note ? `: ${clip.takedown_note}` : ''}
+      </p>
+      <ol className="mt-2 list-decimal space-y-1 pl-5">
+        <li>
+          Klibi yayınlandığı tüm platformlardan gecikmeden kaldırın; aynı
+          kaynaktan çıkan diğer klipleri de kontrol edin.
+        </li>
+        <li>
+          İçerik kartına not düşün; kuyrukta bekleyen yayın işi varsa içerik
+          sayfasından iptal edin (otomatik iptal edilmez).
+        </li>
+        <li>
+          Bildirimi ve kanıtı kısıtlı depoda saklayın, olay kaydı açın. İzin
+          belgesi olmayan klip için itiraz edilmez.
+        </li>
+      </ol>
+      <p className="mt-2">
+        <a
+          className="underline"
+          href={TAKEDOWN_DOC_URL}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Ayrıntılı adımlar: docs/compliance.md → “Yayıncı klipleri” ve “İhtar
+          ve şikâyet prosedürü”
+        </a>
+      </p>
+    </div>
   );
 }
 
@@ -514,6 +642,17 @@ export function ClipsView({
       : undefined;
   const contentHref = (slug?: string) =>
     slug ? `/content?inf=${encodeURIComponent(slug)}` : '/content';
+  async function copyAttribution(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setToast({ message: 'Atıf satırı kopyalandı.', tone: 'success' });
+    } catch {
+      setToast({
+        message: 'Kopyalanamadı; atıf satırını elle seçip kopyalayın.',
+        tone: 'error',
+      });
+    }
+  }
 
   return (
     <div className="page-stack">
@@ -522,9 +661,10 @@ export function ClipsView({
           <p className="eyebrow">YAYIN</p>
           <h1>Klipler</h1>
           <p>
-            Yayıncı videoları, izin durumu ve klip adayları. Yalnız izni
-            verilmiş kaynağın klibi içerik backlog’una aktarılır; video dosyası
-            panele yüklenmez.
+            Yayıncı videoları, izin durumu ve klip adayları. Yazılı izin şart
+            değildir; atıf (kanal adı ve linki) zorunludur. Yayıncının
+            reddettiği kaynak kullanılmaz, kaldırma isteği gelen klip hemen
+            kaldırılır. Video dosyası panele yüklenmez.
           </p>
         </div>
         {canWrite && (
@@ -554,9 +694,9 @@ export function ClipsView({
           value={String(sources.length)}
         />
         <StatCard
-          detail="Aktarıma açık kaynak"
+          detail="İzin belgesi kayıtlı kaynak"
           icon={ShieldCheck}
-          label="İzin verildi"
+          label="İzin alındı"
           tone="mint"
           value={String(
             sources.filter((item) => item.permission_status === 'granted')
@@ -592,7 +732,7 @@ export function ClipsView({
           <EmptyState
             description={
               canWrite
-                ? 'Henüz kaynak yok. “Yeni kaynak” ile bir YouTube videosu ekleyin, izni işaretleyin ve klip adaylarını girin.'
+                ? 'Henüz kaynak yok. “Yeni kaynak” ile bir YouTube videosunu kanal adı ve linkiyle ekleyin, klip adaylarını girin.'
                 : 'Henüz kaynak eklenmedi.'
             }
             title="Klip kaynağı bulunamadı"
@@ -600,7 +740,14 @@ export function ClipsView({
         </section>
       ) : (
         sources.map((source) => {
-          const granted = source.permission_status === 'granted';
+          const denied = source.permission_status === 'denied';
+          const attribution = clipAttribution(source);
+          // Aktarım engeli: yayıncı reddetti ya da atıf için kanal linki yok (eski kayıt).
+          const blockedNote = denied
+            ? 'Yayıncı izni reddetti: bu kaynaktan klip kullanılmaz, aktarım kapalı.'
+            : attribution
+              ? null
+              : 'Atıf zorunlu: backlog’a aktarmak için “İzni işaretle” ile kanal linkini ekleyin.';
           const noteId = `permission-note-${source.id}`;
           return (
             <article
@@ -670,6 +817,7 @@ export function ClipsView({
                     <button
                       aria-label={`Klip ekle: ${source.title}`}
                       className="button button-primary"
+                      disabled={denied}
                       onClick={() =>
                         setOpen({ kind: 'clip', sourceId: source.id })
                       }
@@ -707,11 +855,17 @@ export function ClipsView({
                   />
                 )}
 
-              {!granted && (
-                <p className="mt-3 text-sm text-muted" id={noteId}>
-                  Backlog’a aktarmak için kaynağın izni verilmiş olarak
-                  işaretlenmeli.
+              {blockedNote ? (
+                <p className="mt-3 text-sm text-text" id={noteId}>
+                  {blockedNote}
                 </p>
+              ) : (
+                source.permission_status === 'pending' && (
+                  <p className="mt-3 text-sm text-muted">
+                    İzin alınmadı: klipler atıfla kullanılabilir; yayıncı ya da
+                    platform isterse hemen kaldırılır.
+                  </p>
+                )
               )}
 
               {source.clips.length === 0 ? (
@@ -766,6 +920,23 @@ export function ClipsView({
                                   {clip.notes}
                                 </div>
                               )}
+                              {attribution && (
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                                  <span className="break-all">
+                                    {attribution}
+                                  </span>
+                                  <button
+                                    aria-label={`Atfı kopyala: ${clip.title}`}
+                                    className="button button-quiet"
+                                    onClick={() =>
+                                      void copyAttribution(attribution)
+                                    }
+                                    type="button"
+                                  >
+                                    Atfı kopyala
+                                  </button>
+                                </div>
+                              )}
                             </td>
                             <td>{clip.influencer?.name ?? 'Atanmadı'}</td>
                             <td>
@@ -794,6 +965,11 @@ export function ClipsView({
                               ) : (
                                 clipStatusLabels[clip.status]
                               )}
+                              {clip.takedown_requested_at && (
+                                <div className="mt-1">
+                                  <span className={badge}>Kaldırma isteği</span>
+                                </div>
+                              )}
                             </td>
                             <td>
                               <div className="flex flex-wrap items-center gap-2">
@@ -808,14 +984,15 @@ export function ClipsView({
                                   </Link>
                                 ) : (
                                   canWrite &&
-                                  clip.status !== 'rejected' && (
+                                  clip.status !== 'rejected' &&
+                                  !clip.takedown_requested_at && (
                                     <button
                                       aria-describedby={
-                                        granted ? undefined : noteId
+                                        blockedNote ? noteId : undefined
                                       }
                                       aria-label={`Backlog'a aktar: ${clip.title}`}
                                       className="button button-primary"
-                                      disabled={!granted}
+                                      disabled={!!blockedNote}
                                       onClick={() =>
                                         setOpen({
                                           kind: 'backlog',
@@ -828,6 +1005,42 @@ export function ClipsView({
                                     </button>
                                   )
                                 )}
+                                {canWrite &&
+                                  (clip.takedown_requested_at ? (
+                                    <button
+                                      aria-label={`Kaldırma işaretini geri al: ${clip.title}`}
+                                      className="button button-quiet"
+                                      disabled={busy}
+                                      onClick={() =>
+                                        void act(
+                                          () =>
+                                            send(
+                                              `/api/clips/${clip.id}`,
+                                              'PATCH',
+                                              { takedown: false },
+                                            ),
+                                          'Kaldırma işareti geri alındı.',
+                                        )
+                                      }
+                                      type="button"
+                                    >
+                                      İşareti geri al
+                                    </button>
+                                  ) : (
+                                    <button
+                                      aria-label={`Kaldırma isteği geldi: ${clip.title}`}
+                                      className="button button-quiet"
+                                      onClick={() =>
+                                        setOpen({
+                                          kind: 'takedown',
+                                          clipId: clip.id,
+                                        })
+                                      }
+                                      type="button"
+                                    >
+                                      Kaldırma isteği geldi
+                                    </button>
+                                  ))}
                                 {canWrite && (
                                   <button
                                     aria-label={`Klibi sil: ${clip.title}`}
@@ -860,6 +1073,22 @@ export function ClipsView({
                                 </td>
                               </tr>
                             )}
+                          {canWrite &&
+                            open?.kind === 'takedown' &&
+                            open.clipId === clip.id && (
+                              <tr>
+                                <td colSpan={5}>
+                                  <TakedownPanel clip={clip} onDone={done} />
+                                </td>
+                              </tr>
+                            )}
+                          {clip.takedown_requested_at && (
+                            <tr>
+                              <td colSpan={5}>
+                                <TakedownNotice clip={clip} />
+                              </td>
+                            </tr>
+                          )}
                         </Fragment>
                       ))}
                     </tbody>

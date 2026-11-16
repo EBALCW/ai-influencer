@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { hasLocalSupabase } from './global-setup';
 
 // Trend arşivi (#10): viewer arşivi okur ve CSV indirir, yazamaz (buton yok, API 403).
@@ -38,6 +39,7 @@ test('viewer trend arşivini salt okur', async ({ page }) => {
   expect(
     (
       await page.request.post('/api/trends', {
+        headers: sameOrigin,
         data: { url: 'https://example.invalid/viewer' },
       })
     ).status(),
@@ -45,18 +47,23 @@ test('viewer trend arşivini salt okur', async ({ page }) => {
   expect(
     (
       await page.request.patch(`/api/trends/${SEED_TREND}`, {
+        headers: sameOrigin,
         data: { status: 'rejected' },
       })
     ).status(),
   ).toBe(403);
   expect(
     (
-      await page.request.post(`/api/trends/${SEED_TREND}/backlog`, { data: {} })
+      await page.request.post(`/api/trends/${SEED_TREND}/backlog`, {
+        headers: sameOrigin,
+        data: {},
+      })
     ).status(),
   ).toBe(403);
   expect(
     (
       await page.request.post('/api/trends/import', {
+        headers: sameOrigin,
         multipart: {
           file: {
             name: 'trends.csv',

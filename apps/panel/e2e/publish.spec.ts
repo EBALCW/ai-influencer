@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 import { checklistKeys } from '../src/lib/content/checklist-schema';
@@ -137,7 +138,7 @@ test('editor içeriği şimdi yayınlar, iptal eder ve planlar; eksik AI etiketi
     // Aynı içerik için ikinci açık iş açılamaz.
     const dup = await page.request.post(
       `/api/content-items/${readyId}/publish`,
-      { data: { mode: 'now', title: 'Tekrar' } },
+      { headers: sameOrigin, data: { mode: 'now', title: 'Tekrar' } },
     );
     expect(dup.status()).toBe(409);
 

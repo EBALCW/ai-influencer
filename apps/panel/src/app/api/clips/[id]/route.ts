@@ -8,7 +8,11 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 const idSchema = z.string().uuid();
 type Context = { params: Promise<{ id: string }> };
 
-/** Klibi düzenler veya durumunu değiştirir (#173). En az editor. */
+/**
+ * Klibi düzenler, durumunu değiştirir veya kaldırma isteğini işaretler (#173, #254).
+ * En az editor. Kaldırma isteğinin zamanını veritabanı yazar; buradaki değer yalnız
+ * "işaretli" anlamına gelir.
+ */
 export async function PATCH(request: Request, context: Context) {
   const auth = await requireApiRole('editor');
   if (!auth.ok) return auth.response;
@@ -16,11 +20,19 @@ export async function PATCH(request: Request, context: Context) {
   if (!id.success) return jsonError('Klip bulunamadı.', 404);
   const parsed = await parseJson(request, clipPatchSchema);
   if (!parsed.ok) return parsed.response;
+  const { takedown, ...patch } = parsed.data;
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from('clips')
-      .update(parsed.data)
+      .update({
+        ...patch,
+        ...(takedown === undefined
+          ? {}
+          : {
+              takedown_requested_at: takedown ? new Date().toISOString() : null,
+            }),
+      })
       .eq('id', id.data)
       .select('*')
       .maybeSingle();

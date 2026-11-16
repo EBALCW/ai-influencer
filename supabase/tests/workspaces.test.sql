@@ -289,9 +289,9 @@ INSERT INTO public.comment_replies (comment_id, body)
 VALUES ('a18f0000-0000-4000-8000-000000000001', 'A yanıtı');
 INSERT INTO public.trends (id, influencer_id, url)
 VALUES ('a1900000-0000-4000-8000-000000000001', 'a1820000-0000-4000-8000-000000000001', 'https://example.invalid/ws-trend');
-INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, title, duration_seconds, permission_status, permission_ref)
+INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, channel_url, title, duration_seconds, permission_status, permission_ref)
 VALUES ('a1910000-0000-4000-8000-000000000001', 'wsAAAAAAAA1', 'https://www.youtube.com/watch?v=wsAAAAAAAA1',
-  'WS Kanal', 'A yayını', 600, 'granted', 'IZIN-WS-A');
+  'WS Kanal', 'https://www.youtube.com/@test-kanal', 'A yayını', 600, 'granted', 'IZIN-WS-A');
 INSERT INTO public.clips (id, source_id, influencer_id, title, start_seconds, end_seconds)
 VALUES ('a1920000-0000-4000-8000-000000000001', 'a1910000-0000-4000-8000-000000000001',
   'a1820000-0000-4000-8000-000000000001', 'A klibi', 10, 40);
@@ -398,9 +398,9 @@ SELECT extensions.is(
   (SELECT count(*)::integer FROM public.app_settings WHERE key = 'ai'), 2,
   'app_settings keys are per workspace'
 );
-INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, title, permission_status, permission_ref, workspace_id)
+INSERT INTO public.clip_sources (id, video_id, video_url, channel_name, channel_url, title, permission_status, permission_ref, workspace_id)
 SELECT 'b1910000-0000-4000-8000-000000000001', 'wsAAAAAAAA1', 'https://www.youtube.com/watch?v=wsAAAAAAAA1',
-  'WS Kanal', 'B yayını', 'granted', 'IZIN-WS-B', b FROM ws;
+  'WS Kanal', 'https://www.youtube.com/@test-kanal', 'B yayını', 'granted', 'IZIN-WS-B', b FROM ws;
 SELECT extensions.pass('clip source video_url is unique per workspace');
 INSERT INTO public.clips (id, source_id, title, start_seconds, end_seconds)
 VALUES ('b1920000-0000-4000-8000-000000000001', 'b1910000-0000-4000-8000-000000000001', 'B klibi', 0, 30);

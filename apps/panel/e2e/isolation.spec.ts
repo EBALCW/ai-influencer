@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import {
   createSession,
@@ -136,7 +137,10 @@ test('ikinci alan birinci alanın anlatım serisini, bölümünü ve konu isteğ
   // Birinci alanın editörü panel API'siyle veri açar (alan oturumdan gelir).
   const first = await browser.newContext({ storageState: EDITOR_STATE });
   const create = async <T>(url: string, data: unknown): Promise<T> => {
-    const response = await first.request.post(url, { data });
+    const response = await first.request.post(url, {
+      headers: sameOrigin,
+      data,
+    });
     expect(response.status(), url).toBe(201);
     return (await response.json()) as T;
   };
@@ -251,7 +255,10 @@ test('ikinci alan birinci alanın anlatım serisini, bölümünü ve konu isteğ
     ],
   ];
   for (const [url, method, data] of writes)
-    expect((await api[method](url, { data })).status(), url).toBe(404);
+    expect(
+      (await api[method](url, { headers: sameOrigin, data })).status(),
+      url,
+    ).toBe(404);
   const similarOther = await api.get(
     `/api/explainers/similar?title=${encodeURIComponent(episodeTitle)}`,
   );
@@ -261,6 +268,7 @@ test('ikinci alan birinci alanın anlatım serisini, bölümünü ve konu isteğ
   ).toEqual([]);
   // Seri adı alan içinde tekildir: ikinci alan aynı adı kullanabilir.
   const sameName = await api.post('/api/explainers/series', {
+    headers: sameOrigin,
     data: { name: seriesName },
   });
   expect(sameName.status()).toBe(201);

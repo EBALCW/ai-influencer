@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { hasLocalSupabase } from './global-setup';
 
 // Ana ekran ve modül gezinmesi (#200, ADR 0004 → Karar 7). Seed verisi kullanılır.
@@ -33,9 +34,11 @@ test('ana ekranda modüller, park işareti ve modüller arası son üretimler g�
   // Son üretimler: az önce eklenen yayıncı klibi, modül etiketi ve durumuyla en üstte.
   const run = crypto.randomUUID().slice(0, 8);
   const source = await page.request.post('/api/clip-sources', {
+    headers: sameOrigin,
     data: {
       video_url: `https://www.youtube.com/watch?v=hm${run}x`,
       channel_name: `Ana ekran kanal ${run}`,
+      channel_url: `https://www.youtube.com/@ana-ekran-${run}`,
       title: `Ana ekran yayın ${run}`,
     },
   });
@@ -44,6 +47,7 @@ test('ana ekranda modüller, park işareti ve modüller arası son üretimler g�
     .id;
   try {
     const clip = await page.request.post('/api/clips', {
+      headers: sameOrigin,
       data: {
         source_id: sourceId,
         title: `Ana ekran klip ${run}`,
@@ -62,7 +66,9 @@ test('ana ekranda modüller, park işareti ve modüller arası son üretimler g�
     await expect(row).toContainText('Aday');
     await expect(row.getByRole('link')).toHaveAttribute('href', '/clips');
   } finally {
-    await page.request.delete(`/api/clip-sources/${sourceId}`);
+    await page.request.delete(`/api/clip-sources/${sourceId}`, {
+      headers: sameOrigin,
+    });
   }
 
   // Makine durumu ana ekranda; üretim sayfasına götürür.

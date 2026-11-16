@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clipAttribution,
   clipBacklogSchema,
   clipPatchSchema,
   clipSchema,
   clipSourcePatchSchema,
   clipSourceSchema,
   clipsQuerySchema,
+  permissionLabels,
 } from './schemas';
 
 const SOURCE = '80000000-0000-4000-8000-000000000001';
@@ -16,6 +18,7 @@ describe('clipSourceSchema', () => {
       clipSourceSchema.parse({
         video_url: ' https://youtu.be/demoClip001?si=x ',
         channel_name: '  Demo Kanal ',
+        channel_url: ' https://www.youtube.com/@demo ',
         title: 'Demo yayın',
       }),
     ).toEqual({
@@ -23,26 +26,34 @@ describe('clipSourceSchema', () => {
       video_id: 'demoClip001',
       video_url: 'https://www.youtube.com/watch?v=demoClip001',
       channel_name: 'Demo Kanal',
-      channel_url: null,
+      channel_url: 'https://www.youtube.com/@demo',
       title: 'Demo yayın',
       duration_seconds: null,
       notes: '',
     });
   });
 
-  it('YouTube dışı link, boş alan, kötü kanal linki ve istemci alanlarını reddeder', () => {
+  it('YouTube dışı link, boş alan, eksik/kötü kanal linki ve istemci alanlarını reddeder', () => {
     const base = {
       video_url: 'https://www.youtube.com/watch?v=demoClip001',
       channel_name: 'Demo Kanal',
+      channel_url: 'https://www.youtube.com/@demo',
       title: 'Demo yayın',
     };
+    const { channel_url: _omitted, ...withoutChannel } = base;
+    void _omitted;
     for (const body of [
       { ...base, video_url: 'https://example.invalid/watch?v=demoClip001' },
       { ...base, video_url: 'javascript:alert(1)' },
       { ...base, channel_name: '   ' },
       { ...base, title: '' },
-      { ...base, channel_url: 'http://www.youtube.com/@demo' },
-      { ...base, channel_url: 'https://example.invalid/@demo' },
+      withoutChannel,
+      { ...base, channel_url: '' },
+      { ...base, channel_url: null },
+      { ...base, channel_url: 'javascript:alert(1)' },
+      { ...base, channel_url: 'www.youtube.com/@demo' },
+      { ...base, channel_url: 'https://example.invalid/a b' },
+      { ...base, channel_url: `https://example.invalid/${'a'.repeat(300)}` },
       { ...base, duration_seconds: 0 },
       { ...base, duration_seconds: 1.5 },
       { ...base, permission_status: 'granted' },
@@ -56,22 +67,46 @@ describe('clipSourceSchema', () => {
     expect(
       clipSourceSchema.parse({
         ...base,
-        channel_url: 'https://www.youtube.com/@demo',
+        channel_url: 'https://www.twitch.tv/demo',
         duration_seconds: 3600,
       }),
     ).toMatchObject({
-      channel_url: 'https://www.youtube.com/@demo',
+      channel_url: 'https://www.twitch.tv/demo',
       duration_seconds: 3600,
     });
     expect(
-      clipSourceSchema.parse({ ...base, channel_url: '' }).channel_url,
-    ).toBe(null);
+      clipSourceSchema.safeParse(withoutChannel).error?.issues[0]?.message,
+    ).toMatch(/Atıf için kanal linki/);
+  });
+});
+
+describe('izin etiketleri ve atıf satırı', () => {
+  it('izin durumu bilgi olarak etiketlenir', () => {
+    expect(permissionLabels).toEqual({
+      pending: 'İzin alınmadı',
+      granted: 'İzin alındı',
+      denied: 'Reddedildi',
+    });
+  });
+
+  it('atıf satırı kanal adı ve bağlantısını taşır; bağlantı yoksa null', () => {
+    expect(
+      clipAttribution({
+        channel_name: 'Demo Kanal',
+        channel_url: 'https://www.youtube.com/@demo',
+      }),
+    ).toBe('Kaynak: Demo Kanal (https://www.youtube.com/@demo)');
+    expect(
+      clipAttribution({ channel_name: 'Demo Kanal', channel_url: null }),
+    ).toBeNull();
   });
 });
 
 describe('clipSourcePatchSchema', () => {
-  it('“izin verildi” için aynı istekte dolu referans ister', () => {
+  it('“izin alındı” için aynı istekte dolu referans ister; kanal linki silinemez', () => {
     for (const body of [
+      { channel_url: '' },
+      { channel_url: null },
       { permission_status: 'granted' },
       { permission_status: 'granted', permission_ref: '   ' },
       { permission_status: 'approved', permission_ref: 'IZIN-1' },
@@ -176,11 +211,23 @@ describe('clipPatchSchema', () => {
       { start_seconds: 10, end_seconds: 400 },
       { content_item_id: SOURCE },
       { source_id: SOURCE },
+      { takedown_requested_at: '2026-11-16T00:00:00Z' },
+      { takedown: 'yes' },
+      { takedown: true, takedown_note: 'kisi@example.invalid' },
     ])
       expect(
         clipPatchSchema.safeParse(body).success,
         JSON.stringify(body),
       ).toBe(false);
+  });
+
+  it('kaldırma isteği işaretini ve kısa notu kabul eder', () => {
+    expect(
+      clipPatchSchema.parse({ takedown: true, takedown_note: ' Platform ' }),
+    ).toEqual({ takedown: true, takedown_note: 'Platform' });
+    expect(clipPatchSchema.parse({ takedown: false })).toEqual({
+      takedown: false,
+    });
   });
 });
 

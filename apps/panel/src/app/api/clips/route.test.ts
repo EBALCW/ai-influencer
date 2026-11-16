@@ -82,6 +82,7 @@ const writes = (table: string) =>
 const source = {
   video_url: 'https://youtu.be/demoClip001',
   channel_name: 'Demo Kanal',
+  channel_url: 'https://www.youtube.com/@demo',
   title: 'Demo yayın',
 };
 const clip = {
@@ -137,15 +138,17 @@ describe('/api/clip-sources', () => {
       video_id: 'demoClip001',
       video_url: 'https://www.youtube.com/watch?v=demoClip001',
       channel_name: 'Demo Kanal',
-      channel_url: null,
+      channel_url: 'https://www.youtube.com/@demo',
       title: 'Demo yayın',
       duration_seconds: null,
       notes: '',
     });
   });
 
-  it('YouTube dışı link ve istemci izin/audit alanı 400; aynı video 409', async () => {
+  it('YouTube dışı link, kanal linksiz kaynak ve istemci izin/audit alanı 400; aynı video 409', async () => {
     for (const body of [
+      { ...source, channel_url: '' },
+      { ...source, channel_url: 'javascript:alert(1)' },
       { ...source, video_url: 'https://example.invalid/watch?v=demoClip001' },
       { ...source, permission_status: 'granted', permission_ref: 'X' },
       { ...source, created_by: 'spoof' },
@@ -262,6 +265,36 @@ describe('/api/clips', () => {
     ).toBe(404);
     expect((await deleteClip(json({}, 'DELETE'), ctx)).status).toBe(204);
   });
+
+  it('kaldırma isteğini işaretler ve geri alır; zaman istemciden alınmaz', async () => {
+    expect(
+      (
+        await patchClip(
+          json(
+            { takedown: true, takedown_note: 'Platform bildirimi' },
+            'PATCH',
+          ),
+          ctx,
+        )
+      ).status,
+    ).toBe(200);
+    const marked = writes('clips')[0]?.args[0] as Record<string, unknown>;
+    expect(marked.takedown_note).toBe('Platform bildirimi');
+    expect(typeof marked.takedown_requested_at).toBe('string');
+    expect(marked).not.toHaveProperty('takedown');
+    await patchClip(json({ takedown: false }, 'PATCH'), ctx);
+    expect(writes('clips')[1]?.args[0]).toEqual({
+      takedown_requested_at: null,
+    });
+    expect(
+      (
+        await patchClip(
+          json({ takedown_requested_at: '2020-01-01T00:00:00Z' }, 'PATCH'),
+          ctx,
+        )
+      ).status,
+    ).toBe(400);
+  });
 });
 
 describe('POST /api/clips/[id]/backlog', () => {
@@ -281,16 +314,18 @@ describe('POST /api/clips/[id]/backlog', () => {
     expect(state.rpc[1]?.args).toEqual({ p_clip_id: id });
   });
 
-  it('izinsiz kaynak 422, ikinci aktarım 409, bilinmeyen klip 404', async () => {
-    state.rpcError = {
-      code: '23514',
-      message: 'Kaynağın izni onaylanmadan klip backlog’a aktarılamaz.',
-    };
-    let response = await backlog(json({}), ctx);
-    expect(response.status).toBe(422);
-    expect(await error(response)).toBe(
-      'Kaynağın izni onaylanmadan klip backlog’a aktarılamaz.',
-    );
+  it('reddedilmiş kaynak, atıfsız kaynak ve kaldırma isteği 422; ikinci aktarım 409, bilinmeyen klip 404', async () => {
+    let response: Response;
+    for (const message of [
+      'Yayıncı izni reddetti; bu kaynaktan klip kullanılamaz.',
+      'Atıf için kaynağa kanal bağlantısı ekleyin.',
+      'Bu klip için kaldırma isteği var; backlog’a aktarılamaz.',
+    ]) {
+      state.rpcError = { code: '23514', message };
+      response = await backlog(json({}), ctx);
+      expect(response.status).toBe(422);
+      expect(await error(response)).toBe(message);
+    }
     state.rpcError = {
       code: '23505',
       message: 'Bu klip zaten backlog’a aktarıldı.',

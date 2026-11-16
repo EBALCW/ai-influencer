@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase, VIEWER_STATE } from './global-setup';
 
@@ -222,6 +223,7 @@ test('deal uçtan uca takip edilir: marka → deal → aşamalar → içerik →
       expect(
         (
           await vp.request.patch(`/api/brand-deals/${dealId}`, {
+            headers: sameOrigin,
             data: { stage: 'lost' },
           })
         ).status(),

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 
@@ -266,7 +267,7 @@ test('şablon + AI önerisiyle yanıt kuyruğa alınır; çift istek ikinci yan�
 
   const again = await page.request.post(
     `/api/comments/${f.comments.yt}/reply`,
-    { data: { body: 'İkinci deneme' } },
+    { headers: sameOrigin, data: { body: 'İkinci deneme' } },
   );
   expect(again.status()).toBe(200);
   expect(await again.json()).toMatchObject({ duplicate: true });

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 import { checklistKeys } from '../src/lib/content/checklist-schema';
@@ -95,6 +96,7 @@ test('viewer yayın durumunu görür ama yayın butonları yok, API 403', async 
     expect(
       (
         await page.request.post(`/api/content-items/${item.data.id}/publish`, {
+          headers: sameOrigin,
           data: { mode: 'now', title: 'Viewer' },
         })
       ).status(),
@@ -102,6 +104,7 @@ test('viewer yayın durumunu görür ama yayın butonları yok, API 403', async 
     expect(
       (
         await page.request.post(`/api/publish-jobs/${job.data.id}/cancel`, {
+          headers: sameOrigin,
           data: {},
         })
       ).status(),

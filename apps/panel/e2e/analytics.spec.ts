@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 
@@ -284,6 +285,7 @@ test('öğrenim eklenir ve listelenir; boş metin 400 döner', async ({ page }) 
   ).toContainText('açılışı kısalt');
 
   const blank = await page.request.post('/api/learnings', {
+    headers: sameOrigin,
     data: { body: '   ', postId: posts.target },
   });
   expect(blank.status()).toBe(400);
@@ -382,6 +384,7 @@ test('elle metrik girilir, tabloda görünür; API noktası ezilmez, geçersiz s
   const corrected = await page.request.post(
     `/api/posts/${posts.target}/manual-metrics`,
     {
+      headers: sameOrigin,
       data: { targetHours: 72, views: 650, likes: 41, comments: 6, shares: 2 },
     },
   );
@@ -404,6 +407,7 @@ test('elle metrik girilir, tabloda görünür; API noktası ezilmez, geçersiz s
   const conflict = await page.request.post(
     `/api/posts/${posts.target}/manual-metrics`,
     {
+      headers: sameOrigin,
       data: { targetHours: 168, views: 1, likes: 1, comments: 1, shares: 1 },
     },
   );
@@ -421,6 +425,7 @@ test('elle metrik girilir, tabloda görünür; API noktası ezilmez, geçersiz s
   const invalid = await page.request.post(
     `/api/posts/${posts.target}/manual-metrics`,
     {
+      headers: sameOrigin,
       data: { targetHours: 24, views: -5, likes: 1, comments: 1, shares: 1 },
     },
   );
@@ -489,6 +494,7 @@ test('performans takibi: medyana göre konum, takıldı/patladı grubu ve ses t�
 
   // Owner olmayan eşik değiştiremez; geçersiz ses türü 400
   const put = await page.request.put('/api/analytics/settings', {
+    headers: sameOrigin,
     data: {
       stuckViews: 1,
       stuckWithinHours: 1,
@@ -498,6 +504,7 @@ test('performans takibi: medyana göre konum, takıldı/patladı grubu ve ses t�
   });
   expect(put.status()).toBe(403);
   const bad = await page.request.patch(`/api/posts/${posts.target}`, {
+    headers: sameOrigin,
     data: { soundType: 'viral' },
   });
   expect(bad.status()).toBe(400);

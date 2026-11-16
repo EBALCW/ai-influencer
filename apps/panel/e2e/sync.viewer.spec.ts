@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { hasLocalSupabase } from './global-setup';
 
 // Senkronizasyon (#53): viewer günlüğü görür, tetikleyemez.
@@ -18,7 +19,9 @@ test('viewer senkronizasyon sayfasını görür ama tetikleyemez (buton yok, API
   await expect(
     page.getByRole('button', { name: 'Şimdi senkronize et' }),
   ).toHaveCount(0);
-  expect((await page.request.post('/api/sync', { data: {} })).status()).toBe(
-    403,
-  );
+  expect(
+    (
+      await page.request.post('/api/sync', { headers: sameOrigin, data: {} })
+    ).status(),
+  ).toBe(403);
 });

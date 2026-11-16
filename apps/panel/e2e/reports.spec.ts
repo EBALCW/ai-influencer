@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase, VIEWER_STATE } from './global-setup';
 
@@ -250,6 +251,7 @@ test('haftalık rapor tek tıkla oluşur; CSV ve yazdırma görünümü çalış
       expect(
         (
           await vp.request.post('/api/reports', {
+            headers: sameOrigin,
             data: { periodStart: WEEK.from, influencerId },
           })
         ).status(),
@@ -267,7 +269,12 @@ test('haftalık rapor tek tıkla oluşur; CSV ve yazdırma görünümü çalış
         (await guest.request.get(`/api/exports/posts?${query}`)).status(),
       ).toBe(401);
       expect(
-        (await guest.request.post('/api/reports', { data: {} })).status(),
+        (
+          await guest.request.post('/api/reports', {
+            headers: sameOrigin,
+            data: {},
+          })
+        ).status(),
       ).toBe(401);
     } finally {
       await guest.close();

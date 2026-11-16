@@ -9,7 +9,8 @@ const idSchema = z.string().uuid();
 
 /**
  * "Backlog'a aktar" (#173 → #57): klipten `idea` aşamasında içerik kartı açar
- * (`push_clip_to_backlog`, tek transaction). Kaynağın izni `granted` değilse
+ * (`push_clip_to_backlog`, tek transaction). İzin şart değildir (#254); yayıncı
+ * reddettiyse, kaynakta kanal linki (atıf) yoksa ya da klipte kaldırma isteği varsa
  * veritabanı reddeder (422). Atanmamış klip için hedef influencer gövdede verilir.
  */
 export async function POST(

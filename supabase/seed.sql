@@ -146,9 +146,9 @@ ON CONFLICT (id) DO UPDATE SET
 -- Demo yayıncı klipleri (#173): /clips örnekleri. Kanal adları ve video id'leri uydurmadır.
 INSERT INTO public.clip_sources (id, platform, video_id, video_url, channel_name, channel_url, title, duration_seconds, permission_status, permission_ref, notes)
 VALUES
-  ('80000000-0000-4000-8000-000000000001', 'youtube', 'demoClip001', 'https://www.youtube.com/watch?v=demoClip001', 'Demo Sohbet Kanalı', NULL,
+  ('80000000-0000-4000-8000-000000000001', 'youtube', 'demoClip001', 'https://www.youtube.com/watch?v=demoClip001', 'Demo Sohbet Kanalı', 'https://www.youtube.com/@demo-sohbet-kanali',
    'Demo: haftalık sohbet yayını', 5400, 'granted', 'DEMO-IZIN-001', 'Demo: izin belgesi kısıtlı depoda'),
-  ('80000000-0000-4000-8000-000000000002', 'youtube', 'demoClip002', 'https://www.youtube.com/watch?v=demoClip002', 'Demo Oyun Kanalı', NULL,
+  ('80000000-0000-4000-8000-000000000002', 'youtube', 'demoClip002', 'https://www.youtube.com/watch?v=demoClip002', 'Demo Oyun Kanalı', 'https://www.youtube.com/@demo-oyun-kanali',
    'Demo: turnuva yayını', NULL, 'pending', '', '')
 ON CONFLICT (id) DO UPDATE SET
   platform = EXCLUDED.platform,
@@ -167,7 +167,7 @@ VALUES
   ('81000000-0000-4000-8000-000000000001', '80000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001',
    'Demo: beklenmedik soru anı', 'Demo: “Bunu kimse sormamıştı”', 754, 812, 'candidate', ''),
   ('81000000-0000-4000-8000-000000000002', '80000000-0000-4000-8000-000000000002', NULL,
-   'Demo: son saniye dönüşü', NULL, 120, 165, 'candidate', 'Demo: izin bekleniyor')
+   'Demo: son saniye dönüşü', NULL, 120, 165, 'candidate', 'Demo: izin alınmadı, atıfla kullanılır')
 ON CONFLICT (id) DO UPDATE SET
   source_id = EXCLUDED.source_id,
   influencer_id = EXCLUDED.influencer_id,
