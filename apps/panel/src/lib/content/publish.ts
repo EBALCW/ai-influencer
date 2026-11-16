@@ -102,6 +102,9 @@ const blockers: Record<string, string> = {
   no_target_account: 'Önce hedef hesap seçin.',
   source_missing: SOURCE_MISSING_MESSAGE,
   scorer_is_producer: SCORER_IS_PRODUCER_MESSAGE,
+  // Yayıncı klibi (#254): klipte "kaldırma isteği geldi" işareti varken yayın işi açılmaz.
+  clip_takedown_requested:
+    'Bu içeriğin klibi için kaldırma isteği var; yayınlanamaz. Ayrıntı: Klipler sayfası.',
 };
 export function publishBlocker(error: {
   code?: string;

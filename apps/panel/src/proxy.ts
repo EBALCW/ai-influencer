@@ -1,10 +1,19 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@ai-influencer/shared';
+import { isCrossOriginApiMutation } from './lib/same-origin';
 import { getSupabasePublicEnv } from './lib/supabase/env';
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  // CSRF: değiştirici API istekleri yalnız panelin kendi origin'inden kabul edilir (#254).
+  // Oturum denetiminden önce çalışır; uçlardaki yetki denetimleri aynen sürer.
+  if (isCrossOriginApiMutation(request)) {
+    return NextResponse.json(
+      { error: 'Geçersiz istek kaynağı.' },
+      { status: 403 },
+    );
+  }
   if (path === '/login' || path.startsWith('/auth/')) {
     return NextResponse.next();
   }

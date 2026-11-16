@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase, VIEWER_EMAIL } from './global-setup';
 
@@ -95,15 +96,24 @@ test('okundu API: viewer 200, geçersiz id 400, olmayan uyarı 404', async ({
 }) => {
   await page.goto('/notifications');
   expect(
-    (await page.request.post(`/api/alerts/${SEED_ALERT}/read`)).status(),
+    (
+      await page.request.post(`/api/alerts/${SEED_ALERT}/read`, {
+        headers: sameOrigin,
+      })
+    ).status(),
   ).toBe(200);
   expect(
-    (await page.request.post('/api/alerts/not-a-uuid/read')).status(),
+    (
+      await page.request.post('/api/alerts/not-a-uuid/read', {
+        headers: sameOrigin,
+      })
+    ).status(),
   ).toBe(400);
   expect(
     (
       await page.request.post(
         '/api/alerts/00000000-0000-4000-8000-0000000000ff/read',
+        { headers: sameOrigin },
       )
     ).status(),
   ).toBe(404);
@@ -133,6 +143,7 @@ test('viewer bildirim ayarlarını görür ama değiştiremez', async ({ page })
     page.getByRole('button', { name: 'Bildirim ayarlarını kaydet' }),
   ).toHaveCount(0);
   const put = await page.request.put('/api/notification-settings', {
+    headers: sameOrigin,
     data: {
       viralMultiplier: 5,
       followerMilestones: [1000],

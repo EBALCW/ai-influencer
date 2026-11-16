@@ -311,14 +311,14 @@ isOneToOne: false
                   ]
                 },"clips": {
                   Row: {
-                    "content_item_id": string | null,"created_at": string,"created_by": string | null,"end_seconds": number,"hook": string | null,"id": string,"influencer_id": string | null,"notes": string,"source_id": string,"start_seconds": number,"status": Database["public"]['Enums']["clip_status"],"title": string,"updated_at": string,"workspace_id": string
+                    "content_item_id": string | null,"created_at": string,"created_by": string | null,"end_seconds": number,"hook": string | null,"id": string,"influencer_id": string | null,"notes": string,"source_id": string,"start_seconds": number,"status": Database["public"]['Enums']["clip_status"],"takedown_note": string,"takedown_requested_at": string | null,"title": string,"updated_at": string,"workspace_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds": number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id": string,"start_seconds": number,"status"?: Database["public"]['Enums']["clip_status"],"title": string,"updated_at"?: string,"workspace_id"?: string
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds": number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id": string,"start_seconds": number,"status"?: Database["public"]['Enums']["clip_status"],"takedown_note"?: string,"takedown_requested_at"?: string | null,"title": string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Update: {
-                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds"?: number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id"?: string,"start_seconds"?: number,"status"?: Database["public"]['Enums']["clip_status"],"title"?: string,"updated_at"?: string,"workspace_id"?: string
+                    "content_item_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"end_seconds"?: number,"hook"?: string | null,"id"?: string,"influencer_id"?: string | null,"notes"?: string,"source_id"?: string,"start_seconds"?: number,"status"?: Database["public"]['Enums']["clip_status"],"takedown_note"?: string,"takedown_requested_at"?: string | null,"title"?: string,"updated_at"?: string,"workspace_id"?: string
                   }
                   Relationships: [
                     {

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase, VIEWER_STATE } from './global-setup';
 
@@ -190,7 +191,10 @@ test('seri → elle öneriler → seçim → senaryo ve kaynak notları → onay
     ).toHaveCount(0);
     const denied = await viewer.request.post(
       `/api/explainers/episodes/${episodeId}/approve`,
-      { data: { script_version: 1, acknowledge_fact_gaps: true } },
+      {
+        headers: sameOrigin,
+        data: { script_version: 1, acknowledge_fact_gaps: true },
+      },
     );
     expect(denied.status()).toBe(403);
   } finally {
@@ -204,10 +208,22 @@ test('seri → elle öneriler → seçim → senaryo ve kaynak notları → onay
   await expect(approveButton).toBeDisabled();
   const refused = await page.request.post(
     `/api/explainers/episodes/${episodeId}/approve`,
-    { data: { script_version: 1 } },
+    { headers: sameOrigin, data: { script_version: 1 } },
   );
   expect(refused.status()).toBe(422);
   expect(((await refused.json()) as { code: string }).code).toBe('fact_gaps');
+  // CSRF (#254): başka siteden ya da Origin'siz gelen istek, editor oturumuyla ve geçerli
+  // gövdeyle bile onay veremez.
+  for (const headers of [{ origin: 'https://example.invalid' }, {}]) {
+    const forged = await page.request.post(
+      `/api/explainers/episodes/${episodeId}/approve`,
+      { headers, data: { script_version: 1, acknowledge_fact_gaps: true } },
+    );
+    expect(forged.status(), JSON.stringify(headers)).toBe(403);
+    expect(((await forged.json()) as { error: string }).error).toBe(
+      'Geçersiz istek kaynağı.',
+    );
+  }
   await approval.getByLabel(/Kaynak eksiğini biliyorum/).check();
   await approveButton.click();
   await expect(page.getByText(/Senaryo onaylandı/)).toBeVisible();
@@ -305,7 +321,10 @@ test('seri → elle öneriler → seçim → senaryo ve kaynak notları → onay
   // Üretim sürerken senaryo API'den de değiştirilemez.
   const locked = await page.request.put(
     `/api/explainers/episodes/${episodeId}/script`,
-    { data: { script_text: 'değişti', expected_version: 2 } },
+    {
+      headers: sameOrigin,
+      data: { script_text: 'değişti', expected_version: 2 },
+    },
   );
   expect(locked.status()).toBe(409);
 
@@ -373,6 +392,7 @@ test('tekil video: seri olmadan; çakışmada sessizce üstüne yazılmaz; eski 
 
   // Başka bir editör aynı anda kaydeder (sürüm 2).
   const other = await page.request.put(scriptApi, {
+    headers: sameOrigin,
     data: { script_text: 'Başka editörün metni.', expected_version: 1 },
   });
   expect(other.status()).toBe(200);
@@ -457,10 +477,12 @@ test('tekil video: seri olmadan; çakışmada sessizce üstüne yazılmaz; eski 
   // Seriye taşıma: tekil video serinin ilk bölümü olur.
   const seriesName = `E2E Taşıma ${run}`;
   const created = await page.request.post('/api/explainers/series', {
+    headers: sameOrigin,
     data: { name: seriesName, settings: { visual_route: 'hyperframes' } },
   });
   expect(created.status()).toBe(201);
   const duplicate = await page.request.post('/api/explainers/series', {
+    headers: sameOrigin,
     data: { name: seriesName.toLocaleUpperCase('tr') },
   });
   expect(duplicate.status()).toBe(409);

@@ -18,7 +18,7 @@ Panel yalnızca AI influencer içeriği için değil: yayıncıların (streamer)
 - Yayıncı açıkça reddettiyse o kaynaktan klip kesilmez. Kaldırma isteği gelirse klip gecikmeden kaldırılır.
 - İzin yazışması, e-posta ve kişi adı repoya ya da panele yazılmaz; yalnızca kısa referans (ör. `IZIN-2026-014`) girilir.
 - Kaynak göstermek lisans yerine geçmez; izinsiz klipte şikâyet ve kaldırma mümkündür.
-- Panel tarafı (`/clips`) henüz eski kuralı uygular: izni "verildi" olmayan kaynaktan içerik kartı oluşturmaz. Değişiklik #254 ile gelecek.
+- Panel tarafı (`/clips`) aynı kuralı uygular (#254): izin durumu bilgidir (İzin alındı / İzin alınmadı / Reddedildi). "İzin alınmadı" engel değildir; klip içerik kartına "izin alınmadı · atıf: <kanal> <bağlantı>" kaydıyla aktarılır. "Reddedildi" kaynağa klip eklenmez ve klipleri aktarılmaz. Kaynak eklerken kanal adı ve kanal linki zorunludur; klip satırındaki "Atfı kopyala" atıf satırını caption'a yapıştırmak için kopyalar. Kaldırma isteği gelirse klip satırındaki "Kaldırma isteği geldi" ile işaretlenir: klip aktarılamaz, kartına yeni yayın işi açılamaz ve sonraki adımlar gösterilir (yayındaki klibi platformdan kaldırmak ve kuyruktaki yayın işini iptal etmek elle yapılır).
 
 ## Gereksinimler
 

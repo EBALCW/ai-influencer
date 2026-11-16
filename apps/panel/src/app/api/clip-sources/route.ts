@@ -6,7 +6,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
  * Klip kaynağı (yayıncı videosu) ekler (#173). En az editor. Link kanonik
- * YouTube biçimine çevrilir; izin `pending` başlar ve ayrıca işaretlenir.
+ * YouTube biçimine çevrilir; kanal linki (atıf) zorunludur. İzin `pending`
+ * (izin alınmadı) başlar; bu aktarıma engel değildir (#254).
  * `created_by` trigger ile dolar, istemciden alınmaz.
  */
 export async function POST(request: Request) {

@@ -107,6 +107,7 @@ RLS'i aşan kod alanı kendisi denetler:
 - **Yetki her zaman sunucuda kontrol edilir.** UI'da butonu gizlemek yetki kontrolü değildir. Route handler ve server action'lar oturumu ve rolü kendisi doğrular, RLS de ikinci savunma hattıdır.
 - **Girdi doğrulama:** Dışarıdan gelen her veri (body, query, params, form) Zod ile doğrulanır. Hata durumunda 400 ve anlaşılır bir mesaj döner.
 - **Service role anahtarı** sadece `import 'server-only'` içeren modüllerde kullanılır. Hiçbir `NEXT_PUBLIC_*` değişkeninde sır olmaz.
+- **İstek kaynağı (CSRF):** `/api/**` altındaki GET/HEAD/OPTIONS dışı her istek `src/proxy.ts` içinde `isCrossOriginApiMutation` (`src/lib/same-origin.ts`) ile denetlenir: `Origin` başlığı panelin kendi origin'i değilse 403. Muaf yol yoktur (tarayıcı dışı meşru çağıran yok; liste ve gerekçe yardımcı dosyada). Yeni makine-makine ucu gerekirse muafiyet oraya gerekçesi ve kendi kimlik doğrulamasıyla eklenir. Playwright'ın `request` API'si `Origin` göndermez; doğrudan API çağıran e2e testleri `e2e/same-origin.ts` → `sameOrigin` başlığını ekler.
 - **Redirect'ler:** `next`/`redirect` gibi parametrelerle yönlendirme yapılıyorsa sadece aynı origin'deki göreli yollar kabul edilir (open redirect yasak).
 - **Env eksikse:** Uygulama anlamlı bir hata verir, build kırılmaz. CI'da Supabase secret'ı yok, build ve E2E secret olmadan geçmeli.
 - **Durum kodları:** `notFound()`, 401/403 gibi davranışlar E2E'de **HTTP status** ile test edilir. Suspense/stream altında sayfa 200 dönebilir.

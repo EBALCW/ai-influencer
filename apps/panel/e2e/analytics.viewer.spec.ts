@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { hasLocalSupabase } from './global-setup';
 
 // Viewer rolü: analitiği okur, öğrenim ekleyemez. Seed'deki demo postları kullanılır.
@@ -29,6 +30,7 @@ test('viewer analitik ve post detayını görür ama öğrenim formu yok', async
 test('viewer öğrenim API çağrısında 403 alır', async ({ page }) => {
   await page.goto('/analytics');
   const response = await page.request.post('/api/learnings', {
+    headers: sameOrigin,
     data: { body: 'viewer denemesi', postId: demoPost },
   });
   expect(response.status()).toBe(403);
@@ -46,7 +48,10 @@ test('viewer elle metrik formunu görmez, API çağrısında 403 alır', async (
   );
   const response = await page.request.post(
     `/api/posts/${demoPost}/manual-metrics`,
-    { data: { targetHours: 24, views: 1, likes: 1, comments: 1, shares: 1 } },
+    {
+      headers: sameOrigin,
+      data: { targetHours: 24, views: 1, likes: 1, comments: 1, shares: 1 },
+    },
   );
   expect(response.status()).toBe(403);
 });
@@ -65,6 +70,7 @@ test('viewer performans takibini görür; ses türü ve eşik değiştiremez', a
   await page.goto(`/analytics/posts/${demoPost}?inf=demo-creator`);
   await expect(page.getByRole('form', { name: 'Ses türü' })).toHaveCount(0);
   const patch = await page.request.patch(`/api/posts/${demoPost}`, {
+    headers: sameOrigin,
     data: { soundType: 'trend' },
   });
   expect(patch.status()).toBe(403);

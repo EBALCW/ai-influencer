@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { hasLocalSupabase } from './global-setup';
 
 // Gelen kutusu (#61): viewer yorumları okur, yanıtlayamaz/gizleyemez (buton yok, API 403).
@@ -21,6 +22,7 @@ test('viewer gelen kutusunu salt okur', async ({ page }) => {
   expect(
     (
       await page.request.post(`/api/comments/${SEED_COMMENT}/reply`, {
+        headers: sameOrigin,
         data: { body: 'Merhaba' },
       })
     ).status(),
@@ -28,6 +30,7 @@ test('viewer gelen kutusunu salt okur', async ({ page }) => {
   expect(
     (
       await page.request.patch(`/api/comments/${SEED_COMMENT}`, {
+        headers: sameOrigin,
         data: { status: 'hidden' },
       })
     ).status(),
@@ -35,6 +38,7 @@ test('viewer gelen kutusunu salt okur', async ({ page }) => {
   expect(
     (
       await page.request.post(`/api/comments/${SEED_COMMENT}/lead`, {
+        headers: sameOrigin,
         data: { brandName: 'X' },
       })
     ).status(),

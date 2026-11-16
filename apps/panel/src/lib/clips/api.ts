@@ -17,7 +17,11 @@ export function clipDbError(error: { code?: string; message: string }) {
     return jsonError('Kaynak veya influencer bulunamadı.', 400);
   if (error.code === '23514' || error.code === '22023') {
     if (error.message.includes('clip_sources_granted_needs_ref'))
-      return jsonError('“İzin verildi” için izin referansı gerekli.', 422);
+      return jsonError('“İzin alındı” için izin referansı gerekli.', 422);
+    if (error.message.includes('clip_sources_channel_url_check'))
+      return jsonError('Kanal linki http:// veya https:// ile başlamalı.', 422);
+    if (error.message.includes('clips_takedown_note_check'))
+      return jsonError('Nota e-posta veya kişisel bilgi yazmayın.', 422);
     if (error.message.includes('clips_range_valid'))
       return jsonError(
         'Bitiş başlangıçtan sonra olmalı ve klip en fazla 180 sn sürebilir.',

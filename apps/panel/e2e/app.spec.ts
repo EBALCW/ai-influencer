@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase, OWNER_EMAIL } from './global-setup';
 
@@ -422,7 +423,11 @@ test('owner sosyal hesap bağlantı formlarını görür; bilinmeyen OAuth platf
       'form[action="/api/oauth/youtube/start"] input[name="influencerId"]',
     ),
   ).toHaveValue('10000000-0000-4000-8000-000000000001');
-  expect((await request.post('/api/oauth/foo/start')).status()).toBe(404);
+  expect(
+    (
+      await request.post('/api/oauth/foo/start', { headers: sameOrigin })
+    ).status(),
+  ).toBe(404);
 });
 
 test('profilde gerçek kullanıcı ve çıkış var', async ({ page }) => {

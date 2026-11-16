@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { sameOrigin } from './same-origin';
 import { expect, test } from '@playwright/test';
 import { hasLocalSupabase } from './global-setup';
 
@@ -74,6 +75,7 @@ test('viewer API ile iptal veya yeniden deneme yapamaz (403)', async ({
     [genIds[0], 'retry'],
   ]) {
     const res = await page.request.post(`/api/generations/${id}/${action}`, {
+      headers: sameOrigin,
       data: {},
     });
     expect(res.status()).toBe(403);

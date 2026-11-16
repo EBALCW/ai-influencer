@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { unlink } from 'node:fs/promises';
 import { createSession, hasLocalSupabase, VIEWER_STATE } from './global-setup';
@@ -48,6 +49,7 @@ test('wizard ve içerik kartında AI önerisi yalnız onayla forma, kaydet ile D
   const slug = `ai-${crypto.randomUUID()}`;
   try {
     const created = await page.request.post('/api/influencers', {
+      headers: sameOrigin,
       data: { name: 'AI fixture', slug, niche: 'Teknoloji', language: 'tr' },
     });
     expect(created.status()).toBe(201);
@@ -160,12 +162,18 @@ test('wizard ve içerik kartında AI önerisi yalnız onayla forma, kaydet ile D
       expect(
         (
           await vp.request.post('/api/ai/suggest', {
+            headers: sameOrigin,
             data: { influencerId: id, request: { task: 'weekly', input: {} } },
           })
         ).status(),
       ).toBe(403);
       expect(
-        (await vp.request.put('/api/ai/settings', { data: {} })).status(),
+        (
+          await vp.request.put('/api/ai/settings', {
+            headers: sameOrigin,
+            data: {},
+          })
+        ).status(),
       ).toBe(403);
     } finally {
       await viewer.close();
@@ -175,7 +183,12 @@ test('wizard ve içerik kartında AI önerisi yalnız onayla forma, kaydet ile D
     });
     try {
       expect(
-        (await guest.request.post('/api/ai/suggest', { data: {} })).status(),
+        (
+          await guest.request.post('/api/ai/suggest', {
+            headers: sameOrigin,
+            data: {},
+          })
+        ).status(),
       ).toBe(401);
     } finally {
       await guest.close();
@@ -241,7 +254,12 @@ test('anahtar yoksa uyarı görünür; owner ayar kaydeder, editor değiştireme
     await page.goto('/settings/ai');
     await expect(page.getByLabel('Model ID', { exact: true })).toBeDisabled();
     expect(
-      (await page.request.put('/api/ai/settings', { data: {} })).status(),
+      (
+        await page.request.put('/api/ai/settings', {
+          headers: sameOrigin,
+          data: {},
+        })
+      ).status(),
     ).toBe(403);
     await page.route('**/api/ai/settings', (r) =>
       r.fulfill({

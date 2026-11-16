@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 
@@ -49,7 +50,10 @@ test('editor "Şimdi senkronize et" isteği gönderir; yapılandırma yoksa anla
   ).toBeVisible();
   expect(
     (
-      await page.request.post('/api/sync', { data: { accountId: 'x' } })
+      await page.request.post('/api/sync', {
+        headers: sameOrigin,
+        data: { accountId: 'x' },
+      })
     ).status(),
   ).toBe(400);
 });

@@ -121,7 +121,7 @@ Panel her bilgisayarda yerel olarak çalışır, veri Supabase'de ortak tutulur.
 | Instagram toplayıcısı                                                                              | 🚧 Emre                                                   | #50             |
 | Panelden yayınlama (YouTube, Instagram Reels)                                                      | ✅                                                        | #58             |
 | Birleşik yorum gelen kutusu                                                                        | ✅                                                        | #61             |
-| Yayıncı klipleri: kaynak, izin ve klip adayları (`/clips`)                                         | ✅                                                        | #173            |
+| Yayıncı klipleri: kaynak, atıf, izin durumu, klip adayları, kaldırma isteği (`/clips`)             | ✅                                                        | #173            |
 | Yayıncı klipleri: canlı izleme (`pnpm clip:live`, Twitch; komut satırı)                            | ✅                                                        | #252            |
 | Çalışma alanları: kiracı başına yalıtım (RLS, Storage, service role), `pnpm workspace:create`      | ✅                                                        | #181            |
 | Ana ekran (`/`): modüller, son üretimler, makine durumu; modüllere göre gruplanmış menü            | ✅                                                        | #200            |

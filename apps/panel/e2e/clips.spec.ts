@@ -1,9 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 
-// Yayıncı klipleri (#173): editor kaynak ekler, izni işaretler, klip adayı ekler ve
-// backlog'a aktarır. İzin verilmeden aktarma arayüzde ve API'de engellidir.
+// Yayıncı klipleri (#173, #254): editor kaynağı atıf bilgisiyle ekler, klip adayı ekler ve
+// backlog'a aktarır. İzin şart değildir ("izin alınmadı" engel değil); yayıncı reddettiyse ve
+// kaldırma isteği geldiyse aktarma arayüzde ve API'de engellidir.
 test.skip(!hasLocalSupabase(), 'Yerel Supabase yok (pnpm supabase:start)');
 
 function adminClient() {
@@ -14,14 +16,17 @@ function adminClient() {
   );
 }
 
-test('editor kaynak ekler, izin verir, klip ekler ve backlog’a aktarır', async ({
+test('editor kaynak ekler, izinsiz klibi atıfla aktarır; ret ve kaldırma isteği engeller', async ({
   page,
+  context,
 }) => {
   const admin = adminClient();
   const run = crypto.randomUUID().slice(0, 8);
   const slug = `clips-${run}`;
   const videoId = `e2e${run}`;
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  const channelUrl = `https://www.youtube.com/@e2e-${run}`;
+  const attribution = `Kaynak: E2E Kanal ${run} (${channelUrl})`;
   const inf = await admin
     .from('influencers')
     .insert({ name: `Klip test ${run}`, slug })
@@ -44,6 +49,12 @@ test('editor kaynak ekler, izin verir, klip ekler ve backlog’a aktarır', asyn
       .fill('https://example.invalid/watch?v=abc');
     await sourceForm.getByLabel(/Video başlığı/).fill(`E2E yayın ${run}`);
     await sourceForm.getByLabel(/Kanal adı/).fill(`E2E Kanal ${run}`);
+    // Atıf zorunlu: kanal linki boşken form gönderilmez.
+    await expect(sourceForm.getByLabel(/Kanal linki/)).toHaveAttribute(
+      'required',
+      '',
+    );
+    await sourceForm.getByLabel(/Kanal linki/).fill(channelUrl);
     await sourceForm.getByRole('button', { name: /Kaynağı kaydet/ }).click();
     await expect(sourceForm.getByRole('alert')).toContainText(/YouTube/);
     await sourceForm
@@ -58,9 +69,12 @@ test('editor kaynak ekler, izin verir, klip ekler ve backlog’a aktarır', asyn
       name: new RegExp(`Kaynak: E2E yayın ${run}`),
     });
     await expect(
-      source.getByText('İzin bekleniyor', { exact: true }),
+      source.getByText('İzin alınmadı', { exact: true }),
     ).toBeVisible();
-    await expect(source).toContainText(`E2E Kanal ${run}`);
+    await expect(source).toContainText(/klipler atıfla kullanılabilir/);
+    await expect(
+      source.getByRole('link', { name: `E2E Kanal ${run}` }),
+    ).toHaveAttribute('href', channelUrl);
     await expect(
       source.getByRole('link', { name: new RegExp(`E2E yayın ${run}`) }),
     ).toHaveAttribute('href', videoUrl);
@@ -82,31 +96,74 @@ test('editor kaynak ekler, izin verir, klip ekler ve backlog’a aktarır', asyn
     await expect(row).toContainText('45 sn');
     await expect(row).toContainText(`Klip test ${run}`);
 
-    // 3) İzin yokken aktarma engelli: düğme devre dışı + açıklama, API 422.
+    // 3) Atıf satırı klip satırında; kopyalanıp caption'a yapıştırılır.
+    await expect(row).toContainText(attribution);
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await row.getByRole('button', { name: /Atfı kopyala/ }).click();
+    await expect(page.getByText(/Atıf satırı kopyalandı/)).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      attribution,
+    );
+
     const pushButton = row.getByRole('button', { name: /Backlog'a aktar/ });
-    await expect(pushButton).toBeDisabled();
-    await expect(source).toContainText(/Backlog’a aktarmak için kaynağın izni/);
+    await expect(pushButton).toBeEnabled();
     const { data: clip } = await admin
       .from('clips')
       .select('id, source_id')
       .eq('title', `E2E klip ${run}`)
       .single();
+    const cardCount = async () =>
+      (
+        await admin
+          .from('content_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('influencer_id', influencerId)
+      ).count;
+
+    // 4) CSRF: başka siteden ya da Origin'siz gelen aktarma isteği reddedilir.
+    for (const headers of [{ origin: 'https://example.invalid' }, {}]) {
+      const forged = await page.request.post(`/api/clips/${clip!.id}/backlog`, {
+        headers,
+        data: { influencer_id: influencerId },
+      });
+      expect(forged.status(), JSON.stringify(headers)).toBe(403);
+    }
+    expect(await cardCount()).toBe(0);
+
+    // 5) Yayıncı reddetti: aktarma ve yeni klip arayüzde kapalı, API 422.
+    const permissionForm = source.getByRole('form', { name: /İzni işaretle/ });
+    await source.getByRole('button', { name: /İzni işaretle/ }).click();
+    await permissionForm.getByLabel(/İzin durumu/).selectOption('denied');
+    await permissionForm.getByRole('button', { name: /İzni kaydet/ }).click();
+    await expect(page.getByText(/İzin durumu kaydedildi/)).toBeVisible();
+    await expect(source.getByText('Reddedildi', { exact: true })).toBeVisible();
+    await expect(source).toContainText(/Yayıncı izni reddetti/);
+    await expect(pushButton).toBeDisabled();
+    await expect(
+      source.getByRole('button', { name: /Klip ekle/ }),
+    ).toBeDisabled();
     const denied = await page.request.post(`/api/clips/${clip!.id}/backlog`, {
+      headers: sameOrigin,
       data: { influencer_id: influencerId },
     });
     expect(denied.status()).toBe(422);
     expect(((await denied.json()) as { error: string }).error).toMatch(
-      /izni onaylanmadan/,
+      /Yayıncı izni reddetti/,
     );
-    const { count } = await admin
-      .from('content_items')
-      .select('id', { count: 'exact', head: true })
-      .eq('influencer_id', influencerId);
-    expect(count).toBe(0);
+    const deniedClip = await page.request.post('/api/clips', {
+      headers: sameOrigin,
+      data: {
+        source_id: clip!.source_id,
+        title: `E2E reddedilen ${run}`,
+        start_seconds: 0,
+        end_seconds: 20,
+      },
+    });
+    expect(deniedClip.status()).toBe(422);
+    expect(await cardCount()).toBe(0);
 
-    // 4) İzni işaretle: e-posta kabul edilmez, kısa referans zorunlu.
+    // 6) İzin alındı: e-posta kabul edilmez, kısa referans zorunlu.
     await source.getByRole('button', { name: /İzni işaretle/ }).click();
-    const permissionForm = source.getByRole('form', { name: /İzni işaretle/ });
     await permissionForm.getByLabel(/İzin durumu/).selectOption('granted');
     await permissionForm
       .getByLabel(/İzin referansı/)
@@ -117,11 +174,18 @@ test('editor kaynak ekler, izin verir, klip ekler ve backlog’a aktarır', asyn
     await permissionForm.getByRole('button', { name: /İzni kaydet/ }).click();
     await expect(page.getByText(/İzin durumu kaydedildi/)).toBeVisible();
     await expect(
-      source.getByText('İzin verildi', { exact: true }),
+      source.getByText('İzin alındı', { exact: true }),
     ).toBeVisible();
     await expect(source).toContainText(`Referans: IZIN-E2E-${run}`);
 
-    // 5) Backlog'a aktar: Fikir aşamasında üçüncü kişi kaynaklı kart açılır.
+    // 7) Yeniden "izin alınmadı": engel değil. Kart atıfla açılır.
+    await source.getByRole('button', { name: /İzni işaretle/ }).click();
+    await permissionForm.getByLabel(/İzin durumu/).selectOption('pending');
+    await permissionForm.getByLabel(/İzin referansı/).fill('');
+    await permissionForm.getByRole('button', { name: /İzni kaydet/ }).click();
+    await expect(
+      source.getByText('İzin alınmadı', { exact: true }),
+    ).toBeVisible();
     await expect(pushButton).toBeEnabled();
     await pushButton.click();
     const panel = source.getByRole('form', { name: /Backlog'a aktar/ });
@@ -161,21 +225,80 @@ test('editor kaynak ekler, izin verir, klip ekler ve backlog’a aktarır', asyn
       source_url: `${videoUrl}&t=90s`,
       source_type: 'third_party',
       source_owner: `E2E Kanal ${run}`,
-      source_license: `yazılı izin – kısıtlı depoda: IZIN-E2E-${run}`,
+      source_license: `izin alınmadı · atıf: E2E Kanal ${run} ${channelUrl}`,
     });
     const again = await page.request.post(`/api/clips/${clip!.id}/backlog`, {
+      headers: sameOrigin,
       data: {},
     });
     expect(again.status()).toBe(409);
 
-    // 6) Durum değiştirme.
+    // 8) Durum değiştirme.
     await row.getByRole('combobox', { name: /Durum/ }).selectOption('rendered');
     await expect(page.getByText(/Klip durumu güncellendi/)).toBeVisible();
     await expect(row.getByRole('combobox', { name: /Durum/ })).toHaveValue(
       'rendered',
     );
 
-    // 7) Kart içerik kanbanında görünür.
+    // 9) Kaldırma isteği: ikinci klip işaretlenir, sonraki adımlar gösterilir, aktarım kapanır.
+    const second = await page.request.post('/api/clips', {
+      headers: sameOrigin,
+      data: {
+        source_id: clip!.source_id,
+        influencer_id: influencerId,
+        title: `E2E ikinci ${run}`,
+        start_seconds: 200,
+        end_seconds: 230,
+      },
+    });
+    expect(second.status()).toBe(201);
+    const secondId = ((await second.json()) as { clip: { id: string } }).clip
+      .id;
+    await page.reload();
+    const row2 = source
+      .getByRole('row')
+      .filter({ hasText: `E2E ikinci ${run}` });
+    await expect(
+      row2.getByRole('button', { name: /Backlog'a aktar/ }),
+    ).toBeEnabled();
+    await row2.getByRole('button', { name: /Kaldırma isteği geldi/ }).click();
+    const takedownForm = source.getByRole('form', { name: /Kaldırma isteği/ });
+    await expect(takedownForm).toContainText(/backlog’a aktarılamaz/);
+    await takedownForm.getByLabel(/Not/).fill('kisi@example.invalid yazdı');
+    await takedownForm
+      .getByRole('button', { name: /Kaldırma isteğini işaretle/ })
+      .click();
+    await expect(takedownForm.getByRole('alert')).toContainText(/e-posta/);
+    await takedownForm.getByLabel(/Not/).fill(`Platform bildirimi ${run}`);
+    await takedownForm
+      .getByRole('button', { name: /Kaldırma isteğini işaretle/ })
+      .click();
+    await expect(page.getByText(/Kaldırma isteği işaretlendi/)).toBeVisible();
+    await expect(
+      row2.getByRole('button', { name: /Kaldırma işaretini geri al/ }),
+    ).toBeVisible();
+    await expect(source).toContainText(
+      new RegExp(
+        `Kaldırma isteği geldi \\(\\d{4}-\\d{2}-\\d{2}\\): Platform bildirimi ${run}`,
+      ),
+    );
+    await expect(
+      source.getByRole('link', { name: /Ayrıntılı adımlar/ }),
+    ).toHaveAttribute('href', /docs\/compliance\.md/);
+    await expect(
+      row2.getByRole('button', { name: /Backlog'a aktar/ }),
+    ).toHaveCount(0);
+    const blocked = await page.request.post(`/api/clips/${secondId}/backlog`, {
+      headers: sameOrigin,
+      data: {},
+    });
+    expect(blocked.status()).toBe(422);
+    expect(((await blocked.json()) as { error: string }).error).toMatch(
+      /kaldırma isteği/,
+    );
+    expect(await cardCount()).toBe(1);
+
+    // 10) Kart içerik kanbanında görünür.
     await row.getByRole('link', { name: /İçerik kartına git/ }).click();
     await expect(page).toHaveURL(new RegExp(`/content\\?inf=${slug}`));
     await expect(page.getByText(`E2E klip ${run}`).first()).toBeVisible();

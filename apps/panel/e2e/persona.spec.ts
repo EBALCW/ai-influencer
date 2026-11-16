@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase } from './global-setup';
 
@@ -137,12 +138,12 @@ test('geçersiz gövde ve olmayan influencer API seviyesinde reddedilir', async 
   await page.goto(PERSONA_URL);
   const invalid = await page.request.post(
     `/api/influencers/${INFLUENCER_ID}/persona`,
-    { data: { bio: 123 } },
+    { headers: sameOrigin, data: { bio: 123 } },
   );
   expect(invalid.status()).toBe(400);
   const missing = await page.request.post(
     '/api/influencers/10000000-0000-4000-8000-0000000000ff/persona/restore',
-    { data: { version: 1 } },
+    { headers: sameOrigin, data: { version: 1 } },
   );
   expect(missing.status()).toBe(404);
 });

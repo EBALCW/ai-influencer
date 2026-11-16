@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { EDITOR_STATE, hasLocalSupabase } from './global-setup';
 
 // Anlatım modülü: viewer seri, öneri ve senaryoyu okur; hiçbir şeyi değiştiremez (düğme yok,
@@ -15,7 +16,10 @@ test('viewer anlatım ekranlarını salt okur', async ({ page, browser }) => {
   let episodeId = '';
   try {
     const post = async <T>(url: string, data: unknown): Promise<T> => {
-      const response = await editor.request.post(url, { data });
+      const response = await editor.request.post(url, {
+        headers: sameOrigin,
+        data,
+      });
       expect(response.status(), url).toBeLessThan(300);
       return (await response.json()) as T;
     };
@@ -52,6 +56,7 @@ test('viewer anlatım ekranlarını salt okur', async ({ page, browser }) => {
     const saved = await editor.request.put(
       `/api/explainers/episodes/${episodeId}/script`,
       {
+        headers: sameOrigin,
         data: {
           script_text: 'Viewer için senaryo.',
           fact_notes: [
@@ -181,5 +186,8 @@ test('viewer anlatım ekranlarını salt okur', async ({ page, browser }) => {
     ],
   ];
   for (const [url, method, data] of writes)
-    expect((await page.request[method](url, { data })).status(), url).toBe(403);
+    expect(
+      (await page.request[method](url, { headers: sameOrigin, data })).status(),
+      url,
+    ).toBe(403);
 });

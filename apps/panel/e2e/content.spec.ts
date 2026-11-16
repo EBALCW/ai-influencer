@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { sameOrigin } from './same-origin';
 import { createClient } from '@supabase/supabase-js';
 import { hasLocalSupabase, VIEWER_EMAIL, VIEWER_STATE } from './global-setup';
 import { checklistKeys } from '../src/lib/content/checklist-schema';
@@ -143,6 +144,7 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
     await stage.selectOption('edit');
     await expect(stage).toHaveValue('edit');
     const blocked = await page.request.patch(`/api/content-items/${item.id}`, {
+      headers: sameOrigin,
       data: { stage: 'scheduled' },
     });
     expect(blocked.status()).toBe(422);
@@ -176,6 +178,7 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
     await expect(stage).toHaveValue('scheduled');
     await expect(card).toContainText('en az 5 saat');
     const near = await page.request.post('/api/content-items', {
+      headers: sameOrigin,
       data: {
         influencer_id: influencerId,
         title: 'Yakın plan',
@@ -238,6 +241,7 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
       expect(
         (
           await vp.request.patch(`/api/content-items/${item.id}`, {
+            headers: sameOrigin,
             data: { stage: 'edit' },
           })
         ).status(),
@@ -245,6 +249,7 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
       expect(
         (
           await vp.request.post(`/api/content-items/${item.id}/post`, {
+            headers: sameOrigin,
             data: { post_id: post.data.id },
           })
         ).status(),
@@ -252,6 +257,7 @@ test('içerik fikri kanban, checklist, takvim ve post metrikleriyle uçtan uca i
       expect(
         (
           await vp.request.post('/api/posting-slots', {
+            headers: sameOrigin,
             data: {
               account_id: accountId,
               weekday: 1,

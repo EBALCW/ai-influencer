@@ -56,6 +56,10 @@ describe('yayın yardımcıları (#58)', () => {
     expect(
       publishBlocker({ code: '23514', hint: 'scorer_is_producer' })?.status,
     ).toBe(422);
+    expect(
+      publishBlocker({ code: '23514', hint: 'clip_takedown_requested' })
+        ?.message,
+    ).toMatch(/kaldırma isteği/);
     expect(publishBlocker({ code: '23514', hint: 'unknown' })).toBeNull();
     expect(publishBlocker({ code: '42501' })).toBeNull();
   });

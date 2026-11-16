@@ -2,16 +2,30 @@ import { z } from 'zod';
 import { canonicalVideoUrl, parseYouTubeVideoId } from './youtube';
 
 /**
- * Yayıncı klipleri (#173) sözlükleri ve istek şemaları. Değerler veritabanındaki
- * enum/CHECK'lerle aynıdır (`supabase/migrations/20261112100000_streamer_clips.sql`).
+ * Yayıncı klipleri (#173, #254) sözlükleri ve istek şemaları. Değerler veritabanındaki
+ * enum/CHECK'lerle aynıdır (`supabase/migrations/20261112100000_streamer_clips.sql`,
+ * `20261116140000_clip_permission_optional.sql`).
+ *
+ * İzin durumu bilgidir (docs/compliance.md → Yayıncı klipleri): `pending` = izin alınmadı
+ * (engel değil), `granted` = izin alındı, `denied` = yayıncı reddetti (kaynak kullanılmaz).
  */
 export const permissionStatuses = ['pending', 'granted', 'denied'] as const;
 export type PermissionStatus = (typeof permissionStatuses)[number];
 export const permissionLabels: Record<PermissionStatus, string> = {
-  pending: 'İzin bekleniyor',
-  granted: 'İzin verildi',
-  denied: 'İzin reddedildi',
+  pending: 'İzin alınmadı',
+  granted: 'İzin alındı',
+  denied: 'Reddedildi',
 };
+
+/** Caption'a yapıştırılacak atıf satırı; kanal bağlantısı yoksa (eski kayıt) `null`. */
+export function clipAttribution(source: {
+  channel_name: string;
+  channel_url: string | null;
+}): string | null {
+  return source.channel_url
+    ? `Kaynak: ${source.channel_name} (${source.channel_url})`
+    : null;
+}
 
 export const clipStatuses = [
   'candidate',
@@ -51,19 +65,20 @@ const videoUrl = z
   .refine((value) => parseYouTubeVideoId(value) !== null, {
     message: 'Geçerli bir YouTube video linki girin.',
   });
+/** Atıf için zorunlu: yayıncının herkese açık kanal bağlantısı (http/https). */
 const channelUrl = z
-  .union([
-    z.literal(''),
-    z
-      .string()
-      .trim()
-      .max(300)
-      .regex(/^https:\/\/(www\.|m\.)?youtube\.com\/\S+$/, {
-        message: 'Kanal linki https://www.youtube.com/… biçiminde olmalı.',
-      }),
-  ])
-  .nullable()
-  .transform((value) => value || null);
+  .string({ error: 'Atıf için kanal linki gerekli.' })
+  .trim()
+  .min(1, 'Atıf için kanal linki gerekli.')
+  .max(300)
+  .regex(/^https?:\/\/\S+$/, {
+    message: 'Kanal linki http:// veya https:// ile başlamalı.',
+  });
+/** Kaldırma isteği notu; e-posta/kişisel bilgi yazılmaz. */
+export const takedownNoteSchema = text(1000).refine(
+  (value) => !EMAIL.test(value),
+  { message: 'Nota e-posta veya kişisel bilgi yazmayın.' },
+);
 const duration = z.number().int().min(1).max(MAX_VIDEO_SECONDS).nullable();
 
 /** Yeni kaynak: link kanonik biçime çevrilir, `video_id` linkten çıkarılır. */
@@ -71,7 +86,7 @@ export const clipSourceSchema = z
   .object({
     video_url: videoUrl,
     channel_name: requiredText(200, 'Kanal adı gerekli.'),
-    channel_url: channelUrl.default(null),
+    channel_url: channelUrl,
     title: requiredText(300, 'Video başlığı gerekli.'),
     duration_seconds: duration.default(null),
     notes: text(3000).default(''),
@@ -91,6 +106,7 @@ export type ClipSourceInput = z.output<typeof clipSourceSchema>;
 /**
  * PATCH: yalnız gönderilen alanlar değişir. İzin `granted` yapılırken referans
  * aynı istekte ve dolu gelmelidir. Video linki değiştirilemez (yeni kaynak eklenir).
+ * Kanal linki gönderilirse dolu olmalıdır (atıf silinemez).
  */
 export const clipSourcePatchSchema = z
   .object({
@@ -109,7 +125,7 @@ export const clipSourcePatchSchema = z
   .refine(
     (input) => input.permission_status !== 'granted' || !!input.permission_ref,
     {
-      message: '“İzin verildi” için izin referansı gerekli.',
+      message: '“İzin alındı” için izin referansı gerekli.',
       path: ['permission_ref'],
     },
   );
@@ -140,7 +156,10 @@ export const clipSchema = z
   });
 export type ClipInput = z.output<typeof clipSchema>;
 
-/** PATCH: başlangıç ve bitiş birlikte gönderilir (aralık bütün olarak denetlenir). */
+/**
+ * PATCH: başlangıç ve bitiş birlikte gönderilir (aralık bütün olarak denetlenir).
+ * `takedown: true` kaldırma isteğini işaretler (zamanı veritabanı yazar), `false` geri alır.
+ */
 export const clipPatchSchema = z
   .object({
     influencer_id: z.string().uuid().nullable().optional(),
@@ -150,6 +169,8 @@ export const clipPatchSchema = z
     end_seconds: seconds.optional(),
     status: z.enum(clipStatuses).optional(),
     notes: text(3000).optional(),
+    takedown: z.boolean().optional(),
+    takedown_note: takedownNoteSchema.optional(),
   })
   .strict()
   .refine((input) => Object.keys(input).length > 0, {

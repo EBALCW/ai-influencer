@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { sameOrigin } from './same-origin';
 import { expect, test } from '@playwright/test';
 import { hasLocalSupabase } from './global-setup';
 
@@ -88,6 +89,7 @@ test('viewer dışa aktarabilir ama içe aktaramaz: form yok, API 403', async ({
     page.getByRole('link', { name: 'Tümünü dışa aktar' }),
   ).toBeVisible();
   const response = await page.request.post('/api/prompts/import', {
+    headers: sameOrigin,
     multipart: {
       file: {
         name: 'prompts.json',

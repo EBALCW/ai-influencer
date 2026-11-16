@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
-import { isSameOrigin } from './same-origin';
+import { isCrossOriginApiMutation, isSameOrigin } from './same-origin';
 
 function request(url: string, headers: Record<string, string>) {
   return new NextRequest(url, { method: 'POST', headers });
@@ -45,6 +45,49 @@ describe('isSameOrigin', () => {
           host: '127.0.0.1:3000',
           ...headers,
         }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('isCrossOriginApiMutation', () => {
+  const make = (
+    url: string,
+    method: string,
+    headers: Record<string, string> = {},
+  ) => new NextRequest(url, { method, headers });
+  const own = { origin: 'https://panel.ornek.com', host: 'panel.ornek.com' };
+
+  it('başka siteden ya da Origin’siz değiştirici API isteğini reddeder', () => {
+    for (const method of ['POST', 'PUT', 'PATCH', 'DELETE'])
+      for (const headers of [
+        { origin: 'https://example.invalid', host: 'panel.ornek.com' },
+        { host: 'panel.ornek.com' },
+        { origin: 'null', host: 'panel.ornek.com' },
+      ] as Record<string, string>[])
+        expect(
+          isCrossOriginApiMutation(
+            make('https://panel.ornek.com/api/clips/1', method, headers),
+          ),
+          `${method} ${JSON.stringify(headers)}`,
+        ).toBe(true);
+  });
+
+  it('kendi origin’inden gelen isteği, okuma isteklerini ve API dışı yolları engellemez', () => {
+    expect(
+      isCrossOriginApiMutation(
+        make('https://panel.ornek.com/api/explainers/series', 'POST', own),
+      ),
+    ).toBe(false);
+    for (const method of ['GET', 'HEAD', 'OPTIONS'])
+      expect(
+        isCrossOriginApiMutation(
+          make('https://panel.ornek.com/api/oauth/youtube/callback', method),
+        ),
+      ).toBe(false);
+    expect(
+      isCrossOriginApiMutation(
+        make('https://panel.ornek.com/auth/signout', 'POST'),
       ),
     ).toBe(false);
   });
