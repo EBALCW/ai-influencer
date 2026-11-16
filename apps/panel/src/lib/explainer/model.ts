@@ -1,10 +1,13 @@
 import {
+  CAPTION_BURN_ROUTES,
   EPISODE_STATUS_LABELS,
+  EXPLAINER_RENDER_ROUTES,
   JOB_KINDS,
   MIN_SOURCES_PER_CLAIM,
   VISUAL_ROUTE_CAPABILITY,
   WORKER_OFFLINE_AFTER_SECONDS,
   isEpisodeStatus,
+  jobKindCapability,
   requiresApprovedScript,
   type EpisodeStatus,
   type FactNote,
@@ -238,19 +241,27 @@ export function stageKeys(kind: JobKind): string[] {
   return JOB_KINDS[kind].stages.map((stage) => stage.key);
 }
 
-/** Aşamanın makinede istediği yetenek. Görsel aşamalar seçilen yola bağlıdır. */
+/**
+ * Aşamanın makinede istediği yetenek (makinedeki karşılığı: `apps/worker/src/handlers/explainer`).
+ * Altyazı gömme aracı (`captions.burn`) yalnız altyazıyı videoya libass ile gömen yollarda gerekir;
+ * HyperFrames yolunda altyazı kompozisyonun içindedir. Görsel aşamalar seçilen yola bağlıdır ve
+ * yalnız makinede işleyicisi olan yollarda (`EXPLAINER_RENDER_ROUTES`) vardır.
+ */
 function stageCapability(stage: string, route: VisualRoute): string | null {
   if (stage === 'voice') return 'voice.edge-tts';
-  if (stage === 'captions') return 'captions.burn';
+  if (stage === 'captions')
+    return CAPTION_BURN_ROUTES.includes(route) ? 'captions.burn' : null;
   if (stage === 'visuals' || stage === 'render')
-    return VISUAL_ROUTE_CAPABILITY[route];
+    return EXPLAINER_RENDER_ROUTES.includes(route)
+      ? VISUAL_ROUTE_CAPABILITY[route]
+      : null;
   return null;
 }
 
 /**
- * İşin makineden istediği yetenekler: `stopAt`'e kadar olan aşamalarınkiler. Yolun üretim
- * aşaması henüz yoksa (`VISUAL_ROUTE_CAPABILITY` → null) ve iş o aşamaya uzanıyorsa `null`
- * döner: iş açılmaz.
+ * İşin makineden istediği yetenekler: türün işleyicisi (`kind:<tür>`; işleyicisi olmayan eski
+ * bir makine işi almasın) ve `stopAt`'e kadar olan aşamalarınkiler. Yolun üretim aşaması henüz
+ * yoksa ve iş o aşamaya uzanıyorsa `null` döner: iş açılmaz.
  */
 export function requiredCapabilities(
   kind: JobKind,
@@ -260,7 +271,7 @@ export function requiredCapabilities(
   const keys = stageKeys(kind);
   const end = stopAt ? keys.indexOf(stopAt) : keys.length - 1;
   if (end < 0) return null;
-  const capabilities = new Set<string>();
+  const capabilities = new Set<string>([jobKindCapability(kind)]);
   for (const stage of keys.slice(0, end + 1)) {
     const capability = stageCapability(stage, route);
     if (capability === null && (stage === 'visuals' || stage === 'render'))

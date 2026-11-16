@@ -81,7 +81,7 @@ test('boş makine (CI): hiçbir yetenek yok, eksikler adıyla listelenir', () =>
   assert.deepEqual(
     report.unavailable.find((item) => item.key === 'render.hyperframes')
       ?.missing,
-    ['hyperframes', 'ffmpeg', 'ffprobe'],
+    ['hyperframes', 'ffmpeg', 'ffprobe', 'ffmpeg.libx264'],
   );
 });
 

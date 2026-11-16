@@ -14,8 +14,16 @@ import {
 
 test('kayıt: tür + aşama → işleyici; bilinmeyenler null', () => {
   const registry = defaultRegistry();
-  assert.deepEqual(registry.kinds(), ['clip.selftest']);
-  assert.deepEqual(registry.capabilities(), ['kind:clip.selftest']);
+  assert.deepEqual(registry.kinds(), ['clip.selftest', 'explainer.render']);
+  assert.deepEqual(registry.capabilities(), [
+    'kind:clip.selftest',
+    'kind:explainer.render',
+  ]);
+  for (const stage of ['voice', 'captions', 'visuals', 'render'])
+    assert.equal(
+      typeof registry.find('explainer.render', stage)?.handler,
+      'function',
+    );
   for (const stage of ['prepare', 'review', 'finish'])
     assert.equal(
       typeof registry.find('clip.selftest', stage)?.handler,

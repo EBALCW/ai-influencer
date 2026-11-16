@@ -41,6 +41,13 @@ export interface StageContext<P> {
     contentType: string;
     role: JobAssetRole;
   }): Promise<void>;
+  /** `attach` ile yüklenebilecek en büyük dosya (bayt). */
+  maxUploadBytes: number;
+  /**
+   * İşin bağlı olduğu bölümün, işe dondurulmuş senaryo sürümü (`episode_script_versions` satırı).
+   * Dönen değer veridir: işleyici şemadan geçirir. İş bir bölüme bağlı değilse kalıcı hata verir.
+   */
+  loadScript(): Promise<unknown>;
 }
 
 /** Aşamanın kısa çıktı özeti (`job_stages.output`, en çok 8 KB). Sır yazılmaz. */

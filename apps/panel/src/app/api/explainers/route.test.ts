@@ -353,8 +353,8 @@ describe('üretime gönder', () => {
           p_episode_id: id,
           p_kind: 'explainer.render',
           p_required_capabilities: [
+            'kind:explainer.render',
             'voice.edge-tts',
-            'captions.burn',
             'render.hyperframes',
           ],
         },
@@ -367,7 +367,7 @@ describe('üretime gönder', () => {
     await jobs.POST(json({ kind: 'explainer.render', stop_at: 'voice' }), ctx);
     expect(state.rpc[0]?.args).toMatchObject({
       p_stop_at: 'voice',
-      p_required_capabilities: ['voice.edge-tts'],
+      p_required_capabilities: ['kind:explainer.render', 'voice.edge-tts'],
     });
   });
 
@@ -386,15 +386,18 @@ describe('üretime gönder', () => {
     const none = await jobs.POST(json({ kind: 'explainer.render' }), ctx);
     expect(none.status).toBe(422);
     expect((await body(none)).error).toMatch(/görsel yolu seçin/);
-    state.rows.episodes = { visual_route: 'stock', series: null };
-    expect(
-      (await jobs.POST(json({ kind: 'explainer.render' }), ctx)).status,
-    ).toBe(422);
+    // Makinede işleyicisi olmayan yollar (stok, skia, blender) tam üretime gönderilemez
+    for (const route of ['stock', 'skia', 'blender']) {
+      state.rows.episodes = { visual_route: route, series: null };
+      const response = await jobs.POST(json({ kind: 'explainer.render' }), ctx);
+      expect(response.status).toBe(422);
+      expect((await body(response)).error).toMatch(/üretim aşaması henüz yok/);
+    }
     expect(state.rpc).toEqual([]);
   });
 
   it('onaysız senaryoda veritabanı reddi 409 olarak döner', async () => {
-    state.rows.episodes = { visual_route: 'skia', series: null };
+    state.rows.episodes = { visual_route: 'hyperframes', series: null };
     state.rpcError = {
       code: '42501',
       hint: 'script_approval_required',

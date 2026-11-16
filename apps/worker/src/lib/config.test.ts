@@ -77,7 +77,20 @@ test('ayarlar çözülür: ortam dosyayı ezer, varsayılanlar işletim sistemin
     config.stateDir,
     '/Users/ornek/Library/Application Support/ai-influencer-worker',
   );
-  assert.equal(config.workDir, '/tmp/ai-influencer-worker');
+  // Çalışma klasörü kullanıcının veri klasöründe ve yolunda boşluk yok
+  assert.equal(
+    config.workDir,
+    '/Users/ornek/Library/Caches/ai-influencer-worker',
+  );
+  assert.equal(
+    resolveConfig(base, {}, win).workDir,
+    'C:\\Users\\ornek\\AppData\\Local\\ai-influencer-worker\\work',
+  );
+  assert.equal(
+    resolveConfig(base, {}, { ...mac, platform: 'linux', home: '/home/ornek' })
+      .workDir,
+    '/home/ornek/.cache/ai-influencer-worker',
+  );
 
   const onWin = resolveConfig(base, {}, win);
   assert.equal(onWin.name, 'ORNEK-PC');

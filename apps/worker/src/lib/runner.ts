@@ -5,7 +5,9 @@ import path from 'node:path';
 import {
   AbortedError,
   PermanentError,
+  TransientError,
   classifyRpcFailure,
+  isRetryableApiFailure,
   isRetryableStageError,
 } from './errors.ts';
 import type { Logger } from './log.ts';
@@ -57,7 +59,7 @@ export interface RunnerDeps {
 }
 
 export const SHUTDOWN_MESSAGE = 'Makine kapatıldı; iş kuyruğa döndü.';
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const UPLOAD_TYPES = new Set([
   'video/mp4',
   'video/webm',
@@ -293,6 +295,24 @@ export async function runJob(
             signal: controller.signal,
           });
         },
+        maxUploadBytes: deps.maxUploadBytes ?? MAX_UPLOAD_BYTES,
+        async loadScript() {
+          const episodeId = job.episode_id;
+          const version = job.episode_script_version;
+          if (!episodeId || !version)
+            throw new PermanentError('Bu iş bir bölüme bağlı değil.');
+          let row: unknown;
+          try {
+            row = await api.fetchScriptVersion(episodeId, version);
+          } catch (error) {
+            // Ağ ve sunucu hataları geçicidir; yetki ya da biçim hatası değildir
+            if (isRetryableApiFailure(error))
+              throw new TransientError('Senaryo okunamadı (ağ).');
+            throw error;
+          }
+          if (!row) throw new PermanentError('İşin senaryo sürümü bulunamadı.');
+          return row;
+        },
         async attach(output) {
           if (controller.signal.aborted)
             throw new AbortedError('İş durduruldu.');
@@ -333,6 +353,8 @@ export async function runJob(
         clearInterval(flush);
         deps.shutdown.removeEventListener('abort', onShutdown);
         if (sending) await sending;
+        // Seyreltme yüzünden bekleyen son ilerleme kaybolmasın (aşamanın son notu görünsün)
+        if (dirty && !stop && !failure) await send();
       }
 
       // 6) Sonucu bildir

@@ -215,15 +215,20 @@ test('formatReport: Türkçe tablo, yönergeler ve özet satırları', () => {
   assert.equal(text.match(/pip kur/g)?.length, 1);
   assert.match(
     text,
-    /Bu makine şunları üretebilir: voice\.edge-tts, captions\.burn/,
+    /Bu makine şunları üretebilir: captions\.burn, render\.hyperframes/,
   );
+  // Seslendirme kayıtları numpy ile birleştirilir: numpy yoksa ses yeteneği de yok
+  assert.match(text, /Üretemez: voice\.edge-tts \(eksik: numpy\)/);
   assert.match(text, /Üretemez: .*render\.blender \(eksik: Blender\)/);
   assert.match(text, /fetch\.youtube \(eksik: yt-dlp\)/);
   assert.match(
     text,
     /hazır değil\s+Yayıncı klibi \(eksik yetenek: fetch\.youtube\)/,
   );
-  assert.match(text, /^  hazır\s+Anlatım videosu, stil yolu/m);
+  assert.match(
+    text,
+    /^  hazır değil\s+Anlatım videosu, stil yolu \(HyperFrames\) \(eksik yetenek: voice\.edge-tts\)/m,
+  );
   // Renk kapalıyken kaçış kodu yok
   assert.doesNotMatch(text, /\x1b\[/);
 });

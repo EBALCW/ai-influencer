@@ -164,6 +164,7 @@ test('start: işi yürütür, onayda bırakır, boşta çıkar; token döner ve 
     ]);
     assert.deepEqual(env.server.queue.state.worker?.capabilities, [
       'kind:clip.selftest',
+      'kind:explainer.render',
       'voice.edge-tts',
     ]);
     assert.equal(env.server.queue.state.worker?.name, 'Test Makinesi');
@@ -332,6 +333,7 @@ test('login (e-posta bağlantısı): oturum kasaya yazılır, makine kaydedilir,
     assert.equal(env.server.queue.state.worker?.name, 'Test Makinesi');
     assert.deepEqual(env.server.queue.state.worker?.capabilities, [
       'kind:clip.selftest',
+      'kind:explainer.render',
       'voice.edge-tts',
     ]);
     assert.equal(

@@ -402,6 +402,7 @@ test('döngü: kaydolur, yetenek bildirir, işi yürütür, boşta kalınca çı
   assert.equal(await instance.run(), 'idle');
   assert.deepEqual(fake.state.worker?.capabilities, [
     'kind:clip.selftest',
+    'kind:explainer.render',
     'voice.edge-tts',
   ]);
   assert.equal(job.status, 'awaiting_approval');

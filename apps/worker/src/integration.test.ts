@@ -351,7 +351,8 @@ test(
     });
     assert.equal(row.name, machineA.name);
     assert.equal(row.workspace_id, alice.workspaceId);
-    assert.deepEqual(row.capabilities, [CAPABILITY]);
+    // İşleyici kaydındaki her tür bildirilir (sıralı)
+    assert.deepEqual(row.capabilities, [CAPABILITY, 'kind:explainer.render']);
     // Kalp atışı son görülmeyi ilerletir
     await waitFor('kalp atışı', async () => {
       const reply = await rest(

@@ -166,22 +166,35 @@ describe('üretim yetenekleri', () => {
     expect(PRODUCTION_JOB_KINDS).toEqual(['explainer.render']);
   });
 
-  it('tam üretim ses, altyazı ve yolun render yeteneğini ister', () => {
+  it('tam üretim türün işleyicisini, sesi ve yolun render yeteneğini ister', () => {
+    // HyperFrames yolunda altyazı kompozisyonun içinde: libass (captions.burn) istenmez
     expect(
       requiredCapabilities('explainer.render', 'hyperframes', null),
-    ).toEqual(['voice.edge-tts', 'captions.burn', 'render.hyperframes']);
-    expect(requiredCapabilities('explainer.render', 'blender', null)).toContain(
-      'render.blender',
-    );
+    ).toEqual([
+      'kind:explainer.render',
+      'voice.edge-tts',
+      'render.hyperframes',
+    ]);
+  });
+
+  it('makinede işleyicisi olmayan yol görsel aşamaya uzanamaz', () => {
+    expect(requiredCapabilities('explainer.render', 'skia', null)).toBeNull();
+    expect(
+      requiredCapabilities('explainer.render', 'blender', 'visuals'),
+    ).toBeNull();
   });
 
   it('kısmi üretim yalnız o aşamaya kadarki yetenekleri ister', () => {
     expect(requiredCapabilities('explainer.render', 'skia', 'voice')).toEqual([
+      'kind:explainer.render',
       'voice.edge-tts',
     ]);
     expect(
       requiredCapabilities('explainer.render', 'skia', 'captions'),
-    ).toEqual(['voice.edge-tts', 'captions.burn']);
+    ).toEqual(['kind:explainer.render', 'voice.edge-tts', 'captions.burn']);
+    expect(
+      requiredCapabilities('explainer.render', 'hyperframes', 'captions'),
+    ).toEqual(['kind:explainer.render', 'voice.edge-tts']);
   });
 
   it('üretim aşaması olmayan yol görsel aşamaya uzanamaz, bilinmeyen aşama reddedilir', () => {
@@ -191,7 +204,7 @@ describe('üretim yetenekleri', () => {
     ).toBeNull();
     expect(
       requiredCapabilities('explainer.render', 'stock', 'captions'),
-    ).toEqual(['voice.edge-tts', 'captions.burn']);
+    ).toEqual(['kind:explainer.render', 'voice.edge-tts', 'captions.burn']);
     expect(requiredCapabilities('explainer.render', 'skia', 'yok')).toBeNull();
   });
 });

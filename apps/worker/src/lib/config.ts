@@ -127,6 +127,27 @@ export function defaultStateDir(host: HostInfo): string {
   );
 }
 
+/**
+ * İşlerin geçici çalışma klasörü: kullanıcının veri (önbellek) klasörü altında, repo dışında.
+ * Yolda boşluk olmasın diye macOS'ta `Application Support` yerine `Library/Caches` kullanılır.
+ * `WORKER_WORK_DIR` ile değiştirilir.
+ */
+export function defaultWorkDir(host: HostInfo): string {
+  const p = host.platform === 'win32' ? path.win32 : path.posix;
+  if (host.platform === 'darwin')
+    return p.join(host.home, 'Library', 'Caches', 'ai-influencer-worker');
+  if (host.platform === 'win32')
+    return p.join(
+      host.env.LOCALAPPDATA || p.join(host.home, 'AppData', 'Local'),
+      'ai-influencer-worker',
+      'work',
+    );
+  return p.join(
+    host.env.XDG_CACHE_HOME || p.join(host.home, '.cache'),
+    'ai-influencer-worker',
+  );
+}
+
 export function resolveConfig(
   fileEnv: EnvValues,
   processEnv: EnvValues,
@@ -187,10 +208,6 @@ export function resolveConfig(
       defaultStateDir(host),
       'WORKER_STATE_DIR',
     ),
-    workDir: dir(
-      env.WORKER_WORK_DIR,
-      p.join(host.tmpdir, 'ai-influencer-worker'),
-      'WORKER_WORK_DIR',
-    ),
+    workDir: dir(env.WORKER_WORK_DIR, defaultWorkDir(host), 'WORKER_WORK_DIR'),
   };
 }

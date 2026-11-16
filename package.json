@@ -37,7 +37,7 @@
     "owner:create": "pnpm --filter @ai-influencer/panel run owner:create",
     "workspace:create": "pnpm --filter @ai-influencer/panel run workspace:create",
     "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
-    "test:integration:worker": "node --test --test-concurrency=1 scripts/session-claim.integration.test.mjs apps/worker/src/integration.test.ts",
+    "test:integration:worker": "node --test --test-concurrency=1 scripts/session-claim.integration.test.mjs apps/worker/src/integration.test.ts apps/worker/src/explainer.integration.test.ts",
     "panel": "node scripts/panel.mjs",
     "backup": "node scripts/backup.mjs",
     "backup:storage": "node scripts/backup-storage.mjs",
@@ -57,7 +57,8 @@
     "worker:login": "node apps/worker/src/cli.ts login",
     "worker:logout": "node apps/worker/src/cli.ts logout",
     "worker:status": "node apps/worker/src/cli.ts status",
-    "worker:selftest": "node apps/worker/src/cli.ts selftest"
+    "worker:selftest": "node apps/worker/src/cli.ts selftest",
+    "worker:produce-local": "node apps/worker/src/produce-local.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

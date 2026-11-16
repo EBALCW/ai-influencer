@@ -547,6 +547,10 @@ async function runSelftest(deps: CliDeps, log: Logger): Promise<number> {
             cwd: options.cwd ?? dir,
             signal: abort.signal,
           }),
+        maxUploadBytes: 5 * 1024 * 1024,
+        loadScript: async () => {
+          throw new Error('Deneme işinin senaryosu yok.');
+        },
         attach: async (output) => {
           if (!isSafeFileName(output.fileName))
             throw new Error('Dosya adı geçersiz.');
