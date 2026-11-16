@@ -28,6 +28,8 @@ yalnızca projeye özgü farkları söyler. İnsanlar için rehber: `docs/explai
 
 **Üçüncü yol: Blender ile 3D kesit** (`blender/README.md`). Gerilimli gerçek olaylar için: toprağı yandan kesen şema, loş 3D tünel ve oda sahneleri, fener ışığı, yavaş uzun planlar. Mağara, dalış, maden, batık, dağ gibi "içeride ne oldu" hikâyelerinde ilk tercih budur. Altyazı SRT + ffmpeg ile gömülür. Ölçüm: 5 dakikalık film (40 çekim) 720×1280'de render edilip büyütülerek yaklaşık 50 dakika. Çalışan örnek: `ornek/tham-luang-3d/`.
 
+**Blender'ın ikinci kalıbı: stüdyo** (`blender/README.md` → "Stüdyo kalıbı"). Mekanik ve bilimsel "nasıl çalışır" konuları için: karanlık stüdyo, mavi ışık kaması, parlak zemin, sade 3D nesneler, ışıyan akış parçacıkları, etiket kutuları, benzetme ve karşılaştırma sahneleri (sütun, pist, gösterge, küre), alt-ortada 2-3 kelimelik büyük altyazı. Ekran yazıları `texts.<dil>.json` dosyasından gelir; aynı sahne başka dilde yeniden render edilir. Ölçüm: 1:45'lik film (20 çekim, 2.518 kare) yaklaşık 57 dakika. Çalışan örnek: `ornek/planor-3d-studyo/`.
+
 Kararsızsan: mekanik "nasıl çalışır" konusu ve seri düşünülüyorsa stil yolu; fotoğraf, harita ya da
 çok renkli akış gerekiyorsa skia yolu. Aşağıdaki akış, doğruluk ve hassasiyet kuralları ikisinde aynıdır.
 

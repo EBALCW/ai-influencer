@@ -1,0 +1,98 @@
+{
+  "title": "Planör Nasıl Uçar? (3D, stüdyo)",
+  "lang": "tr",
+  "voice": "tr-TR-AhmetNeural",
+  "rate": "+0%",
+  "segments": [
+    {
+      "id": "01",
+      "gap": 0.3,
+      "shots": ["s01"],
+      "text": "Bir planör, tek uçuşta üç bin kilometreden fazla yol gitti."
+    },
+    {
+      "id": "02",
+      "gap": 0.3,
+      "shots": ["s02"],
+      "text": "Oysa planörde motor yok, yakıt yok. Peki havada nasıl kalıyor?"
+    },
+    {
+      "id": "03",
+      "gap": 0.3,
+      "shots": ["s03a", ["s03b", "Avucunuzu", 1]],
+      "text": "Arabanın camından elinizi çıkarın. Avucunuzu hafifçe yukarı eğin: hava elinizi kaldırır."
+    },
+    {
+      "id": "04",
+      "gap": 0.3,
+      "shots": ["s04"],
+      "text": "Kanat da aynı işi yapar. Havayı aşağı çevirir, hava da kanadı yukarı iter."
+    },
+    {
+      "id": "05",
+      "gap": 0.3,
+      "shots": ["s05"],
+      "text": "Hızını yükseklikten alır: yokuş aşağı kayan bir kızak gibi, hep hafifçe alçalır."
+    },
+    {
+      "id": "06",
+      "gap": 0.3,
+      "shots": ["s06a", ["s06b", "Motoru", 1]],
+      "text": "Ama çok az. Bir kilometre alçalırken kırk elli kilometre ileri gider. Motoru duran bir yolcu uçağı, bunun yarısına bile ulaşamaz."
+    },
+    {
+      "id": "07",
+      "gap": 0.3,
+      "shots": ["s07"],
+      "text": "Peki yükseklik bitince? Planörün asıl motoru gökyüzüdür."
+    },
+    {
+      "id": "08",
+      "gap": 0.3,
+      "shots": ["s08"],
+      "text": "Güneş yeri ısıtır. Isınan hava sütun gibi yükselir: termik."
+    },
+    {
+      "id": "09",
+      "gap": 0.3,
+      "shots": ["s09"],
+      "text": "Pilot bu sütunun içinde daire çizer ve asansöre binmiş gibi tırmanır."
+    },
+    {
+      "id": "10",
+      "gap": 0.3,
+      "shots": ["s10"],
+      "text": "İbre yukarıdaysa, bedava yükseklik kazanıyordur."
+    },
+    {
+      "id": "11",
+      "gap": 0.3,
+      "shots": ["s11"],
+      "text": "Yamaca çarpan rüzgâr da yukarı döner. Planör sırt boyunca bu akımda süzülür."
+    },
+    {
+      "id": "12",
+      "gap": 0.3,
+      "shots": ["s12a", ["s12b", "Yolcu", 1]],
+      "text": "Dağ ardındaki dev hava dalgaları ise planörleri yirmi iki kilometrenin üzerine çıkardı. Yolcu uçaklarının yaklaşık iki katı yükseğe."
+    },
+    {
+      "id": "13",
+      "gap": 0.3,
+      "shots": ["s13a", ["s13b", "Kanat", 1]],
+      "text": "Kanatlar neden uzun ve ince? Çünkü kanat ucundaki girdap planörü yavaşlatır. Kanat uzayıp inceldikçe bu kayıp azalır."
+    },
+    {
+      "id": "14",
+      "gap": 0.4,
+      "shots": ["s14a", ["s14b", "Bu", 1]],
+      "text": "Tek şart: yükselen hava bulamazsan, inersin. Bu yüzden pilot, ulaşabileceği bir iniş yerini hep aklında tutar."
+    },
+    {
+      "id": "15",
+      "gap": 0.3,
+      "shots": ["s15"],
+      "text": "Motor yok. Yakıt yok. Sadece güneş, rüzgâr ve onları okuyan bir pilot."
+    }
+  ]
+}
