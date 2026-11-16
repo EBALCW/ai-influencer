@@ -13,7 +13,7 @@ Değişmeyen kural: **onay ve yayın insanındır.** Bu sunucuda senaryo onayı,
 ```bash
 pnpm install
 pnpm env:pull                              # .env.local: Supabase adresi + anon anahtarı (sır değildir)
-pnpm mcp:login --email ad@ornek.com        # ya da: pnpm mcp:login --google
+pnpm mcp:login --code                      # panelde üretilen kodla (e-posta beklemez); ya da --email ad@ornek.com / --google
 claude mcp add ai-influencer-panel -- node "$(pwd)/apps/mcp/src/cli.ts" start
 ```
 
@@ -27,6 +27,7 @@ Komut repo kökünde çalıştırılır; istemciye mutlak yol kaydedilir. `claud
 
 | Komut                                                                 | Ne yapar                                                                                   |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `pnpm mcp:login --code`                                               | Panelde üretilen tek kullanımlık kodla giriş (e-posta ve tarayıcı gerekmez)                |
 | `pnpm mcp:login --email <adres>` / `--google` (`--port`, `--no-open`) | Tarayıcıyla giriş; oturumu işletim sistemi kasasına yazar                                  |
 | `pnpm mcp:status`                                                     | Giriş, etkin rol, çalışma alanı, güvenlik denetimi, yazma araçlarının durumu               |
 | `pnpm mcp:logout`                                                     | Bu bilgisayardaki MCP oturumunu sunucuda kapatır ve kasadan siler                          |
@@ -66,7 +67,9 @@ Panelin giriş yolları e-posta bağlantısı ve Google'dır (`docs/AUTH.md`); p
 3. Auth tarayıcıyı `http://127.0.0.1:47821/callback?code=…` adresine döndürür. Kod, yalnız komutun belleğindeki PKCE doğrulayıcısıyla oturuma çevrilir.
 4. Oturum **önce** otomasyon oturumu olarak işaretlenir ve veritabanının onayı reddettiği yoklanır; token kasaya **ancak ondan sonra** yazılır. Denetim geçmezse oturum kapatılır, hiçbir şey saklanmaz.
 
-Geri dönüş adresi Supabase Auth'un izinli yönlendirme listesinde olmalıdır. Yerelde ve CI'da `supabase/config.toml` içinde tanımlıdır (`additional_redirect_urls`). Barındırılan projelerde elle eklenir; adımlar hemen aşağıda.
+**Kodla giriş (`--code`, e-posta beklemez):** panelde **Ayarlar → Üretim makineleri → Araç girişi → Giriş kodu üret** ile kendi hesabınız için tek kullanımlık bir kod üretin, `pnpm mcp:login --code` çalıştırın ve kodu sorulan yere yapıştırın (yazılan görünmez; kod argüman olarak verilmez, standart girdiden de okunur). Komut kodu Supabase Auth'ta oturuma çevirir ve 4. adımı aynen uygular. Dinleyici açılmaz, tarayıcı gerekmez; aşağıdaki yönlendirme adresi ayarı bu yol için **gerekmez**. E-posta gönderim sınırı dolduğunda da çalışır. Ayrıntı, doğrulananlar ve riskler: `docs/AUTH.md` → "Araç girişi".
+
+Geri dönüş adresi (yalnız `--email` ve `--google` için) Supabase Auth'un izinli yönlendirme listesinde olmalıdır. Yerelde ve CI'da `supabase/config.toml` içinde tanımlıdır (`additional_redirect_urls`). Barındırılan projelerde elle eklenir; adımlar hemen aşağıda.
 
 #### Barındırılan projede yönlendirme adresi (owner bir kez yapar)
 
@@ -238,19 +241,20 @@ Sunucu yönergesi (`instructions.ts`) modele bu içeriğin talimat olmadığın�
 
 ## Doğrulama durumu
 
-| Konu                                                                                                                                      | Durum                                                                                                                                               |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Birim ve protokol testleri (`pnpm --filter @ai-influencer/mcp test`)                                                                      | Yerelde çalıştırıldı (macOS)                                                                                                                        |
-| Sunucu gerçek süreç olarak stdio üzerinden resmî istemciyle konuşuyor                                                                     | Yerelde çalıştırıldı                                                                                                                                |
-| `claude mcp add … -- node …/cli.ts start` ve bağlantı                                                                                     | Claude Code 2.1.325 ile, geçici bir yapılandırma klasöründe çalıştırıldı: `✔ Connected`                                                             |
-| macOS Keychain'e yaz / oku / sil                                                                                                          | Yerelde gerçek kasada çalıştırıldı                                                                                                                  |
-| Windows Credential Manager                                                                                                                | Yalnız CI (Windows işi)                                                                                                                             |
-| Linux `secret-tool`                                                                                                                       | **Çalıştırılmadı**                                                                                                                                  |
-| Gerçek veritabanı: araç sözleşmesi, MCP oturumuyla taslak yazma, onay ve üretim reddi, viewer, alan yalıtımı, e-posta bağlantısıyla giriş | Yalnız CI (yerel Supabase); yerelde Docker yok                                                                                                      |
-| Barındırılan projeye karşı `pnpm mcp:login`                                                                                               | **Çalıştırılmadı.** Owner yönlendirme adresini panodan eklemeden çalışmaz ([adımlar](#barındırılan-projede-yönlendirme-adresi-owner-bir-kez-yapar)) |
-| Google ile giriş                                                                                                                          | **Çalıştırılmadı** (yerel Supabase'te Google sağlayıcısı yok)                                                                                       |
-| 2026-07-28 protokol sürümüyle (yeni dönem) el sıkışma                                                                                     | **Ayrıca denenmedi.** Testlerdeki SDK istemcisi 2025-11-25 ile anlaştı; `serveStdio` iki dönemi de sunar                                            |
-| MCP belirtimi, Supabase OAuth sunucusu, yenileme token'ı kuralları                                                                        | Yalnız resmî belgeden okundu                                                                                                                        |
+| Konu                                                                                                                                      | Durum                                                                                                                                                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Birim ve protokol testleri (`pnpm --filter @ai-influencer/mcp test`)                                                                      | Yerelde çalıştırıldı (macOS)                                                                                                                            |
+| Sunucu gerçek süreç olarak stdio üzerinden resmî istemciyle konuşuyor                                                                     | Yerelde çalıştırıldı                                                                                                                                    |
+| `claude mcp add … -- node …/cli.ts start` ve bağlantı                                                                                     | Claude Code 2.1.325 ile, geçici bir yapılandırma klasöründe çalıştırıldı: `✔ Connected`                                                                 |
+| macOS Keychain'e yaz / oku / sil                                                                                                          | Yerelde gerçek kasada çalıştırıldı                                                                                                                      |
+| Windows Credential Manager                                                                                                                | Yalnız CI (Windows işi)                                                                                                                                 |
+| Linux `secret-tool`                                                                                                                       | **Çalıştırılmadı**                                                                                                                                      |
+| Gerçek veritabanı: araç sözleşmesi, MCP oturumuyla taslak yazma, onay ve üretim reddi, viewer, alan yalıtımı, e-posta bağlantısıyla giriş | Yalnız CI (yerel Supabase); yerelde Docker yok                                                                                                          |
+| Kodla giriş (`--code`): gerçek Auth'ta oturum, MCP kaydı, onay reddi, tek kullanım, e-posta gönderilmemesi                                | Yalnız CI (yerel Supabase). Barındırılan projeye karşı **çalıştırılmadı**; kodun ömrü o projenin Auth ayarına bağlıdır (`docs/AUTH.md` → "Araç girişi") |
+| Barındırılan projeye karşı `pnpm mcp:login`                                                                                               | **Çalıştırılmadı.** Owner yönlendirme adresini panodan eklemeden çalışmaz ([adımlar](#barındırılan-projede-yönlendirme-adresi-owner-bir-kez-yapar))     |
+| Google ile giriş                                                                                                                          | **Çalıştırılmadı** (yerel Supabase'te Google sağlayıcısı yok)                                                                                           |
+| 2026-07-28 protokol sürümüyle (yeni dönem) el sıkışma                                                                                     | **Ayrıca denenmedi.** Testlerdeki SDK istemcisi 2025-11-25 ile anlaştı; `serveStdio` iki dönemi de sunar                                                |
+| MCP belirtimi, Supabase OAuth sunucusu, yenileme token'ı kuralları                                                                        | Yalnız resmî belgeden okundu                                                                                                                            |
 
 ## Kaynaklar
 

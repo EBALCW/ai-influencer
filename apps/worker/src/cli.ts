@@ -78,6 +78,8 @@ Seçenekler:
   --json             Satır başına bir JSON nesnesi yazar
   --exit-when-idle   start: sırada iş kalmayınca çıkar
   --force            login: zaten giriş yapılmışsa yeniden giriş yapar
+  --code             login: e-posta beklemeden, panelde üretilen tek kullanımlık kodla giriş
+                     (Ayarlar → Üretim makineleri → Araç girişi; kod gizli sorulur, argüman olarak yazılmaz)
   --password         login: e-posta bağlantısı yerine parolayla giriş (parolası olan hesaplar)
   --help             Bu metni gösterir
 
@@ -116,12 +118,26 @@ export function parseCliArgs(argv: readonly string[]): {
   exitWhenIdle: boolean;
   force: boolean;
   password: boolean;
+  code: boolean;
+  /** Kod argüman olarak yazılmış (`--code <kod>` / `--code=<kod>`): reddedilir, yankılanmaz. */
+  codeInArgv: boolean;
   help: boolean;
   unknown: string[];
 } {
-  const flags = new Set(argv.filter((arg) => arg.startsWith('--')));
-  const positional = argv.filter((arg) => !arg.startsWith('--'));
+  const codeAt = argv.indexOf('--code');
+  const codeValue = codeAt >= 0 ? argv[codeAt + 1] : undefined;
+  const codeInArgv =
+    argv.some((arg) => arg.startsWith('--code=')) ||
+    (codeValue !== undefined && !codeValue.startsWith('--'));
+  // Yazılan kod "bilinmeyen seçenek" iletisine de girmesin
+  const rest = argv.filter(
+    (arg, index) =>
+      !arg.startsWith('--code=') && !(codeInArgv && index === codeAt + 1),
+  );
+  const flags = new Set(rest.filter((arg) => arg.startsWith('--')));
+  const positional = rest.filter((arg) => !arg.startsWith('--'));
   const known = [
+    '--code',
     '--json',
     '--exit-when-idle',
     '--force',
@@ -137,6 +153,8 @@ export function parseCliArgs(argv: readonly string[]): {
     exitWhenIdle: flags.has('--exit-when-idle'),
     force: flags.has('--force'),
     password: flags.has('--password'),
+    code: flags.has('--code') || codeInArgv,
+    codeInArgv,
     help: flags.has('--help'),
     unknown: [
       ...[...flags].filter((flag) => !known.includes(flag)),
@@ -298,7 +316,7 @@ async function runLogin(
   config: WorkerConfig,
   store: CredentialStore,
   log: Logger,
-  options: { force: boolean; password: boolean },
+  options: { force: boolean; password: boolean; code: boolean },
 ): Promise<number> {
   const lock = acquireLock(config.stateDir);
   const abort = new AbortController();
@@ -325,7 +343,7 @@ async function runLogin(
       log,
       prompter: deps.prompter ?? createPrompter(process.stdin, process.stdout),
       say: deps.out,
-      method: options.password ? 'password' : 'email',
+      method: options.code ? 'code' : options.password ? 'password' : 'email',
       signal: abort.signal,
     });
     // Oturum hemen makine olarak kaydedilir: o andan sonra salt okur ve onay veremez.
@@ -587,6 +605,17 @@ export async function main(deps: CliDeps): Promise<number> {
     deps.out(HELP);
     return EXIT.ok;
   }
+  if (args.codeInArgv) {
+    deps.out(
+      'Giriş kodu komut satırına yazılmaz (kabuk geçmişine girer). Yalnız `pnpm worker:login --code` yaz; ' +
+        'kod sonra gizli olarak sorulur. Yazdığın kodu kullanma, panelden yenisini üret.',
+    );
+    return EXIT.usage;
+  }
+  if (args.code && args.password) {
+    deps.out('--code ve --password birlikte kullanılamaz.');
+    return EXIT.usage;
+  }
   if (!args.command || args.unknown.length > 0) {
     deps.out(
       `${args.unknown.length > 0 ? `Bilinmeyen seçenek: ${args.unknown.join(' ')}` : 'Komut belirtilmedi.'}\n\n${HELP}`,
@@ -617,6 +646,7 @@ export async function main(deps: CliDeps): Promise<number> {
       return await runLogin(deps, config, store, log, {
         force: args.force,
         password: args.password,
+        code: args.code,
       });
     if (args.command === 'logout')
       return await runLogout(config, store, log, deps.out);

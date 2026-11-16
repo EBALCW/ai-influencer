@@ -82,7 +82,7 @@ Makine oturumunu insan oturumundan ayıran her kural erişim token'ındaki `sess
 
 ### Giriş
 
-`pnpm worker:login` makinede üye olarak giriş yapar; panelin kullandığı yöntemin aynısıdır (e-posta bağlantısı), ek bir sunucu ucu yoktur:
+`pnpm worker:login` makinede üye olarak giriş yapar; panelin kullandığı yöntemin aynısıdır (e-posta bağlantısı). E-posta beklemeden girmek için `pnpm worker:login --code` kullanılır: 1. ve 2. adımın yerine panelde üretilen tek kullanımlık kod sorulur ([Araç girişi](#araç-girişi-kodla-giriş)); 3. ve 4. adım aynıdır.
 
 1. Program e-posta adresini sorar ve Supabase Auth'tan giriş e-postası ister (yalnız mevcut kullanıcılar; kayıt kapalıdır).
 2. Kullanıcı e-postadaki **bağlantının adresini kopyalayıp** programa yapıştırır (bağlantıya tıklanmaz: tıklanırsa tarayıcı giriş yapar ve bağlantı tükenir). E-posta şablonu 6 haneli kod içeriyorsa kod da yazılabilir. Parolası olan hesaplar `--password` ile parolayla girer. Girdi ekranda gösterilmez.
@@ -111,11 +111,11 @@ Makine oturumunu insan oturumundan ayıran her kural erişim token'ındaki `sess
 - Otomasyon oturumunun (makine, MCP) Auth uçlarındaki etkisinin sınırlanması: oturum Auth'un gözünde üyenin kendi oturumudur; token'ı elinde tutan Auth'u doğrudan çağırarak üye adına işlem yapabilir (ör. genel kapsamla çıkış). Panel yolu kapatıldı: `/auth/signout?error=not_allowed` üye sayılmayan oturumu yalnız yerel kapsamla kapatır, yani bir panel sayfasına gelen otomasyon oturumu üyenin tarayıcıdaki oturumunu artık kapatmaz (`apps/panel/e2e/machines.app.spec.ts`).
 - MCP oturumları için panel ekranı (liste, yetki kaldırma; RPC'ler hazır: `list_mcp_sessions`, `revoke_mcp_session`), viewer üyeler için salt okur MCP oturumu ve ekip düzeyinde MCP denetim tablosu (`docs/mcp-panel.md` → "Sonraya kalanlar").
 
-İlk tasarımdaki eşleme kodlu giriş güvenlik incelemesinde dört bulgu aldı (istemcinin yazdığı başlığa dayanan hız sınırı, oturumsuz yazımın yol açtığı engelleme, onaylatma yoluyla oltalama, sunucunun üye adına oturum açması). Dördü de eşleme yüzeyi bütünüyle kaldırılarak kapatıldı: oturumsuz hiçbir uç, service role ile oturum açma ve token aktarımı yoktur.
+İlk tasarımdaki eşleme kodlu giriş güvenlik incelemesinde dört bulgu aldı (istemcinin yazdığı başlığa dayanan hız sınırı, oturumsuz yazımın yol açtığı engelleme, onaylatma yoluyla oltalama, sunucunun üye adına oturum açması). Dördü de eşleme yüzeyi bütünüyle kaldırılarak kapatıldı: oturumsuz hiçbir uç, service role ile oturum açma ve token aktarımı yoktur. Sonradan eklenen kodla giriş bu kararı geri almaz; farkları [Araç girişi](#araç-girişi-kodla-giriş) bölümünde tek tek yazılıdır.
 
 ## MCP oturumu (#241)
 
-Panel MCP sunucusu (`apps/mcp`, `docs/mcp-panel.md`) da bir ekip üyesinin kendi Auth oturumuyla çalışır. `pnpm mcp:login` girişten hemen sonra, token kasaya yazılmadan önce `register_mcp_session()` çağırır; oturum o andan sonra kalıcı olarak **MCP oturumu**dur (`private.worker_sessions.kind = 'mcp'`; şema: `docs/data-model.md` → "Otomasyon oturumu türleri").
+Panel MCP sunucusu (`apps/mcp`, `docs/mcp-panel.md`) da bir ekip üyesinin kendi Auth oturumuyla çalışır. `pnpm mcp:login` (tarayıcıyla ya da `--code` ile, bkz. [Araç girişi](#araç-girişi-kodla-giriş)) girişten hemen sonra, token kasaya yazılmadan önce `register_mcp_session()` çağırır; oturum o andan sonra kalıcı olarak **MCP oturumu**dur (`private.worker_sessions.kind = 'mcp'`; şema: `docs/data-model.md` → "Otomasyon oturumu türleri").
 
 - Tablolarda ve genel RPC'lerde `viewer` sayılır; `team_members`'ı okuyamaz, bu yüzden panel sunucusu onu üye saymaz (API 403, sayfa çıkışa yönlenir ve yalnız o oturum kapanır).
 - Yalnız taslak RPC'lerinde üyenin gerçek rolüyle (owner/editor) çalışır: seri, konu isteği / önerisi, bölüm, senaryo kaydı, ön hazırlık işi, iptal isteği.
@@ -123,6 +123,67 @@ Panel MCP sunucusu (`apps/mcp`, `docs/mcp-panel.md`) da bir ekip üyesinin kendi
 - Makine oturumu ile MCP oturumu birbirine dönüşemez; makine oturumunun kuralları (#211) değişmedi.
 - Sınırlamak: `pnpm mcp:logout` (o bilgisayardaki oturumu kapatır) ya da bir insan oturumundan `revoke_mcp_session()` (Auth oturumu silinir; panel ekranı #245'te). Kayıttan önceki an ve çalınan token için makine oturumundaki notlar aynen geçerlidir: MCP oturumu ele geçerse saldırgan o üyenin alanındaki veriyi okur ve **taslak** yazar; onay, üretim ve yayın kapalıdır.
 - Viewer hesabı v1'de MCP oturumu açamaz.
+
+## Araç girişi: kodla giriş
+
+Barındırılan Supabase projesinin yerleşik e-posta sağlayıcısı proje genelinde saatte yalnız birkaç e-posta gönderir ([Rate limits](https://supabase.com/docs/guides/auth/rate-limits): "2 emails per hour with the built-in email provider", okuma 2026-11-16). Panel, MCP ve makine girişleri bu sınırı paylaşır. Kodla giriş, araçlara (`pnpm mcp:login`, `pnpm worker:login`) e-posta beklemeden giriş yolu verir. Gücü, üyenin **kendine giriş e-postası istemesiyle aynıdır**; tek fark kodun e-postayla değil, üyenin zaten açık olan panel oturumunda ekranda verilmesidir.
+
+### Akış
+
+1. Üye panelde **Ayarlar → Üretim makineleri → Araç girişi** bölümünde **Giriş kodu üret**'e basar (owner / editor). Bölüm makineler sayfasındadır, çünkü makine ekleme yönergesi ve yetki kaldırma aynı yerdedir.
+2. `POST /api/tool-login` çağıranın **kendi** hesabı için tek kullanımlık bir kod döndürür. Kod ekranda maskeli gösterilir, kopyalanır; "Bu kod senin hesabınla giriş yapar; kimseyle paylaşma" uyarısı yanında durur.
+3. Üye kendi bilgisayarında `pnpm mcp:login --code` ya da `pnpm worker:login --code` çalıştırır ve kodu sorulan yere yapıştırır (yazılan görünmez). Kod standart girdiden de okunur (macOS: `pbpaste | pnpm mcp:login --code`). Kod **komut satırı argümanı olarak kabul edilmez** (`--code <kod>` ve `--code=<kod>` reddedilir ve yankılanmaz): kabuk geçmişine ve süreç listesine girmesin.
+4. Araç kodu anon anahtarla `POST /auth/v1/verify` (`type: magiclink`, `token_hash`) ucunda oturuma çevirir ve mevcut akışına aynen devam eder: MCP önce `register_mcp_session()` + onay yoklaması, sonra kasa; makine kasa + `register_worker()`. Ret yolları değişmedi (viewer MCP oturumu açamaz, kasa yoksa giriş başlamaz, kayıt başarısızsa oturum kapatılır). Bu modda e-posta istenmez.
+
+Her araç için ayrı kod üretilir (kod tek kullanımlıktır).
+
+### Kod nedir (doğrulandı)
+
+Kod, Supabase Auth'un giriş e-postasındaki bağlantıda taşıdığı özetin aynısıdır: yönetici API'si `auth.admin.generateLink({ type: 'magiclink', email })` yanıtındaki `properties.hashed_token`. Panel yalnız bu alanı döndürür; `action_link` ve `email_otp` (6 haneli kod) istemciye verilmez. Kaynak: [supabase/auth `internal/api/mail.go` → `adminGenerateLink`](https://github.com/supabase/auth/blob/master/internal/api/mail.go), [`internal/api/verify.go`](https://github.com/supabase/auth/blob/master/internal/api/verify.go), [`internal/models/user.go` → `Recover`](https://github.com/supabase/auth/blob/master/internal/models/user.go) (okuma 2026-11-16).
+
+| Soru                                  | Yanıt ve dayanak                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Yanıtta ne var?                       | `action_link`, `email_otp`, `hashed_token`, `verification_type`, `redirect_to` + kullanıcı (`GenerateLinkResponse`). Oturum ya da yenileme token'ı yoktur                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| E-posta gönderir mi?                  | Hayır. `adminGenerateLink` özeti kullanıcıya yazar ve yanıtı döndürür; içinde e-posta gönderen çağrı yoktur (belgedeki tanım: "Generates email links and OTPs to be sent via a custom email provider"). CI kanıtı: MCP entegrasyon testi kod üretip kullandıktan sonra yerel posta kutusunda o adrese yeni ileti olmadığını doğrular                                                                                                                                                                                                                                                           |
+| E-posta gönderim sınırına takılır mı? | Hayır. Sınır e-posta gönderen uçlardadır; `/admin/generate_link` yolunda hız sınırı ara katmanı yoktur ([`internal/api/api.go`](https://github.com/supabase/auth/blob/master/internal/api/api.go)). Kodun doğrulandığı `/auth/v1/verify` IP başına ayrı bir sınıra tabidir (varsayılan 5 dakikada 30)                                                                                                                                                                                                                                                                                          |
+| Tek kullanımlık mı?                   | Evet. Doğrulama `recovery_token`'ı siler (`Recover` → `ClearAllOneTimeTokensForUser`); belge: "Magic Links … are one-time use only". CI kanıtı: aynı kodla ikinci giriş MCP ve makine entegrasyon testlerinde ve panel E2E'sinde reddedilir                                                                                                                                                                                                                                                                                                                                                    |
+| Ömrü ne kadar?                        | Auth'un e-posta OTP süresi (`isOtpExpired(user.RecoverySentAt, config.Mailer.OtpExp)`). Barındırılan projede varsayılan **1 saat** ([Passwordless email](https://supabase.com/docs/guides/auth/auth-email-passwordless): "expire after 1 hour"); yerelde `supabase/config.toml` değer vermediği için CLI varsayılanı geçerlidir. Süre panel kodunda kısaltılamaz (kod sunucuda saklanmaz); owner panodan **Authentication → Email → Email OTP Expiration** ile kısaltabilir. **Süre dolumu CI'da denenmedi** (bir saat beklemek ya da Auth ayarını değiştirmek gerekir); dayanak kaynak koddur |
+| Aynı anda kaç kod geçerli?            | Kullanıcı başına bir. Yeni kod üretmek ya da giriş e-postası istemek öncekini geçersiz kılar (aynı `recovery_token` alanı). CI kanıtı: MCP entegrasyon testi                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Yan etki                              | Kod üretmek `recovery_sent_at`'i günceller: aynı kullanıcı sonraki ~60 saniyede giriş e-postası isterse Auth "biraz bekleyin" der. Bekleyen bir giriş e-postası bağlantısı da geçersiz olur                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Kullanıcı yoksa?                      | `generateLink` `magiclink` türünde bilinmeyen e-posta için kullanıcı açabilir. Uç e-postayı istekten almaz, oturumdaki kullanıcının e-postasını kullanır ve dönen kullanıcı kimliği ile türü (`magiclink`) eşleşmiyorsa kodu vermez                                                                                                                                                                                                                                                                                                                                                            |
+
+### Denetimler (`apps/panel/src/app/api/tool-login/route.ts`)
+
+- Yalnız POST; `requireApiRole('editor')`; istek kaynağı (`isSameOrigin`) panelin kendisi olmalı.
+- Kod yalnız çağıranın kendi hesabı içindir: **istek gövdesi okunmaz**, e-posta ve kullanıcı kimliği oturumdan gelir.
+- Yalnız insan oturumu üretebilir. Makine ve MCP oturumları `team_members`'ı okuyamadığı için zaten üye sayılmaz (403); uç ayrıca `is_worker_session()` sorar ve yanıt kesin "hayır" değilse reddeder.
+- Kullanıcı başına süreç içi hız sınırı: 10 dakikada 5 kod (`src/lib/tool-login/rate-limit.ts`). Anahtar sunucunun doğruladığı kullanıcı kimliğidir, istemcinin yazdığı bir başlık değil.
+- Kod sunucuda saklanmaz ve loglanmaz; yanıt `Cache-Control: no-store` taşır. Tarayıcıda yalnız bileşenin belleğindedir (adres, depolama yok). Araçlar kodu argüman olarak almaz, ekrana ve loga yazmaz.
+- Panel tarayıcıya oturum ya da yenileme token'ı döndürmez; üyenin zaten sahip olduğundan fazlasını vermez.
+
+Testler: `src/app/api/tool-login/route.test.ts` (rol, kaynak, otomasyon reddi, yalnız kendi hesabı, hız sınırı, loga sızmama), `e2e/tool-login.app.spec.ts` + `tool-login.viewer.spec.ts` (gerçek uç ve arayüz; kodla açılan oturumun MCP / makine olarak kaydı ve onay reddi; ikinci kullanım; viewer ve otomasyon oturumu üretemez), `apps/mcp/src/auth/code-login.test.ts`, `apps/mcp/src/integration.test.ts`, `apps/worker/src/lib/login.test.ts`, `apps/worker/src/cli.test.ts`, `apps/worker/src/integration.test.ts`.
+
+### Kaldırılan eşleme tasarımından farkı
+
+Kaldırılan tasarımda makine oturumsuz bir uca yazıyor, panel onay verince sunucu makineye **kendiliğinden** oturum teslim ediyordu. Kodla girişte:
+
+| Eşleme tasarımındaki bulgu                                  | Kodla girişte durum                                                                                                                                                                                     |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| İstemcinin yazdığı başlığa dayanan hız sınırı               | Sınırın anahtarı doğrulanmış kullanıcı kimliğidir                                                                                                                                                       |
+| Oturumsuz yazımın yol açtığı engelleme                      | Oturumsuz uç yoktur; tek uç oturum + rol + kaynak denetimlidir ve veritabanına satır yazmaz                                                                                                             |
+| Onaylatma yoluyla oltalama                                  | Onaylanacak bir makine isteği yoktur. Akışı üye kendisi başlatır; kodu kendi terminaline kendisi taşır. (Birinin üyeyi kodu **kendisine göndermeye** ikna etmesi riski aşağıda)                         |
+| Sunucunun üye adına oturum açıp makineye aktarması (yüksek) | Sunucu oturum açmaz ve hiçbir makineye bir şey göndermez. Yalnız isteyen üyenin kendi hesabı için, o üyenin giriş e-postasıyla eşdeğer tek kullanımlık kod üretir; oturumu Auth, kodu sunan tarafa açar |
+
+### Kalan riskler
+
+- **Açık ve kilitsiz bir panel oturumuna erişen kişi kod üretebilir.** Bu, o kişinin paneli zaten kullanabilmesiyle aynı düzeydedir; ek olarak kodla **başka bir cihazda** insan oturumu açılabilir (kod Auth'a doğrudan sunulursa otomasyon olarak işaretlenmemiş bir üye oturumu verir; giriş e-postası bağlantısı için de aynısı geçerlidir). Ortak bilgisayarda paneli açık bırakma.
+- **Omuz üstünden okuma / ekran paylaşımı:** kod varsayılan olarak maskelidir; "Kodu göster" bilinçli bir adımdır.
+- **Pano:** kopyalanan kod panoda kalır; pano yöneticileri ve eşitlenen panolar onu görebilir. Kod tek kullanımlıktır: kullanılınca panodaki değer işe yaramaz. Kullanmayacaksan yeni kod üretip eskisini geçersiz kıl.
+- **Sosyal mühendislik:** biri üyeden kodu isteyebilir. Uyarı metni bunun içindir; kod parolayla aynı özenle korunur.
+- **Ömür:** kod kullanılmazsa Auth'un OTP süresi boyunca (varsayılan 1 saat) geçerlidir.
+- **Hız sınırı süreç içidir:** panel yeniden başlayınca sıfırlanır; birden çok panel süreci varsa her biri ayrı sayar.
+
+Daha sıkı seçenek #245'te izlenir: araca bağlı (cihazda üretilen anahtarla eşleşen), dakikalarla ölçülen ömürlü, yalnız otomasyon oturumu açabilen kod.
 
 ## Sosyal hesap OAuth geliştirmesi (#49)
 

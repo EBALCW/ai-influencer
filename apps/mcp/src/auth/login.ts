@@ -211,7 +211,8 @@ export async function loginWithBrowser(
         if (error.status === 429 || error.code === 'over_email_send_rate_limit')
           throw new LoginError(
             'E-posta gönderim sınırı doldu (panel, MCP ve makine girişleri aynı saatlik sınırı paylaşır). ' +
-              'Yaklaşık bir saat sonra yeniden deneyin ya da --google ile girin.',
+              "E-posta beklemeden girmek için panelde Ayarlar → Araç girişi'nden kod üretip `--code` ile girin " +
+              '(ya da yaklaşık bir saat sonra yeniden deneyin / --google kullanın).',
           );
         throw new LoginError(
           'Giriş bağlantısı gönderilemedi: e-posta kayıtlı bir ekip üyesine ait olmalı.',

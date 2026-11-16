@@ -4,6 +4,7 @@ import { requireTeamMember } from '@/lib/auth';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { RevokeMachineButton } from './revoke-machine-button';
 import { SelftestPanel } from './selftest-panel';
+import { ToolLoginCode } from './tool-login-code';
 
 const dateTime = new Intl.DateTimeFormat('tr-TR', {
   dateStyle: 'short',
@@ -68,11 +69,33 @@ export default async function MachinesSettingsPage() {
       <section className="section-card" aria-label="Makine ekleme">
         <h2 className="text-lg font-semibold">Makine ekleme</h2>
         <p className="mt-1 text-sm text-muted">
-          Kendi bilgisayarında <code>pnpm worker:login</code> ile giriş yap,
-          sonra <code>pnpm worker:start</code> ile programı başlat. Makine bu
-          listede görünür. Kullanmadığın ya da kaybolan bir bilgisayarın
-          yetkisini buradan kaldır: oturumu hemen kapanır.
+          Kendi bilgisayarında <code>pnpm worker:login</code> ile giriş yap
+          (e-posta beklemeden girmek için aşağıdaki «Araç girişi» kodunu
+          kullan), sonra <code>pnpm worker:start</code> ile programı başlat.
+          Makine bu listede görünür. Kullanmadığın ya da kaybolan bir
+          bilgisayarın yetkisini buradan kaldır: oturumu hemen kapanır.
         </p>
+      </section>
+      <section
+        className="section-card"
+        aria-label="Araç girişi"
+        id="arac-girisi"
+      >
+        <h2 className="text-lg font-semibold">Araç girişi</h2>
+        <p className="mt-1 text-sm text-muted">
+          Üretim makinesi programına ve panel MCP sunucusuna e-posta beklemeden
+          giriş yapmak için buradan tek kullanımlık bir kod üret, sonra kendi
+          bilgisayarında <code>pnpm worker:login --code</code> ya da{' '}
+          <code>pnpm mcp:login --code</code> çalıştırıp kodu sorulan yere
+          yapıştır. Kod yalnız senin hesabın içindir.
+        </p>
+        {role === 'viewer' ? (
+          <p className="mt-3 text-sm text-muted">
+            Giriş kodu üretmek için owner ya da editor olmalısın.
+          </p>
+        ) : (
+          <ToolLoginCode />
+        )}
       </section>
       <section className="section-card" aria-label="Deneme işi">
         <h2 className="text-lg font-semibold">Deneme işi</h2>

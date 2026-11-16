@@ -2,7 +2,9 @@
 // Kapsam: giriş → kayıt → kalp atışı → editor sahte iş açar → makine alır → 1. aşamayı yürütür →
 // onayda durur → makine oturumu onaylayamaz → editor onaylar → tamamlanır → çıktı bağlanır;
 // aşama ortasında iptal; kirası dolan işin geri alınması; ikinci çalışma alanının makinesi işi
-// göremez; yetki kaldırılınca makine durur.
+// göremez; yetki kaldırılınca makine durur; kodla giriş (`worker:login --code`): panelin ürettiği
+// türden tek kullanımlık kod e-posta istemeden oturum açar, makine olarak kaydolur, onay veremez,
+// kod ikinci kez kullanılamaz.
 // Yerel veriye kullanıcı ve çalışma alanı yazdığı için yalnız WORKER_INTEGRATION=1 ile çalışır.
 // Gereksinim: LOCAL_SUPABASE_URL / _ANON_KEY / _SERVICE_ROLE_KEY (yalnız 127.0.0.1 / localhost).
 import assert from 'node:assert/strict';
@@ -14,7 +16,7 @@ import { after, before, test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { jobKindCapability } from '@ai-influencer/shared/jobs';
 import { createHttp, decodeJwtClaims, type Http } from './lib/api.ts';
-import { NetworkError, SessionError } from './lib/errors.ts';
+import { LoginError, NetworkError, SessionError } from './lib/errors.ts';
 import { defaultRegistry } from './lib/handlers.ts';
 import { createMemoryLogger } from './lib/log.ts';
 import { login } from './lib/login.ts';
@@ -646,5 +648,84 @@ test(
     );
     // Yenileme token'ı da ölü: Auth oturumu silindi
     await assert.rejects(machineA.session.forceRefresh(), SessionError);
+  },
+);
+
+test(
+  'kodla giriş: e-posta istenmez; oturum makine olur, onay veremez; kod tek kullanımlık',
+  { skip: !enabled },
+  async () => {
+    const carol = await createPerson('c');
+    people.push(carol);
+    // Panelin `POST /api/tool-login` ucunun yaptığı çağrının aynısı (yönetici API'si, kullanıcının
+    // kendi e-postası); uç yalnız `hashed_token` alanını döndürür. Ucun kendisi panel E2E'sinde
+    // denenir (apps/panel/e2e/tool-login.app.spec.ts).
+    const minted = await rest('/auth/v1/admin/generate_link', {
+      key: serviceKey,
+      body: { type: 'magiclink', email: carol.email },
+    });
+    assert.equal(minted.status, 200, 'giriş kodu üretilemedi');
+    assert.equal(minted.json.id, carol.id);
+    const code: string = minted.json.hashed_token;
+
+    // `pnpm worker:login --code`: tek gizli soru; e-posta sorulmaz, Auth'tan e-posta istenmez.
+    const real = createHttp({ supabaseUrl: url, anonKey });
+    const http: Http = {
+      ...real,
+      sendLoginEmail: async () => assert.fail('kodla girişte e-posta istenmez'),
+    };
+    const signIn = (store = createMemoryStore(), log = createMemoryLogger()) =>
+      login({
+        http,
+        store,
+        account: 'integration-code',
+        log,
+        prompter: {
+          ask: async () => assert.fail('kodla girişte e-posta sorulmaz'),
+          askHidden: async () => code,
+        },
+        say: () => undefined,
+        method: 'code',
+      });
+    const store = createMemoryStore();
+    const log = createMemoryLogger();
+    const session = await signIn(store, log);
+    assert.equal(store.items.size, 1, 'oturum kasaya yazılmış olmalı');
+    const token = await session.accessToken();
+    assert.equal(decodeJwtClaims(token).sub, carol.id);
+    assert.equal(
+      (await rest('/rest/v1/rpc/is_worker_session', { token, body: {} })).json,
+      false,
+      'kayıttan önce sıradan üye oturumu',
+    );
+    const logged = log.lines.join('\n');
+    assert.equal(logged.includes(code), false);
+    assert.equal(/eyJ[A-Za-z0-9_-]+\.eyJ/.test(logged), false);
+
+    // Girişten sonraki adım değişmedi: register_worker; oturum artık makinedir ve onay veremez.
+    const registered = await createWorkerApi(http, session).registerWorker({
+      name: `Makine C ${run}`,
+      platform: 'linux',
+      version: '0.0.0-kod',
+      capabilities: [],
+    });
+    assert.match(registered.id, /^[0-9a-f-]{36}$/);
+    assert.equal(
+      (await rest('/rest/v1/rpc/is_worker_session', { token, body: {} })).json,
+      true,
+    );
+    const refused = await rest('/rest/v1/rpc/approve_job_stage', {
+      token,
+      body: { p_job_id: randomUUID(), p_stage_key: 'review' },
+    });
+    assert.equal(refused.status, 403);
+    assert.equal(refused.json.code, '42501');
+
+    // Tek kullanımlık: aynı kod ikinci kez oturum açmaz ve kasaya bir şey yazmaz.
+    const second = createMemoryStore();
+    await assert.rejects(signIn(second), LoginError);
+    assert.equal(second.items.size, 0);
+
+    await session.logout();
   },
 );

@@ -93,9 +93,25 @@ test('argümanlar: komut, bayraklar, bilinmeyenler', () => {
     exitWhenIdle: true,
     force: false,
     password: false,
+    code: false,
+    codeInArgv: false,
     help: false,
     unknown: [],
   });
+  const withCode = parseCliArgs(['login', '--code', '--force']);
+  assert.deepEqual(
+    [withCode.code, withCode.codeInArgv, withCode.force, withCode.unknown],
+    [true, false, true, []],
+  );
+  // Argüman olarak yazılan kod işaretlenir ve "bilinmeyen seçenek" listesine girmez
+  for (const argv of [
+    ['login', '--code', 'gizli-kod-degeri-0123'],
+    ['login', '--code=gizli-kod-degeri-0123'],
+  ]) {
+    const parsed = parseCliArgs(argv);
+    assert.equal(parsed.codeInArgv, true);
+    assert.deepEqual(parsed.unknown, []);
+  }
   assert.deepEqual(parseCliArgs(['login', '--force']).force, true);
   assert.equal(parseCliArgs(['login', '--password']).password, true);
   assert.equal(parseCliArgs(['baska']).command, null);
@@ -350,6 +366,79 @@ test('login (e-posta bağlantısı): oturum kasaya yazılır, makine kaydedilir,
     assert.equal(await main(env.deps(['login'], { prompter })), EXIT.ok);
     assert.match(env.lines.at(-1)!, /zaten giriş yapılmış/);
     assert.equal(env.server.state.rotations, before);
+  } finally {
+    await env.server.close();
+  }
+});
+
+test('login --code: e-posta istenmez; panel koduyla giriş yapılır, makine kaydedilir, kod görünmez', async () => {
+  const env = await setup({ paired: false });
+  // Panelin ürettiği kodun yerine: sahte Auth'ta bekleyen tek kullanımlık özet
+  const code = ['c0de', 'ab12'].join('').repeat(7);
+  try {
+    // Argüman olarak yazılan kod reddedilir ve yankılanmaz; Auth'a hiç gidilmez
+    for (const argv of [
+      ['login', '--code', code],
+      ['login', `--code=${code}`],
+    ]) {
+      assert.equal(await main(env.deps(argv)), EXIT.usage);
+      assert.match(env.lines.at(-1)!, /komut satırına yazılmaz/);
+    }
+    assert.equal(
+      await main(env.deps(['login', '--code', '--password'])),
+      EXIT.usage,
+    );
+    assert.equal(env.lines.join('\n').includes(code), false);
+    assert.equal(env.server.state.requests.length, 0);
+
+    // Yanlış kod: giriş reddedilir, kasaya bir şey yazılmaz
+    env.server.state.login.tokenHash = code;
+    assert.equal(
+      await main(
+        env.deps(['login', '--code'], {
+          prompter: scripted([code.replace('c0de', 'dead')]),
+        }),
+      ),
+      EXIT.error,
+    );
+    assert.match(env.lines.at(-1)!, /Giriş reddedildi/);
+    assert.equal(env.store.items.size, 0);
+    assert.equal(env.server.queue.state.worker === null, true);
+
+    const prompter = scripted([` ${code} `]);
+    assert.equal(
+      await main(env.deps(['login', '--code'], { prompter })),
+      EXIT.ok,
+    );
+    // Tek soru soruldu (e-posta sorulmadı) ve e-posta istenmedi
+    assert.equal(prompter.questions.length, 1);
+    assert.match(prompter.questions[0]!, /Giriş kodu/);
+    assert.deepEqual(env.server.state.emailsSent, []);
+    assert.equal(
+      env.server.state.requests.includes('POST /auth/v1/otp'),
+      false,
+    );
+    assert.equal(
+      env.store.items.get(env.server.account),
+      env.server.state.refreshToken,
+    );
+    // Oturum hemen makine olarak kaydedildi
+    assert.equal(env.server.queue.state.worker?.name, 'Test Makinesi');
+    const output = [...env.lines, ...prompter.questions].join('\n');
+    for (const secret of [code, 'yenileme-', 'sahte-imza'])
+      assert.equal(output.includes(secret), false, secret);
+    assert.match(output, /makine olarak kaydedildi/);
+
+    // Kod tek kullanımlık: aynı kodla ikinci giriş reddedilir
+    assert.equal(
+      await main(
+        env.deps(['login', '--code', '--force'], {
+          prompter: scripted([code]),
+        }),
+      ),
+      EXIT.error,
+    );
+    assert.match(env.lines.at(-1)!, /Giriş reddedildi/);
   } finally {
     await env.server.close();
   }

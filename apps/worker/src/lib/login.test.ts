@@ -6,7 +6,12 @@ import type { Http, LoginProof, Tokens } from './api.ts';
 import { CredentialStoreError } from './credential-store.ts';
 import { AbortedError, LoginError } from './errors.ts';
 import { createMemoryLogger } from './log.ts';
-import { login, parseLoginInput, type Prompter } from './login.ts';
+import {
+  login,
+  parseLoginCode,
+  parseLoginInput,
+  type Prompter,
+} from './login.ts';
 import { createPrompter } from './prompt.ts';
 
 const email = 'uye@ornek.com';
@@ -261,4 +266,70 @@ test('gizli girdi yankılanmaz; silme tuşu ve yapıştırma çalışır; Ctrl+C
   term.input.write('yarım\u0003');
   await assert.rejects(cancelled, AbortedError);
   assert.equal(term.input.rawModes.at(-1), false, 'ham kip kapatılmalı');
+});
+
+test('kodla giriş: e-posta sorulmaz ve istenmez; kod gizli sorulur ve görünmez', async () => {
+  assert.equal(parseLoginCode(` ${hash}\n`), hash);
+  for (const bad of ['', '123456', `https://x.test/v?token=${hash}`, 'a b'])
+    assert.equal(parseLoginCode(bad), null, bad);
+
+  const store = createMemoryStore();
+  const { http, calls } = fakeHttp();
+  const log = createMemoryLogger();
+  const said: string[] = [];
+  const hidden: string[] = [];
+  const prompter: Prompter = {
+    ask: async () => {
+      throw new Error('görünür soru sorulmamalı');
+    },
+    askHidden: async (question) => {
+      hidden.push(question);
+      return ` ${hash} `;
+    },
+  };
+  await login({
+    http,
+    store,
+    account: 'hesap',
+    log,
+    prompter,
+    say: (line) => said.push(line),
+    method: 'code',
+  });
+  assert.deepEqual(calls, ['verify:token_hash', 'refresh:yenileme-0']);
+  assert.equal(store.items.get('hesap'), 'yenileme-1');
+  assert.equal(hidden.length, 1);
+  const shown = [...said, ...log.lines, ...hidden].join('\n');
+  for (const secret of [hash, 'yenileme-', 'erisim-'])
+    assert.equal(shown.includes(secret), false, secret);
+
+  // Koda benzemeyen girdi Auth'a gönderilmez ve iletiye taşınmaz
+  const second = fakeHttp();
+  await assert.rejects(
+    login({
+      http: second.http,
+      store: createMemoryStore(),
+      account: 'hesap',
+      log: createMemoryLogger(),
+      prompter: scripted(['gizli deger degil kod']),
+      say: () => undefined,
+      method: 'code',
+    }),
+    (error: unknown) =>
+      error instanceof LoginError &&
+      /benzemiyor/.test(error.message) &&
+      !error.message.includes('gizli deger'),
+  );
+  assert.deepEqual(second.calls, []);
+});
+
+test('gizli girdi borudan (stdin) da okunur', async () => {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  const written: string[] = [];
+  output.on('data', (chunk: Buffer) => written.push(chunk.toString('utf8')));
+  const pending = createPrompter(input, output).askHidden('Giriş kodu: ');
+  input.end(`${hash}\n`);
+  assert.equal(await pending, hash);
+  assert.equal(written.join('').includes(hash), false);
 });

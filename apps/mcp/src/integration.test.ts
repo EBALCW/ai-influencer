@@ -13,6 +13,9 @@
 //      çalışma alanı (insan ve MCP oturumuyla) birincinin verisini göremez, değiştiremez.
 //   4. Tarayıcıyla giriş akışı (e-posta bağlantısı + PKCE + 127.0.0.1 geri dönüşü) gerçek Auth'a
 //      karşı oturum üretir.
+//   6. Kodla giriş (`mcp:login --code`): panelin ürettiği türden tek kullanımlık kod e-posta
+//      göndermeden oturum açar; oturum MCP oturumu olarak kaydedilir ve onay veremez; aynı kod
+//      ikinci kez, eski kod yenisi üretilince kullanılamaz; viewer için ret yolu değişmez.
 //   5. İçine talimat gömülü metin gerçek veritabanından da etkisiz veri olarak döner.
 /* eslint-disable @typescript-eslint/no-explicit-any -- test: PostgREST ve araç yanıtları biçimsiz JSON */
 import { after, before, test } from 'node:test';
@@ -23,8 +26,9 @@ import {
   AutomationGuardError,
   probeApprovalRefused,
 } from './auth/automation.ts';
+import { loginWithCode } from './auth/code-login.ts';
 import { createMemoryStore } from './auth/credential-store.ts';
-import { loginWithBrowser } from './auth/login.ts';
+import { LoginError, loginWithBrowser } from './auth/login.ts';
 import {
   SessionManager,
   tokenClaims,
@@ -33,7 +37,12 @@ import {
 import { createMemoryAuditLog } from './lib/audit.ts';
 import { createSupabaseGateway, type Row } from './lib/gateway.ts';
 import { RateLimiter } from './lib/rate-limit.ts';
-import { createDataClient, createPanelSession, rawRpcOf } from './runtime.ts';
+import {
+  createDataClient,
+  createPanelSession,
+  establishGuard,
+  rawRpcOf,
+} from './runtime.ts';
 import { buildServer, type PanelSession } from './server.ts';
 
 const enabled = process.env.MCP_INTEGRATION === '1';
@@ -918,5 +927,122 @@ test(
       body: { refresh_token: token.refresh_token },
     });
     assert.notEqual(dead.status, 200);
+  },
+);
+
+/**
+ * Panelin `POST /api/tool-login` ucunun yaptığı çağrının aynısı (yönetici API'si, kullanıcının
+ * kendi e-postası); uç yalnız `hashed_token` alanını döndürür. Ucun kendisi (rol, istek kaynağı,
+ * otomasyon oturumu reddi) panel E2E'sinde denenir: apps/panel/e2e/tool-login.app.spec.ts.
+ */
+async function mintToolCode(user: User): Promise<string> {
+  const { status, json } = await rest('/auth/v1/admin/generate_link', {
+    key: serviceKey,
+    body: { type: 'magiclink', email: user.email },
+  });
+  assert.equal(status, 200, 'giriş kodu üretilemedi');
+  assert.equal(json.id, user.id, 'kod başka bir kullanıcıya ait');
+  assert.equal(json.verification_type, 'magiclink');
+  assert.match(json.hashed_token, /^[A-Za-z0-9_-]{16,256}$/);
+  return json.hashed_token as string;
+}
+
+async function mailCountFor(email: string): Promise<number> {
+  const list = (await (await fetch(`${mailUrl}/api/v1/messages`)).json()) as {
+    messages?: { To?: { Address: string }[] }[];
+  };
+  return (list.messages ?? []).filter((item) =>
+    item.To?.some((to) => to.Address === email),
+  ).length;
+}
+
+test(
+  'kodla giriş: e-posta gönderilmez; oturum MCP oturumu olur ve onay veremez; kod tek kullanımlık',
+  { skip: !enabled },
+  async () => {
+    const mailsBefore = await mailCountFor(users.owner.email);
+
+    // Yeni kod üretmek öncekini geçersiz kılar (Auth kullanıcı başına tek kod tutar).
+    const stale = await mintToolCode(users.owner);
+    const code = await mintToolCode(users.owner);
+    assert.notEqual(stale, code);
+    await assert.rejects(loginWithCode(config, stale), LoginError);
+
+    // `pnpm mcp:login --code` akışı (cli.ts → login): kod → oturum → işaretle + yokla → kasa.
+    const token = await loginWithCode(config, code);
+    const claims = tokenClaims(token.access_token);
+    assert.equal(claims.sub, users.owner.id);
+    assert.equal(claims.role, 'authenticated');
+    assert.match(claims.session_id ?? '', /^[0-9a-f-]{36}$/);
+    // Kayıttan önce sıradan üye oturumudur
+    assert.equal(
+      (await rpcAs(token.access_token, 'is_worker_session')).json,
+      false,
+    );
+    const store = createMemoryStore();
+    const manager = new SessionManager({ config, store });
+    manager.hold(token);
+    assert.equal(store.entries.size, 0, 'denetimden önce kasaya yazılmaz');
+    const client = createDataClient(config, async () => token.access_token);
+    assert.equal(await establishGuard(rawRpcOf(client)), 'marked');
+    await manager.adopt(token);
+    assert.equal(store.entries.size, 1);
+
+    // Oturum artık MCP oturumudur: onay veremez (doğrudan RPC ile de).
+    assert.equal(
+      (await rpcAs(token.access_token, 'is_worker_session')).json,
+      true,
+    );
+    for (const [name, body] of [
+      [
+        'approve_episode_script',
+        { p_episode_id: ids.episode, p_script_version: 1 },
+      ],
+      ['approve_job_stage', { p_job_id: randomUUID(), p_stage_key: 'x' }],
+    ] as const) {
+      const refused = await rpcAs(token.access_token, name, body);
+      assert.equal(refused.status, 403, name);
+      assert.equal(refused.json.code, '42501', name);
+    }
+    // Araç katmanı da aynı oturumla çalışır
+    const session = createPanelSession({ config, store, manager });
+    const mcp = await connect(session);
+    try {
+      const who = await mcp.call('whoami');
+      assert.equal(who.data.otomasyon_oturumu, true, who.text);
+    } finally {
+      await mcp.close();
+    }
+
+    // Tek kullanımlık: aynı kod ikinci kez oturum açmaz (ne araçla ne doğrudan Auth'la).
+    await assert.rejects(
+      loginWithCode(config, code),
+      (error: unknown) =>
+        error instanceof LoginError &&
+        /kullanılmış ya da süresi dolmuş/.test(error.message) &&
+        !error.message.includes(code),
+    );
+    const replay = await rest('/auth/v1/verify', {
+      body: { type: 'magiclink', token_hash: code },
+    });
+    assert.notEqual(replay.status, 200);
+
+    // Kod üretmek ve kullanmak e-posta göndermez (gönderim sınırına takılmaz).
+    assert.equal(await mailCountFor(users.owner.email), mailsBefore);
+
+    const out = await manager.logout();
+    assert.equal(out.revoked, true);
+  },
+);
+
+test(
+  'kodla giriş ret yolunu değiştirmez: viewer oturumu işaretlenemez ve saklanmaz',
+  { skip: !enabled },
+  async () => {
+    const token = await loginWithCode(config, await mintToolCode(users.viewer));
+    assert.equal(tokenClaims(token.access_token).sub, users.viewer.id);
+    const client = createDataClient(config, async () => token.access_token);
+    await assert.rejects(establishGuard(rawRpcOf(client)), /viewer hesapları/);
+    await rest('/auth/v1/logout?scope=local', { token: token.access_token });
   },
 );
